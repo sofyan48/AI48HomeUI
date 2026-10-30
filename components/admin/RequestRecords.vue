@@ -88,7 +88,10 @@
       :loading="detailLoading"
       :downloading="Boolean(downloadingId)"
       :download-error="detailDownloadError"
+      :has-previous="selectedIndex > 0"
+      :has-next="selectedIndex >= 0 && selectedIndex < events.length - 1"
       @download="downloadRequestLog"
+      @navigate="navigateDetail"
     />
 
     <AppModal v-model:open="exportOpen" title="Export request events" description="Exports up to 10,000 events matching the currently applied filters and sort, across all pages.">
@@ -149,6 +152,7 @@ const detailOpen = ref(false)
 const detailLoading = useWorkspaceState('admin:request-records:detailLoading', () => (false))
 const selectedDetail = useWorkspaceState('admin:request-records:selectedDetail', () => (null))
 const detailDownloadError = ref('')
+const selectedDetailId = ref('')
 const downloadingId = useWorkspaceState('admin:request-records:downloadingId', () => (''))
 const exportOpen = ref(false)
 const exportFormat = ref('csv')
@@ -248,8 +252,14 @@ async function pollEvents() {
     if (!disposed && version === requestVersion && liveRefresh.value) liveError.value = errorMessage(error, 'Live refresh failed.')
   } finally { polling = false }
 }
+const selectedIndex = computed(() => events.value.findIndex(event => event.id === selectedDetailId.value))
+function navigateDetail(direction) {
+  const next = events.value[selectedIndex.value + direction]
+  if (next) openDetail(next)
+}
 async function openDetail(event) {
   if (!event?.id) return
+  selectedDetailId.value = event.id
   pageError.value = ''
   detailOpen.value = true
   detailLoading.value = true

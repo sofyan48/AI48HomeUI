@@ -1,59 +1,91 @@
 <template>
-  <AppModal v-model:open="open" title="Request Details" :description="subtitle" :ui="{ content: 'w-full sm:max-w-4xl', header: 'shrink-0 border-b border-[var(--ui-border)]', body: 'min-h-0 overflow-y-auto p-4 sm:p-6', footer: 'shrink-0 border-t border-[var(--ui-border)] bg-[var(--ui-bg)] p-4 sm:px-6' }">
+  <AppModal v-model:open="open" :ui="{ content: 'w-full sm:max-w-2xl', header: 'shrink-0 border-b border-[var(--ui-border)] px-4 py-3 sm:px-5', body: 'min-h-0 overflow-y-auto p-0 sm:p-0', footer: 'shrink-0 border-t border-[var(--ui-border)] bg-[var(--ui-bg)] px-4 py-3 sm:px-5' }">
+    <template #header="{ close }">
+      <div class="flex w-full min-w-0 items-start gap-3">
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center gap-2">
+            <span class="size-2 shrink-0 rounded-full" :class="loading ? 'bg-[var(--ui-text-dimmed)]' : event.failed ? 'bg-[var(--ui-color-error-500)]' : 'bg-[var(--ui-color-success-500)]'" aria-hidden="true" />
+            <h2 class="truncate text-base font-semibold" :title="title">{{ loading ? 'Loading request…' : title }}</h2>
+          </div>
+          <p class="mt-0.5 truncate text-xs text-[var(--ui-text-muted)]">{{ subtitle }}</p>
+        </div>
+        <div class="flex shrink-0 items-center gap-1">
+          <AppButton type="button" color="neutral" variant="ghost" size="sm" icon="i-tabler-chevron-up" aria-label="Previous request" title="Previous request" :disabled="loading || !hasPrevious" @click="emit('navigate', -1)" />
+          <AppButton type="button" color="neutral" variant="ghost" size="sm" icon="i-tabler-chevron-down" aria-label="Next request" title="Next request" :disabled="loading || !hasNext" @click="emit('navigate', 1)" />
+          <span class="mx-1 h-5 w-px bg-[var(--ui-border)]" aria-hidden="true" />
+          <AppButton type="button" color="neutral" variant="ghost" size="sm" icon="i-tabler-x" aria-label="Close" @click="close" />
+        </div>
+      </div>
+    </template>
+
     <template #body>
-      <div v-if="loading" role="status" class="flex items-center justify-center gap-2 py-16 text-sm text-[var(--ui-text-muted)]"><UIcon name="i-tabler-loader-2" class="size-5 animate-spin" />Loading request details…</div>
-      <div v-else-if="detail" class="space-y-4">
-        <dl class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div v-for="field in overview" :key="field.label" class="min-w-0 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg)] p-3 sm:p-4" :class="field.full ? 'sm:col-span-2' : ''">
-            <dt class="text-xs font-medium text-[var(--ui-text-muted)]">{{ field.label }}</dt>
-            <dd class="mt-2 flex min-w-0 items-start justify-between gap-3 text-sm">
-              <div class="min-w-0 space-y-1">
-                <UBadge v-if="field.label === 'Status'" :color="event.failed ? 'error' : 'success'" variant="subtle">{{ event.failed ? 'Failed' : 'Success' }}</UBadge>
-                <span v-else class="block break-all font-medium" :class="field.mono ? 'font-mono text-xs leading-5' : ''">{{ display(field.value) }}</span>
-                <p v-if="field.secondary" class="break-all text-xs text-[var(--ui-text-muted)]">{{ field.secondary }}</p>
-              </div>
-              <AppButton v-if="field.copy" type="button" color="neutral" variant="ghost" size="xs" icon="i-tabler-copy" class="shrink-0" :aria-label="`Copy ${field.label.toLowerCase()}`" :title="`Copy ${field.label.toLowerCase()}`" @click="copyText(field.copy, field.label)" />
-            </dd>
+      <div v-if="loading" role="status" aria-label="Loading request details" class="space-y-6 p-4 sm:p-5">
+        <USkeleton class="h-16 w-full" />
+        <div v-for="index in 3" :key="index" class="space-y-3"><USkeleton class="h-3 w-24" /><USkeleton class="h-4 w-full" /><USkeleton class="h-4 w-4/5" /><USkeleton class="h-4 w-3/5" /></div>
+      </div>
+
+      <div v-else-if="detail" class="divide-y divide-[var(--ui-border)]">
+        <dl class="grid grid-cols-2 sm:grid-cols-4">
+          <div v-for="(metric, index) in metrics" :key="metric.label" class="min-w-0 px-4 py-3 sm:px-5" :class="[index % 2 ? 'border-l' : '', index > 1 ? 'border-t sm:border-t-0' : '', index === 2 ? 'sm:border-l' : '', 'border-[var(--ui-border)]']">
+            <dt class="text-xs text-[var(--ui-text-muted)]">{{ metric.label }}</dt>
+            <dd class="mt-1 truncate text-sm font-semibold tabular-nums" :class="metric.tone" :title="metric.value">{{ metric.value }}</dd>
           </div>
         </dl>
 
-        <section class="rounded-lg border border-[var(--ui-border)] p-3 sm:p-4" aria-labelledby="request-detail-tokens">
-          <div class="mb-3 flex items-center justify-between gap-3"><h3 id="request-detail-tokens" class="text-sm font-semibold">Tokens</h3><span class="text-xs text-[var(--ui-text-muted)]">Total <strong class="ml-1 text-[var(--ui-text)] tabular-nums">{{ number(event.tokens?.total_tokens) }}</strong></span></div>
-          <dl class="grid grid-cols-3 gap-3">
-            <div v-for="item in primaryTokens" :key="item.label" class="min-w-0 rounded-md bg-[var(--ui-bg-muted)] p-3"><dt class="text-xs text-[var(--ui-text-muted)]">{{ item.label }}</dt><dd class="mt-1 break-all text-lg font-semibold tabular-nums">{{ item.value }}</dd></div>
-          </dl>
-          <dl class="mt-3 grid grid-cols-1 gap-3 border-t border-[var(--ui-border)] pt-3 sm:grid-cols-3">
-            <div v-for="item in cacheTokens" :key="item.label"><dt class="text-xs text-[var(--ui-text-muted)]">{{ item.label }}</dt><dd class="mt-1 text-sm font-medium tabular-nums">{{ item.value }}</dd></div>
-          </dl>
-        </section>
-
-        <UAlert v-if="hasError" color="error" variant="subtle" icon="i-tabler-alert-circle" title="Request error" :description="event.error.message || event.error.reason || event.error.body_preview" />
-        <section v-if="hasError" class="rounded-lg border border-[var(--ui-border)] p-4" aria-labelledby="request-detail-error">
-          <h3 id="request-detail-error" class="mb-3 text-sm font-semibold">Error details</h3>
-          <dl class="grid gap-3 sm:grid-cols-2"><AdminDetailItem v-for="item in errorDetails" :key="item.label" :label="item.label" :value="item.value" /></dl>
-          <pre v-if="event.error?.body_preview" class="mt-3 max-h-64 overflow-auto whitespace-pre-wrap break-all rounded-md bg-[var(--ui-bg-muted)] p-3 font-mono text-xs leading-5">{{ event.error.body_preview }}</pre>
-        </section>
-
-        <section class="rounded-lg border border-[var(--ui-border)] p-4" aria-labelledby="request-detail-routing">
-          <h3 id="request-detail-routing" class="mb-3 text-sm font-semibold">Additional request details</h3>
-          <dl class="grid grid-cols-1 gap-3 sm:grid-cols-2"><AdminDetailItem v-for="item in requestDetails" :key="item.label" :label="item.label" :value="item.value" /></dl>
-        </section>
-        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <AdminDetailSection title="Runtime" :items="runtimeDetails" />
-          <AdminDetailSection title="Credential" :items="credentialDetails" />
-          <AdminDetailSection title="Client" :items="clientDetails" />
-          <AdminDetailSection title="Performance" :items="performanceDetails" />
-          <AdminDetailSection title="Billing" :items="billingDetails" />
+        <div v-if="hasError" class="px-4 py-4 sm:px-5">
+          <div class="rounded-md border border-[var(--ui-color-error-500)]/25 bg-[var(--ui-color-error-500)]/5 px-3 py-2.5 text-sm">
+            <p class="flex items-center gap-2 font-medium text-[var(--ui-color-error-600)] dark:text-[var(--ui-color-error-400)]"><UIcon name="i-tabler-alert-triangle" class="size-4 shrink-0" />{{ event.error.reason || 'Request failed' }}</p>
+            <p v-if="event.error.message" class="mt-1 line-clamp-3 break-words text-[var(--ui-text-muted)]">{{ event.error.message }}</p>
+            <details v-if="event.error.body_preview" class="mt-2">
+              <summary class="cursor-pointer select-none text-xs font-medium text-[var(--ui-text-muted)] hover:text-[var(--ui-text)]">Response body</summary>
+              <pre class="mt-2 max-h-48 overflow-auto whitespace-pre-wrap break-all rounded bg-[var(--ui-bg)] p-2.5 font-mono text-xs leading-5">{{ event.error.body_preview }}</pre>
+            </details>
+          </div>
         </div>
-        <section v-if="detail.payload_summary" class="rounded-lg border border-[var(--ui-border)] p-4"><h3 class="mb-3 text-sm font-semibold">Payload summary</h3><pre class="max-h-64 overflow-auto whitespace-pre-wrap break-all rounded-md bg-[var(--ui-bg-muted)] p-3 font-mono text-xs leading-5">{{ JSON.stringify(detail.payload_summary, null, 2) }}</pre></section>
-        <section v-if="detail.log_excerpt?.length" class="rounded-lg border border-[var(--ui-border)] p-4"><div class="mb-3 flex items-center justify-between gap-2"><h3 class="text-sm font-semibold">Request log excerpt</h3><UBadge color="neutral" variant="subtle" size="sm">Redacted</UBadge></div><pre class="max-h-96 overflow-auto whitespace-pre-wrap break-all rounded-md bg-[var(--ui-bg-muted)] p-3 font-mono text-xs leading-5">{{ detail.log_excerpt.join('\n') }}</pre></section>
+
+        <section v-for="section in sections" :key="section.title" class="px-4 py-4 sm:px-5" :aria-label="section.title">
+          <h3 class="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--ui-text-muted)]">{{ section.title }}</h3>
+          <dl>
+            <div v-for="row in section.rows" :key="row.label" class="group grid min-h-8 grid-cols-[7.5rem_minmax(0,1fr)_1.75rem] items-center gap-3 sm:grid-cols-[10rem_minmax(0,1fr)_1.75rem]">
+              <dt class="truncate text-sm text-[var(--ui-text-muted)]">{{ row.label }}</dt>
+              <dd class="min-w-0 truncate text-sm" :class="row.mono ? 'font-mono text-xs' : ''" :title="row.value">{{ row.value }}<span v-if="row.hint" class="ml-1.5 text-xs text-[var(--ui-text-muted)]">{{ row.hint }}</span></dd>
+              <AppButton v-if="row.copy" type="button" color="neutral" variant="ghost" size="xs" icon="i-tabler-copy" class="opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100" :aria-label="`Copy ${row.label.toLowerCase()}`" :title="`Copy ${row.label.toLowerCase()}`" @click="copyText(row.value, row.label)" />
+            </div>
+          </dl>
+        </section>
+
+        <details v-if="technicalRows.length" class="group/tech">
+          <summary class="flex cursor-pointer select-none list-none items-center justify-between px-4 py-3 text-xs font-semibold uppercase tracking-wide text-[var(--ui-text-muted)] hover:text-[var(--ui-text)] sm:px-5 [&::-webkit-details-marker]:hidden">
+            Technical details
+            <UIcon name="i-tabler-chevron-down" class="size-4 transition-transform group-open/tech:rotate-180" />
+          </summary>
+          <dl class="px-4 pb-4 sm:px-5">
+            <div v-for="row in technicalRows" :key="row.label" class="grid min-h-7 grid-cols-[7.5rem_minmax(0,1fr)] items-center gap-3 sm:grid-cols-[10rem_minmax(0,1fr)]">
+              <dt class="truncate text-xs text-[var(--ui-text-muted)]">{{ row.label }}</dt>
+              <dd class="min-w-0 truncate font-mono text-xs" :title="row.value">{{ row.value }}</dd>
+            </div>
+          </dl>
+        </details>
+
+        <details v-if="detail.log_excerpt?.length" class="group/log">
+          <summary class="flex cursor-pointer select-none list-none items-center justify-between px-4 py-3 text-xs font-semibold uppercase tracking-wide text-[var(--ui-text-muted)] hover:text-[var(--ui-text)] sm:px-5 [&::-webkit-details-marker]:hidden">
+            <span>Log excerpt <span class="ml-1 font-normal normal-case tracking-normal">· {{ detail.log_excerpt.length }} lines, redacted</span></span>
+            <UIcon name="i-tabler-chevron-down" class="size-4 transition-transform group-open/log:rotate-180" />
+          </summary>
+          <div class="px-4 pb-4 sm:px-5">
+            <pre class="max-h-72 overflow-auto whitespace-pre rounded-md bg-[var(--ui-bg-muted)] p-3 font-mono text-xs leading-5">{{ detail.log_excerpt.join('\n') }}</pre>
+          </div>
+        </details>
       </div>
+
+      <div v-else class="flex flex-col items-center justify-center px-4 py-16 text-center text-sm text-[var(--ui-text-muted)]"><UIcon name="i-tabler-file-unknown" class="mb-2 size-6" />No request selected.</div>
     </template>
+
     <template #footer>
-      <div class="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p v-if="!loading && !downloadUrl" id="request-detail-no-log" class="text-xs text-[var(--ui-text-muted)]">This request has no downloadable request log.</p>
-        <p v-else-if="downloadError" role="alert" class="break-words text-xs text-[var(--ui-color-error-500)]">{{ downloadError }}</p>
-        <AppButton type="button" color="neutral" variant="outline" icon="i-tabler-download" class="shrink-0 sm:ml-auto" :loading="downloading" :disabled="loading || !downloadUrl || downloading" :aria-describedby="!loading && !downloadUrl ? 'request-detail-no-log' : undefined" @click="emit('download', downloadUrl, event.request_id)">Download request log</AppButton>
+      <div class="flex w-full items-center gap-2">
+        <AppButton type="button" color="neutral" variant="outline" size="sm" icon="i-tabler-copy" :disabled="loading || !event.request_id" @click="copyText(event.request_id, 'Request ID')">Copy request ID</AppButton>
+        <p v-if="downloadError" role="alert" class="min-w-0 flex-1 truncate text-xs text-[var(--ui-color-error-500)]" :title="downloadError">{{ downloadError }}</p>
+        <AppButton type="button" color="neutral" variant="solid" size="sm" icon="i-tabler-download" class="ml-auto shrink-0" :loading="downloading" :disabled="loading || !downloadUrl || downloading" :title="!loading && !downloadUrl ? 'This request has no downloadable log' : undefined" @click="emit('download', downloadUrl, event.request_id)">Download log</AppButton>
       </div>
     </template>
   </AppModal>
@@ -62,49 +94,103 @@
 <script setup lang="ts">
 type Fields = Record<string, any>
 type Detail = { event?: Fields; payload_summary?: Fields | null; log_excerpt?: string[] }
-type OverviewField = { label: string; value?: unknown; secondary?: string; mono?: boolean; full?: boolean; copy?: string }
-const props = defineProps<{ detail: Detail | null; loading: boolean; downloading: boolean; downloadError?: string }>()
+type Row = { label: string; value: string; hint?: string; mono?: boolean; copy?: boolean }
+type RowInput = { label: string; value: unknown; hint?: unknown; mono?: boolean; copy?: boolean }
+const props = defineProps<{ detail: Detail | null; loading: boolean; downloading: boolean; downloadError?: string; hasPrevious?: boolean; hasNext?: boolean }>()
 const open = defineModel<boolean>('open', { default: false })
-const emit = defineEmits<{ download: [url: string, requestId: string] }>()
+const emit = defineEmits<{ download: [url: string, requestId: string]; navigate: [direction: -1 | 1] }>()
 const toast = useToast()
 const event = computed(() => props.detail?.event || {})
-const display = (value: unknown) => value == null || value === '' ? '—' : String(value)
-const number = (value: unknown) => value == null ? '—' : new Intl.NumberFormat().format(Number(value))
-const decimal = (value: unknown) => new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(Number(value))
-const milliseconds = (value: unknown) => value == null ? '—' : `${number(value)} ms`
-const subtitle = computed(() => event.value.timestamp ? new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'medium' }).format(new Date(event.value.timestamp)) : 'Routing, usage, billing, and redacted logs for this request.')
+const payload = computed(() => props.detail?.payload_summary || {})
+
+const isEmpty = (value: unknown) => value == null || value === ''
+const number = (value: unknown) => isEmpty(value) ? '—' : new Intl.NumberFormat().format(Number(value))
+const decimal = (value: unknown, digits = 2) => new Intl.NumberFormat(undefined, { maximumFractionDigits: digits }).format(Number(value))
+const duration = (ms: unknown) => isEmpty(ms) ? '' : Number(ms) >= 1000 ? `${decimal(Number(ms) / 1000)} s` : `${number(ms)} ms`
+// Drops empty rows so every section only shows recorded values.
+const rows = (items: RowInput[]): Row[] => items.filter(item => !isEmpty(item.value)).map(item => ({ ...item, value: String(item.value), hint: isEmpty(item.hint) ? undefined : String(item.hint) }))
+
+const title = computed(() => [event.value.provider, event.value.model].filter(Boolean).join(' · ') || 'Request details')
+const subtitle = computed(() => {
+  const time = event.value.timestamp ? new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'medium' }).format(new Date(event.value.timestamp)) : ''
+  const endpoint = [payload.value.method, event.value.endpoint].filter(Boolean).join(' ')
+  return [time, endpoint].filter(Boolean).join(' · ') || 'Routing, usage, billing, and redacted logs for this request.'
+})
 const downloadUrl = computed(() => event.value.related?.request_log?.download_url || '')
-const amount = computed(() => event.value.billing?.amount == null ? '—' : `${decimal(event.value.billing.amount)} ${event.value.billing.currency || 'credits'}`)
-const endpoint = computed(() => [props.detail?.payload_summary?.method, event.value.endpoint].filter(Boolean).join(' '))
-const status = computed(() => [event.value.status || (event.value.failed ? 'failed' : 'success'), event.value.status_code ? `HTTP ${event.value.status_code}` : '', event.value.upstream_status_code ? `Upstream ${event.value.upstream_status_code}` : ''].filter(Boolean).join(' · '))
-const overview = computed<OverviewField[]>(() => [
-  { label: 'Event type', value: event.value.event_type || 'completion' },
-  { label: 'Status', secondary: status.value },
-  { label: 'Request ID', value: event.value.request_id, mono: true, copy: event.value.request_id },
-  { label: 'Upstream request ID', value: event.value.upstream_request_id, mono: true, copy: event.value.upstream_request_id },
-  { label: 'Provider', value: event.value.provider },
-  { label: 'Model', value: event.value.model },
-  { label: 'Endpoint', value: endpoint.value, mono: true, full: true, copy: endpoint.value },
-  { label: 'Home node', value: event.value.runtime?.home_id || event.value.runtime?.home_ip },
-  { label: 'CPA node', value: event.value.runtime?.cpa_label || event.value.runtime?.cpa_node_id },
-  { label: 'User', value: event.value.client?.username || event.value.client?.user_id },
-  { label: 'Client access key', value: event.value.client?.client_key_label },
-  { label: 'Credential', value: event.value.credential?.label || event.value.credential?.credential_id, secondary: event.value.credential?.credential_type },
-  { label: 'Latency', value: event.value.performance?.latency_ms == null ? '—' : `${new Intl.NumberFormat(undefined, { maximumFractionDigits: 3 }).format(event.value.performance.latency_ms / 1000)} s` },
-  { label: 'Cost', value: amount.value, full: true }
+const amount = computed(() => isEmpty(event.value.billing?.amount) ? '' : `${decimal(event.value.billing.amount, 6)} ${event.value.billing.currency || 'credits'}`)
+const statusLabel = computed(() => {
+  const code = event.value.status_code ? ` ${event.value.status_code}` : ''
+  return event.value.failed ? `Failed${code}` : `Success${code}`
+})
+
+const metrics = computed(() => [
+  { label: 'Status', value: statusLabel.value, tone: event.value.failed ? 'text-[var(--ui-color-error-500)]' : 'text-[var(--ui-color-success-600)] dark:text-[var(--ui-color-success-400)]' },
+  { label: 'Latency', value: duration(event.value.performance?.latency_ms) || '—', tone: '' },
+  { label: 'Tokens', value: number(event.value.tokens?.total_tokens), tone: '' },
+  { label: 'Cost', value: amount.value || '—', tone: '' }
 ])
-function details(object: Fields | undefined, pairs: string[][]) { return pairs.map(([label, key]) => ({ label: label!, value: display(object?.[key!]) })) }
-const primaryTokens = computed(() => details(event.value.tokens, [['Input', 'input_tokens'], ['Output', 'output_tokens'], ['Reasoning', 'reasoning_tokens']]).map(item => ({ ...item, value: item.value === '—' ? '—' : number(item.value) })))
-const cacheTokens = computed(() => details(event.value.tokens, [['Cached', 'cached_tokens'], ['Cache read', 'cache_read_tokens'], ['Cache creation', 'cache_creation_tokens']]).map(item => ({ ...item, value: item.value === '—' ? '—' : number(item.value) })))
-const requestDetails = computed(() => details(event.value, [['Event ID', 'id'], ['Original model', 'original_model'], ['Model alias', 'model_alias'], ['Executor', 'executor_type'], ['Source', 'source'], ['Service tier', 'service_tier'], ['Reasoning effort', 'reasoning_effort'], ['Session ID', 'session_id'], ['Parent session ID', 'parent_session_id'], ['Root session ID', 'root_session_id']]))
-const runtimeDetails = computed(() => details(event.value.runtime, [['Home', 'home_id'], ['Home IP', 'home_ip'], ['Home port', 'home_port'], ['CPA label', 'cpa_label'], ['CPA node ID', 'cpa_node_id'], ['CPA address', 'cpa_ip'], ['CPA port', 'cpa_port']]))
-const credentialDetails = computed(() => details(event.value.credential, [['Type', 'credential_type'], ['Label', 'label'], ['Credential ID', 'credential_id'], ['Auth index', 'auth_index'], ['Provider', 'provider'], ['Source', 'source'], ['Key preview', 'api_key_preview']]))
-const clientDetails = computed(() => details(event.value.client, [['Username', 'username'], ['User ID', 'user_id'], ['Key label', 'client_key_label'], ['Key ID', 'client_key_id'], ['Masked key', 'client_key_masked'], ['Client IP', 'client_ip']]))
-const performanceDetails = computed(() => [{ label: 'Latency', value: milliseconds(event.value.performance?.latency_ms) }, { label: 'TTFT', value: milliseconds(event.value.performance?.ttft_ms) }, { label: 'TPS', value: event.value.performance?.tps == null ? '—' : decimal(event.value.performance.tps) }])
-const billingDetails = computed(() => [{ label: 'Amount', value: amount.value }, ...details(event.value.billing, [['Charge ID', 'charge_id'], ['Price rule', 'matched_price_rule']])])
+
+const tokenHint = computed(() => {
+  const tokens = event.value.tokens || {}
+  const parts = [['in', tokens.input_tokens], ['out', tokens.output_tokens], ['reasoning', tokens.reasoning_tokens], ['cached', tokens.cached_tokens]].filter(([, value]) => !isEmpty(value) && Number(value) > 0)
+  return parts.map(([label, value]) => `${number(value)} ${label}`).join(' · ')
+})
+
+const sections = computed(() => [
+  { title: 'Request', rows: rows([
+    { label: 'Request ID', value: event.value.request_id, mono: true, copy: true },
+    { label: 'Upstream ID', value: event.value.upstream_request_id, mono: true, copy: true },
+    { label: 'Endpoint', value: [payload.value.method, event.value.endpoint].filter(Boolean).join(' '), mono: true },
+    { label: 'Model', value: event.value.model, hint: event.value.original_model && event.value.original_model !== event.value.model ? `from ${event.value.original_model}` : '' },
+    { label: 'Upstream status', value: event.value.upstream_status_code },
+    { label: 'Stream', value: payload.value.stream == null ? '' : payload.value.stream ? 'Yes' : 'No' },
+    { label: 'Messages / tools', value: isEmpty(payload.value.message_count) && isEmpty(payload.value.tool_count) ? '' : `${number(payload.value.message_count)} / ${number(payload.value.tool_count)}` },
+    { label: 'Session', value: event.value.session_id, mono: true, copy: true }
+  ]) },
+  { title: 'Routing', rows: rows([
+    { label: 'User', value: event.value.client?.username || event.value.client?.user_id },
+    { label: 'Access key', value: event.value.client?.client_key_label, hint: event.value.client?.client_key_masked },
+    { label: 'Credential', value: event.value.credential?.label || event.value.credential?.credential_id, hint: event.value.credential?.credential_type },
+    { label: 'Home node', value: event.value.runtime?.home_id || event.value.runtime?.home_ip },
+    { label: 'CPA node', value: event.value.runtime?.cpa_label || event.value.runtime?.cpa_node_id },
+    { label: 'Client IP', value: event.value.client?.client_ip, mono: true }
+  ]) },
+  { title: 'Usage', rows: rows([
+    { label: 'Tokens', value: isEmpty(event.value.tokens?.total_tokens) ? '' : number(event.value.tokens.total_tokens), hint: tokenHint.value },
+    { label: 'Time to first token', value: duration(event.value.performance?.ttft_ms) },
+    { label: 'Throughput', value: isEmpty(event.value.performance?.tps) ? '' : `${decimal(event.value.performance.tps)} tok/s` },
+    { label: 'Cost', value: amount.value, hint: event.value.billing?.matched_price_rule }
+  ]) }
+].filter(section => section.rows.length))
+
+const technicalRows = computed(() => rows([
+  { label: 'Event ID', value: event.value.id },
+  { label: 'Event type', value: event.value.event_type },
+  { label: 'Executor', value: event.value.executor_type },
+  { label: 'Source', value: event.value.source },
+  { label: 'Model alias', value: event.value.model_alias },
+  { label: 'Service tier', value: event.value.service_tier },
+  { label: 'Reasoning effort', value: event.value.reasoning_effort },
+  { label: 'Parent session', value: event.value.parent_session_id },
+  { label: 'Root session', value: event.value.root_session_id },
+  { label: 'Credential ID', value: event.value.credential?.credential_id },
+  { label: 'Auth index', value: event.value.credential?.auth_index },
+  { label: 'Credential source', value: event.value.credential?.source },
+  { label: 'Key preview', value: event.value.credential?.api_key_preview },
+  { label: 'Client key ID', value: event.value.client?.client_key_id },
+  { label: 'User ID', value: event.value.client?.user_id },
+  { label: 'Home address', value: [event.value.runtime?.home_ip, event.value.runtime?.home_port].filter(value => !isEmpty(value)).join(':') },
+  { label: 'CPA node ID', value: event.value.runtime?.cpa_node_id },
+  { label: 'CPA address', value: [event.value.runtime?.cpa_ip, event.value.runtime?.cpa_port].filter(value => !isEmpty(value)).join(':') },
+  { label: 'Cache read', value: isEmpty(event.value.tokens?.cache_read_tokens) ? '' : number(event.value.tokens.cache_read_tokens) },
+  { label: 'Cache creation', value: isEmpty(event.value.tokens?.cache_creation_tokens) ? '' : number(event.value.tokens.cache_creation_tokens) },
+  { label: 'Charge ID', value: event.value.billing?.charge_id }
+]))
+
 const hasError = computed(() => Boolean(event.value.error?.message || event.value.error?.reason || event.value.error?.body_preview))
-const errorDetails = computed(() => details(event.value.error, [['HTTP status', 'status_code'], ['Upstream status', 'upstream_status_code'], ['Reason', 'reason'], ['Message', 'message']]))
-async function copyText(value: string, label: string) {
+
+async function copyText(value: string | undefined, label: string) {
+  if (!value) return
   try { await navigator.clipboard.writeText(value); toast.add({ title: `${label} copied`, color: 'success' }) }
   catch { toast.add({ title: `Could not copy ${label.toLowerCase()}`, description: 'Select the value and copy it manually.', color: 'error' }) }
 }
