@@ -1,12 +1,5 @@
 <template>
-  <div class="space-y-5">
-    <p
-      v-if="summaryPending"
-      role="status"
-      class="text-sm text-[var(--ui-text-muted)]"
-    >
-      Loading Upstream summary…
-    </p>
+  <div class="space-y-4">
     <UAlert
       v-if="summaryError"
       color="warning"
@@ -14,13 +7,14 @@
       title="Upstream summary unavailable"
       :description="summaryError"
     />
-    <section aria-label="Upstream summary" class="metric-strip">
+    <section aria-label="Upstream summary" :aria-busy="summaryPending" class="metric-strip">
       <dl class="metric">
         <dt>Accounts</dt>
-        <dd class="metric-value">{{ accounts.length }}</dd>
+        <dd class="metric-value">{{ summaryPending && !accounts.length ? "—" : accounts.length }}</dd>
         <dd class="metric-detail">
-          {{ activeAccounts }} active · {{ disabledAccounts }} disabled ·
-          {{ unavailableAccounts }} unavailable
+          <span class="metric-dot bg-green-500" />{{ activeAccounts }} active
+          <span class="metric-dot ml-2 bg-slate-400" />{{ disabledAccounts }} disabled
+          <template v-if="unavailableAccounts"><span class="metric-dot ml-2 bg-amber-500" />{{ unavailableAccounts }} unavailable</template>
         </dd>
       </dl>
       <dl class="metric">
@@ -30,29 +24,23 @@
           {{ providerGroups || "No entries" }}
         </dd>
       </dl>
-      <div class="metric">
-        <dl>
-          <dt>Quota attention</dt>
-          <dd class="metric-value">{{ quotaError ? "Unavailable" : attentionCount }}</dd>
-          <dd class="metric-detail">Quota status and collection freshness</dd>
-        </dl>
-        <AppButton
-          type="button"
-          size="sm"
-          color="neutral"
-          variant="ghost"
-          icon="i-tabler-arrow-right"
-          class="mt-1"
-          aria-label="Show accounts needing attention"
-          @click="showAttention"
-        >Review accounts</AppButton>
-      </div>
+      <button
+        type="button"
+        class="metric metric--action text-left"
+        :class="attentionCount && !quotaError ? 'metric--warning' : ''"
+        aria-label="Show accounts needing attention"
+        @click="showAttention"
+      >
+        <span class="flex items-center justify-between text-xs text-[var(--ui-text-muted)]">Needs attention<UIcon name="i-tabler-arrow-right" class="metric-arrow size-3.5" /></span>
+        <span class="metric-value block">{{ quotaError ? "—" : attentionCount }}</span>
+        <span class="metric-detail block">{{ quotaError ? "Quota snapshots unavailable" : "Quota status or stale collection" }}</span>
+      </button>
       <dl class="metric">
         <dt>WebSockets</dt>
         <dd class="metric-value">
           {{ accounts.filter((item) => item.websockets).length }}
         </dd>
-        <dd class="metric-detail">Enabled accounts</dd>
+        <dd class="metric-detail">Accounts with WebSockets on</dd>
       </dl>
     </section>
 
@@ -104,8 +92,8 @@ const tab = computed(() =>
       : "accounts",
 );
 const upstreamTabs = [
-  { label: "Accounts", value: "accounts" },
-  { label: "Providers", value: "providers" },
+  { label: "Accounts", value: "accounts", icon: "i-tabler-user-shield" },
+  { label: "Provider keys", value: "providers", icon: "i-tabler-key" },
 ];
 const summaryError = useWorkspaceState('admin:upstream:summaryError', () => (""));
 const quotaError = useWorkspaceState('admin:upstream:quotaError', () => (""));
@@ -276,8 +264,8 @@ async function syncData() {
 
 .metric {
   min-width: 0;
-  padding: 0.75rem 1rem;
-  background: var(--ui-bg-elevated);
+  padding: 0.875rem 1.125rem;
+  background: var(--ui-bg);
 }
 
 .metric dt,
@@ -288,12 +276,34 @@ async function syncData() {
 }
 
 .metric-value {
-  margin-block: 0.25rem;
-  font-size: 1.25rem;
-  line-height: 1.75rem;
+  margin-block: 0.375rem 0.25rem;
+  font-size: 1.5rem;
+  line-height: 2rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+  color: var(--ui-text-highlighted);
 }
+
+.metric-dot {
+  display: inline-block;
+  width: 0.375rem;
+  height: 0.375rem;
+  margin-right: 0.3125rem;
+  border-radius: 9999px;
+  vertical-align: middle;
+}
+
+.metric--action {
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+
+.metric--action:hover { background: var(--ui-bg-elevated); }
+.metric--action:focus-visible { outline: 2px solid var(--ui-primary); outline-offset: -2px; }
+.metric--action .metric-arrow { opacity: 0; transition: opacity 120ms ease; }
+.metric--action:is(:hover, :focus-visible) .metric-arrow { opacity: 1; }
+.metric--warning .metric-value { color: var(--color-amber-600); }
+:global(.dark) .metric--warning .metric-value { color: var(--color-amber-400); }
 
 @media (min-width: 40rem) {
   .metric-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
