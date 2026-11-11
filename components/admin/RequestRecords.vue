@@ -62,17 +62,18 @@
           </div>
         </div>
       </template>
-      <AppTable :columns="columns" :data="events" :loading="loading" class="min-w-[1320px]">
-        <template #timestamp-cell="{ row }"><div class="min-w-36"><p class="text-sm font-medium">{{ formatDateTime(rowValue(row).timestamp) }}</p></div></template>
-        <template #event-cell="{ row }"><div><p class="text-sm">{{ rowValue(row).event_type || 'completion' }}</p><p class="text-xs text-[var(--ui-text-muted)]">{{ rowValue(row).executor_type || 'default executor' }}</p></div></template>
-        <template #status-cell="{ row }"><div class="space-y-1"><UBadge :color="rowValue(row).failed ? 'error' : 'success'" variant="subtle">{{ rowValue(row).failed ? 'Failed' : 'Success' }}</UBadge><p class="text-xs text-[var(--ui-text-muted)]">HTTP {{ rowValue(row).status_code || '—' }}</p></div></template>
-        <template #model-cell="{ row }"><div class="min-w-40"><p class="font-medium">{{ rowValue(row).model || 'Unknown model' }}</p><p class="text-xs text-[var(--ui-text-muted)]">{{ rowValue(row).provider || 'Unknown provider' }}<span v-if="rowValue(row).model_alias || rowValue(row).original_model"> · {{ rowValue(row).model_alias || rowValue(row).original_model }}</span></p></div></template>
-        <template #runtime-cell="{ row }"><div class="min-w-36"><p class="text-sm">{{ rowValue(row).runtime?.home_id || rowValue(row).runtime?.home_ip || 'Unknown Home' }}</p><p class="text-xs text-[var(--ui-text-muted)]">{{ rowValue(row).runtime?.cpa_label || rowValue(row).runtime?.cpa_node_id || rowValue(row).runtime?.cpa_ip || 'Unknown CPA' }}</p></div></template>
-        <template #client-cell="{ row }"><div class="min-w-36"><p class="text-sm">{{ rowValue(row).client?.username || 'Unattributed' }}</p><p class="text-xs text-[var(--ui-text-muted)]">{{ rowValue(row).client?.client_key_label || rowValue(row).client?.client_key_masked || 'No client key' }}</p></div></template>
-        <template #credential-cell="{ row }"><div class="min-w-36"><p class="truncate text-sm">{{ rowValue(row).credential?.label || rowValue(row).credential?.credential_id || 'Unknown' }}</p><p class="truncate text-xs text-[var(--ui-text-muted)]">{{ rowValue(row).credential?.auth_index || rowValue(row).credential?.credential_type || 'No auth index' }}</p></div></template>
-        <template #tokens-cell="{ row }"><div class="min-w-24 text-sm tabular-nums"><p class="font-semibold">{{ formatNumber(rowValue(row).tokens?.total_tokens) }}</p><p class="text-xs text-[var(--ui-text-muted)]">{{ formatNumber(rowValue(row).tokens?.input_tokens) }} in / {{ formatNumber(rowValue(row).tokens?.output_tokens) }} out</p></div></template>
-        <template #latency-cell="{ row }"><div class="min-w-24 text-sm tabular-nums"><p>{{ formatMilliseconds(rowValue(row).performance?.latency_ms) }}</p><p class="text-xs text-[var(--ui-text-muted)]">TTFT {{ formatMilliseconds(rowValue(row).performance?.ttft_ms) }}</p></div></template>
-        <template #request-cell="{ row }"><div class="min-w-40"><p class="truncate font-mono text-xs">{{ rowValue(row).request_id || rowValue(row).id }}</p><p class="truncate font-mono text-xs text-[var(--ui-text-muted)]">{{ rowValue(row).upstream_request_id || 'No upstream ID' }}</p></div></template>
+      <AppTable :columns="columns" :data="events" :loading="loading" class="min-w-[1520px] [&_table]:table-fixed">
+        <template #timestamp-cell="{ row }"><div class="w-32"><p class="text-sm font-medium">{{ formatDateTime(rowValue(row).timestamp) }}</p></div></template>
+        <template #event-cell="{ row }"><div class="w-44 min-w-0"><p class="truncate font-mono text-xs">{{ rowValue(row).endpoint || rowValue(row).event_type || 'completion' }}</p><p class="truncate text-xs text-[var(--ui-text-muted)]">{{ executorLabel(rowValue(row).executor_type) || rowValue(row).event_type || 'default' }}<span v-if="rowValue(row).stream != null"> · {{ rowValue(row).stream ? 'Streaming' : 'Non-streaming' }}</span></p></div></template>
+        <template #status-cell="{ row }"><div class="w-16"><UBadge :color="statusColor(rowValue(row))" variant="subtle" class="font-mono tabular-nums" :title="statusLabel(rowValue(row))">{{ statusCode(rowValue(row)) || statusLabel(rowValue(row)) }}</UBadge><p v-if="rowValue(row).upstream_status_code && rowValue(row).upstream_status_code !== rowValue(row).status_code" class="mt-1 truncate text-[11px] text-[var(--ui-text-muted)]">Upstream {{ rowValue(row).upstream_status_code }}</p></div></template>
+        <template #model-cell="{ row }"><div class="w-48 min-w-0"><p class="truncate font-medium">{{ rowValue(row).model || 'Unknown model' }}</p><p class="truncate text-xs text-[var(--ui-text-muted)]">{{ [rowValue(row).model_alias || rowValue(row).original_model, rowValue(row).service_tier, rowValue(row).reasoning_effort].filter(Boolean).join(' · ') || 'No alias or tier' }}</p></div></template>
+        <template #runtime-cell="{ row }"><div class="w-40 min-w-0"><p class="truncate text-sm">{{ rowValue(row).runtime?.home_id || rowValue(row).runtime?.home_ip || 'Unknown Home' }}</p><p class="truncate text-xs text-[var(--ui-text-muted)]">{{ rowValue(row).runtime?.cpa_label || rowValue(row).runtime?.cpa_node_id || rowValue(row).runtime?.cpa_ip || 'Unknown CPA' }}</p></div></template>
+        <template #client-cell="{ row }"><div class="w-36 min-w-0"><p class="truncate text-sm">{{ rowValue(row).client?.username || 'Unattributed' }}</p><p class="truncate text-xs text-[var(--ui-text-muted)]">{{ rowValue(row).client?.client_key_label || rowValue(row).client?.client_key_masked || 'No client key' }}</p></div></template>
+        <template #credential-cell="{ row }"><div class="w-36 min-w-0"><p class="truncate text-sm">{{ rowValue(row).credential?.label || rowValue(row).credential?.credential_id || 'Unknown' }}</p><p class="truncate text-xs text-[var(--ui-text-muted)]">{{ rowValue(row).credential?.auth_index || rowValue(row).credential?.credential_type || 'No auth index' }}</p></div></template>
+        <template #tokens-cell="{ row }"><div class="w-44 min-w-0 text-sm tabular-nums"><p class="font-semibold">{{ formatCompactNumber(rowValue(row).tokens?.total_tokens) }}</p><p class="truncate text-xs text-[var(--ui-text-muted)]">{{ formatCompactNumber(rowValue(row).tokens?.input_tokens) }} in · {{ formatCompactNumber(rowValue(row).tokens?.output_tokens) }} out<span v-if="cacheTokens(rowValue(row))"> · cache {{ cacheTokens(rowValue(row)) }}<span v-if="cacheRate(rowValue(row))"> ({{ cacheRate(rowValue(row)) }})</span></span></p><p v-if="toolCount(rowValue(row))" class="truncate text-[11px] text-[var(--ui-primary)]">⚒ {{ formatCompactNumber(toolCount(rowValue(row))) }} tool calls</p></div></template>
+        <template #latency-cell="{ row }"><div class="w-28 text-sm tabular-nums"><p>{{ formatMilliseconds(rowValue(row).performance?.latency_ms) }}</p><p class="truncate text-xs text-[var(--ui-text-muted)]">TTFT {{ formatMilliseconds(rowValue(row).performance?.ttft_ms) }}</p></div></template>
+        <template #cost-cell="{ row }"><div class="w-24 text-right text-sm tabular-nums"><p class="font-medium">{{ formatTableAmount(rowValue(row).billing?.amount, rowValue(row).billing?.currency) }}</p><p class="truncate text-xs text-[var(--ui-text-muted)]">{{ rowValue(row).billing?.currency || 'credits' }}</p></div></template>
+        <template #request-cell="{ row }"><div class="w-44 min-w-0"><p class="truncate font-mono text-xs">{{ rowValue(row).request_id || rowValue(row).id }}</p><p class="truncate font-mono text-xs text-[var(--ui-text-muted)]">{{ rowValue(row).upstream_request_id || 'No upstream ID' }}</p></div></template>
         <template #actions-cell="{ row }"><div class="flex justify-end gap-1"><AdminTableAction v-if="rowValue(row).related?.request_log?.download_url" action="download" label="Download request log" :loading="downloadingId === rowValue(row).request_id" @click="downloadRequestLog(rowValue(row).related.request_log.download_url, rowValue(row).request_id)" /><AdminTableAction action="view" label="View request event" @click="openDetail(rowValue(row))" /></div></template>
         <template #empty><div class="flex flex-col items-center justify-center py-14 text-center"><UIcon name="i-tabler-list" class="mb-3 size-8 text-[var(--ui-text-muted)]" /><p class="font-medium">No request events found</p><p class="mt-1 text-sm text-[var(--ui-text-muted)]">Try a broader time range or fewer filters.</p></div></template>
       </AppTable>
@@ -129,8 +130,13 @@ const filters = ref(defaultFilters())
 const appliedFilters = ref({ ...filters.value })
 const searchField = ref('all')
 const appliedSearchField = ref('all')
-const timeRange = ref('24h')
-const sort = ref('timestamp_desc')
+const preference = (key, fallback, choices) => {
+  if (!import.meta.client) return fallback
+  try { const value = window.localStorage.getItem(key); return choices.includes(value) ? value : fallback } catch { return fallback }
+}
+const savePreference = (key, value) => { if (!import.meta.client) return; try { window.localStorage.setItem(key, value) } catch {} }
+const timeRange = ref(preference('cpahome:request-events:range', '24h', ['4h', '12h', '24h', 'today', 'yesterday', '7d', '30d', '90d']))
+const sort = ref(preference('cpahome:request-events:sort', 'timestamp_desc', ['timestamp_desc', 'timestamp_asc', 'tokens_desc', 'latency_desc', 'cost_desc', 'failed_first']))
 const page = ref(1)
 const response = useWorkspaceState('admin:request-records:response', () => (null))
 const filterOptions = useWorkspaceState('admin:request-records:filterOptions', () => (null))
@@ -164,7 +170,7 @@ const sortOptions = [
 const refreshOptions = [{ label: '5s', value: '5' }, { label: '15s', value: '15' }, { label: '30s', value: '30' }, { label: '60s', value: '60' }]
 const exportOptions = [{ label: 'CSV spreadsheet', value: 'csv' }, { label: 'JSON Lines', value: 'jsonl' }]
 const columns = [
-  { accessorKey: 'timestamp', header: 'Time' }, { accessorKey: 'event', header: 'Event' }, { accessorKey: 'status', header: 'Status' }, { accessorKey: 'model', header: 'Model' }, { accessorKey: 'runtime', header: 'Home node' }, { accessorKey: 'client', header: 'User' }, { accessorKey: 'credential', header: 'Credential' }, { accessorKey: 'tokens', header: 'Tokens' }, { accessorKey: 'latency', header: 'Latency' }, { accessorKey: 'request', header: 'Request ID' }, { accessorKey: 'actions', header: '', meta: { class: { th: 'table-action-head', td: 'table-action-cell' } } }
+  { accessorKey: 'timestamp', header: 'Time' }, { accessorKey: 'event', header: 'Event' }, { accessorKey: 'status', header: 'Status' }, { accessorKey: 'model', header: 'Model' }, { accessorKey: 'runtime', header: 'Home node' }, { accessorKey: 'client', header: 'User' }, { accessorKey: 'credential', header: 'Credential' }, { accessorKey: 'tokens', header: 'Tokens' }, { accessorKey: 'latency', header: 'Latency' }, { accessorKey: 'cost', header: 'Cost (credits)' }, { accessorKey: 'request', header: 'Request ID' }, { accessorKey: 'actions', header: '', meta: { class: { th: 'table-action-head', td: 'table-action-cell' } } }
 ]
 const events = computed(() => Array.isArray(response.value?.items) ? response.value.items : [])
 const total = computed(() => Number(response.value?.total) || 0)
@@ -294,11 +300,19 @@ function formatDecimal(value) { return new Intl.NumberFormat(undefined, { maximu
 function formatMilliseconds(value) { return value == null ? '—' : `${formatNumber(value)} ms` }
 function formatDateTime(value) { return value ? new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'medium' }).format(new Date(value)) : '—' }
 function formatAmount(amount, currency) { return amount == null ? '—' : `${formatDecimal(amount)} ${currency || 'credits'}` }
-function formatStatus(event) { return `${event?.status || (event?.failed ? 'failed' : 'success')}${event?.status_code ? ` (${event.status_code})` : ''}${event?.upstream_status_code && event.upstream_status_code !== event.status_code ? ` · upstream ${event.upstream_status_code}` : ''}` }
+function formatTableAmount(amount, currency) { return amount == null ? '—' : `${formatDecimal(amount)}${currency && currency.toLowerCase() !== 'credits' ? ` ${currency}` : ''}` }
+function statusCode(event) { return event?.status_code || event?.error?.status_code || event?.upstream_status_code || '' }
+function statusLabel(event) { return event?.status || (event?.failed ? 'Failed' : 'Success') }
+function statusColor(event) { const code = Number(statusCode(event)); return event?.failed || code >= 400 ? 'error' : code >= 200 && code < 400 ? 'success' : 'neutral' }
+function executorLabel(value) { return value ? String(value).trim().replace(/Executor$/i, '') : '' }
+function cacheTokens(event) { const value = Number(event?.tokens?.cache_read_tokens ?? event?.tokens?.cached_tokens); return value > 0 ? formatCompactNumber(value) : '' }
+function cacheRate(event) { const input = Number(event?.tokens?.input_tokens) || 0; const cached = Number(event?.tokens?.cache_read_tokens ?? event?.tokens?.cached_tokens) || 0; return input > 0 && cached > 0 ? `${Math.round((cached / input) * 100)}%` : '' }
+function toolCount(event) { return Object.entries(event?.tool_usage || {}).filter(([key]) => key !== 'num_sources_used').reduce((sum, [, value]) => sum + (Number(value) || 0), 0) }
 function errorMessage(error, fallback = 'Unexpected request error.') { return error?.data?.message || error?.data?.error || error?.message || fallback }
 
 watch([liveRefresh, refreshSeconds], scheduleRefresh)
-watch(sort, async () => { page.value = 1; pendingNewEvents.value = 0; await refreshEvents() })
+watch(timeRange, value => savePreference('cpahome:request-events:range', value))
+watch(sort, async value => { savePreference('cpahome:request-events:sort', value); page.value = 1; pendingNewEvents.value = 0; await refreshEvents() })
 useDataSync('admin:request-records:sync', refreshEvents)
 watch(token, () => {
   exportVersion++
@@ -308,6 +322,13 @@ watch(token, () => {
   exportOpen.value = false
   exporting.value = false
 })
-onMounted(() => { void refreshCapabilities().catch(() => {}); void refreshEvents() })
+onMounted(() => {
+  if (timeRange.value !== '24h') {
+    applyTimeRange(timeRange.value)
+    appliedFilters.value = { ...filters.value }
+  }
+  void refreshCapabilities().catch(() => {})
+  void refreshEvents()
+})
 onBeforeUnmount(() => { disposed = true; exportVersion++; exportController.abort(); requestVersion++; loading.value = false; if (refreshTimer) clearInterval(refreshTimer) })
 </script>

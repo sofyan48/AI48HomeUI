@@ -53,29 +53,15 @@
         <template #concurrency-cell="{ row }"><div class="text-sm"><span class="font-semibold">{{ concurrency(value(row)).in_flight || value(row).in_flight || 0 }}</span><span class="text-[var(--ui-text-muted)]"> / {{ concurrency(value(row)).max_in_flight ?? value(row).max_in_flight ?? '∞' }}</span><p v-if="concurrency(value(row)).total_saturated || value(row).total_saturated" class="text-xs text-amber-500">Saturated</p></div></template>
         <template #quota-cell="{ row }">
           <button type="button" class="min-w-44 space-y-1 text-left" :aria-label="`View quota for ${value(row).label || value(row).id}`" @click="openAccountQuota(value(row))">
-            <template v-if="quotaByID.get(value(row).id)">
-              <p v-if="quotaByID.get(value(row).id).plan?.name" class="text-xs font-medium">{{ quotaByID.get(value(row).id).plan.name }}</p>
-              <div class="flex flex-wrap gap-1">
-                <UBadge :color="quotaColor(quotaByID.get(value(row).id).quota_status)" variant="subtle">{{ quotaByID.get(value(row).id).quota_status || 'unknown' }}</UBadge>
-                <UBadge color="neutral" variant="subtle">{{ quotaByID.get(value(row).id).freshness || 'never' }}</UBadge>
-                <UBadge v-if="quotaByID.get(value(row).id).collection_status" color="neutral" variant="subtle">{{ quotaByID.get(value(row).id).collection_status }}</UBadge>
-              </div>
-              <div v-for="window in quotaDisplayWindows(quotaByID.get(value(row).id))" :key="window.id" class="grid grid-cols-[minmax(6.5rem,9rem)_minmax(2.5rem,1fr)_2.25rem] items-center gap-2 text-[11px]">
-                <span class="truncate" :title="window.label || window.id">{{ window.label || window.id }}</span>
-                <div class="h-1.5 overflow-hidden rounded-full bg-[var(--ui-bg-muted)]"><div v-if="quotaWindowRatio(window) !== null" class="h-full rounded-full bg-[var(--ui-primary)]" :style="{ width: `${Math.round(quotaWindowRatio(window) * 100)}%` }" /></div>
-                <span class="text-right tabular-nums text-[var(--ui-text-muted)]">{{ quotaWindowRatio(window) === null ? '—' : `${Math.round(quotaWindowRatio(window) * 100)}%` }}</span>
-              </div>
-              <p v-if="quotaByID.get(value(row).id).window_count > quotaDisplayWindows(quotaByID.get(value(row).id)).length" class="text-xs text-[var(--ui-text-muted)]">+{{ quotaByID.get(value(row).id).window_count - quotaDisplayWindows(quotaByID.get(value(row).id)).length }} more</p>
-            </template>
-            <span v-else class="text-xs text-[var(--ui-text-muted)]">{{ quotaPending ? 'Loading…' : quotaError ? 'Unavailable' : 'Not collected' }}</span>
+            <AdminCredentialQuotaPreview :quota="quotaByID.get(value(row).id)" :pending="quotaPending" :read-error="quotaError" />
           </button>
         </template>
         <template #websockets-cell="{ row }">
-          <div v-if="supportsWebsockets(value(row))" class="flex items-center gap-2">
-            <USwitch :model-value="Boolean(value(row).websockets)" :disabled="busy || !value(row).id" :loading="inlineChanging === value(row).id" :aria-label="`WebSockets for ${value(row).label || value(row).name || value(row).id}`" @update:model-value="setInlineField(value(row), 'websockets', $event)" />
-            <span class="text-xs text-[var(--ui-text-muted)]">{{ value(row).websockets ? 'On' : 'Off' }}</span>
+          <div v-if="['on', 'off'].includes(credentialWebsocketState(value(row)))" class="flex flex-col items-start gap-1" title="Responses WebSocket transport setting">
+            <USwitch :model-value="credentialWebsocketState(value(row)) === 'on'" :disabled="busy || !value(row).id" :loading="inlineChanging === value(row).id" :aria-label="`WebSockets for ${value(row).label || value(row).name || value(row).id}`" @update:model-value="setInlineField(value(row), 'websockets', $event)" />
+            <span class="text-xs text-[var(--ui-text-muted)]">{{ credentialWebsocketState(value(row)) === 'on' ? 'WS enabled' : 'WS disabled' }}</span>
           </div>
-          <span v-else class="text-xs text-[var(--ui-text-muted)]" title="WebSockets are not applicable to this provider">N/A</span>
+          <span v-else class="text-xs text-[var(--ui-text-muted)]" :title="supportsWebsockets(value(row)) ? 'Home did not return a WebSocket setting; this is not an off state.' : 'WebSockets are not applicable to this provider'">{{ supportsWebsockets(value(row)) ? 'Unknown' : 'N/A' }}</span>
         </template>
         <template #cooling-cell="{ row }"><USwitch :model-value="!value(row)['disable-cooling']" :disabled="busy || !value(row).id" :loading="inlineChanging === value(row).id" :aria-label="`Cooling schedule for ${value(row).label || value(row).name || value(row).id}`" @update:model-value="setInlineField(value(row), 'disable_cooling', !$event)" /></template>
         <template #priority-cell="{ row }"><span class="font-mono text-xs tabular-nums" :title="value(row).priority == null ? 'Not set' : undefined">{{ value(row).priority ?? '—' }}</span></template>
@@ -119,8 +105,9 @@
             <p v-if="exclusionsLoading" class="text-xs text-[var(--ui-text-muted)]">Reading stored exclusions…</p>
             <UAlert v-if="exclusionsError" color="warning" variant="subtle" :description="exclusionsError" />
             <AppButton v-if="!exclusionsLoaded && !exclusionsLoading" type="button" size="sm" variant="outline" @click="loadExclusions">Read exclusions</AppButton>
-            <UCheckbox v-if="supportsWebsockets(detailsTarget || {})" v-model="fields.websockets" label="WebSockets" />
-            <div v-else class="flex items-center justify-between rounded-md border border-[var(--ui-border)] p-3"><div><h4 class="font-semibold">WebSocket support</h4><p class="text-xs text-[var(--ui-text-muted)]">The current provider does not expose a WS toggle.</p></div><UBadge color="neutral" variant="subtle">N/A</UBadge></div>
+            <UCheckbox v-if="['on', 'off'].includes(credentialWebsocketState(detailsTarget || {}))" v-model="fields.websockets" label="Responses WebSocket transport" />
+                        <div v-else class="flex items-center justify-between rounded-md border border-[var(--ui-border)] p-3"><div><h4 class="font-semibold">WebSocket support</h4><p class="text-xs text-[var(--ui-text-muted)]">{{ supportsWebsockets(detailsTarget) ? 'Home did not return a WebSocket setting.' : 'The current provider does not expose a WS toggle.' }}</p></div><UBadge color="neutral" variant="subtle">{{ supportsWebsockets(detailsTarget) ? 'Unknown' : 'N/A' }}</UBadge></div>
+            <UFormField v-if="supportsUsingAPI(detailsTarget)" label="xAI API mode" description="Enable using_api to use xAI API mode instead of the default transport. This is independent of the WebSocket setting."><USwitch v-model="fields.using_api" aria-label="Use xAI API mode" /></UFormField>
             <UFormField label="Cooling override"><USelect v-model="fields.disable_cooling" :items="coolingOptions" value-key="value" label-key="label" class="w-full" /></UFormField>
             <div class="flex items-center justify-between rounded-md border border-[var(--ui-border)] p-3"><span class="font-semibold">Enable credential</span><USwitch v-model="fields.enabled" aria-label="Enable credential" :disabled="savingFields" /></div>
             <AdminCredentialConcurrencyPolicy v-model:total="policyTotal" v-model:models="policyModels" class="border-t border-[var(--ui-border)] pt-4" :available="policySupported" :dirty="policyDirty" :policy="policy" :loading="loadingPolicy" :saving="savingFields || savingPolicy" :conflict="policyConflict" :error="policyError" @reload="loadPolicy" @add="addPolicyModel" @remove="policyModels.splice($event, 1)" />
@@ -213,7 +200,8 @@
 import { useWorkspaceState } from '~/composables/useWorkspaceState'
 import { useStoreData } from '~/composables/useStoreData'
 import { credentialModelCards, normalizeCredentialModels } from '~/composables/credentialModelCards'
-import { quotaDisplayWindows, quotaWindowAmount, quotaCollectionMessage, credentialWeightPatch } from '~/composables/upstreamQuota'
+import { normalizeQuotaEntry, isQuotaAttention, quotaWindowAmount, quotaCollectionMessage, credentialWeightPatch, quotaHistorical, isRetainedQuotaWindow, quotaWindowLabel, xaiOnDemandState, xaiProductWindows, quotaProductUsed } from '~/composables/upstreamQuota'
+import { credentialWebsocketState, supportsCredentialWebsockets, supportsCredentialUsingAPI, credentialUsingAPI, credentialInFlight } from '~/composables/credentialTransport'
 import { useQuotaCollection } from '~/composables/useQuotaCollection'
 const quotaCollection = useQuotaCollection()
 const props = defineProps({ attentionRequest: { type: Number, default: 0 }, syncRequest: { type: Number, default: 0 } })
@@ -266,7 +254,8 @@ function overviewFields(item) {
     ['Account', item.account || item.email], ['Auth index', item.auth_index || item.id],
     ['Prefix', item.prefix], ['Proxy URL', item.proxy_url],
     ['Priority', item.priority], ['Weight', item.weight ?? 'Unset (default 1)'], ['Request retries', item['request-retry']],
-    ['WebSockets', supportsWebsockets(item) ? (item.websockets ? 'Enabled' : 'Disabled') : 'N/A'],
+    ['WebSockets', credentialWebsocketState(item)],
+        ...(supportsUsingAPI(item) ? [['xAI API mode', credentialUsingAPI(item) ? 'Enabled' : 'Disabled']] : []),
     ['Cooling', item['disable-cooling'] ? 'Disabled' : 'Enabled'],
     ['Path', item.path], ['Size', item.size], ['Updated at', item.mod_time || item.updated_at],
     ['Last refresh', item.last_refresh], ['Note', item.note],
@@ -325,7 +314,7 @@ const bulkBusy = useWorkspaceState('admin:upstream-accounts:bulkBusy', () => (fa
 const bulkAction = ref('')
 const bulkDeleteOpen = ref(false)
 const fieldsTarget = computed(() => detailsTarget.value)
-const fields = reactive({ prefix: '', proxy_url: '', priority: '', weight: '', request_retry: '', note: '', websockets: false, disable_cooling: 'inherit', enabled: true })
+const fields = reactive({ prefix: '', proxy_url: '', priority: '', weight: '', request_retry: '', note: '', websockets: false, using_api: false, disable_cooling: 'inherit', enabled: true })
 const excludedModels = ref('')
 const originalExcludedModels = ref('')
 const exclusionsLoaded = ref(false)
@@ -469,13 +458,14 @@ async function loadQuotaSummary() {
     const batches = []
     for (let start = 0; start < ids.length; start += 200) {
       const result = await fetchAPI('/quota/credentials', { query: { ids: ids.slice(start, start + 200).join(','), limit: 200 } })
-      batches.push(...(result.items || []))
+      batches.push(...(result.items || []).map(normalizeQuotaEntry))
     }
-    return batches
+    return batches.map(normalizeQuotaEntry)
   } catch (error) { quotaError.value = message(error); return [] }
 }
 const { data: quotaSummary, pending: quotaPending, refresh: refreshQuotaSummary } = useStoreData('admin:upstream-accounts:management-account-quota', loadQuotaSummary, { lazy: true, default: () => [], watch: [credentialIDs] })
 const quotaByID = computed(() => new Map((quotaSummary.value || []).map(item => [item.credential_id, item])))
+
 function quotaColor(status) { return status === 'healthy' || status === 'available' ? 'success' : status === 'low' ? 'warning' : status === 'exhausted' || status === 'error' ? 'error' : 'neutral' }
 function quotaWindowRatio(window) {
   const ratio = Number(window.remaining_ratio)
@@ -569,7 +559,7 @@ const statusOptions = [
   { label: 'Error', value: 'error' }
 ]
 const websocketsOptions = [
-  { label: 'All WebSockets', value: ALL_FILTER }, { label: 'WebSockets on', value: 'on' }, { label: 'WebSockets off', value: 'off' }
+  { label: 'All WebSockets', value: ALL_FILTER }, { label: 'WebSockets on', value: 'on' }, { label: 'WebSockets off', value: 'off' }, { label: 'Setting unknown', value: 'unknown' }, { label: 'Not applicable', value: 'unsupported' }
 ]
 const needsAttention = item => isQuotaAttention(quotaByID.value.get(item.id))
 const filteredCredentials = computed(() => {
@@ -578,7 +568,7 @@ const filteredCredentials = computed(() => {
     (!q || [item.id, item.name, item.label, item.email, item.provider].some(v => String(v || '').toLowerCase().includes(q))) &&
     (providerFilter.value === ALL_FILTER || item.provider === providerFilter.value) &&
     (statusFilter.value === ALL_FILTER || credentialStatus(item) === statusFilter.value) &&
-    (websocketsFilter.value === ALL_FILTER || Boolean(item.websockets) === (websocketsFilter.value === 'on')) &&
+    (websocketsFilter.value === ALL_FILTER || credentialWebsocketState(item) === websocketsFilter.value) &&
     (!attentionOnly.value || needsAttention(item))
   )
 })
@@ -650,7 +640,8 @@ async function bulkDelete() {
   await runBulk('Delete', items, item => fetchAPI(`${credentialRoute('')}?id=${encodeURIComponent(item.id)}`, { method: 'DELETE' }))
 }
 
-function supportsWebsockets(item) { return ['codex', 'xai'].includes(String(item.provider || '').toLowerCase()) }
+const supportsWebsockets = supportsCredentialWebsockets
+const supportsUsingAPI = supportsCredentialUsingAPI
 async function setInlineField(item, field, nextValue) {
   if (!item.id || busy.value) return
   inlineChanging.value = item.id
@@ -800,7 +791,7 @@ function initializeFields(item) {
     prefix: item.prefix || '', proxy_url: item.proxy_url || '',
     weight: item.weight == null ? '' : String(item.weight),
         priority: item.priority == null ? '' : String(item.priority), request_retry: item['request-retry'] == null ? '' : String(item['request-retry']),
-    note: item.note || '', websockets: Boolean(item.websockets), disable_cooling: item['disable-cooling'] == null ? 'inherit' : item['disable-cooling'] ? 'disable' : 'enable', enabled: !item.disabled
+    note: item.note || '', websockets: credentialWebsocketState(item) === 'on', using_api: credentialUsingAPI(item), disable_cooling: item['disable-cooling'] == null ? 'inherit' : item['disable-cooling'] ? 'disable' : 'enable', enabled: !item.disabled
   })
   originalFields.value = { ...fields }
 }
@@ -880,6 +871,7 @@ async function saveFields() {
       if (raw && (!/^\d+$/.test(raw) || !Number.isSafeInteger(Number(raw)))) { fieldsError.value = `${key} must be a non-negative integer.`; return }
       body[key] = raw ? Number(raw) : null
     } else if (key === 'disable_cooling') body['disable-cooling'] = fields[key] === 'inherit' ? null : fields[key] === 'disable'
+    else if (key === 'using_api') body.using_api = Boolean(fields[key])
     else if (key === 'enabled') body.disabled = !fields.enabled
     else body[key] = fields[key]
   }
