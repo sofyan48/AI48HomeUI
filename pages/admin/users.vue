@@ -31,22 +31,16 @@
         title="Users"
         :description="`${filteredUsers.length} of ${users.length} users`"
       >
-        <template #filters>
-          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <UFormField label="Search"
-              ><UInput
-                v-model="search"
-                icon="i-tabler-search"
-                placeholder="Filter users or scopes"
-                class="w-full"
-            /></UFormField>
-          </div>
+        <template #actions>
+          <UInput
+            v-model="search"
+            icon="i-tabler-search"
+            placeholder="Search users or scopes"
+            aria-label="Search users"
+            class="w-full sm:w-72"
+          />
+          <AppButton icon="i-tabler-plus" @click="openUserCreate">New user</AppButton>
         </template>
-        <template #actions
-          ><AppButton icon="i-tabler-plus" @click="openUserCreate"
-            >New user</AppButton
-          ></template
-        >
 
         <template v-if="selectedUsers.length" #bulk>
           <div
@@ -82,10 +76,10 @@
         <AppTable
           :columns="visibleUserColumns"
           :data="filteredUsers"
-          :virtualize="{ estimateSize: 88, overscan: 8 }"
+          :virtualize="{ estimateSize: 64, overscan: 8 }"
           :get-row-id="(user) => String(user.id)"
           class="max-h-[65dvh]"
-          :ui="{ base: 'table-fixed lg:min-w-[90rem]', thead: 'sticky top-0 z-10 bg-[var(--ui-bg)]' }"
+          :ui="{ base: 'w-full table-fixed lg:min-w-[90rem]', thead: 'sticky top-0 z-10 bg-[var(--ui-bg)]' }"
           :loading="loading"
           empty="No users match the current filter."
         >
@@ -130,23 +124,19 @@
           <template #periodLimits-cell="{ row }"
             ><span
               v-if="zeroPeriodWindows(row.original).length"
-              :class="[
-                'inline-flex rounded-md border px-2 py-1 text-xs font-medium',
-                'border-amber-300 bg-amber-50 text-amber-700',
-                'dark:border-amber-700 dark:bg-amber-950 dark:text-amber-300'
-              ]"
-              >Blocked: {{ zeroPeriodWindows(row.original).join(", ") }}</span
+              class="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400"
+              :title="`Blocked: ${zeroPeriodWindows(row.original).join(', ')}`"
+              ><UIcon name="i-tabler-lock" class="size-3.5" />Blocked</span
             ><span
               v-else-if="periodWindows(row.original).length"
-              class="inline-flex rounded-md border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-2 py-1 text-xs text-[var(--ui-text-muted)]"
+              class="tabular-nums"
               >{{ periodWindows(row.original).length }} windows</span
             ><span v-else class="text-[var(--ui-text-muted)]">—</span></template
           >
           <template #resetAllowance-cell="{ row }">
-            <div v-if="resetAllowanceSupported && row.original.reset_allowance" class="space-y-1">
-              <p class="tabular-nums">{{ row.original.reset_allowance.available }} available</p>
-              <p class="text-xs text-[var(--ui-text-muted)]">{{ row.original.reset_allowance.mode === 'monthly' ? `${row.original.reset_allowance.amount} / month` : 'One-time' }}</p>
-              <p v-if="row.original.reset_allowance.renews_at || row.original.reset_allowance.expires_at" class="text-xs text-[var(--ui-text-muted)]">{{ row.original.reset_allowance.mode === 'monthly' ? 'Renews' : 'Expires' }} {{ formatDate(row.original.reset_allowance.renews_at || row.original.reset_allowance.expires_at) }}</p>
+            <div v-if="resetAllowanceSupported && row.original.reset_allowance" class="min-w-0">
+              <p class="tabular-nums">{{ row.original.reset_allowance.available }} available <span class="text-xs text-[var(--ui-text-muted)]">· {{ row.original.reset_allowance.mode === 'monthly' ? `${row.original.reset_allowance.amount}/mo` : 'one-time' }}</span></p>
+              <p v-if="row.original.reset_allowance.renews_at || row.original.reset_allowance.expires_at" class="truncate text-xs text-[var(--ui-text-muted)]" :title="formatDate(row.original.reset_allowance.renews_at || row.original.reset_allowance.expires_at)">{{ row.original.reset_allowance.mode === 'monthly' ? 'Renews' : 'Expires' }} {{ formatDate(row.original.reset_allowance.renews_at || row.original.reset_allowance.expires_at) }}</p>
             </div>
             <span v-else class="text-[var(--ui-text-muted)]">—</span>
           </template>
@@ -193,22 +183,16 @@
         title="Client keys"
         :description="`${filteredKeys.length} of ${keys.length} keys`"
       >
-        <template #filters>
-          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <UFormField label="Search"
-              ><UInput
-                v-model="search"
-                icon="i-tabler-search"
-                placeholder="Filter keys, owners, or scopes"
-                class="w-full"
-            /></UFormField>
-          </div>
+        <template #actions>
+          <UInput
+            v-model="search"
+            icon="i-tabler-search"
+            placeholder="Search keys, owners, or scopes"
+            aria-label="Search client keys"
+            class="w-full sm:w-72"
+          />
+          <AppButton icon="i-tabler-plus" @click="openKeyCreate">New key</AppButton>
         </template>
-        <template #actions
-          ><AppButton icon="i-tabler-plus" @click="openKeyCreate"
-            >New key</AppButton
-          ></template
-        >
         <AppTable
           :columns="keyColumns"
           :data="filteredKeys"
@@ -1473,14 +1457,14 @@ const userColumns = [
   { accessorKey: "credits", header: "Credits" },
   { accessorKey: "pendingTopup", header: "Pending topup" },
   { accessorKey: "periodLimits", header: "Period limits" },
-  { accessorKey: "resetAllowance", header: "Reset Available" },
+  { accessorKey: "resetAllowance", header: "Reset allowance" },
   { accessorKey: "keys", header: "Client keys" },
   { accessorKey: "credentialScope", header: "Credential scope" },
   { accessorKey: "modelScope", header: "Model scope" },
 
   {
     id: "actions",
-    header: "Actions",
+    header: "",
     meta: {
       class: {
         th: "w-24 whitespace-nowrap text-right",

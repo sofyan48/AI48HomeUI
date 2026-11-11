@@ -45,18 +45,14 @@
       title="Access keys"
       :description="`${filteredResources.length} of ${resources.length} keys`"
     >
-      <template #filters>
-        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <UFormField label="Search"
-            ><UInput
-              v-model="search"
-              icon="i-tabler-search"
-              placeholder="Filter name, key, owner, or scope"
-              class="w-full"
-          /></UFormField>
-        </div>
-      </template>
       <template #actions>
+        <UInput
+          v-model="search"
+          icon="i-tabler-search"
+          placeholder="Search name, key, owner, or scope"
+          aria-label="Search access keys"
+          class="w-full sm:w-72"
+        />
         <AccessKeyReplaceList @replaced="handleListReplaced" />
         <AppButton icon="i-tabler-plus" @click="openCreate">New access key</AppButton>
       </template>

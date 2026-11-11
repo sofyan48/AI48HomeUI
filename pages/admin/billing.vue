@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-6">
+  <div class="space-y-4">
     <UAlert
       v-if="pageError"
       color="error"
@@ -9,220 +9,165 @@
       :description="pageError"
     />
 
-    <div class="flex flex-wrap items-center justify-between gap-3">
-      <p class="text-xs text-[var(--ui-text-muted)]">Reporting timezone: {{ savedReportTimezone }} (saved default). Date filters include both calendar dates; timestamps use this timezone.</p>
-      <AppButton color="neutral" variant="outline" icon="i-tabler-settings" :loading="settingsLoading" :disabled="settingsLoading || settingsSaving" @click="openMatchingSettings">Billing settings</AppButton>
+    <div class="flex items-end justify-between gap-3 border-b border-[var(--ui-border)]">
+      <AppPanelTabs v-model="activeSection" :items="sections" label="Billing sections" class="!border-b-0" />
+      <div class="flex shrink-0 items-center gap-1 pb-1.5">
+        <span class="hidden items-center gap-1 text-xs text-[var(--ui-text-muted)] md:inline-flex" :title="'Reports and date filters use this timezone. Date ranges include both calendar dates.'"><UIcon name="i-tabler-world" class="size-3.5" />{{ savedReportTimezone }}</span>
+        <AppButton color="neutral" variant="ghost" size="sm" icon="i-tabler-refresh" aria-label="Refresh" title="Refresh" :loading="loading" @click="refreshCurrent" />
+        <AppButton color="neutral" variant="ghost" size="sm" icon="i-tabler-settings" aria-label="Billing settings" title="Billing settings" :loading="settingsLoading" :disabled="settingsLoading || settingsSaving" @click="openMatchingSettings" />
+      </div>
     </div>
-    <AppPanelTabs v-model="activeSection" :items="sections" label="Billing sections" />
 
+    <!-- Overview -->
     <template v-if="activeSection === 'overview'">
-      <AppCard class="workbench-filter-panel">
-        <form class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-6" @submit.prevent="applyOverviewFilters">
-          <UFormField label="Time range"><USelect v-model="overviewPreset" :items="rangeOptions" value-key="value" label-key="label" class="w-full" @update:model-value="selectRange('overview', $event)" /></UFormField>
-          <UFormField label="From">
-            <AppDateInput v-model="overviewFilters.from" type="date" :max="overviewFilters.to" class="w-full" @update:model-value="overviewPreset = 'custom'" />
-          </UFormField>
-          <UFormField label="To">
-            <AppDateInput v-model="overviewFilters.to" type="date" :min="overviewFilters.from" class="w-full" @update:model-value="overviewPreset = 'custom'" />
-          </UFormField>
-          <UFormField label="User">
-            <UInputMenu v-model="overviewFilters.user" :items="userSearchOptions" create-item @create="overviewFilters.user = $event.trim()" placeholder="Search users or enter ID..." class="w-full" />
-          </UFormField>
-          <UFormField label="Provider">
-            <UInputMenu v-model="overviewFilters.provider" :items="providerSearchOptions" create-item @create="overviewFilters.provider = $event.trim()" placeholder="Search providers..." class="w-full" />
-          </UFormField>
-          <UFormField label="Model">
-            <UInputMenu v-model="overviewFilters.model" :items="modelSearchOptions" create-item @create="overviewFilters.model = $event.trim()" placeholder="Search models..." class="w-full" />
-          </UFormField>
-
-          <div class="flex flex-wrap items-center gap-2 md:col-span-2 xl:col-span-6">
-            <AppButton type="submit" color="primary" :loading="overviewLoading">Apply filters</AppButton>
-            <AppButton color="neutral" variant="ghost" @click="resetOverviewFilters">Reset</AppButton>
-          </div>
-        </form>
-      </AppCard>
+      <AdminBillingFilterBar v-model:filters="overviewFilters" v-model:preset="overviewPreset" :range-options="rangeOptions" :user-options="userSearchOptions" :provider-options="providerSearchOptions" :model-options="modelSearchOptions" :loading="overviewLoading" @range="selectRange('overview', $event)" @apply="applyOverviewFilters" @reset="resetOverviewFilters" />
 
       <template v-if="overview">
-        <AppCard>
-          <template #header><h2 class="text-sm font-semibold">Finance summary</h2></template>
-          <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <AppCard v-for="metric in financeMetrics" :key="metric.label" :ui="{ body: 'p-4' }">
-              <p class="text-xs font-medium text-[var(--ui-text-muted)]">{{ metric.label }}</p>
-              <p class="mt-2 text-xl font-semibold tabular-nums text-[var(--ui-text-highlighted)]">{{ metric.value }}</p>
-              <p class="mt-1 text-xs text-[var(--ui-text-muted)]">{{ metric.hint }}</p>
-            </AppCard>
-          </div>
-        </AppCard>
-        <AppCard>
-          <template #header><h2 class="text-sm font-semibold">Usage summary</h2></template>
-          <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-            <AppCard v-for="metric in usageMetrics" :key="metric.label" :ui="{ body: 'p-4' }">
-              <p class="text-xs font-medium text-[var(--ui-text-muted)]">{{ metric.label }}</p>
-              <p class="mt-2 text-xl font-semibold tabular-nums text-[var(--ui-text-highlighted)]">{{ metric.value }}</p>
-            </AppCard>
-          </div>
-        </AppCard>
+        <section class="overflow-hidden rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg)]" aria-label="Summary">
+          <dl class="grid grid-cols-2 divide-[var(--ui-border)] lg:grid-cols-4 lg:divide-x">
+            <div v-for="(metric, index) in financeMetrics" :key="metric.label" class="min-w-0 px-4 py-4 sm:px-5" :class="[index % 2 ? 'border-l border-[var(--ui-border)] lg:border-l-0' : '', index > 1 ? 'border-t border-[var(--ui-border)] lg:border-t-0' : '']">
+              <dt class="flex items-center justify-between text-xs text-[var(--ui-text-muted)]">{{ metric.label }}<span class="text-[10px] uppercase tracking-wide text-[var(--ui-text-dimmed)]">{{ metric.hint }}</span></dt>
+              <dd class="mt-1.5 truncate text-2xl font-semibold tabular-nums text-[var(--ui-text-highlighted)]" :title="metric.value">{{ metric.value }}</dd>
+            </div>
+          </dl>
+          <dl class="flex flex-wrap gap-x-6 gap-y-1 border-t border-[var(--ui-border)] bg-[var(--ui-bg-elevated)]/50 px-4 py-2.5 text-xs sm:px-5">
+            <div v-for="metric in usageMetrics" :key="metric.label" class="flex items-baseline gap-1.5"><dt class="text-[var(--ui-text-muted)]">{{ metric.label }}</dt><dd class="font-medium tabular-nums text-[var(--ui-text-highlighted)]">{{ metric.value }}</dd></div>
+          </dl>
+        </section>
+
+        <div class="grid grid-cols-1 gap-4 xl:grid-cols-3">
+          <section class="min-w-0 overflow-hidden rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg)] xl:col-span-2" aria-labelledby="billing-daily">
+            <header class="flex items-baseline justify-between gap-3 border-b border-[var(--ui-border)] px-4 py-3">
+              <h2 id="billing-daily" class="text-sm font-semibold">Daily charges</h2>
+              <span class="text-xs tabular-nums text-[var(--ui-text-muted)]">{{ overviewRange.from || 'All time' }} – {{ overviewRange.to || 'Now' }} · {{ overviewRange.timezone || savedReportTimezone }}</span>
+            </header>
+            <div v-if="dailyTrend.length" class="max-h-96 overflow-y-auto">
+              <div v-for="point in dailyTrend" :key="point.date" class="grid grid-cols-[6.5rem_minmax(0,1fr)_7rem_6rem] items-center gap-4 border-b border-[var(--ui-border)] px-4 py-2 text-sm last:border-b-0 hover:bg-[var(--ui-bg-elevated)]/60">
+                <span class="text-xs tabular-nums text-[var(--ui-text-muted)]">{{ point.date }}</span>
+                <div class="h-1.5 overflow-hidden rounded-full bg-[var(--ui-bg-accented)]/50"><div class="h-full rounded-full bg-[var(--ui-primary)]" :style="{ width: `${trendWidth(point.charge_amount)}%` }" /></div>
+                <span class="text-right font-medium tabular-nums">{{ formatCredits(point.charge_amount) }}</span>
+                <span class="text-right text-xs tabular-nums text-[var(--ui-text-muted)]">{{ formatNumber(point.request_count) }} req</span>
+              </div>
+            </div>
+            <p v-else class="py-12 text-center text-sm text-[var(--ui-text-muted)]">No charges in the selected range.</p>
+          </section>
+
+          <section class="min-w-0 overflow-hidden rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg)]" aria-labelledby="billing-top-users">
+            <header class="border-b border-[var(--ui-border)] px-4 py-3"><h2 id="billing-top-users" class="text-sm font-semibold">Top consumers</h2></header>
+            <ol v-if="topUsers.length" class="max-h-96 overflow-y-auto">
+              <li v-for="(item, index) in topUsers" :key="item.id || item.label" class="flex items-center gap-3 border-b border-[var(--ui-border)] px-4 py-2 last:border-b-0">
+                <span class="w-5 shrink-0 text-right text-xs tabular-nums text-[var(--ui-text-dimmed)]">{{ index + 1 }}</span>
+                <div class="min-w-0 flex-1"><p class="truncate text-sm font-medium">{{ item.label || `User #${item.id}` }}</p><p class="text-xs tabular-nums text-[var(--ui-text-muted)]">{{ formatNumber(item.request_count) }} requests</p></div>
+                <span class="text-sm font-semibold tabular-nums">{{ formatCredits(item.amount) }}</span>
+              </li>
+            </ol>
+            <p v-else class="py-12 text-center text-sm text-[var(--ui-text-muted)]">No user charges found.</p>
+          </section>
+        </div>
+
+        <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <section v-for="group in rankingGroups" :key="group.title" class="min-w-0 overflow-hidden rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg)]" :aria-label="group.title">
+            <header class="border-b border-[var(--ui-border)] px-4 py-3"><h2 class="text-sm font-semibold">{{ group.title }}</h2></header>
+            <ul v-if="group.items.length" class="max-h-80 overflow-y-auto">
+              <li v-for="item in group.items" :key="item.id || item.label" class="relative flex items-center justify-between gap-3 border-b border-[var(--ui-border)] px-4 py-2 text-sm last:border-b-0">
+                <span class="absolute inset-y-0 left-0 bg-[var(--ui-primary)]/8" :style="{ width: `${share(item.amount, group.items)}%` }" aria-hidden="true" />
+                <span class="relative min-w-0 truncate" :title="item.label">{{ item.label }}</span>
+                <span class="relative shrink-0 font-medium tabular-nums">{{ formatCredits(item.amount) }}</span>
+              </li>
+            </ul>
+            <p v-else class="py-10 text-center text-sm text-[var(--ui-text-muted)]">{{ group.empty }}</p>
+          </section>
+        </div>
       </template>
-      <p v-else-if="!overviewLoading && !pageError" class="py-8 text-center text-sm text-[var(--ui-text-muted)]">No billing overview available.</p>
-
-      <div v-if="overview" class="grid grid-cols-1 gap-6 xl:grid-cols-3">
-        <AppCard class="xl:col-span-2">
-          <template #header>
-            <div class="flex items-center justify-between gap-3">
-              <div>
-                <h2 class="font-semibold">Daily charges</h2>
-                <p class="text-xs text-[var(--ui-text-muted)]">Charge amount and request volume in {{ overviewRange.timezone || 'UTC' }}</p>
-              </div>
-              <span class="text-xs text-[var(--ui-text-muted)]">{{ overviewRange.from || 'All time' }} – {{ overviewRange.to || 'Now' }}</span>
-            </div>
-          </template>
-          <div v-if="dailyTrend.length" class="max-h-96 overflow-y-auto pr-2">
-            <div v-for="point in dailyTrend" :key="point.date" class="grid grid-cols-[6rem_1fr_auto] items-center gap-3 border-b border-[var(--ui-border-muted)] py-3 text-sm first:pt-0 last:border-b-0 last:pb-0">
-              <span class="text-xs text-[var(--ui-text-muted)]">{{ point.date }}</span>
-              <div class="h-2 overflow-hidden rounded-full bg-[var(--ui-bg-elevated)]">
-                <div class="h-full rounded-full bg-[var(--ui-primary)]" :style="{ width: `${trendWidth(point.charge_amount)}%` }" />
-              </div>
-              <div class="min-w-28 text-right">
-                <p class="font-medium tabular-nums">{{ formatCredits(point.charge_amount) }}</p>
-                <p class="text-xs text-[var(--ui-text-muted)]">{{ formatNumber(point.request_count) }} requests</p>
-              </div>
-            </div>
-          </div>
-          <div v-else class="py-12 text-center text-sm text-[var(--ui-text-muted)]">No charges in the selected range.</div>
-        </AppCard>
-
-        <AppCard>
-          <template #header>
-            <div>
-              <h2 class="font-semibold">Top consumers</h2>
-              <p class="text-xs text-[var(--ui-text-muted)]">Users by charged amount</p>
-            </div>
-          </template>
-          <div v-if="topUsers.length" class="max-h-96 overflow-y-auto pr-2">
-            <div v-for="(item, index) in topUsers" :key="item.id || item.label" class="flex items-center justify-between gap-4 border-b border-[var(--ui-border-muted)] py-3 first:pt-0 last:border-b-0 last:pb-0">
-              <div class="min-w-0">
-                <p class="truncate text-sm font-medium">{{ index + 1 }}. {{ item.label || `User #${item.id}` }}</p>
-                <p class="text-xs text-[var(--ui-text-muted)]">{{ formatNumber(item.request_count) }} requests</p>
-              </div>
-              <span class="font-mono text-sm font-semibold tabular-nums">{{ formatCredits(item.amount) }}</span>
-            </div>
-          </div>
-          <div v-else class="py-8 text-center text-sm text-[var(--ui-text-muted)]">No user charges found.</div>
-        </AppCard>
-      </div>
-
-      <div v-if="overview" class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <AppCard>
-          <template #header><h2 class="font-semibold">Top models</h2></template>
-          <div v-if="topModels.length" class="space-y-3">
-            <div v-for="item in topModels" :key="item.id || item.label" class="flex items-center justify-between gap-3 text-sm">
-              <span class="min-w-0 truncate">{{ item.label }}</span>
-              <span class="font-mono font-medium">{{ formatCredits(item.amount) }}</span>
-            </div>
-          </div>
-          <p v-else class="py-8 text-center text-sm text-[var(--ui-text-muted)]">No model charges found.</p>
-        </AppCard>
-        <AppCard>
-          <template #header><h2 class="font-semibold">Top providers</h2></template>
-          <div v-if="topProviders.length" class="space-y-3">
-            <div v-for="item in topProviders" :key="item.id || item.label" class="flex items-center justify-between gap-3 text-sm">
-              <span class="min-w-0 truncate">{{ item.label }}</span>
-              <span class="font-mono font-medium">{{ formatCredits(item.amount) }}</span>
-            </div>
-          </div>
-          <p v-else class="py-8 text-center text-sm text-[var(--ui-text-muted)]">No provider charges found.</p>
-        </AppCard>
-      </div>
+      <div v-else-if="overviewLoading" class="grid gap-4"><USkeleton class="h-32 w-full" /><USkeleton class="h-72 w-full" /></div>
+      <p v-else-if="!pageError" class="py-12 text-center text-sm text-[var(--ui-text-muted)]">No billing overview available.</p>
     </template>
 
+    <!-- Charge records -->
     <template v-else-if="activeSection === 'charges'">
-      <AppCard class="workbench-filter-panel">
-        <form class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5" @submit.prevent="applyChargeFilters">
-          <UFormField label="Time range"><USelect v-model="chargePreset" :items="rangeOptions" value-key="value" label-key="label" class="w-full" @update:model-value="selectRange('charges', $event)" /></UFormField>
-          <UFormField label="From"><AppDateInput v-model="chargeFilters.from" type="date" :max="chargeFilters.to" class="w-full" @update:model-value="chargePreset = 'custom'" /></UFormField>
-          <UFormField label="To"><AppDateInput v-model="chargeFilters.to" type="date" :min="chargeFilters.from" class="w-full" @update:model-value="chargePreset = 'custom'" /></UFormField>
-          <UFormField label="User"><UInputMenu v-model="chargeFilters.user" :items="userSearchOptions" create-item @create="chargeFilters.user = $event.trim()" placeholder="Search users..." class="w-full" /></UFormField>
-          <UFormField label="Provider"><UInputMenu v-model="chargeFilters.provider" :items="providerSearchOptions" create-item @create="chargeFilters.provider = $event.trim()" placeholder="Search providers..." class="w-full" /></UFormField>
-          <UFormField label="Model"><UInputMenu v-model="chargeFilters.model" :items="modelSearchOptions" create-item @create="chargeFilters.model = $event.trim()" placeholder="Search models..." class="w-full" /></UFormField>
-          <div class="flex gap-2 md:col-span-2 xl:col-span-5">
-            <AppButton type="submit" :loading="chargesLoading">Apply filters</AppButton>
-            <AppButton color="neutral" variant="ghost" @click="resetChargeFilters">Reset</AppButton>
-          </div>
-        </form>
-      </AppCard>
-
-      <AdminDataPanel title="Charges" :description="`${formatNumber(chargesTotal)} matching records`">
-        <AppTable :columns="chargeColumns" :data="charges" :loading="chargesLoading">
-          <template #created_at-cell="{ row }"><div class="min-w-36"><p class="text-sm">{{ formatDateTime(rowValue(row).created_at) }}</p><p class="font-mono text-xs text-[var(--ui-text-muted)]">{{ rowValue(row).request_id || rowValue(row).id }}</p></div></template>
-          <template #user-cell="{ row }"><div class="min-w-32"><p class="text-sm">{{ chargeUserName(rowValue(row)) }}</p><p class="font-mono text-xs text-[var(--ui-text-muted)]">{{ rowValue(row).api_key_masked || rowValue(row).api_key_label || 'No client key' }}</p></div></template>
-          <template #model-cell="{ row }"><div class="min-w-40"><p class="font-medium">{{ rowValue(row).model || 'Unknown' }}</p><p class="text-xs text-[var(--ui-text-muted)]">{{ rowValue(row).provider || 'Unknown' }}<span v-if="rowValue(row).original_model && rowValue(row).original_model !== rowValue(row).model"> · from {{ rowValue(row).original_model }}</span></p></div></template>
-          <template #tokens-cell="{ row }"><div class="min-w-28 text-sm tabular-nums"><p>{{ formatNumber(totalChargeTokens(rowValue(row))) }} total</p><p class="text-xs text-[var(--ui-text-muted)]">{{ formatNumber(rowValue(row).input_tokens) }} in / {{ formatNumber(rowValue(row).output_tokens) }} out</p></div></template>
-          <template #amount-cell="{ row }"><div class="text-right"><p class="font-mono font-semibold">{{ formatCredits(rowValue(row).amount) }}</p><p class="text-xs text-[var(--ui-text-muted)]">Bal. {{ formatCredits(rowValue(row).balance_after) }}</p></div></template>
-          <template #actions-cell="{ row }"><div class="flex justify-end"><AdminTableAction action="view" label="View charge details" @click="openChargeDetail(rowValue(row))" /></div></template>
+      <AdminDataPanel title="Charges" :description="`${formatNumber(chargesTotal)} records`">
+        <template #toolbar>
+          <AdminBillingFilterBar v-model:filters="chargeFilters" v-model:preset="chargePreset" :range-options="rangeOptions" :user-options="userSearchOptions" :provider-options="providerSearchOptions" :model-options="modelSearchOptions" :loading="chargesLoading" @range="selectRange('charges', $event)" @apply="applyChargeFilters" @reset="resetChargeFilters" />
+        </template>
+        <AppTable :columns="chargeColumns" :data="charges" :loading="chargesLoading" class="min-w-[56rem]">
+          <template #created_at-cell="{ row }"><p class="whitespace-nowrap text-sm">{{ formatDateTime(rowValue(row).created_at) }}</p><p class="max-w-44 truncate font-mono text-xs text-[var(--ui-text-muted)]" :title="rowValue(row).request_id || rowValue(row).id">{{ rowValue(row).request_id || rowValue(row).id }}</p></template>
+          <template #user-cell="{ row }"><p class="text-sm font-medium">{{ chargeUserName(rowValue(row)) }}</p><p class="max-w-40 truncate font-mono text-xs text-[var(--ui-text-muted)]">{{ rowValue(row).api_key_masked || rowValue(row).api_key_label || 'No client key' }}</p></template>
+          <template #model-cell="{ row }"><p class="max-w-64 truncate text-sm font-medium" :title="rowValue(row).model">{{ rowValue(row).model || 'Unknown' }}</p><p class="max-w-64 truncate text-xs text-[var(--ui-text-muted)]">{{ rowValue(row).provider || 'Unknown' }}<span v-if="rowValue(row).original_model && rowValue(row).original_model !== rowValue(row).model"> · from {{ rowValue(row).original_model }}</span></p></template>
+          <template #tokens-cell="{ row }"><p class="text-right text-sm tabular-nums">{{ formatNumber(totalChargeTokens(rowValue(row))) }}</p><p class="text-right text-xs tabular-nums text-[var(--ui-text-muted)]">{{ formatNumber(rowValue(row).input_tokens) }} in · {{ formatNumber(rowValue(row).output_tokens) }} out</p></template>
+          <template #amount-cell="{ row }"><p class="text-right text-sm font-semibold tabular-nums">{{ formatCredits(rowValue(row).amount) }}</p><p class="text-right text-xs tabular-nums text-[var(--ui-text-muted)]">bal. {{ formatCredits(rowValue(row).balance_after) }}</p></template>
+          <template #actions-cell="{ row }"><AdminTableAction action="view" label="View charge details" @click="openChargeDetail(rowValue(row))" /></template>
           <template #empty><div class="py-12 text-center text-sm text-[var(--ui-text-muted)]">No charges match these filters.</div></template>
         </AppTable>
-        <template v-if="chargesTotal > 0" #footer><div class="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"><p class="text-sm text-[var(--ui-text-muted)]">{{ chargeRangeStart }}–{{ chargeRangeEnd }} / {{ formatNumber(chargesTotal) }} total</p><div class="flex flex-wrap items-center gap-2"><span class="text-xs text-[var(--ui-text-muted)]">Rows per page</span><USelect v-model="chargePageSize" :items="pageSizeOptions" value-key="value" label-key="label" class="w-24" @update:model-value="changePageSize('charges')" /><AppButton size="sm" color="neutral" variant="outline" :disabled="chargePage <= 1 || chargesLoading" @click="changeChargePage(-1)">Previous</AppButton><AppButton size="sm" color="neutral" variant="outline" :disabled="chargePage >= chargePageCount || chargesLoading" @click="changeChargePage(1)">Next</AppButton></div></div></template>
+        <template v-if="chargesTotal > 0" #footer><AdminBillingPagination :page="chargePage" :total="chargesTotal" :page-size="chargePageSize" :loading="chargesLoading" @previous="changeChargePage(-1)" @next="changeChargePage(1)" @update:page-size="chargePageSize = $event; changePageSize('charges')" /></template>
       </AdminDataPanel>
     </template>
 
+    <!-- Balance records -->
     <template v-else-if="activeSection === 'balances'">
-
-      <AppCard class="workbench-filter-panel">
-        <form class="grid grid-cols-1 gap-3 md:grid-cols-4" @submit.prevent="applyBalanceFilters">
-          <UFormField label="Time range"><USelect v-model="balancePreset" :items="rangeOptions" value-key="value" label-key="label" class="w-full" @update:model-value="selectRange('balances', $event)" /></UFormField>
-          <UFormField label="From"><AppDateInput v-model="balanceFilters.from" type="date" :max="balanceFilters.to" class="w-full" @update:model-value="balancePreset = 'custom'" /></UFormField>
-          <UFormField label="To"><AppDateInput v-model="balanceFilters.to" type="date" :min="balanceFilters.from" class="w-full" @update:model-value="balancePreset = 'custom'" /></UFormField>
-          <UFormField label="User"><UInputMenu v-model="balanceFilters.user" :items="userSearchOptions" create-item @create="balanceFilters.user = $event.trim()" placeholder="Search users..." class="w-full" /></UFormField>
-          <div class="flex items-end gap-2"><AppButton type="submit" :loading="balancesLoading">Apply</AppButton><AppButton color="neutral" variant="ghost" @click="resetBalanceFilters">Reset</AppButton></div>
-        </form>
-      </AppCard>
-      <AdminDataPanel title="Balance records" :description="`${formatNumber(balancesTotal)} matching adjustments`">
-        <template #actions><USelect v-model="balancePageSize" :items="pageSizeOptions" value-key="value" label-key="label" class="w-24" @update:model-value="changePageSize('balances')" /></template>
-        <AppTable :columns="balanceColumns" :data="balanceRecords" :loading="balancesLoading">
-          <template #created_at-cell="{ row }"><div><p class="text-sm">{{ formatDateTime(rowValue(row).created_at) }}</p><p class="font-mono text-xs text-[var(--ui-text-muted)]">{{ rowValue(row).id }}</p></div></template>
-          <template #type-cell="{ row }"><UBadge :color="rowValue(row).type === 'recharge' ? 'success' : 'warning'" variant="subtle">{{ rowValue(row).type }}</UBadge></template>
-          <template #amount-cell="{ row }"><span class="font-mono font-semibold" :class="rowValue(row).type === 'recharge' ? 'text-green-600 dark:text-green-400' : 'text-amber-600 dark:text-amber-400'">{{ rowValue(row).type === 'recharge' ? '+' : '−' }}{{ formatCredits(rowValue(row).amount) }}</span></template>
-          <template #balance-cell="{ row }"><div class="text-sm tabular-nums"><p>{{ formatCredits(rowValue(row).balance_after) }}</p><p class="text-xs text-[var(--ui-text-muted)]">from {{ formatCredits(rowValue(row).balance_before) }}</p></div></template>
-          <template #note-cell="{ row }"><div class="max-w-72"><p class="truncate text-sm">{{ rowValue(row).note || '—' }}</p><p class="text-xs text-[var(--ui-text-muted)]">{{ rowValue(row).operator || '—' }}</p></div></template>
+      <AdminDataPanel title="Balance records" :description="`${formatNumber(balancesTotal)} adjustments`">
+        <template #actions>
+          <AppButton size="sm" color="neutral" variant="outline" icon="i-tabler-minus" @click="openBalanceAdjustment('deduct')">Deduct</AppButton>
+          <AppButton size="sm" icon="i-tabler-plus" @click="openBalanceAdjustment('recharge')">Recharge</AppButton>
+        </template>
+        <template #toolbar>
+          <AdminBillingFilterBar v-model:filters="balanceFilters" v-model:preset="balancePreset" :range-options="rangeOptions" :user-options="userSearchOptions" :loading="balancesLoading" @range="selectRange('balances', $event)" @apply="applyBalanceFilters" @reset="resetBalanceFilters" />
+        </template>
+        <AppTable :columns="balanceColumns" :data="balanceRecords" :loading="balancesLoading" class="min-w-[52rem]">
+          <template #created_at-cell="{ row }"><p class="whitespace-nowrap text-sm">{{ formatDateTime(rowValue(row).created_at) }}</p><p class="font-mono text-xs text-[var(--ui-text-muted)]">#{{ rowValue(row).id }}</p></template>
+          <template #user_id-cell="{ row }"><span class="text-sm font-medium">{{ balanceUserName(rowValue(row)) }}</span></template>
+          <template #type-cell="{ row }"><span class="inline-flex items-center gap-1.5 text-sm capitalize"><span class="size-1.5 rounded-full" :class="rowValue(row).type === 'recharge' ? 'bg-green-500' : 'bg-amber-500'" />{{ rowValue(row).type }}</span></template>
+          <template #amount-cell="{ row }"><p class="text-right text-sm font-semibold tabular-nums" :class="rowValue(row).type === 'recharge' ? 'text-green-600 dark:text-green-400' : 'text-amber-600 dark:text-amber-400'">{{ rowValue(row).type === 'recharge' ? '+' : '−' }}{{ formatCredits(rowValue(row).amount) }}</p></template>
+          <template #balance-cell="{ row }"><p class="text-right text-sm tabular-nums">{{ formatCredits(rowValue(row).balance_after) }}</p><p class="text-right text-xs tabular-nums text-[var(--ui-text-muted)]">from {{ formatCredits(rowValue(row).balance_before) }}</p></template>
+          <template #note-cell="{ row }"><p class="max-w-72 truncate text-sm" :title="rowValue(row).note">{{ rowValue(row).note || '—' }}</p><p class="text-xs text-[var(--ui-text-muted)]">by {{ rowValue(row).operator || '—' }}</p></template>
           <template #actions-cell="{ row }"><AdminTableAction action="view" label="View balance details" @click="openBalanceDetail(rowValue(row))" /></template>
           <template #empty><div class="py-12 text-center text-sm text-[var(--ui-text-muted)]">No balance records match these filters.</div></template>
         </AppTable>
-        <template #footer><PaginationFooter :page="balancePage" :total="balancesTotal" :page-size="balancePageSize" :loading="balancesLoading" @previous="changeBalancePage(-1)" @next="changeBalancePage(1)" /></template>
+        <template v-if="balancesTotal > 0" #footer><AdminBillingPagination :page="balancePage" :total="balancesTotal" :page-size="balancePageSize" :loading="balancesLoading" @previous="changeBalancePage(-1)" @next="changeBalancePage(1)" @update:page-size="balancePageSize = $event; changePageSize('balances')" /></template>
       </AdminDataPanel>
     </template>
 
+    <!-- Model prices -->
     <template v-else-if="activeSection === 'prices'">
-      <section class="overflow-hidden rounded-lg border border-blue-500/30 bg-blue-500/5" aria-labelledby="tier-policy-title"><div class="flex flex-wrap items-center justify-between gap-4 p-4"><div class="flex items-start gap-3"><span class="flex size-9 items-center justify-center rounded-md bg-blue-500/10 text-blue-500"><UIcon name="i-tabler-arrows-exchange" class="size-5" /></span><div><div class="flex flex-wrap items-center gap-2"><h2 id="tier-policy-title" class="font-semibold">Runtime billing context</h2><UBadge color="info" variant="subtle">Global</UBadge><UBadge v-if="priceSchemaVersion >= 2" color="success" variant="subtle">Tier and context pricing supported</UBadge></div><p class="mt-1 text-sm text-[var(--ui-text-muted)]">{{ settingsForm.service_tier_source === 'response' ? 'Rules match the provider response tier, falling back to the requested tier when absent.' : 'Rules match the service tier requested by the client.' }}</p><p v-if="priceSchemaVersion < 2" class="mt-1 text-xs text-[var(--ui-text-muted)]">This Home instance supports flat-price compatibility rules only.</p></div></div><AppButton v-if="priceSchemaVersion >= 2" color="neutral" variant="outline" icon="i-tabler-settings" @click="openMatchingSettings">Configure matching</AppButton></div></section>
       <UAlert v-if="modelCandidatesError" color="warning" variant="subtle" title="Import model candidates unavailable" :description="modelCandidatesError" />
-      <p v-if="modelCandidatesLoading" class="text-xs text-[var(--ui-text-muted)]">Loading available import targets…</p>
       <AdminBillingPriceImport ref="priceImporter" :providers="importProviderOptions" :models="modelSearchOptions" :candidates="modelCandidates" :available-targets="modelCandidates.filter(candidate => candidate.available)" :price-rules="priceRules" :service-tier-source="savedTierSource" @applied="loadPricesSafely" />
-      <AdminTablePanel title="Model prices" :description="`${filteredPriceRules.length} rules`">
-        <template #filters>
-          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <UFormField label="Search"><UInput v-model="priceFilters.search" icon="i-tabler-search" placeholder="Search model ID or provider" class="w-full" /></UFormField>
-            <UFormField label="Status"><USelect :model-value="priceFilters.enabled || allOptionValue" @update:model-value="priceFilters.enabled = $event === allOptionValue ? '' : $event" :items="enabledOptions" value-key="value" label-key="label" class="w-full" /></UFormField>
-            <UFormField label="Service tier"><UInputMenu v-model="priceFilters.service_tier" :items="priceTierOptions" create-item @create="priceFilters.service_tier = $event.trim()" placeholder="All tiers" class="w-full" /></UFormField>
-            <UFormField label="Source"><USelect :model-value="priceFilters.source || allOptionValue" @update:model-value="priceFilters.source = $event === allOptionValue ? '' : $event" :items="priceSourceOptions" value-key="value" label-key="label" class="w-full" /></UFormField>
+      <AdminDataPanel title="Model prices" :description="`${filteredPriceRules.length} of ${priceRules.length} rules`">
+        <template #actions>
+          <UDropdownMenu :items="priceMenuItems" :content="{ align: 'end' }">
+            <AppButton size="sm" color="neutral" variant="outline" trailing-icon="i-tabler-chevron-down">More</AppButton>
+          </UDropdownMenu>
+          <AppButton size="sm" icon="i-tabler-plus" @click="openPriceForm()">New price</AppButton>
+        </template>
+        <template #toolbar>
+          <div class="flex flex-wrap items-center gap-2">
+            <UInput v-model="priceFilters.search" icon="i-tabler-search" placeholder="Search model or provider" aria-label="Search model prices" class="w-full sm:w-64" />
+            <USelect :model-value="priceFilters.enabled || allOptionValue" :items="enabledOptions" value-key="value" label-key="label" aria-label="Status" class="w-32" @update:model-value="priceFilters.enabled = $event === allOptionValue ? '' : $event" />
+            <USelect :model-value="priceFilters.source || allOptionValue" :items="priceSourceOptions" value-key="value" label-key="label" aria-label="Source" class="w-36" @update:model-value="priceFilters.source = $event === allOptionValue ? '' : $event" />
+            <UInputMenu v-if="priceSchemaVersion >= 2" v-model="priceFilters.service_tier" :items="priceTierOptions" create-item placeholder="All tiers" aria-label="Service tier" class="w-32" @create="priceFilters.service_tier = $event.trim()" />
+            <AppButton v-if="hasPriceFilters" size="sm" color="neutral" variant="ghost" @click="clearPriceFilters">Clear</AppButton>
+            <span class="ml-auto inline-flex items-center gap-1.5 text-xs text-[var(--ui-text-muted)]" :title="settingsForm.service_tier_source === 'response' ? 'Rules match the provider response tier, falling back to the requested tier when absent.' : 'Rules match the service tier requested by the client.'">
+              <UIcon name="i-tabler-arrows-exchange" class="size-3.5" />
+              {{ priceSchemaVersion >= 2 ? `Tier matching: ${savedTierSource === 'response' ? 'response tier' : 'requested tier'}` : 'Flat-price rules only' }}
+              <span v-if="modelCandidatesLoading">· loading candidates…</span>
+            </span>
           </div>
         </template>
-        <template #actions><AppButton v-if="hasPriceFilters" color="neutral" variant="ghost" @click="clearPriceFilters">Clear filters</AppButton><AppButton color="neutral" variant="outline" icon="i-tabler-refresh" :disabled="pricesLoading || modelCandidatesLoading || !priceRules.some(rule => rule.source === 'sync')" @click="priceImporter?.checkUpdates()">Check for updates</AppButton><AppButton color="neutral" variant="outline" icon="i-tabler-download" @click="priceImporter?.openImport()">Import model prices</AppButton><AppButton color="primary" icon="i-tabler-plus" @click="openPriceForm()">New price</AppButton></template>
-        <AppTable :columns="priceColumns" :data="filteredPriceRules" :loading="pricesLoading" class="min-w-[1260px]">
-          <template #provider-cell="{ row }"><span class="font-medium">{{ rowValue(row).provider }}</span></template>
-          <template #model-cell="{ row }"><div class="flex min-w-52 items-center gap-1"><span class="truncate font-mono">{{ rowValue(row).model }}</span><AppButton size="xs" color="neutral" variant="ghost" icon="i-tabler-clipboard" aria-label="Copy model ID" @click="copyText(rowValue(row).model)" /></div></template>
-          <template #scope-cell="{ row }"><div class="min-w-36"><template v-if="priceSchemaVersion >= 2"><UBadge color="neutral" variant="subtle">{{ rowValue(row).service_tier || '*' }}</UBadge><p class="mt-1 text-xs text-[var(--ui-text-muted)]">{{ contextBandLabel(rowValue(row).min_input_tokens) }}</p></template><span v-else class="text-xs text-[var(--ui-text-muted)]">Flat price compatibility rule</span></div></template>
-          <template #input-cell="{ row }"><span class="font-mono text-xs">{{ formatCredits(rowValue(row).input_price_per_million) }}</span></template>
-          <template #output-cell="{ row }"><span class="font-mono text-xs">{{ formatCredits(rowValue(row).output_price_per_million) }}</span></template>
-          <template #cache_read-cell="{ row }"><span class="font-mono text-xs">{{ formatCredits(rowValue(row).cache_read_price_per_million) }}</span></template>
-          <template #cache_write-cell="{ row }"><span v-if="Number(rowValue(row).cache_write_price_per_million)" class="font-mono text-xs">{{ formatCredits(rowValue(row).cache_write_price_per_million) }}</span><span v-else class="text-xs text-[var(--ui-text-muted)]" title="No separate cache-write rate; billing fallback behavior is preserved in the charge snapshot.">No separate rate</span></template>
-          <template #request-cell="{ row }"><span class="font-mono text-xs">{{ formatCredits(rowValue(row).request_price) }}</span></template>
-          <template #source-cell="{ row }"><UBadge color="neutral" variant="subtle">{{ rowValue(row).source || 'manual' }}</UBadge></template>
-          <template #state-cell="{ row }"><div class="flex items-center gap-2"><USwitch :model-value="Boolean(rowValue(row).enabled)" :loading="togglingPrice === rowValue(row).id" @update:model-value="togglePriceEnabled(rowValue(row), $event)" /><UBadge :color="rowValue(row).enabled ? 'success' : 'neutral'" variant="subtle">{{ rowValue(row).enabled ? 'Enabled' : 'Disabled' }}</UBadge></div></template>
+        <AppTable :columns="priceColumns" :data="filteredPriceRules" :loading="pricesLoading" class="min-w-[72rem]">
+          <template #model-cell="{ row }"><div class="group flex min-w-0 items-center gap-1"><div class="min-w-0"><p class="max-w-72 truncate font-mono text-xs font-medium text-[var(--ui-text-highlighted)]" :title="rowValue(row).model">{{ rowValue(row).model }}</p><p class="text-xs text-[var(--ui-text-muted)]">{{ rowValue(row).provider }}</p></div><AppButton size="xs" color="neutral" variant="ghost" icon="i-tabler-copy" aria-label="Copy model ID" class="opacity-0 group-hover:opacity-100 focus-visible:opacity-100" @click="copyText(rowValue(row).model)" /></div></template>
+          <template #scope-cell="{ row }"><template v-if="priceSchemaVersion >= 2"><p class="font-mono text-xs">{{ rowValue(row).service_tier || '*' }}</p><p class="text-xs text-[var(--ui-text-muted)]">{{ contextBandLabel(rowValue(row).min_input_tokens) }}</p></template><span v-else class="text-xs text-[var(--ui-text-muted)]">Flat</span></template>
+          <template #input-cell="{ row }"><span class="block text-right font-mono text-xs tabular-nums">{{ formatCredits(rowValue(row).input_price_per_million) }}</span></template>
+          <template #output-cell="{ row }"><span class="block text-right font-mono text-xs tabular-nums">{{ formatCredits(rowValue(row).output_price_per_million) }}</span></template>
+          <template #cache_read-cell="{ row }"><span class="block text-right font-mono text-xs tabular-nums">{{ formatCredits(rowValue(row).cache_read_price_per_million) }}</span></template>
+          <template #cache_write-cell="{ row }"><span v-if="Number(rowValue(row).cache_write_price_per_million)" class="block text-right font-mono text-xs tabular-nums">{{ formatCredits(rowValue(row).cache_write_price_per_million) }}</span><span v-else class="block text-right text-xs text-[var(--ui-text-dimmed)]" title="No separate cache-write rate; billing fallback behavior is preserved in the charge snapshot.">—</span></template>
+          <template #request-cell="{ row }"><span class="block text-right font-mono text-xs tabular-nums">{{ formatCredits(rowValue(row).request_price) }}</span></template>
+          <template #source-cell="{ row }"><span class="text-xs capitalize text-[var(--ui-text-muted)]">{{ rowValue(row).source || 'manual' }}</span></template>
+          <template #state-cell="{ row }"><USwitch :model-value="Boolean(rowValue(row).enabled)" :loading="togglingPrice === rowValue(row).id" :aria-label="rowValue(row).enabled ? 'Disable price rule' : 'Enable price rule'" @update:model-value="togglePriceEnabled(rowValue(row), $event)" /></template>
           <template #updated-cell="{ row }"><span class="whitespace-nowrap text-xs text-[var(--ui-text-muted)]">{{ formatDateTime(rowValue(row).updated_at) }}</span></template>
           <template #actions-cell="{ row }"><div class="flex justify-end gap-1"><AdminTableAction action="edit" label="Edit model price" @click="openPriceForm(rowValue(row))" /><AdminTableAction action="delete" label="Delete model price" destructive @click="confirmDeletePrice(rowValue(row))" /></div></template>
           <template #empty><div class="py-12 text-center text-sm text-[var(--ui-text-muted)]">No model price rules match these filters.</div></template>
         </AppTable>
-      </AdminTablePanel>
+      </AdminDataPanel>
     </template>
+
 
 
 
@@ -420,36 +365,37 @@ const selectedCharge = ref(null)
 const balanceDetailOpen = ref(false)
 const selectedBalance = ref(null)
 
+const actionColumn = { accessorKey: 'actions', header: '', meta: { class: { th: 'table-action-head', td: 'table-action-cell' } } }
+const rightAligned = { class: { th: 'text-right' } }
 const chargeColumns = [
-  { accessorKey: 'created_at', header: 'Time / Request' },
-  { accessorKey: 'user', header: 'User / Key' },
-  { accessorKey: 'model', header: 'Provider / Model' },
-  { accessorKey: 'tokens', header: 'Tokens' },
-  { accessorKey: 'amount', header: 'Charge / Balance' },
-  { accessorKey: 'actions', header: '', meta: { class: { th: 'table-action-head', td: 'table-action-cell' } } }
+  { accessorKey: 'created_at', header: 'Time' },
+  { accessorKey: 'user', header: 'User' },
+  { accessorKey: 'model', header: 'Model' },
+  { accessorKey: 'tokens', header: 'Tokens', meta: rightAligned },
+  { accessorKey: 'amount', header: 'Charge', meta: rightAligned },
+  actionColumn
 ]
 const balanceColumns = [
-  { accessorKey: 'created_at', header: 'Time / Record' },
-  { accessorKey: 'user_id', header: 'User ID' },
+  { accessorKey: 'created_at', header: 'Time' },
+  { accessorKey: 'user_id', header: 'User' },
   { accessorKey: 'type', header: 'Type' },
-  { accessorKey: 'amount', header: 'Amount' },
-  { accessorKey: 'balance', header: 'Balance after' },
-  { accessorKey: 'note', header: 'Note / Operator' },
-  { accessorKey: 'actions', header: '', meta: { class: { th: 'table-action-head', td: 'table-action-cell' } } }
+  { accessorKey: 'amount', header: 'Amount', meta: rightAligned },
+  { accessorKey: 'balance', header: 'Balance', meta: rightAligned },
+  { accessorKey: 'note', header: 'Note' },
+  actionColumn
 ]
 const priceColumns = [
-  { accessorKey: 'provider', header: 'Model provider' },
-  { accessorKey: 'model', header: 'Model ID' },
-  { accessorKey: 'scope', header: 'Rule scope' },
-  { accessorKey: 'input', header: 'Input / 1M' },
-  { accessorKey: 'output', header: 'Output / 1M' },
-  { accessorKey: 'cache_read', header: 'Cache read / 1M' },
-  { accessorKey: 'cache_write', header: 'Cache write / 1M' },
-  { accessorKey: 'request', header: 'Per request' },
+  { accessorKey: 'model', header: 'Model' },
+  { accessorKey: 'scope', header: 'Tier / context' },
+  { accessorKey: 'input', header: 'Input /1M', meta: rightAligned },
+  { accessorKey: 'output', header: 'Output /1M', meta: rightAligned },
+  { accessorKey: 'cache_read', header: 'Cache read /1M', meta: rightAligned },
+  { accessorKey: 'cache_write', header: 'Cache write /1M', meta: rightAligned },
+  { accessorKey: 'request', header: 'Per request', meta: rightAligned },
   { accessorKey: 'source', header: 'Source' },
-  { accessorKey: 'state', header: 'State' },
+  { accessorKey: 'state', header: 'Enabled' },
   { accessorKey: 'updated', header: 'Updated' },
-  { accessorKey: 'actions', header: '', meta: { class: { th: 'table-action-head', td: 'table-action-cell' } } }
+  actionColumn
 ]
 const enabledOptions = [{ label: 'All rules', value: allOptionValue }, { label: 'Enabled', value: 'true' }, { label: 'Disabled', value: 'false' }]
 const sourceOptions = [{ label: 'Manual', value: 'manual' }, { label: 'Default', value: 'default' }, { label: 'Synchronized', value: 'sync' }]
@@ -473,6 +419,16 @@ const topUsers = computed(() => (Array.isArray(overviewData.value.top_users) ? o
   .sort((left, right) => (Number(right.amount) || 0) - (Number(left.amount) || 0)))
 const topModels = computed(() => Array.isArray(overviewData.value.top_models) ? overviewData.value.top_models : [])
 const topProviders = computed(() => Array.isArray(overviewData.value.top_providers) ? overviewData.value.top_providers : [])
+const rankingGroups = computed(() => [
+  { title: 'Top models', items: topModels.value, empty: 'No model charges found.' },
+  { title: 'Top providers', items: topProviders.value, empty: 'No provider charges found.' }
+])
+const priceMenuItems = computed(() => [[
+  { label: 'Import model prices', icon: 'i-tabler-download', onSelect: () => priceImporter.value?.openImport() },
+  { label: 'Check for updates', icon: 'i-tabler-refresh', disabled: pricesLoading.value || modelCandidatesLoading.value || !priceRules.value.some(rule => rule.source === 'sync'), onSelect: () => priceImporter.value?.checkUpdates() }
+], [
+  { label: 'Matching settings', icon: 'i-tabler-settings', onSelect: () => openMatchingSettings() }
+]])
 const maxTrendCharge = computed(() => Math.max(0.000001, ...dailyTrend.value.map(point => Number(point.charge_amount) || 0)))
 const charges = computed(() => Array.isArray(chargesResponse.value?.items) ? chargesResponse.value.items : [])
 const chargesTotal = computed(() => Number(chargesResponse.value?.total) || 0)
@@ -756,6 +712,14 @@ function chargeUserName(charge) {
   if (user?.username) return user.username
   return charge.user_id ? `User #${charge.user_id}` : 'Unknown user'
 }
+function balanceUserName(record) {
+  const user = users.value.find(item => String(item.id) === String(record.user_id))
+  return user?.username || (record.user_id ? `User #${record.user_id}` : '—')
+}
+function share(amount, items) {
+  const max = Math.max(0.000001, ...items.map(item => Number(item.amount) || 0))
+  return Math.round(((Number(amount) || 0) / max) * 100)
+}
 function openBalanceDetail(record) { selectedBalance.value = record; balanceDetailOpen.value = true }
 function openChargeDetail(charge) { selectedCharge.value = charge; chargeDetailOpen.value = true }
 function totalChargeTokens(charge) { return (Number(charge.input_tokens) || 0) + (Number(charge.output_tokens) || 0) + (Number(charge.cache_tokens) || 0) }
@@ -777,19 +741,4 @@ useDataSync('admin:billing:sync', () => loadBilling(true))
 onMounted(loadBilling)
 </script>
 
-<script>
-export default {
-  components: {
-    PaginationFooter: {
-      props: { page: Number, total: Number, pageSize: Number, loading: Boolean },
-      emits: ['previous', 'next'],
-      computed: {
-        pages() { return Math.max(1, Math.ceil((this.total || 0) / this.pageSize)) },
-        start() { return this.total ? ((this.page - 1) * this.pageSize) + 1 : 0 },
-        end() { return Math.min(this.page * this.pageSize, this.total || 0) }
-      },
-      template: `<div class="flex flex-col gap-3 border-t border-[var(--ui-border)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between"><p class="text-xs text-[var(--ui-text-muted)]">Showing {{ start }}–{{ end }} of {{ total || 0 }}</p><div class="flex items-center gap-2"><AppButton size="sm" color="neutral" variant="outline" :disabled="page <= 1 || loading" @click="$emit('previous')">Previous</AppButton><span class="min-w-20 text-center text-sm">Page {{ page }} of {{ pages }}</span><AppButton size="sm" color="neutral" variant="outline" :disabled="page >= pages || loading" @click="$emit('next')">Next</AppButton></div></div>`
-    }
-  }
-}
-</script>
+

@@ -1,5 +1,23 @@
 <template>
-  <AppModal v-model:open="open" title="Request Details" :description="subtitle" :ui="{ content: 'w-full sm:max-w-4xl', header: 'shrink-0 border-b border-[var(--ui-border)]', body: 'min-h-0 overflow-y-auto p-4 sm:p-6', footer: 'shrink-0 border-t border-[var(--ui-border)] bg-[var(--ui-bg)] p-4 sm:px-6' }">
+  <AppModal v-model:open="open" :ui="{ content: 'w-full sm:max-w-2xl', header: 'shrink-0 border-b border-[var(--ui-border)] px-4 py-3 sm:px-5', body: 'min-h-0 overflow-y-auto p-0 sm:p-0', footer: 'shrink-0 border-t border-[var(--ui-border)] bg-[var(--ui-bg)] px-4 py-3 sm:px-5' }">
+    <template #header="{ close }">
+      <div class="flex w-full min-w-0 items-start gap-3">
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center gap-2">
+            <span class="size-2 shrink-0 rounded-full" :class="loading ? 'bg-[var(--ui-text-dimmed)]' : event.failed ? 'bg-[var(--ui-color-error-500)]' : 'bg-[var(--ui-color-success-500)]'" aria-hidden="true" />
+            <h2 class="truncate text-base font-semibold" :title="title">{{ loading ? 'Loading request…' : title }}</h2>
+          </div>
+          <p class="mt-0.5 truncate text-xs text-[var(--ui-text-muted)]">{{ subtitle }}</p>
+        </div>
+        <div class="flex shrink-0 items-center gap-1">
+          <AppButton type="button" color="neutral" variant="ghost" size="sm" icon="i-tabler-chevron-up" aria-label="Previous request" title="Previous request" :disabled="loading || !hasPrevious" @click="emit('navigate', -1)" />
+          <AppButton type="button" color="neutral" variant="ghost" size="sm" icon="i-tabler-chevron-down" aria-label="Next request" title="Next request" :disabled="loading || !hasNext" @click="emit('navigate', 1)" />
+          <span class="mx-1 h-5 w-px bg-[var(--ui-border)]" aria-hidden="true" />
+          <AppButton type="button" color="neutral" variant="ghost" size="sm" icon="i-tabler-x" aria-label="Close" @click="close" />
+        </div>
+      </div>
+    </template>
+
     <template #body>
       <div v-if="loading" role="status" class="flex items-center justify-center gap-2 py-16 text-sm text-[var(--ui-text-muted)]"><UIcon name="i-tabler-loader-2" class="size-5 animate-spin" />Loading request details…</div>
       <div v-else-if="detail" class="space-y-4">
@@ -56,12 +74,15 @@
         <section v-if="detail.payload_summary" class="rounded-lg border border-[var(--ui-border)] p-4"><h3 class="mb-3 text-sm font-semibold">Payload summary</h3><dl class="grid grid-cols-2 gap-3 sm:grid-cols-4"><AdminDetailItem label="Method" :value="detail.payload_summary.method" /><AdminDetailItem label="Streaming" :value="formatBoolean(detail.payload_summary.stream)" /><AdminDetailItem label="Messages" :value="number(detail.payload_summary.message_count)" /><AdminDetailItem label="Tools" :value="number(detail.payload_summary.tool_count)" /></dl></section>
         <section v-if="detail.log_excerpt?.length" class="rounded-lg border border-[var(--ui-border)] p-4"><div class="mb-3 flex items-center justify-between gap-2"><h3 class="text-sm font-semibold">Request log excerpt</h3><UBadge color="neutral" variant="subtle" size="sm">Redacted</UBadge></div><pre class="max-h-96 overflow-auto whitespace-pre-wrap break-all rounded-md bg-[var(--ui-bg-muted)] p-3 font-mono text-xs leading-5">{{ detail.log_excerpt.join('\n') }}</pre></section>
       </div>
+
+      <div v-else class="flex flex-col items-center justify-center px-4 py-16 text-center text-sm text-[var(--ui-text-muted)]"><UIcon name="i-tabler-file-unknown" class="mb-2 size-6" />No request selected.</div>
     </template>
+
     <template #footer>
-      <div class="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p v-if="!loading && !downloadUrl" id="request-detail-no-log" class="text-xs text-[var(--ui-text-muted)]">This request has no downloadable request log.</p>
-        <p v-else-if="downloadError" role="alert" class="break-words text-xs text-[var(--ui-color-error-500)]">{{ downloadError }}</p>
-        <AppButton type="button" color="neutral" variant="outline" icon="i-tabler-download" class="shrink-0 sm:ml-auto" :loading="downloading" :disabled="loading || !downloadUrl || downloading" :aria-describedby="!loading && !downloadUrl ? 'request-detail-no-log' : undefined" @click="emit('download', downloadUrl, event.request_id)">Download request log</AppButton>
+      <div class="flex w-full items-center gap-2">
+        <AppButton type="button" color="neutral" variant="outline" size="sm" icon="i-tabler-copy" :disabled="loading || !event.request_id" @click="copyText(event.request_id, 'Request ID')">Copy request ID</AppButton>
+        <p v-if="downloadError" role="alert" class="min-w-0 flex-1 truncate text-xs text-[var(--ui-color-error-500)]" :title="downloadError">{{ downloadError }}</p>
+        <AppButton type="button" color="neutral" variant="solid" size="sm" icon="i-tabler-download" class="ml-auto shrink-0" :loading="downloading" :disabled="loading || !downloadUrl || downloading" :title="!loading && !downloadUrl ? 'This request has no downloadable log' : undefined" @click="emit('download', downloadUrl, event.request_id)">Download log</AppButton>
       </div>
     </template>
   </AppModal>
@@ -70,17 +91,31 @@
 <script setup lang="ts">
 type Fields = Record<string, any>
 type Detail = { event?: Fields; payload_summary?: Fields | null; log_excerpt?: string[] }
+type Row = { label: string; value: string; hint?: string; mono?: boolean; copy?: boolean }
+type RowInput = { label: string; value: unknown; hint?: unknown; mono?: boolean; copy?: boolean }
 type OverviewField = { label: string; value?: unknown; secondary?: string; mono?: boolean; full?: boolean; copy?: string }
-const props = defineProps<{ detail: Detail | null; loading: boolean; downloading: boolean; downloadError?: string }>()
+const props = defineProps<{ detail: Detail | null; loading: boolean; downloading: boolean; downloadError?: string; hasPrevious?: boolean; hasNext?: boolean }>()
 const open = defineModel<boolean>('open', { default: false })
-const emit = defineEmits<{ download: [url: string, requestId: string] }>()
+const emit = defineEmits<{ download: [url: string, requestId: string]; navigate: [direction: -1 | 1] }>()
 const toast = useToast()
 const event = computed(() => props.detail?.event || {})
-const display = (value: unknown) => value == null || value === '' ? '—' : String(value)
-const number = (value: unknown) => value == null ? '—' : new Intl.NumberFormat().format(Number(value))
-const decimal = (value: unknown) => new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(Number(value))
-const milliseconds = (value: unknown) => value == null ? '—' : `${number(value)} ms`
-const subtitle = computed(() => event.value.timestamp ? new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'medium' }).format(new Date(event.value.timestamp)) : 'Routing, usage, billing, and redacted logs for this request.')
+const payload = computed(() => props.detail?.payload_summary || {})
+
+const isEmpty = (value: unknown) => value == null || value === ''
+const number = (value: unknown) => isEmpty(value) ? '—' : new Intl.NumberFormat().format(Number(value))
+const decimal = (value: unknown, digits = 2) => new Intl.NumberFormat(undefined, { maximumFractionDigits: digits }).format(Number(value))
+const duration = (ms: unknown) => isEmpty(ms) ? '' : Number(ms) >= 1000 ? `${decimal(Number(ms) / 1000)} s` : `${number(ms)} ms`
+// Drops empty rows so every section only shows recorded values.
+const rows = (items: RowInput[]): Row[] => items.filter(item => !isEmpty(item.value)).map(item => ({ ...item, value: String(item.value), hint: isEmpty(item.hint) ? undefined : String(item.hint) }))
+const display = (value: unknown) => isEmpty(value) ? '—' : String(value)
+const milliseconds = (value: unknown) => isEmpty(value) ? '—' : Number(value) >= 1000 ? `${decimal(Number(value) / 1000)} s` : `${number(value)} ms`
+
+const title = computed(() => [event.value.provider, event.value.model].filter(Boolean).join(' · ') || 'Request details')
+const subtitle = computed(() => {
+  const time = event.value.timestamp ? new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'medium' }).format(new Date(event.value.timestamp)) : ''
+  const endpoint = [payload.value.method, event.value.endpoint].filter(Boolean).join(' ')
+  return [time, endpoint].filter(Boolean).join(' · ') || 'Routing, usage, billing, and redacted logs for this request.'
+})
 const downloadUrl = computed(() => event.value.related?.request_log?.download_url || '')
 const amount = computed(() => event.value.billing?.amount == null ? '—' : `${decimal(event.value.billing.amount)} ${event.value.billing.currency || 'credits'}`)
 const endpoint = computed(() => [props.detail?.payload_summary?.method, event.value.endpoint].filter(Boolean).join(' '))
@@ -105,6 +140,7 @@ const overview = computed<OverviewField[]>(() => [
   { label: 'Cost', value: amount.value, full: true }
 ])
 function details(object: Fields | undefined, pairs: string[][]) { return pairs.map(([label, key]) => ({ label: label!, value: display(object?.[key!]) })) }
+const errorDetails = computed(() => details(event.value.error, [['HTTP status', 'status_code'], ['Upstream status', 'upstream_status_code'], ['Reason', 'reason'], ['Message', 'message']]))
 const primaryTokens = computed(() => details(event.value.tokens, [['Input', 'input_tokens'], ['Output', 'output_tokens'], ['Reasoning', 'reasoning_tokens']]).map(item => ({ ...item, value: item.value === '—' ? '—' : number(item.value) })))
 const cacheTokens = computed(() => details(event.value.tokens, [['Cached', 'cached_tokens'], ['Cache read', 'cache_read_tokens'], ['Cache creation', 'cache_creation_tokens']]).map(item => ({ ...item, value: item.value === '—' ? '—' : number(item.value) })))
 const toolUsage = computed(() => Object.entries(event.value.tool_usage || {}).filter(([, value]) => Number(value) > 0).map(([key, value]) => ({ label: key.replaceAll('_', ' '), value: number(value) })))
@@ -118,12 +154,13 @@ const costBreakdown = computed(() => {
   const billing = event.value.billing
   const items = billing?.cost_breakdown?.items
   if (!items || typeof items !== 'object') return []
-  return Object.entries(items).filter(([, item]) => Number(item?.cost) > 0 || Number(item?.tokens) > 0).map(([key, item]) => ({ label: key.replace(/^expr:/, '').replaceAll('_', ' '), value: Number(item?.cost) > 0 ? `${decimal(item.cost)} ${billing.currency || 'credits'}` : number(item?.tokens) }))
+  return Object.entries(items as Record<string, { cost?: unknown; tokens?: unknown }>).filter(([, item]) => Number(item?.cost) > 0 || Number(item?.tokens) > 0).map(([key, item]) => ({ label: key.replace(/^expr:/, '').replaceAll('_', ' '), value: Number(item?.cost) > 0 ? `${decimal(item.cost)} ${billing.currency || 'credits'}` : number(item?.tokens) }))
 })
 const formatBoolean = (value: unknown) => value == null ? '—' : value ? 'Yes' : 'No'
 const hasError = computed(() => Boolean(event.value.error?.message || event.value.error?.reason || event.value.error?.body_preview))
-const errorDetails = computed(() => details(event.value.error, [['HTTP status', 'status_code'], ['Upstream status', 'upstream_status_code'], ['Reason', 'reason'], ['Message', 'message']]))
-async function copyText(value: string, label: string) {
+
+async function copyText(value: string | undefined, label: string) {
+  if (!value) return
   try { await navigator.clipboard.writeText(value); toast.add({ title: `${label} copied`, color: 'success' }) }
   catch { toast.add({ title: `Could not copy ${label.toLowerCase()}`, description: 'Select the value and copy it manually.', color: 'error' }) }
 }

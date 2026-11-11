@@ -24,7 +24,8 @@ defineExpose({ nativeRoot })
   contain: inline-size;
 }
 
-.app-table:deep(table) {
+/* UTable renders a fragment root, so scoped selectors must start from the viewport wrapper. */
+.app-table-viewport :deep(table) {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
