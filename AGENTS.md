@@ -113,7 +113,7 @@ Keep the root-level source layout used by this repository; do not move it into a
 - With sibling repositories, the integration command is:
 
 ```bash
-make -C ../CLIProxyAPIHome panel-assets-local PANEL_SOURCE_DIR=../CPAHomeUI
+make -C ../CLIProxyAPIHome panel-assets-local PANEL_SOURCE_DIR=../AI48HomeUI
 ```
 
 - Preserve SPA deep-link support and same-origin API behavior. Do not replace embedded entry points with development-only URLs.

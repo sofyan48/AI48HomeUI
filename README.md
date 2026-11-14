@@ -103,9 +103,27 @@ This writes `dist/index.html`, `dist/management.html`, `dist/user.html`, and has
 With both repositories next to each other, build and copy the UI into Home with:
 
 ```bash
-make -C ../CLIProxyAPIHome panel-assets-local PANEL_SOURCE_DIR=../CPAHomeUI
+make -C ../CLIProxyAPIHome panel-assets-local PANEL_SOURCE_DIR=../AI48HomeUI
 ```
 
 The next Home build embeds those files through Go's `embed` package. Home serves the admin SPA under `/management.html` and `/admin/*`, and the user SPA under `/user.html` and `/app/*`.
 
 Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+
+## Release and deployment
+
+Every push to `main` runs `.github/workflows/ci.yml`: install, request-telemetry tests, and `bun run build:embedded`. When it passes, the workflow sends a `panel-updated` dispatch to [CLIProxyAPIHome](https://github.com/sofyan48/CLIProxyAPIHome), which embeds this bundle and publishes `ghcr.io/sofyan48/cliproxyapihome:edge`. Release tags (`v*`) on CLIProxyAPIHome publish `:<version>` and `:latest`.
+
+The dispatch needs one repository secret here:
+
+| Secret | Value |
+| --- | --- |
+| `HOME_DISPATCH_TOKEN` | Fine-grained PAT for `sofyan48/CLIProxyAPIHome` with **Contents: Read and write** (classic PAT: `repo`). |
+
+Without it, CI still builds and tests, and only skips the image trigger.
+
+Install the published image as described in the [CLIProxyAPIHome README](https://github.com/sofyan48/CLIProxyAPIHome#install-from-ghcr-ai48hub-build):
+
+```bash
+docker pull ghcr.io/sofyan48/cliproxyapihome:latest   # or :edge for the newest panel
+```
