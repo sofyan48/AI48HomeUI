@@ -4,99 +4,120 @@
     <UAlert v-if="pageError" color="error" variant="subtle" icon="i-tabler-alert-triangle" title="Some workspace data could not be loaded" :description="pageError" />
 
     <div v-if="section === 'dashboard'" class="dashboard-bento">
-      <section class="dashboard-hero" aria-labelledby="dashboard-title">
-        <p class="dashboard-eyebrow"><UIcon name="i-tabler-sparkles" class="size-3.5" aria-hidden="true" /> Your workspace</p>
-        <h1 id="dashboard-title" class="mt-3 break-words font-bold tracking-tight text-[var(--ui-text-highlighted)]">Welcome back{{ user?.username ? `, ${user.username}` : '' }}.</h1>
-        <p class="mt-2 max-w-lg text-sm leading-relaxed text-[var(--ui-text-muted)]">Ready for your next idea? Your credits and activity are right here.</p>
-        <div class="mt-auto flex flex-wrap items-center gap-2 pt-6">
-          <AppButton to="/app/api-keys" icon="i-tabler-key" class="dashboard-primary-action rounded-full">Manage API keys</AppButton>
-          <AppButton to="/app/models" color="neutral" variant="outline" trailing-icon="i-tabler-arrow-right" class="rounded-full">Explore models</AppButton>
+      <header class="dashboard-greeting" aria-labelledby="dashboard-title">
+        <div class="min-w-0">
+          <h1 id="dashboard-title" class="break-words font-bold tracking-tight text-[var(--ui-text-highlighted)]">Welcome back{{ user?.username ? `, ${user.username}` : '' }}</h1>
+          <p class="mt-1 text-sm text-[var(--ui-text-muted)]">{{ dashboardStatusLine }}</p>
         </div>
+        <AppButton v-if="capabilities.request_logs === true" to="/app/logs" icon="i-tabler-list-details" color="neutral" variant="ghost" size="sm" class="rounded-full">Request logs</AppButton>
+      </header>
+
+      <!-- Spotlight 1: how to start sending requests. -->
+      <section class="dashboard-connect" aria-labelledby="connect-title">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <span class="dashboard-connect-icon"><UIcon name="i-tabler-plug-connected" class="size-5" aria-hidden="true" /></span>
+            <div><h2 id="connect-title" class="text-base font-semibold text-[var(--ui-text-highlighted)]">Connect your app</h2><p class="text-xs text-[var(--ui-text-muted)]">Three steps to your first request.</p></div>
+          </div>
+          <AppButton to="/app/models" size="xs" color="neutral" variant="ghost" class="rounded-full" trailing-icon="i-tabler-arrow-right">Find a model ID</AppButton>
+        </div>
+
+        <ol class="dashboard-steps mt-5">
+          <li class="dashboard-step">
+            <span class="dashboard-step-index" aria-hidden="true">1</span>
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-semibold text-[var(--ui-text-highlighted)]">Create an API key</p>
+              <p class="mt-0.5 text-xs text-[var(--ui-text-muted)]">Use a separate key for each app and keep it out of public code.</p>
+            </div>
+            <AppButton to="/app/api-keys" size="sm" icon="i-tabler-key" class="dashboard-primary-action shrink-0 rounded-full">API keys</AppButton>
+          </li>
+          <li class="dashboard-step">
+            <span class="dashboard-step-index" aria-hidden="true">2</span>
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-semibold text-[var(--ui-text-highlighted)]">Point your client at the endpoint</p>
+              <div v-if="serverInfo.cpa_public_url" class="dashboard-endpoint-field mt-2">
+                <code class="min-w-0 flex-1 truncate font-mono text-sm text-[var(--ui-text-highlighted)]" :title="serverInfo.cpa_public_url">{{ serverInfo.cpa_public_url }}</code>
+                <AppButton type="button" size="xs" class="shrink-0" color="neutral" variant="soft" icon="i-tabler-copy" aria-label="Copy endpoint" @click="copyText(serverInfo.cpa_public_url, 'Endpoint copied')">Copy</AppButton>
+              </div>
+              <p v-else class="mt-0.5 text-xs text-[var(--ui-text-muted)]">Your administrator has not published a public endpoint yet. Ask them for the base URL.</p>
+            </div>
+          </li>
+          <li class="dashboard-step">
+            <span class="dashboard-step-index" aria-hidden="true">3</span>
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-semibold text-[var(--ui-text-highlighted)]">Send a request</p>
+              <p class="mt-0.5 text-xs text-[var(--ui-text-muted)]">OpenAI-compatible: replace the key and model ID.</p>
+              <div v-if="serverInfo.cpa_public_url" class="dashboard-code mt-2 overflow-hidden rounded-xl">
+                <div class="flex items-center justify-between gap-2 border-b px-3 py-1.5">
+                  <span class="font-mono text-[11px] opacity-70">curl</span>
+                  <AppButton type="button" size="xs" color="neutral" variant="ghost" icon="i-tabler-copy" class="dashboard-code-copy" aria-label="Copy curl example" @click="copyText(curlExample, 'Example copied')">Copy</AppButton>
+                </div>
+                <pre class="overflow-x-auto p-4 text-xs leading-6"><code class="font-mono">{{ curlExample }}</code></pre>
+              </div>
+            </div>
+          </li>
+        </ol>
       </section>
 
-      <section class="dashboard-balance" aria-label="Available credits">
+      <!-- Spotlight 2: what the user can still spend. -->
+      <section class="dashboard-credits" aria-labelledby="credits-title">
         <div class="flex items-center justify-between gap-3">
-          <span class="dashboard-balance-icon"><UIcon name="i-tabler-wallet" class="size-5" aria-hidden="true" /></span>
-          <AppButton to="/app/balance" size="xs" color="neutral" variant="ghost" class="rounded-full" trailing-icon="i-tabler-arrow-up-right">Manage</AppButton>
+          <h2 id="credits-title" class="flex items-center gap-2 text-sm font-semibold text-[var(--ui-text-highlighted)]"><span class="dashboard-balance-icon"><UIcon name="i-tabler-wallet" class="size-4" aria-hidden="true" /></span>Credits & limits</h2>
+          <UBadge v-if="limitAlert" :color="limitAlert.color" variant="subtle" class="rounded-full">{{ limitAlert.label }}</UBadge>
         </div>
-        <p class="mt-6 text-xs font-medium text-[var(--ui-text-muted)]">Available credits</p>
-        <p class="dashboard-balance-value mt-1 break-all font-bold tabular-nums tracking-tight text-[var(--ui-text-highlighted)]">{{ user ? formatCredits(user.credits) : '—' }}</p>
-        <div class="mt-auto grid grid-cols-2 gap-2 pt-5 text-xs">
-          <div class="dashboard-balance-stat"><span class="text-[var(--ui-text-muted)]">Today</span><strong class="tabular-nums">{{ billingLoading ? '—' : billingMetrics[1]?.value }}</strong></div>
-          <div class="dashboard-balance-stat"><span class="text-[var(--ui-text-muted)]">This month</span><strong class="tabular-nums">{{ billingLoading ? '—' : billingMetrics[2]?.value }}</strong></div>
+        <div class="mt-4 flex flex-wrap items-end justify-between gap-3">
+          <div class="min-w-0">
+            <p class="text-xs font-medium text-[var(--ui-text-muted)]">Available credits</p>
+            <p class="dashboard-balance-value mt-1 break-all font-bold tabular-nums tracking-tight text-[var(--ui-text-highlighted)]">{{ user ? formatCredits(user.credits) : '—' }}</p>
+          </div>
+          <AppButton to="/app/balance" size="sm" icon="i-tabler-plus" color="success" variant="soft" class="rounded-full">Top up</AppButton>
         </div>
+
+        <div class="dashboard-limit-list mt-5" aria-label="Account period limits">
+          <p class="mb-2 text-xs font-medium text-[var(--ui-text-muted)]">Spending limits</p>
+          <template v-if="activePeriodWindows.length">
+            <div v-for="window in activePeriodWindows" :key="window.id" class="dashboard-limit min-w-0">
+              <div class="flex items-center justify-between gap-3">
+                <p class="text-sm font-semibold">{{ periodWindowLabel(window.id) }}</p>
+                <span class="shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums" :class="periodWindowColor(window)">{{ formatPercent(periodWindowRatio(window)) }}</span>
+              </div>
+              <div class="period-progress-track mt-2 h-2 overflow-hidden rounded-full" role="progressbar" :aria-label="`${periodWindowLabel(window.id)} limit used`" aria-valuemin="0" aria-valuemax="100" :aria-valuenow="Math.round(periodWindowRatio(window) * 100)"><div class="h-full rounded-full transition-[width]" :class="periodWindowBarColor(window)" :style="{ width: `${periodWindowRatio(window) * 100}%`, minWidth: periodWindowRatio(window) > 0 ? '4px' : '0' }" /></div>
+              <div class="mt-1.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5 text-xs text-[var(--ui-text-muted)]">
+                <span><strong class="font-semibold tabular-nums text-[var(--ui-text-highlighted)]">{{ formatCredits(window.remaining) }}</strong> left of {{ formatCredits(window.limit) }}</span>
+                <span v-if="window.reset_at" class="text-[var(--ui-text-dimmed)]">Resets {{ formatDate(window.reset_at) }}</span>
+              </div>
+            </div>
+          </template>
+          <p v-else class="rounded-xl border border-dashed border-[var(--ui-border)] px-3 py-3 text-xs text-[var(--ui-text-muted)]">No spending limits apply to your account. Only your credit balance limits usage.</p>
+        </div>
+        <AppLimitReset class="mt-auto" @reset="loadPeriodLimits" />
       </section>
 
-      <AppCard class="dashboard-panel dashboard-usage min-w-0" :ui="{ body: 'space-y-4' }">
+      <!-- Single place for activity numbers. -->
+      <AppCard class="dashboard-panel dashboard-usage min-w-0" :ui="{ body: 'pt-2' }">
         <template #header>
           <div class="flex flex-wrap items-center justify-between gap-3">
-            <div class="flex items-center gap-3"><span class="dashboard-icon flex size-9 items-center justify-center rounded-lg"><UIcon name="i-tabler-chart-bar" class="size-5" aria-hidden="true" /></span><div><h2 class="text-sm font-semibold">Usage summary</h2><p class="text-xs text-[var(--ui-text-muted)]">A closer look at your requests and spending.</p></div></div>
-            <form class="flex flex-wrap items-end gap-2" @submit.prevent="applyBillingRange">
+            <div class="flex items-center gap-3"><span class="dashboard-icon flex size-9 items-center justify-center rounded-lg"><UIcon name="i-tabler-chart-bar" class="size-5" aria-hidden="true" /></span><div><h2 class="text-sm font-semibold">Usage</h2><p class="text-xs text-[var(--ui-text-muted)]">{{ appliedRange.from === appliedRange.to ? appliedRange.from : `${appliedRange.from} – ${appliedRange.to}` }}<template v-if="monthOverview"> · {{ formatCredits(monthOverview.total_charge_amount ?? monthOverview.month_spend) }} credits this month</template></p></div></div>
+            <form class="flex flex-wrap items-center gap-2" @submit.prevent="applyBillingRange">
               <USelect v-model="rangePreset" :items="rangeOptions" value-key="value" label-key="label" class="w-36" aria-label="Time range" @update:model-value="selectRange" />
               <template v-if="rangePreset === 'custom'">
                 <UInput v-model="rangeFrom" type="date" aria-label="From (UTC)" />
                 <UInput v-model="rangeTo" type="date" aria-label="To (UTC)" />
                 <AppButton type="submit" :loading="billingLoading">Apply</AppButton>
               </template>
-              <AppButton type="button" color="neutral" variant="ghost" icon="i-tabler-refresh" :loading="billingLoading" aria-label="Refresh report" title="Refresh report" @click="loadBilling" />
+              <AppButton type="button" color="neutral" variant="ghost" icon="i-tabler-refresh" :loading="billingLoading" aria-label="Refresh usage" title="Refresh usage" @click="loadBilling" />
+              <AppButton to="/app/balance" color="neutral" variant="ghost" size="sm" trailing-icon="i-tabler-arrow-right">Details</AppButton>
             </form>
           </div>
         </template>
-        <div class="grid min-w-0 gap-3 sm:grid-cols-2" aria-label="Usage summary" :aria-busy="billingLoading">
-          <div v-for="(metric, index) in billingMetrics" :key="metric.label" class="dashboard-metric min-w-0" :class="`dashboard-metric--${index}`">
-            <div class="flex items-center gap-2.5"><span class="dashboard-icon flex size-8 shrink-0 items-center justify-center rounded-lg"><UIcon :name="dashboardMetricIcons[index]" class="size-4" aria-hidden="true" /></span><p class="min-w-0 truncate text-xs font-medium text-[var(--ui-text-muted)]">{{ metric.label }}</p></div>
-            <p class="mt-3 break-words text-2xl font-bold tabular-nums text-[var(--ui-text-highlighted)]">{{ billingLoading ? '—' : metric.value }}</p>
-            <p class="mt-1 text-xs leading-relaxed text-[var(--ui-text-muted)]">{{ metric.detail }}</p>
+        <dl class="dashboard-usage-strip" :aria-busy="billingLoading">
+          <div v-for="(metric, index) in dashboardUsageMetrics" :key="metric.label" class="dashboard-usage-item" :class="`dashboard-metric--${index}`">
+            <dt class="flex items-center gap-2 text-xs font-medium text-[var(--ui-text-muted)]"><UIcon :name="metric.icon" class="size-4 dashboard-usage-icon" aria-hidden="true" />{{ metric.label }}</dt>
+            <dd class="mt-1.5 break-words text-2xl font-bold tabular-nums tracking-tight text-[var(--ui-text-highlighted)]">{{ billingLoading ? '—' : metric.value }}</dd>
           </div>
-        </div>
-        <UAlert v-if="billingError" color="error" variant="subtle" title="Usage summary could not be loaded" :description="billingError" />
+        </dl>
+        <UAlert v-if="billingError" class="mt-3" color="error" variant="subtle" title="Usage could not be loaded" :description="billingError" />
       </AppCard>
-
-      <AppCard class="dashboard-panel dashboard-shortcuts min-w-0" :ui="{ body: 'p-2 sm:p-2' }">
-        <template #header><h2 class="text-sm font-semibold">Shortcuts</h2><p class="mt-0.5 text-xs text-[var(--ui-text-muted)]">Everything you need, one click away.</p></template>
-        <nav class="dashboard-shortcut-list" aria-label="Dashboard shortcuts">
-          <NuxtLink v-for="action in dashboardActions" :key="action.to" :to="action.to" class="dashboard-action">
-            <span class="dashboard-shortcut-icon"><UIcon :name="action.icon" class="size-[18px]" aria-hidden="true" /></span>
-            <span class="min-w-0 flex-1"><span class="block truncate text-sm font-medium text-[var(--ui-text-highlighted)]">{{ action.label }}</span><span class="block truncate text-xs text-[var(--ui-text-muted)]">{{ action.detail }}</span></span>
-            <UIcon name="i-tabler-chevron-right" class="dashboard-action-chevron size-4" aria-hidden="true" />
-          </NuxtLink>
-        </nav>
-      </AppCard>
-
-      <AppCard v-if="serverInfo.cpa_public_url" class="dashboard-panel dashboard-endpoint min-w-0" :ui="{ body: 'space-y-4' }">
-        <template #header><div class="flex items-center gap-3"><span class="dashboard-icon flex size-9 items-center justify-center rounded-lg"><UIcon name="i-tabler-terminal-2" class="size-5" aria-hidden="true" /></span><div><h2 class="text-sm font-semibold">Connect your app</h2><p class="text-xs text-[var(--ui-text-muted)]">Your CPA endpoint and a ready-to-copy example.</p></div></div></template>
-        <div class="flex min-w-0 items-center gap-2 rounded-xl border border-[var(--ui-border)] bg-[var(--user-inset-bg)] py-2 pl-3 pr-1.5">
-          <span class="shrink-0 rounded-md bg-[var(--user-selected)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--ui-primary)]">URL</span>
-          <code class="min-w-0 flex-1 truncate font-mono text-sm text-[var(--ui-text-highlighted)]" :title="serverInfo.cpa_public_url">{{ serverInfo.cpa_public_url }}</code>
-          <AppButton type="button" size="xs" class="shrink-0" color="neutral" variant="ghost" icon="i-tabler-copy" aria-label="Copy endpoint" title="Copy endpoint" @click="copyText(serverInfo.cpa_public_url, 'Endpoint copied')" />
-        </div>
-        <div class="dashboard-code relative overflow-hidden rounded-xl">
-          <div class="flex items-center justify-between gap-2 border-b px-3 py-1.5">
-            <span class="flex items-center gap-1.5" aria-hidden="true"><span class="size-2.5 rounded-full bg-rose-400/80" /><span class="size-2.5 rounded-full bg-amber-400/80" /><span class="size-2.5 rounded-full bg-emerald-400/80" /></span>
-            <span class="font-mono text-[11px] opacity-70">curl</span>
-            <AppButton type="button" size="xs" color="neutral" variant="ghost" icon="i-tabler-copy" class="dashboard-code-copy" aria-label="Copy curl example" title="Copy example" @click="copyText(curlExample, 'Example copied')" />
-          </div>
-          <pre class="overflow-x-auto p-4 text-xs leading-6"><code class="font-mono">{{ curlExample }}</code></pre>
-        </div>
-      </AppCard>
-
-      <section v-if="activePeriodWindows.length || capabilities.user_reset_allowance === true" class="dashboard-limits" :class="{ 'dashboard-limits--full': !serverInfo.cpa_public_url }" aria-label="Account period limits">
-        <div class="flex items-center gap-3 px-5 pt-5"><span class="dashboard-icon flex size-9 items-center justify-center rounded-lg"><UIcon name="i-tabler-gauge" class="size-5" aria-hidden="true" /></span><div><h2 class="text-sm font-semibold">Period limits</h2><p class="text-xs text-[var(--ui-text-muted)]">How much of each spending window you have used.</p></div></div>
-        <div v-if="activePeriodWindows.length" class="dashboard-limit-grid grid grid-cols-1 gap-3">
-          <div v-for="window in activePeriodWindows" :key="window.id" class="dashboard-limit min-w-0">
-            <div class="flex items-start justify-between gap-3">
-              <div class="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
-                <p class="shrink-0 text-sm font-semibold">{{ periodWindowLabel(window.id) }}</p>
-                <p v-if="window.reset_at" class="text-xs text-[var(--ui-text-dimmed)]">Resets {{ formatDate(window.reset_at) }}</p>
-              </div>
-              <span class="shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums" :class="periodWindowColor(window)">{{ formatPercent(periodWindowRatio(window)) }}</span>
-            </div>
-            <div class="period-progress-track mt-3 h-2 overflow-hidden rounded-full"><div class="h-full rounded-full transition-[width]" :class="periodWindowBarColor(window)" :style="{ width: `${periodWindowRatio(window) * 100}%`, minWidth: periodWindowRatio(window) > 0 ? '4px' : '0' }" /></div>
-            <div class="mt-2.5 flex items-end justify-between gap-3 text-xs"><p class="text-[var(--ui-text-muted)]">Used <strong class="font-semibold tabular-nums text-[var(--ui-text-highlighted)]">{{ formatCredits(window.used) }}</strong> / {{ formatCredits(window.limit) }}</p><p class="text-[var(--ui-text-muted)]">Remaining <strong class="font-semibold tabular-nums text-[var(--ui-text-highlighted)]">{{ formatCredits(window.remaining) }}</strong></p></div>
-          </div>
-        </div>
-        <AppLimitReset @reset="loadPeriodLimits" />
-      </section>
     </div>
 
     <section v-if="section === 'billing'" class="workspace-finance space-y-5" aria-labelledby="billing-title">
@@ -367,12 +388,6 @@ type PeriodWindowStatus = { id: string; enabled: boolean; limit: number | null; 
 type PeriodLimitsStatus = { windows?: PeriodWindowStatus[] }
 
 const dashboardMetricIcons = ['i-tabler-calendar-stats', 'i-tabler-sun', 'i-tabler-calendar-month', 'i-tabler-activity']
-const dashboardActions = computed(() => [
-  { label: 'API keys', detail: 'Manage client access', to: '/app/api-keys', icon: 'i-tabler-key' },
-  { label: 'Model catalog', detail: 'Explore available models', to: '/app/models', icon: 'i-tabler-box-multiple' },
-  { label: 'Balance', detail: 'Credits and billing history', to: '/app/balance', icon: 'i-tabler-wallet' },
-  ...(capabilities.value.request_logs === true ? [{ label: 'Request logs', detail: 'Review account activity', to: '/app/logs', icon: 'i-tabler-list-details' }] : [])
-])
 
 const toast = useToast()
 const { currentUser: user, fetchAPI, loadCurrentUser, saveSession, capabilities, serverInfo, loadCapabilities, registerPasskey } = useUserApi()
@@ -504,6 +519,26 @@ function scrollToSection(id: string) {
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   document.getElementById(id)?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' })
 }
+
+const dashboardUsageMetrics = computed(() => [
+  { label: 'Credits spent', value: formatCredits(selectedOverview.value?.total_charge_amount ?? selectedOverview.value?.today_spend), icon: 'i-tabler-coins' },
+  { label: 'Requests', value: formatNumber(selectedOverview.value?.request_count), icon: 'i-tabler-arrows-exchange' },
+  { label: 'Input tokens', value: formatCompactNumber(selectedOverview.value?.input_tokens), icon: 'i-tabler-arrow-bar-to-right' },
+  { label: 'Output tokens', value: formatCompactNumber(selectedOverview.value?.output_tokens), icon: 'i-tabler-arrow-bar-to-left' }
+])
+const limitAlert = computed(() => {
+  const highest = Math.max(0, ...activePeriodWindows.value.map(periodWindowRatio))
+  if (!activePeriodWindows.value.length) return null
+  if (highest >= 1) return { label: 'Limit reached', color: 'error' as const }
+  if (highest >= 0.8) return { label: 'Near limit', color: 'warning' as const }
+  return null
+})
+const dashboardStatusLine = computed(() => {
+  if (limitAlert.value?.color === 'error') return 'A spending limit has been reached. Requests may be blocked until it resets.'
+  if (limitAlert.value) return 'You are close to a spending limit. Keep an eye on the reset time below.'
+  if (user.value && Number(user.value.credits) <= 0) return 'Your balance is empty. Top up to keep sending requests.'
+  return 'Everything you need to start sending requests is right here.'
+})
 
 const emailDetail = computed(() => {
   if (capabilities.value.email_verification === false) return 'Email recovery is not enabled on this Home server.'
@@ -895,6 +930,10 @@ function formatCredits(value: unknown) {
   const number = Number(value)
   return new Intl.NumberFormat(undefined, { maximumFractionDigits: 2, roundingMode: 'ceil' } as Intl.NumberFormatOptions).format(Number.isFinite(number) ? number : 0)
 }
+function formatCompactNumber(value: unknown) {
+  const number = Number(value)
+  return new Intl.NumberFormat(undefined, { notation: 'compact', maximumFractionDigits: 1 }).format(Number.isFinite(number) ? number : 0)
+}
 function formatNumber(value: unknown) {
   const number = Number(value)
   return new Intl.NumberFormat().format(Number.isFinite(number) ? number : 0)
@@ -1039,7 +1078,7 @@ onMounted(() => {
   padding-block: 0.25rem 1rem;
 }
 
-/* Bento grid: hero + balance, usage + shortcuts, endpoint + limits. */
+/* Priority layout: connect (how to start) + credits & limits (what is left), then one usage strip. */
 .dashboard-bento {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -1047,50 +1086,88 @@ onMounted(() => {
 }
 .dashboard-bento > * { min-width: 0; }
 
-.user-dashboard .dashboard-hero {
+.dashboard-greeting {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-block: 0.25rem;
+}
+.dashboard-greeting h1 { font-size: clamp(1.5rem, 2.4vw, 2rem); line-height: 1.2; letter-spacing: -0.03em; }
+
+.dashboard-connect,
+.dashboard-credits {
   position: relative;
   display: flex;
-  min-height: 13rem;
   flex-direction: column;
   overflow: hidden;
-  padding: 1.5rem;
-  border: 1px solid color-mix(in oklch, var(--brand-from) 22%, var(--user-panel-border));
+  padding: 1.25rem;
   border-radius: 1.25rem;
-  background:
-    radial-gradient(ellipse 70% 90% at 100% 0%, color-mix(in oklch, var(--brand-to) 14%, transparent), transparent 70%),
-    radial-gradient(ellipse 60% 80% at 0% 100%, color-mix(in oklch, var(--brand-from) 12%, transparent), transparent 70%),
-    var(--user-panel-bg);
   box-shadow: var(--user-panel-shadow);
 }
-.user-dashboard .dashboard-hero::after {
-  position: absolute;
-  top: -3rem;
-  right: -3rem;
-  width: 14rem;
-  height: 14rem;
-  background-image: radial-gradient(color-mix(in oklch, var(--brand-from) 22%, transparent) 1px, transparent 1px);
-  background-size: 14px 14px;
-  -webkit-mask-image: radial-gradient(circle, black, transparent 70%);
-  mask-image: radial-gradient(circle, black, transparent 70%);
-  content: '';
-  pointer-events: none;
+.dashboard-connect {
+  border: 1px solid color-mix(in oklch, var(--brand-from) 24%, var(--user-panel-border));
+  background:
+    radial-gradient(ellipse 60% 70% at 100% 0%, color-mix(in oklch, var(--brand-to) 11%, transparent), transparent 70%),
+    radial-gradient(ellipse 50% 60% at 0% 0%, color-mix(in oklch, var(--brand-from) 9%, transparent), transparent 70%),
+    var(--user-panel-bg);
 }
-.user-dashboard .dashboard-hero > * { position: relative; z-index: 1; }
-.dashboard-hero h1 { font-size: clamp(1.625rem, 2.6vw, 2.25rem); line-height: 1.15; letter-spacing: -0.035em; }
-.dashboard-eyebrow {
-  display: inline-flex;
-  width: fit-content;
+.dashboard-connect-icon {
+  display: flex;
+  width: 2.5rem;
+  height: 2.5rem;
   align-items: center;
-  gap: 0.375rem;
-  padding: 0.25rem 0.625rem;
-  border: 1px solid color-mix(in oklch, var(--brand-from) 22%, var(--ui-border));
+  justify-content: center;
+  border-radius: 0.75rem;
+  background: var(--brand-gradient);
+  color: white;
+  box-shadow: 0 6px 16px -6px color-mix(in oklch, var(--brand-from) 60%, transparent);
+}
+
+.dashboard-steps { display: grid; gap: 0.25rem; }
+.dashboard-step {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.875rem;
+  padding-block: 0.75rem;
+}
+.dashboard-step:not(:last-child)::before {
+  position: absolute;
+  top: 2.5rem;
+  bottom: -0.5rem;
+  left: 0.8125rem;
+  width: 2px;
   border-radius: 9999px;
-  background: color-mix(in oklch, var(--user-panel-bg) 70%, transparent);
+  background: color-mix(in oklch, var(--brand-from) 18%, var(--ui-border));
+  content: '';
+}
+.dashboard-step-index {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: 1.75rem;
+  height: 1.75rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid color-mix(in oklch, var(--brand-from) 30%, var(--ui-border));
+  border-radius: 9999px;
+  background: var(--user-panel-bg);
   color: var(--ui-primary);
-  font-size: 0.6875rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.dashboard-endpoint-field {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.375rem 0.375rem 0.75rem;
+  border: 1px solid var(--ui-border);
+  border-radius: 0.75rem;
+  background: var(--user-inset-bg);
 }
 .user-dashboard .dashboard-primary-action {
   background: var(--brand-gradient);
@@ -1098,119 +1175,6 @@ onMounted(() => {
   box-shadow: 0 6px 18px -6px color-mix(in oklch, var(--brand-from) 60%, transparent);
 }
 .user-dashboard .dashboard-primary-action:hover { filter: brightness(1.06); }
-
-.user-dashboard .dashboard-balance {
-  --dashboard-accent: var(--ui-success);
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  padding: 1.25rem;
-  border: 1px solid color-mix(in oklch, var(--dashboard-accent) 25%, var(--user-panel-border));
-  border-radius: 1.25rem;
-  background:
-    radial-gradient(ellipse 90% 70% at 100% 0%, color-mix(in oklch, var(--dashboard-accent) 16%, transparent), transparent 70%),
-    var(--user-panel-bg);
-  box-shadow: var(--user-panel-shadow);
-}
-.dashboard-balance::after {
-  position: absolute;
-  right: -4rem;
-  bottom: -5rem;
-  width: 11rem;
-  height: 11rem;
-  border: 1.5rem solid color-mix(in oklch, var(--dashboard-accent) 8%, transparent);
-  border-radius: 9999px;
-  content: '';
-  pointer-events: none;
-}
-.dashboard-balance > * { position: relative; z-index: 1; }
-.dashboard-balance-icon {
-  display: flex;
-  width: 2.5rem;
-  height: 2.5rem;
-  align-items: center;
-  justify-content: center;
-  border-radius: 9999px;
-  background: color-mix(in oklch, var(--dashboard-accent) 15%, transparent);
-  color: var(--dashboard-accent);
-}
-.dashboard-balance-value { font-size: clamp(2rem, 3.2vw, 2.75rem); line-height: 1.1; }
-.dashboard-balance-stat {
-  display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid var(--ui-border);
-  border-radius: 0.75rem;
-  background: color-mix(in oklch, var(--user-panel-bg) 75%, transparent);
-}
-.dashboard-balance-stat strong { color: var(--ui-text-highlighted); font-size: 0.875rem; }
-
-.user-dashboard .dashboard-icon {
-  color: var(--dashboard-accent);
-  background: color-mix(in oklch, var(--dashboard-accent) 13%, transparent);
-}
-
-.user-dashboard .dashboard-panel :deep([data-slot="header"]) { border-bottom: 0; padding-bottom: 0.25rem; }
-.user-dashboard .dashboard-panel h2 { font-size: 0.9375rem; letter-spacing: -0.01em; }
-
-.user-dashboard .dashboard-metric {
-  position: relative;
-  overflow: hidden;
-  padding: 0.875rem 1rem 1rem;
-  border: 1px solid var(--ui-border);
-  border-radius: 0.875rem;
-  background: var(--user-inset-bg);
-  transition: border-color 160ms ease, box-shadow 160ms ease;
-}
-.user-dashboard .dashboard-metric::after {
-  position: absolute;
-  inset-inline: 0;
-  bottom: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--dashboard-accent), transparent);
-  content: '';
-}
-@media (hover: hover) {
-  .user-dashboard .dashboard-metric:hover {
-    border-color: color-mix(in oklch, var(--dashboard-accent) 35%, var(--ui-border));
-    box-shadow: 0 10px 24px -14px color-mix(in oklch, var(--dashboard-accent) 50%, transparent);
-  }
-}
-.dashboard-metric--0 { --dashboard-accent: var(--ui-primary); }
-.dashboard-metric--1 { --dashboard-accent: var(--ui-success); }
-.dashboard-metric--2 { --dashboard-accent: var(--color-blue-500); }
-.dashboard-metric--3 { --dashboard-accent: var(--color-amber-500); }
-
-.dashboard-shortcut-list { display: grid; gap: 0.125rem; }
-.user-dashboard .dashboard-action {
-  display: flex;
-  min-width: 0;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.625rem 0.75rem;
-  border-radius: 0.75rem;
-  text-decoration: none;
-  transition: background-color 150ms ease;
-}
-.user-dashboard .dashboard-action:hover { background: var(--ui-hover); }
-.dashboard-shortcut-icon {
-  display: flex;
-  width: 2.25rem;
-  height: 2.25rem;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: center;
-  border-radius: 0.625rem;
-  color: var(--ui-primary);
-  background: var(--user-selected);
-  transition: color 150ms ease, background 150ms ease;
-}
-.dashboard-action-chevron { flex-shrink: 0; color: var(--ui-text-dimmed); transition: transform 150ms ease, color 150ms ease; }
-.user-dashboard .dashboard-action:is(:hover, :focus-visible) .dashboard-shortcut-icon { color: white; background: var(--brand-gradient); }
-.user-dashboard .dashboard-action:is(:hover, :focus-visible) .dashboard-action-chevron { color: var(--ui-primary); transform: translateX(2px); }
-.user-dashboard .dashboard-action:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 2px; }
 
 .dashboard-code {
   border: 1px solid var(--color-zinc-800);
@@ -1221,52 +1185,73 @@ onMounted(() => {
 .dashboard-code :deep(.dashboard-code-copy) { color: var(--color-zinc-400); }
 .dashboard-code :deep(.dashboard-code-copy:hover) { background: var(--color-zinc-800); color: white; }
 
-.dashboard-limits {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  border: 1px solid var(--user-panel-border);
-  border-radius: var(--user-panel-radius);
-  background: var(--user-panel-bg);
-  box-shadow: var(--user-panel-shadow);
+.dashboard-credits {
+  --dashboard-accent: var(--ui-success);
+  border: 1px solid color-mix(in oklch, var(--dashboard-accent) 24%, var(--user-panel-border));
+  background:
+    radial-gradient(ellipse 90% 45% at 100% 0%, color-mix(in oklch, var(--dashboard-accent) 13%, transparent), transparent 70%),
+    var(--user-panel-bg);
 }
-.dashboard-limit-grid { padding: 1rem 1.25rem 0.5rem; }
+.dashboard-balance-icon {
+  display: flex;
+  width: 1.75rem;
+  height: 1.75rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: color-mix(in oklch, var(--dashboard-accent) 15%, transparent);
+  color: var(--dashboard-accent);
+}
+.dashboard-balance-value { font-size: clamp(2rem, 3vw, 2.5rem); line-height: 1.1; }
+.dashboard-limit-list { display: grid; gap: 0.5rem; }
 .dashboard-limit {
-  padding: 0.875rem 1rem;
+  padding: 0.75rem 0.875rem;
   border: 1px solid var(--ui-border);
   border-radius: 0.875rem;
   background: var(--user-inset-bg);
 }
-.dashboard-limits :deep(.limit-reset) { margin: auto 1.25rem 0; padding-block: 0.875rem 1rem; }
-.dashboard-limit-grid + :deep(.limit-reset) { border-top: 1px solid var(--ui-border); }
+.dashboard-credits :deep(.limit-reset) { margin-top: 1rem; padding-block: 1rem 0; border-top: 1px solid var(--ui-border); }
+
+.user-dashboard .dashboard-icon {
+  color: var(--dashboard-accent);
+  background: color-mix(in oklch, var(--dashboard-accent) 13%, transparent);
+}
+.user-dashboard .dashboard-panel :deep([data-slot="header"]) { border-bottom: 0; padding-bottom: 0.25rem; }
+.user-dashboard .dashboard-panel h2 { font-size: 0.9375rem; letter-spacing: -0.01em; }
+
+.dashboard-usage-strip {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid var(--ui-border);
+  border-radius: 0.875rem;
+  background: var(--user-inset-bg);
+}
+.dashboard-usage-item { padding: 0.875rem 1rem; }
+.dashboard-usage-item:nth-child(odd) { border-right: 1px solid var(--ui-border); }
+.dashboard-usage-item:nth-child(-n + 2) { border-bottom: 1px solid var(--ui-border); }
+.dashboard-usage-icon { color: var(--dashboard-accent); }
+.dashboard-metric--0 { --dashboard-accent: var(--ui-primary); }
+.dashboard-metric--1 { --dashboard-accent: var(--color-blue-500); }
+.dashboard-metric--2 { --dashboard-accent: var(--color-emerald-500); }
+.dashboard-metric--3 { --dashboard-accent: var(--color-amber-500); }
 
 @media (min-width: 768px) {
-  .dashboard-bento { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .dashboard-bento > .dashboard-hero { grid-column: 1 / -1; }
-  .dashboard-bento > .dashboard-usage { grid-column: 1 / -1; }
+  .dashboard-usage-strip { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .dashboard-usage-item { border-bottom: 0 !important; }
+  .dashboard-usage-item:not(:last-child) { border-right: 1px solid var(--ui-border); }
 }
 
 @media (min-width: 1024px) {
   .dashboard-bento { grid-template-columns: repeat(12, minmax(0, 1fr)); }
-  .dashboard-bento > .dashboard-hero { grid-column: span 8; }
-  .dashboard-bento > .dashboard-balance { grid-column: span 4; }
-  .dashboard-bento > .dashboard-usage { grid-column: span 8; }
-  .dashboard-bento > .dashboard-shortcuts { grid-column: span 4; }
-  .dashboard-bento > .dashboard-endpoint { grid-column: span 7; }
-  .dashboard-bento > .dashboard-limits { grid-column: span 5; }
-  .dashboard-bento > .dashboard-limits--full { grid-column: 1 / -1; }
-  .dashboard-limits--full .dashboard-limit-grid { grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .user-dashboard .dashboard-metric,
-  .user-dashboard .dashboard-action,
-  .dashboard-action-chevron { transition: none; }
+  .dashboard-bento > .dashboard-greeting,
+  .dashboard-bento > .dashboard-usage { grid-column: 1 / -1; }
+  .dashboard-bento > .dashboard-connect { grid-column: span 7; }
+  .dashboard-bento > .dashboard-credits { grid-column: span 5; }
 }
 
 .period-progress-track {
   background: color-mix(in oklch, var(--ui-text-muted) 16%, var(--ui-bg));
 }
 
-.dashboard-limit-grid > :deep(*) { min-width: 0; }
 </style>
