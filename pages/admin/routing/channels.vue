@@ -83,7 +83,7 @@
             </div>
           </template>
           <template #empty>
-            <div class="flex flex-col items-center px-6 py-14 text-center">
+            <div class="flex flex-col items-center px-6 py-8 text-center">
               <UIcon name="i-tabler-id" class="mb-3 size-8 text-[var(--ui-text-muted)]" />
               <p class="font-medium">No credentials in this group</p>
               <p class="mt-1 text-sm text-[var(--ui-text-muted)]">Add an auth ID from the available credentials or enter one manually.</p>
@@ -92,7 +92,7 @@
         </AppTable>
       </AppCard>
 
-      <div v-else class="flex min-h-64 flex-col items-center justify-center rounded-[var(--admin-panel-radius)] border border-dashed border-[var(--admin-panel-border)] bg-[var(--admin-panel-bg)]/60 p-8 text-center">
+      <div v-else class="flex min-h-40 flex-col items-center justify-center rounded-[var(--admin-panel-radius)] border border-dashed border-[var(--admin-panel-border)] bg-[var(--admin-panel-bg)]/60 p-8 text-center">
         <UIcon name="i-tabler-arrows-exchange" class="mb-3 size-8 text-[var(--ui-text-muted)]" />
         <p class="font-medium">Select a channel group</p>
         <p class="mt-1 text-sm text-[var(--ui-text-muted)]">Its credential bindings will appear here.</p>

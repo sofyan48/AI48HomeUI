@@ -715,7 +715,7 @@
                             /></div></template
                     ><template #empty
                         ><div
-                            class="py-14 text-center text-sm text-[var(--ui-text-muted)]"
+                            class="py-8 text-center text-sm text-[var(--ui-text-muted)]"
                         >
                             No plugin-store authentication rules.
                         </div></template

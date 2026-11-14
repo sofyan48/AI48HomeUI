@@ -61,7 +61,7 @@
           </div>
         </section>
 
-        <section aria-label="Operating metrics" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:col-span-7">
+        <section aria-label="Operating metrics" class="grid grid-cols-1 content-start gap-3 sm:grid-cols-2 lg:col-span-7">
           <NuxtLink
             v-for="card in operatingCards"
             :key="card.label"
@@ -76,7 +76,7 @@
             </div>
             <p class="metric-value">{{ card.value }}</p>
             <p class="metric-detail">{{ card.detail }}</p>
-            <div class="mt-auto pt-3">
+            <div class="mt-auto pt-2">
               <AdminUsageSparkline v-if="card.points && card.points.length > 1" :values="card.points" :label="`${card.label} trend`" class="metric-spark" />
               <div v-else-if="card.ratio != null" class="metric-bar" role="img" :aria-label="`${card.label}: ${Math.round(card.ratio * 100)}%`">
                 <span :style="{ width: `${Math.min(100, Math.max(0, card.ratio * 100))}%` }" />
@@ -952,9 +952,9 @@ onMounted(refreshDashboard);
   display: flex;
   min-width: 0;
   flex-direction: column;
-  padding: 1rem 1.125rem 1.125rem;
+  padding: 0.875rem 1rem 0.9375rem;
   border: 1px solid var(--admin-panel-border, var(--ui-border));
-  border-radius: 1.125rem;
+  border-radius: 0.875rem;
   background: var(--admin-panel-bg, var(--ui-bg));
   box-shadow: var(--admin-panel-shadow);
   transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
@@ -987,11 +987,11 @@ onMounted(refreshDashboard);
 }
 
 .metric-value {
-  margin-top: 0.875rem;
-  font-size: 1.875rem;
-  line-height: 2.25rem;
-  font-weight: 700;
-  letter-spacing: -0.025em;
+  margin-top: 0.625rem;
+  font-size: 1.375rem;
+  line-height: 1.75rem;
+  font-weight: 650;
+  letter-spacing: -0.015em;
   color: var(--ui-text-highlighted);
   font-variant-numeric: tabular-nums;
 }

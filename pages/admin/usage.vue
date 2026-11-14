@@ -17,48 +17,36 @@
     </div>
 
     <UAlert v-if="!supports('usage_overview')" color="warning" variant="subtle" title="Usage overview unavailable" />
-    <AppCard class="usage-filter-panel">
-      <template #header>
-        <div class="flex flex-wrap items-center justify-between gap-3">
-          <div class="min-w-0"><h2 class="text-sm font-semibold">Filters</h2><p class="truncate text-xs text-[var(--ui-text-muted)]" :title="overviewScopeLabel">{{ overviewScopeLabel }}</p></div>
-          <div class="flex flex-wrap items-center gap-2">
-            <label class="inline-flex items-center gap-2 text-xs text-[var(--ui-text-muted)]"><USwitch v-model="autoRefresh" size="sm" aria-label="Automatically refresh usage overview and first-page attribution" /><span role="status" :title="'Attribution pauses beyond page one.'">{{ refreshStatus }}</span></label>
-            <AppButton size="sm" color="neutral" variant="outline" icon="i-tabler-refresh" :loading="loading" @click="refreshAll()">Refresh</AppButton>
-          </div>
+    <form class="admin-toolbar" aria-label="Usage filters" @submit.prevent="applyFilters">
+      <div class="flex flex-wrap items-end gap-2">
+        <UFormField label="Time range" class="w-full sm:w-44">
+          <USelect v-model="rangePreset" :items="rangeOptions" value-key="value" label-key="label" class="w-full" @update:model-value="selectRange" />
+        </UFormField>
+        <template v-if="rangePreset === 'custom'">
+          <UFormField label="Start date" class="w-full sm:w-40"><AppDateInput v-model="filters.from" type="date" :max="filters.to" class="w-full" /></UFormField>
+          <UFormField label="End date" class="w-full sm:w-40"><AppDateInput v-model="filters.to" type="date" :min="filters.from" class="w-full" /></UFormField>
+        </template>
+        <UFormField label="Provider" class="w-full sm:w-48">
+          <UInputMenu v-model="filters.provider" :items="providerSuggestions" create-item @create="filters.provider = $event.trim()" placeholder="All providers" class="w-full" />
+        </UFormField>
+        <UFormField label="Model" class="w-full sm:w-56">
+          <UInputMenu v-model="filters.model" :items="modelSuggestions" create-item @create="filters.model = $event.trim()" placeholder="All models" class="w-full" />
+        </UFormField>
+        <AppButton type="button" color="neutral" :variant="showAdvancedFilters ? 'soft' : 'ghost'" icon="i-tabler-adjustments-horizontal" :aria-expanded="showAdvancedFilters" @click="showAdvancedFilters = !showAdvancedFilters">{{ showAdvancedFilters ? 'Less' : 'More' }}</AppButton>
+        <AppButton type="submit" color="primary" icon="i-tabler-filter" :loading="loading">Apply</AppButton>
+        <AppButton type="button" color="neutral" variant="ghost" @click="resetFilters">Reset</AppButton>
+        <div class="ml-auto flex items-center gap-2 self-center">
+          <label class="inline-flex items-center gap-2 text-xs text-[var(--ui-text-muted)]"><USwitch v-model="autoRefresh" size="sm" aria-label="Automatically refresh usage overview and first-page attribution" /><span role="status" :title="'Attribution pauses beyond page one.'">{{ refreshStatus }}</span></label>
+          <AppButton color="neutral" variant="outline" icon="i-tabler-refresh" :loading="loading" aria-label="Refresh overview" @click="refreshAll()" />
         </div>
-      </template>
-      <form @submit.prevent="applyFilters">
-        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          <UFormField label="Time range">
-            <USelect v-model="rangePreset" :items="rangeOptions" value-key="value" label-key="label" class="w-full" @update:model-value="selectRange" />
-          </UFormField>
-          <UFormField label="Provider">
-            <UInputMenu v-model="filters.provider" :items="providerSuggestions" create-item @create="filters.provider = $event.trim()" placeholder="Search providers..." class="w-full" />
-          </UFormField>
-          <UFormField label="Model">
-            <UInputMenu v-model="filters.model" :items="modelSuggestions" create-item @create="filters.model = $event.trim()" placeholder="Search models..." class="w-full" />
-          </UFormField>
-        </div>
-
-        <div v-if="rangePreset === 'custom'" class="mt-3 grid grid-cols-1 gap-3 border-t border-[var(--ui-border)] pt-3 sm:grid-cols-2">
-          <UFormField label="Start date"><AppDateInput v-model="filters.from" type="date" :max="filters.to" class="w-full" /></UFormField>
-          <UFormField label="End date"><AppDateInput v-model="filters.to" type="date" :min="filters.from" class="w-full" /></UFormField>
-        </div>
-        <div class="mt-3 border-t border-[var(--ui-border)] pt-3">
-          <AppButton type="button" color="neutral" variant="ghost" size="sm" :icon="showAdvancedFilters ? 'i-tabler-chevron-up' : 'i-tabler-adjustments-horizontal'" :aria-expanded="showAdvancedFilters" @click="showAdvancedFilters = !showAdvancedFilters">{{ showAdvancedFilters ? 'Hide advanced' : 'Advanced filters' }}</AppButton>
-        </div>
-        <div v-if="showAdvancedFilters" class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <UFormField label="Credential type"><USelect :model-value="filters.credentialType || allOptionValue" @update:model-value="filters.credentialType = $event === allOptionValue ? '' : $event" :items="credentialTypeOptions" value-key="value" label-key="label" class="w-full" /></UFormField>
-          <UFormField label="Home node"><UInput v-model="filters.homeIp" placeholder="Home IP" class="w-full" /></UFormField>
-          <UFormField label="Endpoint"><UInput v-model="filters.endpoint" placeholder="Endpoint" class="w-full" /></UFormField>
-        </div>
-        <div class="mt-4 flex flex-wrap items-center gap-2">
-          <AppButton type="submit" color="primary" :loading="loading">Apply filters</AppButton>
-          <AppButton type="button" color="neutral" variant="ghost" @click="resetFilters">Reset</AppButton>
-
-        </div>
-      </form>
-    </AppCard>
+      </div>
+      <div v-if="showAdvancedFilters" class="mt-3 flex flex-wrap items-end gap-2 border-t border-[var(--ui-border)] pt-3">
+        <UFormField label="Credential type" class="w-full sm:w-44"><USelect :model-value="filters.credentialType || allOptionValue" @update:model-value="filters.credentialType = $event === allOptionValue ? '' : $event" :items="credentialTypeOptions" value-key="value" label-key="label" class="w-full" /></UFormField>
+        <UFormField label="Home node" class="w-full sm:w-44"><UInput v-model="filters.homeIp" placeholder="Home IP" class="w-full" /></UFormField>
+        <UFormField label="Endpoint" class="w-full sm:w-56"><UInput v-model="filters.endpoint" placeholder="Endpoint" class="w-full" /></UFormField>
+      </div>
+      <p class="mt-2 truncate text-xs text-[var(--ui-text-muted)]" :title="overviewScopeLabel"><UIcon name="i-tabler-filter" class="mr-1 inline size-3.5 align-[-2px]" />{{ overviewScopeLabel }}</p>
+    </form>
 
     <AdminStatGrid label="Usage summary" :items="chartMetrics" :columns="4" :loading="loading && !overview" />
 

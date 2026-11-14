@@ -19,7 +19,7 @@
     </template>
 
     <template #body>
-      <div v-if="loading" role="status" class="flex items-center justify-center gap-2 py-16 text-sm text-[var(--ui-text-muted)]"><UIcon name="i-tabler-loader-2" class="size-5 animate-spin" />Loading request details…</div>
+      <div v-if="loading" role="status" class="flex items-center justify-center gap-2 py-10 text-sm text-[var(--ui-text-muted)]"><UIcon name="i-tabler-loader-2" class="size-5 animate-spin" />Loading request details…</div>
       <div v-else-if="detail" class="space-y-4">
         <dl class="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div v-for="field in overview" :key="field.label" class="min-w-0 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg)] p-3 sm:p-4" :class="field.full ? 'sm:col-span-2' : ''">
@@ -75,7 +75,7 @@
         <section v-if="detail.log_excerpt?.length" class="rounded-lg border border-[var(--ui-border)] p-4"><div class="mb-3 flex items-center justify-between gap-2"><h3 class="text-sm font-semibold">Request log excerpt</h3><UBadge color="neutral" variant="subtle" size="sm">Redacted</UBadge></div><pre class="max-h-96 overflow-auto whitespace-pre-wrap break-all rounded-md bg-[var(--ui-bg-muted)] p-3 font-mono text-xs leading-5">{{ detail.log_excerpt.join('\n') }}</pre></section>
       </div>
 
-      <div v-else class="flex flex-col items-center justify-center px-4 py-16 text-center text-sm text-[var(--ui-text-muted)]"><UIcon name="i-tabler-file-unknown" class="mb-2 size-6" />No request selected.</div>
+      <div v-else class="flex flex-col items-center justify-center px-4 py-10 text-center text-sm text-[var(--ui-text-muted)]"><UIcon name="i-tabler-file-unknown" class="mb-2 size-6" />No request selected.</div>
     </template>
 
     <template #footer>

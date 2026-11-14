@@ -163,7 +163,7 @@
             <pre class="max-h-[42rem] overflow-auto whitespace-pre-wrap break-words rounded-lg bg-[var(--ui-bg-muted)] p-4 text-xs">{{ formattedBody }}</pre>
           </div>
         </div>
-        <div v-else class="flex min-h-80 flex-col items-center justify-center text-center text-[var(--ui-text-muted)]">
+        <div v-else class="flex min-h-48 flex-col items-center justify-center text-center text-[var(--ui-text-muted)]">
           <UIcon name="i-tabler-terminal-2" class="size-10" />
           <p class="mt-3 text-sm">Send a request to inspect its status, headers, and body.</p>
         </div>

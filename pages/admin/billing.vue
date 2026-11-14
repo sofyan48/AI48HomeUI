@@ -23,10 +23,21 @@
       <AdminBillingFilterBar v-model:filters="overviewFilters" v-model:preset="overviewPreset" :range-options="rangeOptions" :user-options="userSearchOptions" :provider-options="providerSearchOptions" :model-options="modelSearchOptions" :loading="overviewLoading" @range="selectRange('overview', $event)" @apply="applyOverviewFilters" @reset="resetOverviewFilters" />
 
       <template v-if="overview">
-        <AdminStatGrid label="Billing summary" :items="financeMetrics" :columns="4" />
-        <dl class="app-surface flex flex-wrap items-center gap-x-6 gap-y-2 px-4 py-2.5 text-xs" aria-label="Usage in range">
-          <div class="flex items-center gap-1.5 font-medium text-[var(--ui-text-toned)]"><UIcon name="i-tabler-chart-bar" class="size-3.5" />Usage in range</div>
-          <div v-for="metric in usageMetrics" :key="metric.label" class="flex items-baseline gap-1.5"><dt class="text-[var(--ui-text-muted)]">{{ metric.label }}</dt><dd class="font-semibold tabular-nums text-[var(--ui-text-highlighted)]">{{ metric.value }}</dd></div>
+        <div class="billing-hero">
+          <div class="min-w-0">
+            <p class="text-xs font-medium text-white/75">Charged in range</p>
+            <p class="mt-0.5 truncate text-2xl font-semibold tracking-tight tabular-nums">{{ financeMetrics[0].value }}</p>
+            <p class="mt-1 text-xs text-white/75">{{ overviewRange.from || 'All time' }} – {{ overviewRange.to || 'Now' }} · {{ overviewRange.timezone || savedReportTimezone }}</p>
+          </div>
+          <dl class="grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-3 lg:w-[34rem]">
+            <div v-for="metric in financeMetrics.slice(1)" :key="metric.label" class="rounded-lg bg-white/12 px-3 py-2 ring-1 ring-white/15">
+              <dt class="flex items-center gap-1.5 text-[11px] text-white/75"><UIcon :name="metric.icon" class="size-3.5" />{{ metric.label }}</dt>
+              <dd class="truncate text-sm font-semibold tabular-nums" :title="metric.value">{{ metric.value }}</dd>
+            </div>
+          </dl>
+        </div>
+        <dl class="flex flex-wrap gap-2" aria-label="Usage in range">
+          <div v-for="metric in usageMetrics" :key="metric.label" class="inline-flex items-baseline gap-1.5 rounded-full border border-[var(--admin-panel-border)] bg-[var(--admin-panel-bg)] px-3 py-1 text-xs"><dt class="text-[var(--ui-text-muted)]">{{ metric.label }}</dt><dd class="font-semibold tabular-nums text-[var(--ui-text-highlighted)]">{{ metric.value }}</dd></div>
         </dl>
 
         <div class="grid grid-cols-1 gap-4 xl:grid-cols-3">
@@ -736,4 +747,20 @@ useDataSync('admin:billing:sync', () => loadBilling(true))
 onMounted(loadBilling)
 </script>
 
-
+<style scoped>
+.billing-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-radius: 1rem;
+  background:
+    radial-gradient(ellipse 70% 120% at 100% 0%, rgb(255 255 255 / 16%), transparent 60%),
+    var(--admin-brand-gradient);
+  color: white;
+  box-shadow: 0 18px 40px -20px color-mix(in oklch, var(--color-violet-600) 70%, transparent);
+}
+@media (min-width: 64rem) {
+  .billing-hero { flex-direction: row; align-items: center; justify-content: space-between; }
+}
+</style>

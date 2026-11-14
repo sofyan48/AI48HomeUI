@@ -23,9 +23,8 @@
       Live refresh is paused while viewing historical pages. Refresh to return to the latest logs.
     </div>
 
-    <AppCard>
-      <template #header>
-        <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+    <section class="admin-toolbar" aria-label="Log filters">
+      <div class="mb-3 flex flex-col gap-3 border-b border-[var(--ui-border)] pb-3 lg:flex-row lg:items-center lg:justify-between">
           <div class="min-w-0"><h2 class="text-sm font-semibold">Filters</h2><p class="truncate text-xs text-[var(--ui-text-muted)]">{{ activeDescription }}</p></div>
           <div class="flex flex-wrap items-center gap-2">
             <USelect v-model="pageSize" :items="pageSizeOptions" value-key="value" label-key="label" size="sm" class="w-28" aria-label="Page size" @update:model-value="resetPages" />
@@ -47,11 +46,10 @@
               Refresh
             </AppButton>
           </div>
-        </div>
-      </template>
-      <form class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-6" @submit.prevent="applyFilters">
+      </div>
+      <form class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6" @submit.prevent="applyFilters">
         <template v-if="activeView === 'error-logs'">
-          <UFormField label="Search filename" class="md:col-span-2">
+          <UFormField label="Search filename" class="sm:col-span-2">
             <UInput v-model="errorLogSearch" placeholder="e.g. error-2026-05-27.log" icon="i-tabler-search" class="w-full" />
           </UFormField>
         </template>
@@ -82,7 +80,7 @@
         </template>
 
         <template v-else>
-          <UFormField label="Search log content" class="md:col-span-2 xl:col-span-6">
+          <UFormField label="Search log content" class="sm:col-span-2 lg:col-span-3 2xl:col-span-6">
             <UInput v-model="applicationFilters.search" placeholder="Case-insensitive search across stored log lines" icon="i-tabler-search" class="w-full" />
           </UFormField>
           <UFormField label="After">
@@ -105,12 +103,12 @@
           </UFormField>
         </template>
 
-        <div class="flex flex-wrap items-end gap-2 md:col-span-2 xl:col-span-6">
-          <AppButton type="submit" color="primary" :loading="loading">Apply filters</AppButton>
+        <div class="flex flex-wrap items-end gap-2 sm:col-span-2 lg:col-span-3 2xl:col-span-6">
+          <AppButton type="submit" color="primary" icon="i-tabler-filter" :loading="loading">Apply filters</AppButton>
           <AppButton color="neutral" variant="ghost" @click="resetFilters">Reset</AppButton>
         </div>
       </form>
-    </AppCard>
+    </section>
 
     <AppCard v-if="activeView === 'events'" :ui="{ body: 'p-0' }">
       <template #header>

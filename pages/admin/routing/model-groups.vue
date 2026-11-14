@@ -86,7 +86,7 @@
             </div>
           </template>
           <template #empty>
-            <div class="flex flex-col items-center px-6 py-14 text-center">
+            <div class="flex flex-col items-center px-6 py-8 text-center">
               <UIcon name="i-tabler-box" class="mb-3 size-8 text-[var(--ui-text-muted)]" />
               <p class="font-medium">No models in this group</p>
               <p class="mt-1 text-sm text-[var(--ui-text-muted)]">Add a model and optionally select channel groups allowed to execute it.</p>
@@ -95,7 +95,7 @@
         </AppTable>
       </AppCard>
 
-      <div v-else class="flex min-h-64 flex-col items-center justify-center rounded-[var(--admin-panel-radius)] border border-dashed border-[var(--admin-panel-border)] bg-[var(--admin-panel-bg)]/60 p-8 text-center">
+      <div v-else class="flex min-h-40 flex-col items-center justify-center rounded-[var(--admin-panel-radius)] border border-dashed border-[var(--admin-panel-border)] bg-[var(--admin-panel-bg)]/60 p-8 text-center">
         <UIcon name="i-tabler-layout-grid" class="mb-3 size-8 text-[var(--ui-text-muted)]" />
         <p class="font-medium">Select a model group</p>
         <p class="mt-1 text-sm text-[var(--ui-text-muted)]">Its model bindings will appear here.</p>

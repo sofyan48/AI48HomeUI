@@ -71,7 +71,7 @@
         <template #actions-cell="{ row }">
           <AdminRowActions :actions="credentialRowActions(value(row))" :max-inline="1" :menu-label="`credential ${value(row).label || value(row).name || value(row).id}`" />
         </template>
-        <template #empty><div class="py-14 text-center text-sm text-[var(--ui-text-muted)]"><p>{{ pending ? 'Loading accounts…' : pageError ? 'Could not load accounts. Check the connection and refresh.' : hasActiveFilters ? 'No matching credentials.' : 'No credentials have been added.' }}</p><AppButton v-if="hasActiveFilters && !pending" class="mt-3" color="neutral" variant="outline" size="sm" @click="clearFilters">Clear filters</AppButton></div></template>
+        <template #empty><div class="py-8 text-center text-sm text-[var(--ui-text-muted)]"><p>{{ pending ? 'Loading accounts…' : pageError ? 'Could not load accounts. Check the connection and refresh.' : hasActiveFilters ? 'No matching credentials.' : 'No credentials have been added.' }}</p><AppButton v-if="hasActiveFilters && !pending" class="mt-3" color="neutral" variant="outline" size="sm" @click="clearFilters">Clear filters</AppButton></div></template>
       </AppTable>
       </div>
       </div>

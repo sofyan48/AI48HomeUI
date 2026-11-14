@@ -92,10 +92,12 @@
               <span v-if="currentNavigation" aria-hidden="true" class="hidden size-8 shrink-0 items-center justify-center rounded-lg bg-[var(--admin-selected)] text-[var(--ui-primary)] sm:flex">
                 <UIcon :name="currentNavigation.icon" class="size-4" />
               </span>
-              <div class="min-w-0 leading-tight">
-                <p class="truncate text-sm font-semibold text-[var(--ui-text-highlighted)]">{{ pageTitle }}</p>
-                <p v-if="pageSubtitle" class="hidden truncate text-xs text-[var(--ui-text-muted)] md:block">{{ pageSubtitle }}</p>
-              </div>
+              <nav aria-label="Breadcrumb" class="flex min-w-0 items-center gap-1.5 text-sm leading-tight">
+                <span v-if="currentSection" class="hidden truncate text-[var(--ui-text-muted)] sm:inline">{{ currentSection }}</span>
+                <UIcon v-if="currentSection" name="i-tabler-chevron-right" class="hidden size-3.5 shrink-0 text-[var(--ui-text-dimmed)] sm:block" aria-hidden="true" />
+                <span class="truncate font-semibold text-[var(--ui-text-highlighted)]" aria-current="page">{{ pageTitle }}</span>
+                <span v-if="pageSubtitle" class="hidden min-w-0 truncate border-l border-[var(--ui-border)] pl-2.5 text-xs text-[var(--ui-text-muted)] xl:inline">{{ pageSubtitle }}</span>
+              </nav>
             </div>
           </div>
 
@@ -125,14 +127,16 @@
         <main class="workbench-main min-h-0 min-w-0 flex-1 overflow-x-clip overflow-y-auto [scrollbar-gutter:stable] !p-4 sm:!p-5 lg:!p-6">
           <UAlert
             v-if="capabilitiesError"
-            class="mb-6"
+            class="mx-auto mb-4 max-w-[96rem]"
             color="warning"
             variant="subtle"
             icon="i-tabler-alert-triangle"
             :title="t('shell.capabilitiesError')"
             :description="capabilitiesError"
           />
-          <slot />
+          <div class="admin-page mx-auto w-full max-w-[96rem]">
+            <slot />
+          </div>
         </main>
       </div>
     </div>
@@ -313,6 +317,7 @@ const isActive = (item: NavigationItem) => item.to === '/admin/upstream'
 const currentNavigation = computed(() => navigationSections.value.flatMap(section => section.items).find(isActive))
 const pageTitle = computed(() => currentNavigation.value?.label || t('shell.management'))
 const pageSubtitle = computed(() => currentNavigation.value?.subtitle || '')
+const currentSection = computed(() => navigationSections.value.find(section => section.items.some(isActive))?.label || '')
 
 const commandGroups = computed(() => [
   ...visibleSections.value.map(section => ({

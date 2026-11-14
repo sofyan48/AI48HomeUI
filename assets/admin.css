@@ -23,11 +23,11 @@
   --admin-hover-border: color-mix(in oklch, var(--ui-primary) 36%, var(--ui-border));
   --admin-selected: color-mix(in oklch, var(--ui-primary) 10%, var(--ui-bg));
   --admin-scrim: color-mix(in oklch, oklch(0.18 0.03 290) 50%, transparent);
-  --admin-workspace-bg: color-mix(in oklch, var(--color-violet-50) 35%, var(--color-zinc-50));
+  --admin-workspace-bg: color-mix(in oklch, var(--color-violet-50) 55%, var(--color-zinc-50));
   --admin-panel-bg: var(--color-white);
   --admin-panel-border: color-mix(in oklch, var(--color-zinc-200) 85%, transparent);
-  --admin-panel-radius: 0.875rem;
-  --admin-panel-shadow: 0 1px 2px rgb(24 24 27 / 4%), 0 6px 20px -10px rgb(24 24 27 / 10%);
+  --admin-panel-radius: 1rem;
+  --admin-panel-shadow: 0 1px 2px rgb(24 24 27 / 3%), 0 10px 30px -16px rgb(76 29 149 / 14%);
   --admin-control-bg: var(--color-white);
   --admin-table-header: var(--color-zinc-50);
   --admin-control-height: 2.125rem;
@@ -149,6 +149,41 @@
 
   .admin-card > :is([data-slot="header"], [data-slot="footer"]) {
     border-color: var(--admin-panel-border);
+  }
+
+  /* Card chrome: rounded clipping and a tinted header band. */
+  :is(.admin-card, .admin-data-panel, .app-surface) {
+    border-radius: var(--admin-panel-radius) !important;
+    overflow: hidden;
+    transition: box-shadow 160ms ease, border-color 160ms ease;
+  }
+  .admin-card > [data-slot="header"],
+  .admin-data-panel > header {
+    background: linear-gradient(180deg, color-mix(in oklch, var(--ui-primary) 3%, var(--admin-panel-bg)), var(--admin-panel-bg));
+    padding-block: 0.875rem;
+  }
+  .admin-card > [data-slot="header"] :is(h2, h3, [data-slot="title"]) {
+    font-size: 0.9375rem;
+    letter-spacing: -0.005em;
+  }
+
+  /* Filter toolbar: a slim surface instead of a full card. */
+  .admin-toolbar {
+    padding: 0.875rem 1rem;
+    border: 1px solid var(--admin-panel-border);
+    border-radius: var(--admin-panel-radius);
+    background: color-mix(in oklch, var(--admin-panel-bg) 86%, transparent);
+    box-shadow: var(--admin-panel-shadow);
+  }
+  .admin-toolbar [data-slot="label"] { font-size: 0.75rem; color: var(--ui-text-muted); }
+
+  /* Page entrance animation keeps transitions feeling lively. */
+  .admin-page > * { animation: admin-rise 260ms ease both; }
+  .admin-page > *:nth-child(2) { animation-delay: 30ms; }
+  .admin-page > *:nth-child(3) { animation-delay: 60ms; }
+  @keyframes admin-rise {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: none; }
   }
 
 

@@ -9,53 +9,53 @@
       :description="pageError"
     />
 
-    <AdminStatGrid
-      label="Model catalog summary"
-      :items="[
-        { label: 'Models shown', value: filteredModels.length, detail: `of ${modelsList.length} in this catalog`, icon: 'i-tabler-box-multiple', tone: 'violet', ratio: modelsList.length ? filteredModels.length / modelsList.length : null },
-        { label: 'Providers', value: providerCount, detail: 'Distinct upstream providers', icon: 'i-tabler-cloud-computing', tone: 'blue' },
-        { label: 'Channels', value: channelCount, detail: 'Channels exposing models', icon: 'i-tabler-route', tone: 'emerald' }
-      ]"
-    />
-
-    <div class="flex flex-col gap-3 lg:flex-row lg:items-end">
+    <div class="app-surface flex flex-col gap-3 p-3 lg:flex-row lg:items-end">
       <UFormField label="Catalog" class="w-full lg:w-48">
         <USelect v-model="scope" :items="scopeOptions" value-key="value" label-key="label" class="w-full" />
       </UFormField>
       <UFormField v-if="scope === 'static'" label="Channel" class="w-full lg:w-56">
         <USelectMenu :model-value="channel || allChannelsValue" @update:model-value="channel = $event === allChannelsValue ? '' : $event" :items="channelOptions" value-key="value" label-key="label" class="w-full" :search-input="{ placeholder: 'Search channels...' }" />
       </UFormField>
-      <UFormField label="Search" class="w-full lg:max-w-md lg:flex-1">
+      <UFormField label="Search" class="w-full lg:flex-1">
         <UInput v-model="search" icon="i-tabler-search" placeholder="Model ID, name, provider, or channel..." class="w-full" />
       </UFormField>
+      <div class="flex flex-wrap gap-1.5 text-xs lg:pb-2" aria-label="Model catalog summary">
+        <span class="inline-flex items-center gap-1 rounded-full bg-[var(--admin-selected)] px-2.5 py-1 text-[var(--ui-primary)]"><strong class="tabular-nums">{{ filteredModels.length }}</strong>/{{ modelsList.length }} models</span>
+        <span class="inline-flex items-center gap-1 rounded-full bg-[var(--ui-bg-muted)] px-2.5 py-1"><strong class="tabular-nums">{{ providerCount }}</strong> providers</span>
+        <span class="inline-flex items-center gap-1 rounded-full bg-[var(--ui-bg-muted)] px-2.5 py-1"><strong class="tabular-nums">{{ channelCount }}</strong> channels</span>
+      </div>
     </div>
 
-    <div v-if="pending && !modelsList.length" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      <USkeleton v-for="index in 8" :key="index" class="h-52 rounded-xl" />
+    <div v-if="pending && !modelsList.length" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+      <USkeleton v-for="index in 8" :key="index" class="h-24 rounded-2xl" />
     </div>
-    <div v-else-if="filteredModels.length" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      <AppCard v-for="model in filteredModels" :key="`${model.channel}:${model.id}`" class="min-w-0">
-        <div class="flex items-start justify-between gap-2">
-          <div class="min-w-0">
-            <h2 class="truncate font-semibold text-[var(--ui-text-highlighted)]" :title="model.display_name || model.id">{{ model.display_name || model.id }}</h2>
-            <p class="mt-1 break-all font-mono text-xs text-[var(--ui-text-muted)]">{{ model.id }}</p>
-          </div>
+    <div v-else-if="filteredModels.length" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+      <button
+        v-for="model in filteredModels"
+        :key="`${model.channel}:${model.id}`"
+        type="button"
+        class="model-tile app-surface group flex min-w-0 flex-col gap-3 p-3.5 text-left"
+        :aria-label="`View details for ${model.id}`"
+        @click="showDetails(model)"
+      >
+        <span class="flex min-w-0 items-start gap-3">
+          <span class="model-tile__mark" aria-hidden="true">{{ String(model.providers[0] || model.owned_by || model.id || '?').slice(0, 2).toUpperCase() }}</span>
+          <span class="min-w-0 flex-1">
+            <span class="block truncate text-sm font-semibold text-[var(--ui-text-highlighted)]" :title="model.display_name || model.id">{{ model.display_name || model.id }}</span>
+            <span class="block truncate font-mono text-[11px] text-[var(--ui-text-muted)]" :title="model.id">{{ model.id }}</span>
+          </span>
+          <UIcon name="i-tabler-arrow-up-right" class="size-4 shrink-0 text-[var(--ui-text-dimmed)] opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100" aria-hidden="true" />
+        </span>
+        <span class="flex min-w-0 flex-wrap items-center gap-1">
           <UBadge v-if="model.channel" color="primary" variant="subtle" size="sm">{{ model.channel }}</UBadge>
-        </div>
-        <div class="mt-4">
-          <p class="text-xs font-medium text-[var(--ui-text-muted)]">Providers</p>
-          <div v-if="model.providers.length" class="mt-2 flex flex-wrap gap-1">
-            <UBadge v-for="provider in model.providers" :key="provider" color="neutral" variant="subtle" size="sm">{{ provider }}</UBadge>
-          </div>
-          <p v-else class="mt-2 text-xs text-[var(--ui-text-muted)]">No provider information</p>
-        </div>
-        <div class="mt-4 flex items-center justify-between gap-2 border-t border-[var(--ui-border)] pt-3">
-          <span class="truncate text-xs text-[var(--ui-text-muted)]">{{ model.type || model.owned_by || '—' }}</span>
-          <AppButton color="neutral" variant="outline" size="xs" :aria-label="`View details for ${model.id}`" @click="showDetails(model)">Details</AppButton>
-        </div>
-      </AppCard>
+          <UBadge v-for="provider in model.providers.slice(0, 3)" :key="provider" color="neutral" variant="subtle" size="sm">{{ provider }}</UBadge>
+          <span v-if="model.providers.length > 3" class="text-[11px] text-[var(--ui-text-muted)]">+{{ model.providers.length - 3 }}</span>
+          <span v-if="!model.providers.length && !model.channel" class="text-[11px] text-[var(--ui-text-muted)]">No provider information</span>
+          <span class="ml-auto truncate text-[11px] text-[var(--ui-text-muted)]">{{ model.type || model.owned_by || '' }}</span>
+        </span>
+      </button>
     </div>
-    <div v-else-if="!pending" class="rounded-xl border border-dashed border-[var(--ui-border)] px-6 py-14 text-center">
+    <div v-else-if="!pending" class="app-surface border-dashed px-6 py-8 text-center">
       <UIcon name="i-tabler-box" class="mx-auto mb-3 size-8 text-[var(--ui-text-muted)]" />
       <p class="font-medium">{{ search ? 'No matching models' : 'No models found' }}</p>
       <p class="mt-1 text-sm text-[var(--ui-text-muted)]">Try another catalog, channel, or search term.</p>
@@ -200,3 +200,23 @@ function errorMessage(error) {
   return error?.data?.message || error?.data?.error || error?.response?._data?.message || error?.response?._data?.error || error?.message || 'Unexpected request error.'
 }
 </script>
+
+<style scoped>
+.model-tile { transition: border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease; }
+.model-tile:hover { transform: translateY(-1px); border-color: color-mix(in oklch, var(--ui-primary) 35%, var(--admin-panel-border)) !important; }
+.model-tile:focus-visible { outline: 2px solid var(--ui-primary); outline-offset: 2px; }
+.model-tile__mark {
+  display: flex;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.75rem;
+  background: var(--admin-selected);
+  color: var(--ui-primary);
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+@media (prefers-reduced-motion: reduce) { .model-tile { transition: none; } .model-tile:hover { transform: none; } }
+</style>
