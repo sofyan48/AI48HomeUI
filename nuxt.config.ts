@@ -9,10 +9,13 @@ export default defineNuxtConfig({
       title: "AI48Hub",
       meta: [
         { name: "viewport", content: "width=device-width, initial-scale=1" },
-        { name: "theme-color", content: "#18181b" },
+        { name: "theme-color", content: "#7c3aed" },
       ],
       link: [
-        { rel: "icon", type: "image/png", href: "/favicon.png" }
+        { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
+        { rel: "icon", type: "image/png", sizes: "128x128", href: "/favicon.png" },
+        { rel: "alternate icon", href: "/favicon.ico" },
+        { rel: "apple-touch-icon", href: "/apple-touch-icon.png" }
       ]
     }
   },
