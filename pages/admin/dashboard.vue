@@ -19,345 +19,217 @@
     </UAlert>
 
     <template v-if="snapshot && !loadError">
-      <section aria-label="Service readiness" class="dashboard-hero space-y-4" :class="`dashboard-hero--${health.color}`">
-        <header>
-          <div class="flex flex-wrap items-start justify-between gap-4">
-            <div class="flex min-w-0 items-start gap-4">
-              <span class="dashboard-hero-icon" aria-hidden="true">
-                <UIcon :name="healthIcon" class="size-6" />
-              </span>
-              <div class="min-w-0">
-                <div class="flex flex-wrap items-center gap-2">
-                  <h1 class="font-semibold">{{ health.title }}</h1>
-                  <UBadge :color="health.color" variant="subtle" class="rounded-full">{{
-                    health.label
-                  }}</UBadge>
-                </div>
-                <p class="mt-1 max-w-3xl text-sm text-[var(--ui-text-muted)]">
-                  {{ health.description }}
-                </p>
+      <div class="grid grid-cols-1 gap-4 lg:grid-cols-12">
+        <section aria-label="Service readiness" class="dashboard-hero lg:col-span-5" :class="`dashboard-hero--${health.color}`">
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex items-center gap-2.5">
+              <span class="dashboard-hero-icon" aria-hidden="true"><UIcon :name="healthIcon" class="size-5" /></span>
+              <UBadge :color="health.color" variant="subtle" class="rounded-full">{{ health.label }}</UBadge>
+            </div>
+            <AppSyncButton :loading="loading" size="sm" @click="refreshDashboard" />
+          </div>
+          <h1 class="mt-4 text-xl font-bold tracking-tight text-[var(--ui-text-highlighted)]">{{ health.title }}</h1>
+          <p class="mt-1.5 text-sm leading-relaxed text-[var(--ui-text-muted)]">{{ health.description }}</p>
+
+          <div class="mt-4 flex flex-wrap gap-1.5 text-xs">
+            <span class="dashboard-chip"><UIcon name="i-tabler-server" class="size-3.5" aria-hidden="true" />{{ runtimeMode || "Home" }}</span>
+            <span class="dashboard-chip"><UIcon name="i-tabler-tag" class="size-3.5" aria-hidden="true" />{{ latestVersion || "Version unavailable" }}</span>
+            <span class="dashboard-chip"><UIcon name="i-tabler-clock" class="size-3.5" aria-hidden="true" />{{ lastUpdated ? lastUpdated.toLocaleTimeString() : "Not synced" }}</span>
+          </div>
+
+          <div v-if="statusItems.length" class="dashboard-issues mt-4">
+            <p class="mb-1.5 text-xs font-medium text-[var(--ui-text-muted)]">Data loading status · {{ statusItems.length }}</p>
+            <NuxtLink v-for="item in statusItems.slice(0, 4)" :key="item.label" :to="item.to" class="dashboard-issue">
+              <UIcon name="i-tabler-point-filled" class="size-3 shrink-0 text-[var(--ui-warning)]" aria-hidden="true" />
+              <span class="min-w-0 flex-1 truncate"><span class="font-medium text-[var(--ui-text-highlighted)]">{{ item.label }}</span> · {{ item.detail }}</span>
+              <span class="shrink-0 text-xs font-medium text-[var(--ui-primary)]">Review</span>
+            </NuxtLink>
+          </div>
+
+          <div v-if="suggestedActions.length" class="mt-auto flex flex-wrap gap-2 pt-5">
+            <AppButton
+              v-for="(action, index) in suggestedActions"
+              :key="action.label"
+              :to="action.to"
+              size="sm"
+              class="rounded-full"
+              :color="index === 0 ? 'primary' : 'neutral'"
+              :variant="index === 0 ? 'solid' : 'outline'"
+              :trailing-icon="index === 0 ? 'i-tabler-arrow-right' : undefined"
+              >{{ action.label }}</AppButton
+            >
+          </div>
+        </section>
+
+        <section aria-label="Operating metrics" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:col-span-7">
+          <NuxtLink
+            v-for="card in operatingCards"
+            :key="card.label"
+            :to="card.to"
+            class="dashboard-metric"
+            :class="[`dashboard-metric--${card.tone}`, { 'dashboard-metric--static': !card.to }]"
+          >
+            <div class="metric-head">
+              <span class="metric-icon" aria-hidden="true"><UIcon :name="card.icon" class="size-[18px]" /></span>
+              <h2 class="metric-label min-w-0 flex-1 truncate">{{ card.label }}</h2>
+              <UIcon v-if="card.to" name="i-tabler-arrow-up-right" class="metric-link-icon" aria-hidden="true" />
+            </div>
+            <p class="metric-value">{{ card.value }}</p>
+            <p class="metric-detail">{{ card.detail }}</p>
+            <div class="mt-auto pt-3">
+              <AdminUsageSparkline v-if="card.points && card.points.length > 1" :values="card.points" :label="`${card.label} trend`" class="metric-spark" />
+              <div v-else-if="card.ratio != null" class="metric-bar" role="img" :aria-label="`${card.label}: ${Math.round(card.ratio * 100)}%`">
+                <span :style="{ width: `${Math.min(100, Math.max(0, card.ratio * 100))}%` }" />
               </div>
             </div>
-            <AppSyncButton :loading="loading" @click="refreshDashboard" />
-          </div>
-        </header>
-        <div class="flex flex-wrap gap-2 text-xs">
-          <span class="dashboard-chip"><UIcon name="i-tabler-server" class="size-3.5" aria-hidden="true" />Server: {{ runtimeMode || "Home" }}</span>
-          <span class="dashboard-chip"><UIcon name="i-tabler-tag" class="size-3.5" aria-hidden="true" />Version: {{ latestVersion || "Unavailable" }}</span>
-          <span class="dashboard-chip"><UIcon name="i-tabler-clock" class="size-3.5" aria-hidden="true" />Synced: {{ lastUpdated ? lastUpdated.toLocaleString() : "Not synced" }}</span>
-        </div>
-        <div
-          v-if="missingCapabilities.length"
-          class="flex flex-wrap gap-2"
-        >
-          <UBadge
-            v-for="item in missingCapabilities"
-            :key="item.label"
-            color="neutral"
-            variant="subtle"
-            >{{ item.label }} unavailable</UBadge
-          >
-        </div>
-        <div
-          v-if="suggestedActions.length"
-          class="flex flex-col items-stretch gap-2 border-t border-[var(--ui-border)] pt-3 sm:flex-row sm:flex-wrap sm:items-center"
-        >
-          <span class="text-xs font-medium">Suggested actions</span
-          ><AppButton
-            v-for="action in suggestedActions"
-            :key="action.label"
-            :to="action.to"
-            size="sm"
-            color="neutral"
-            variant="outline"
-            >{{ action.label }}</AppButton
-          >
-        </div>
-      </section>
+          </NuxtLink>
+        </section>
 
-      <section aria-label="Operating metrics" class="dashboard-metric-grid">
-        <NuxtLink
-          v-for="card in operatingCards"
-          :key="card.label"
-          :to="card.to"
-          class="dashboard-metric"
-          :class="[`dashboard-metric--${card.tone}`, { 'dashboard-metric--static': !card.to }]"
-        >
-          <div class="metric-head">
-            <span class="metric-icon" aria-hidden="true"><UIcon :name="card.icon" class="size-5" /></span>
-            <UIcon v-if="card.to" name="i-tabler-arrow-up-right" class="metric-link-icon" aria-hidden="true" />
-          </div>
-          <h2 class="metric-label">{{ card.label }}</h2>
-          <p class="metric-value">{{ card.value }}</p>
-          <p class="metric-detail">{{ card.detail }}</p>
-        </NuxtLink>
-      </section>
-
-      <section
-        v-if="tokenTrend.length || activity.length"
-        class="grid gap-4 lg:grid-cols-2"
-      >
         <AdminDashboardTokenTrend
           v-if="tokenTrend.length"
+          :class="activity.length ? 'lg:col-span-8' : 'lg:col-span-12'"
           :trend="tokenTrend"
           :range="usage?.range"
         />
         <AdminDashboardRequestHealth
           v-if="activity.length"
+          :class="tokenTrend.length ? 'lg:col-span-4' : 'lg:col-span-12'"
           :activity="activity"
           :range="usage?.range"
         />
-      </section>
 
-      <section class="grid gap-4 lg:grid-cols-2">
-        <AppCard>
-          <template #header
-            ><div class="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <h2 class="font-semibold">Key status</h2>
-                <p class="text-xs text-[var(--ui-text-muted)]">
-                  {{
-                    formatNumber(usage?.totals?.active_client_key_count ?? 0)
-                  }}
-                  active · {{ formatNumber(quietKeyCount) }} quiet ·
-                  {{ formatNumber(clientKeys.length) }} configured
-                </p>
-              </div>
-              <AppButton
-                to="/admin/usage"
-                color="neutral"
-                variant="ghost"
-                size="sm"
-                >Usage details</AppButton
-              >
-            </div></template
-          >
-          <div v-if="topClientKeys.length" class="space-y-3">
-            <div
-              v-for="(item, index) in topClientKeys"
-              :key="item.id || index"
-              class="flex items-center justify-between gap-3 border-b border-[var(--ui-border)] pb-3 last:border-0 last:pb-0"
-            >
+        <AppCard class="lg:col-span-4">
+          <template #header>
+            <div class="dashboard-card-head">
               <div class="min-w-0">
-                <p class="truncate text-sm font-medium">
-                  {{ index + 1 }}. {{ keyLabel(item) }}
-                </p>
+                <h2 class="font-semibold">Top client keys</h2>
                 <p class="text-xs text-[var(--ui-text-muted)]">
-                  {{ formatNumber(item.request_count) }} requests ·
-                  {{ formatPercent(item.success_rate) }} success<span
-                    v-if="item.failed_count"
-                  >
-                    · {{ formatNumber(item.failed_count) }} failed</span
-                  >
+                  {{ formatNumber(usage?.totals?.active_client_key_count ?? 0) }} active · {{ formatNumber(quietKeyCount) }} quiet · {{ formatNumber(clientKeys.length) }} configured
                 </p>
               </div>
-              <span class="shrink-0 text-sm font-semibold"
-                >{{
-                  item.token_breakdown?.total_tokens == null
-                    ? "--"
-                    : formatCompact(item.token_breakdown.total_tokens)
-                }}
-                tokens</span
-              >
+              <AppButton to="/admin/usage" color="neutral" variant="ghost" size="xs" trailing-icon="i-tabler-arrow-right" aria-label="Key usage details">Details</AppButton>
             </div>
-          </div>
-          <p
-            v-else
-            class="py-8 text-center text-sm text-[var(--ui-text-muted)]"
-          >
-            {{
-              usage
-                ? "No client key activity in this range."
-                : "Key usage is unavailable."
-            }}
-          </p>
+          </template>
+          <ol v-if="topClientKeys.length" class="space-y-3.5">
+            <li v-for="(item, index) in topClientKeys" :key="item.id || index" class="dashboard-rank">
+              <span class="dashboard-rank-index" aria-hidden="true">{{ index + 1 }}</span>
+              <div class="min-w-0 flex-1">
+                <div class="flex items-baseline justify-between gap-3">
+                  <p class="truncate text-sm font-medium text-[var(--ui-text-highlighted)]">{{ keyLabel(item) }}</p>
+                  <span class="shrink-0 text-xs font-semibold tabular-nums">{{ item.token_breakdown?.total_tokens == null ? "--" : formatCompact(item.token_breakdown.total_tokens) }} tokens</span>
+                </div>
+                <div class="dashboard-share mt-1.5"><span :style="{ width: shareOf(item, topClientKeys) }" /></div>
+                <p class="mt-1 text-xs text-[var(--ui-text-muted)]">
+                  {{ formatNumber(item.request_count) }} requests · {{ formatPercent(item.success_rate) }} success<span v-if="item.failed_count"> · {{ formatNumber(item.failed_count) }} failed</span>
+                </p>
+              </div>
+            </li>
+          </ol>
+          <div v-else class="dashboard-empty"><UIcon name="i-tabler-key-off" class="size-6" aria-hidden="true" /><p>{{ usage ? "No client key activity in this range." : "Key usage is unavailable." }}</p></div>
         </AppCard>
-        <AppCard>
-          <template #header
-            ><div class="flex flex-wrap items-center justify-between gap-2">
-              <div>
+
+        <AppCard class="lg:col-span-4">
+          <template #header>
+            <div class="dashboard-card-head">
+              <div class="min-w-0">
                 <h2 class="font-semibold">Model usage distribution</h2>
-                <p class="text-xs text-[var(--ui-text-muted)]">
-                  {{
-                    formatNumber(usage?.totals?.active_model_count ?? 0)
-                  }}
-                  models used
-                </p>
+                <p class="text-xs text-[var(--ui-text-muted)]">{{ formatNumber(usage?.totals?.active_model_count ?? 0) }} models used</p>
               </div>
-              <AppButton
-                to="/admin/usage"
-                color="neutral"
-                variant="ghost"
-                size="sm"
-                >Usage details</AppButton
-              >
-            </div></template
-          >
-          <div v-if="topModels.length" class="space-y-3">
-            <div
-              v-for="(item, index) in topModels"
-              :key="item.id || index"
-              class="flex items-center justify-between gap-3 border-b border-[var(--ui-border)] pb-3 last:border-0 last:pb-0"
-            >
-              <div class="min-w-0">
-                <p class="truncate text-sm font-medium">
-                  {{ index + 1 }}. {{ item.label || item.id }}
-                </p>
-                <p class="text-xs text-[var(--ui-text-muted)]">
-                  {{ formatNumber(item.request_count) }} requests ·
-                  {{ formatPercent(item.success_rate) }} success<span
-                    v-if="item.failed_count"
-                  >
-                    · {{ formatNumber(item.failed_count) }} failed</span
-                  >
-                </p>
-              </div>
-              <span class="shrink-0 text-sm font-semibold"
-                >{{
-                  item.token_breakdown?.total_tokens == null
-                    ? "--"
-                    : formatCompact(item.token_breakdown.total_tokens)
-                }}
-                tokens</span
-              >
+              <AppButton to="/admin/usage" color="neutral" variant="ghost" size="xs" trailing-icon="i-tabler-arrow-right" aria-label="Model usage details">Details</AppButton>
             </div>
-          </div>
-          <p
-            v-else
-            class="py-8 text-center text-sm text-[var(--ui-text-muted)]"
-          >
-            {{
-              usage
-                ? "No model activity in this range."
-                : "Model usage is unavailable."
-            }}
-          </p>
-        </AppCard>
-      </section>
-
-      <section aria-label="Service inventory" class="dashboard-inventory-grid">
-        <NuxtLink
-          v-for="card in inventoryCards"
-          :key="card.label"
-          :to="card.to"
-          class="dashboard-inventory"
-          :class="`dashboard-metric--${card.tone}`"
-        >
-          <span class="metric-icon" aria-hidden="true"><UIcon :name="card.icon" class="size-5" /></span>
-          <div class="min-w-0 flex-1">
-            <h2 class="metric-label">{{ card.label }}</h2>
-            <p class="metric-value metric-value--sm">{{ formatNumber(card.value) }}</p>
-            <p class="metric-detail truncate">{{ card.detail }}</p>
-          </div>
-          <UIcon name="i-tabler-chevron-right" class="metric-chevron" aria-hidden="true" />
-        </NuxtLink>
-      </section>
-
-      <section class="grid gap-4 lg:grid-cols-2">
-        <AppCard
-          ><template #header
-            ><div class="flex flex-wrap items-center justify-between gap-2">
-              <h2 class="font-semibold">Model service access</h2>
-              <AppButton
-                to="/admin/providers"
-                color="neutral"
-                variant="ghost"
-                size="sm"
-                >Manage</AppButton
-              >
-            </div></template
-          >
-          <div class="space-y-2">
-            <div
-              v-for="provider in providerRows"
-              :key="provider.path"
-              class="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--ui-border)] py-2 text-sm last:border-0"
-            >
-              <div>
-                <p class="font-medium">{{ provider.label }}</p>
-                <p class="font-mono text-xs text-[var(--ui-text-muted)]">
-                  {{ provider.path }}
+          </template>
+          <ol v-if="topModels.length" class="space-y-3.5">
+            <li v-for="(item, index) in topModels" :key="item.id || index" class="dashboard-rank dashboard-rank--blue">
+              <span class="dashboard-rank-index" aria-hidden="true">{{ index + 1 }}</span>
+              <div class="min-w-0 flex-1">
+                <div class="flex items-baseline justify-between gap-3">
+                  <p class="truncate text-sm font-medium text-[var(--ui-text-highlighted)]">{{ item.label || item.id }}</p>
+                  <span class="shrink-0 text-xs font-semibold tabular-nums">{{ item.token_breakdown?.total_tokens == null ? "--" : formatCompact(item.token_breakdown.total_tokens) }} tokens</span>
+                </div>
+                <div class="dashboard-share mt-1.5"><span :style="{ width: shareOf(item, topModels) }" /></div>
+                <p class="mt-1 text-xs text-[var(--ui-text-muted)]">
+                  {{ formatNumber(item.request_count) }} requests · {{ formatPercent(item.success_rate) }} success<span v-if="item.failed_count"> · {{ formatNumber(item.failed_count) }} failed</span>
                 </p>
               </div>
-              <p class="text-xs">
-                {{ provider.total }} total · {{ provider.active }} available ·
-                {{ provider.disabled }} disabled
-              </p>
+            </li>
+          </ol>
+          <div v-else class="dashboard-empty"><UIcon name="i-tabler-box-off" class="size-6" aria-hidden="true" /><p>{{ usage ? "No model activity in this range." : "Model usage is unavailable." }}</p></div>
+        </AppCard>
+
+        <AppCard class="lg:col-span-4" :ui="{ body: 'p-2 sm:p-2' }">
+          <template #header><h2 class="font-semibold">Service inventory</h2></template>
+          <nav aria-label="Service inventory" class="space-y-0.5">
+            <NuxtLink
+              v-for="card in inventoryCards"
+              :key="card.label"
+              :to="card.to"
+              class="dashboard-inventory"
+              :class="`dashboard-metric--${card.tone}`"
+            >
+              <span class="metric-icon metric-icon--sm" aria-hidden="true"><UIcon :name="card.icon" class="size-4" /></span>
+              <span class="min-w-0 flex-1">
+                <span class="block truncate text-sm font-medium text-[var(--ui-text-highlighted)]">{{ card.label }}</span>
+                <span class="block truncate text-xs text-[var(--ui-text-muted)]">{{ card.detail }}</span>
+              </span>
+              <span class="text-lg font-bold tabular-nums text-[var(--ui-text-highlighted)]">{{ formatNumber(card.value) }}</span>
+              <UIcon name="i-tabler-chevron-right" class="metric-chevron" aria-hidden="true" />
+            </NuxtLink>
+          </nav>
+          <div class="mx-2 mt-2 border-t border-[var(--ui-border)] px-1 pb-1 pt-3">
+            <p class="mb-2 text-xs font-medium text-[var(--ui-text-muted)]">Account credential sources</p>
+            <div v-if="credentialSources.length" class="flex flex-wrap gap-1.5">
+              <span v-for="source in credentialSources" :key="source.label" class="dashboard-chip">{{ source.label }} <strong class="text-[var(--ui-text-highlighted)]">{{ source.count }}</strong></span>
+            </div>
+            <p v-else class="text-xs text-[var(--ui-text-dimmed)]">No account credential sources available.</p>
+          </div>
+        </AppCard>
+
+        <AppCard class="lg:col-span-7">
+          <template #header>
+            <div class="dashboard-card-head">
+              <h2 class="font-semibold">Model service access</h2>
+              <AppButton to="/admin/providers" color="neutral" variant="ghost" size="xs" trailing-icon="i-tabler-arrow-right">Manage</AppButton>
+            </div>
+          </template>
+          <div class="grid gap-x-6 gap-y-4 sm:grid-cols-2">
+            <div v-for="provider in providerRows" :key="provider.path" class="min-w-0">
+              <div class="flex items-baseline justify-between gap-2">
+                <p class="truncate text-sm font-medium text-[var(--ui-text-highlighted)]">{{ provider.label }}</p>
+                <span v-if="provider.total" class="shrink-0 text-xs tabular-nums text-[var(--ui-text-muted)]"><strong class="text-[var(--ui-text-highlighted)]">{{ provider.active }}</strong> / {{ provider.total }}</span>
+                <span v-else class="shrink-0 text-xs text-[var(--ui-text-dimmed)]">Not configured</span>
+              </div>
+              <div class="provider-bar mt-1.5" role="img" :aria-label="`${provider.label}: ${provider.total} total, ${provider.active} available, ${provider.disabled} disabled`">
+                <span v-if="provider.total" class="provider-bar__active" :style="{ width: `${(provider.active / provider.total) * 100}%` }" />
+                <span v-if="provider.total" class="provider-bar__disabled" :style="{ width: `${(provider.disabled / provider.total) * 100}%` }" />
+              </div>
+              <p class="mt-1 truncate font-mono text-[11px] text-[var(--ui-text-dimmed)]">{{ provider.path }}</p>
             </div>
           </div>
           <AppButton
             v-if="providerRows.every((item) => item.total === 0)"
             to="/admin/providers"
-            color="neutral"
-            variant="outline"
+            color="primary"
+            variant="soft"
             size="sm"
-            class="mt-4"
+            icon="i-tabler-plus"
+            class="mt-5 rounded-full"
             >Configure model service</AppButton
           >
         </AppCard>
-        <AppCard
-          ><template #header
-            ><h2 class="font-semibold">Key switches</h2></template
-          >
-          <div class="space-y-3">
-            <div
-              v-for="item in configChecks"
-              :key="item.label"
-              class="flex items-center justify-between gap-4 text-sm"
-            >
-              <span>{{ item.label }}</span
-              ><UBadge :color="item.color" variant="subtle">{{
-                item.value
-              }}</UBadge>
-            </div>
-          </div>
-        </AppCard>
-      </section>
 
-      <section class="grid gap-4 lg:grid-cols-2">
-        <AppCard
-          v-if="dataIssues.length || missingCapabilities.length"
-          ><template #header
-            ><h2 class="font-semibold">
-              Data loading status ·
-              {{ dataIssues.length + missingCapabilities.length }}
-            </h2></template
-          >
-          <div class="space-y-2">
-            <div
-              v-for="item in statusItems.slice(0, 4)"
-              :key="item.label"
-              class="flex items-center justify-between gap-2 text-sm"
-            >
-              <span>{{ item.label }} · {{ item.detail }}</span
-              ><AppButton :to="item.to" size="xs" color="neutral" variant="ghost"
-                >Review</AppButton
-              >
+        <AppCard class="lg:col-span-5">
+          <template #header><h2 class="font-semibold">Key switches</h2></template>
+          <div class="grid gap-2 sm:grid-cols-2">
+            <div v-for="item in configChecks" :key="item.label" class="dashboard-switch" :class="`dashboard-switch--${item.color}`">
+              <span class="dashboard-switch__dot" aria-hidden="true" />
+              <span class="min-w-0 flex-1 leading-tight">
+                <span class="block truncate text-xs text-[var(--ui-text-muted)]">{{ item.label }}</span>
+                <span class="block truncate text-sm font-semibold text-[var(--ui-text-highlighted)]">{{ item.value }}</span>
+              </span>
             </div>
           </div>
         </AppCard>
-        <AppCard
-          ><template #header
-            ><h2 class="font-semibold">Account credential sources</h2></template
-          >
-          <div v-if="credentialSources.length" class="space-y-2">
-            <div
-              v-for="source in credentialSources"
-              :key="source.label"
-              class="flex justify-between text-sm"
-            >
-              <span>{{ source.label }}</span
-              ><strong>{{ source.count }}</strong>
-            </div>
-          </div>
-          <p
-            v-else
-            class="py-6 text-center text-sm text-[var(--ui-text-muted)]"
-          >
-            No account credential sources available.
-          </p>
-        </AppCard>
-      </section>
+      </div>
     </template>
     <p
       v-else-if="loading"
@@ -603,7 +475,12 @@ const suggestedActions = computed(() => {
     actions.push({ label: "Review data status", to: "/admin/system-nodes" });
   return actions.slice(0, 3);
 });
-const operatingCards = computed(() => [
+const trendPoints = computed<any[]>(() =>
+  Array.isArray(usage.value?.trend) ? usage.value.trend : [],
+);
+const operatingCards = computed<
+  Array<{ label: string; value: string; detail: string; to?: string; icon: string; tone: string; points?: number[]; ratio?: number | null }>
+>(() => [
   {
     label: "Total token consumption",
     value:
@@ -619,6 +496,9 @@ const operatingCards = computed(() => [
     to: hasUsage.value ? "/admin/usage" : undefined,
     icon: "i-tabler-coins",
     tone: "violet",
+    points: trendPoints.value.map(
+      (point) => Number(point.token_breakdown?.total_tokens ?? point.total_tokens) || 0,
+    ),
   },
   {
     label: "Total requests",
@@ -631,6 +511,7 @@ const operatingCards = computed(() => [
     to: hasUsage.value ? "/admin/usage" : undefined,
     icon: "i-tabler-arrows-exchange",
     tone: "blue",
+    points: trendPoints.value.map((point) => Number(point.request_count) || 0),
   },
   {
     label: "Request success rate",
@@ -643,6 +524,10 @@ const operatingCards = computed(() => [
     to: hasUsage.value ? "/admin/diagnostics" : undefined,
     icon: "i-tabler-circle-check",
     tone: "emerald",
+    ratio:
+      hasUsage.value && usage.value.totals?.success_rate != null
+        ? Number(usage.value.totals.success_rate) || 0
+        : null,
   },
   {
     label: "Active access keys",
@@ -655,6 +540,11 @@ const operatingCards = computed(() => [
     to: hasUsage.value ? "/admin/usage" : undefined,
     icon: "i-tabler-key",
     tone: "amber",
+    ratio:
+      hasUsage.value && clientKeys.value.length
+        ? Number(usage.value.totals?.active_client_key_count || 0) /
+          clientKeys.value.length
+        : null,
   },
 ]);
 const inventoryCards = computed(() => [
@@ -752,6 +642,10 @@ const credentialSources = computed(() => {
     .map(([label, count]) => ({ label, count }))
     .sort((a, b) => b.count - a.count);
 });
+function shareOf(item: any, list: any[]) {
+  const max = Math.max(1, ...list.map((entry) => Number(entry.request_count) || 0));
+  return `${Math.round(((Number(item.request_count) || 0) / max) * 100)}%`;
+}
 function formatNumber(value: unknown) {
   return new Intl.NumberFormat().format(Number(value) || 0);
 }
