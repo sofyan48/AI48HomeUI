@@ -1,23 +1,29 @@
 <template>
-  <div class="space-y-6">
-    <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-      <div>
-        <h1 class="text-2xl font-bold text-[var(--ui-text-highlighted)]">Model Groups</h1>
-        <p class="mt-1 max-w-3xl text-sm text-[var(--ui-text-muted)]">
-          Define reusable model allowlists. Each model may optionally be restricted to selected channel groups.
-        </p>
+  <div class="space-y-4">
+    <AppCard :ui="{ body: 'p-3 sm:p-3' }">
+      <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div class="flex min-w-0 items-start gap-3">
+          <span class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[var(--admin-selected)] text-[var(--ui-primary)]" aria-hidden="true"><UIcon name="i-tabler-layout-grid" class="size-4.5" /></span>
+          <div class="min-w-0">
+            <p class="text-sm text-[var(--ui-text-muted)]">Define reusable model allowlists. Each model may optionally be restricted to selected channel groups.</p>
+            <div class="mt-1.5 flex flex-wrap gap-1.5 text-xs" aria-label="Group summary">
+              <span class="inline-flex items-center gap-1.5 rounded-full bg-[var(--ui-bg-muted)] px-2 py-0.5"><strong class="tabular-nums">{{ groups.length }}</strong> groups</span>
+              <span class="inline-flex items-center gap-1.5 rounded-full bg-[var(--ui-bg-muted)] px-2 py-0.5"><span class="size-1.5 rounded-full bg-emerald-500" /><strong class="tabular-nums">{{ groups.filter(group => !group.disabled).length }}</strong> active</span>
+              <span v-if="groups.some(group => group.disabled)" class="inline-flex items-center gap-1.5 rounded-full bg-[var(--ui-bg-muted)] px-2 py-0.5"><span class="size-1.5 rounded-full bg-zinc-400" /><strong class="tabular-nums">{{ groups.filter(group => group.disabled).length }}</strong> disabled</span>
+            </div>
+          </div>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <UInput v-model="search" icon="i-tabler-search" placeholder="Search model groups..." aria-label="Search model groups" class="w-full sm:w-64" />
+          <AppButton color="neutral" variant="outline" icon="i-tabler-refresh" :loading="pending" aria-label="Refresh" @click="refreshWorkspace" />
+          <AppButton color="primary" icon="i-tabler-plus" @click="openCreateGroup">New model group</AppButton>
+        </div>
       </div>
-      <AppButton color="primary" icon="i-tabler-plus" @click="openCreateGroup">New model group</AppButton>
-    </div>
+    </AppCard>
 
     <UAlert v-if="pageError" color="error" variant="subtle" icon="i-tabler-alert-triangle" title="Unable to load model groups" :description="pageError" />
 
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <UInput v-model="search" icon="i-tabler-search" placeholder="Search model groups..." class="w-full sm:max-w-sm" />
-      <AppButton color="neutral" variant="outline" icon="i-tabler-refresh" :loading="pending" @click="refreshWorkspace">Refresh</AppButton>
-    </div>
-
-    <div class="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.6fr)]">
+    <div class="grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.6fr)]">
       <AppCard :ui="{ body: 'p-0' }">
         <template #header>
           <div>
@@ -52,7 +58,7 @@
           <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <div class="flex items-center gap-2">
-                <p class="text-lg font-semibold">{{ selectedGroup.group_name }}</p>
+                <p class="text-base font-semibold">{{ selectedGroup.group_name }}</p>
                 <UBadge :color="selectedGroup.disabled ? 'error' : 'success'" variant="subtle" size="sm">{{ selectedGroup.disabled ? 'Disabled' : 'Active' }}</UBadge>
               </div>
               <p class="mt-1 text-xs text-[var(--ui-text-muted)]">{{ details.length }} model binding{{ details.length === 1 ? '' : 's' }}</p>
@@ -89,7 +95,7 @@
         </AppTable>
       </AppCard>
 
-      <div v-else class="flex min-h-64 flex-col items-center justify-center rounded-xl border border-dashed border-[var(--ui-border)] bg-[var(--ui-bg-muted)] p-8 text-center">
+      <div v-else class="flex min-h-64 flex-col items-center justify-center rounded-[var(--admin-panel-radius)] border border-dashed border-[var(--admin-panel-border)] bg-[var(--admin-panel-bg)]/60 p-8 text-center">
         <UIcon name="i-tabler-layout-grid" class="mb-3 size-8 text-[var(--ui-text-muted)]" />
         <p class="font-medium">Select a model group</p>
         <p class="mt-1 text-sm text-[var(--ui-text-muted)]">Its model bindings will appear here.</p>

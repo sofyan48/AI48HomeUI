@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-6">
+  <div class="space-y-4">
     <AppPanelTabs :model-value="activeView" :items="usageTabs" label="Usage & Requests" @update:model-value="setView" />
 
     <template v-if="activeView === 'requests'">
@@ -16,13 +16,17 @@
       {{ errorMessage }}
     </div>
 
-    <div class="flex flex-wrap items-center gap-3">
-      <USwitch v-model="autoRefresh" aria-label="Automatically refresh usage overview and first-page attribution" />
-      <span class="text-xs text-[var(--ui-text-muted)]" role="status">{{ refreshStatus }} · Attribution pauses beyond page one.</span>
-      <AppButton size="sm" color="neutral" variant="outline" :loading="loading" @click="refreshAll()">Refresh overview</AppButton>
-    </div>
     <UAlert v-if="!supports('usage_overview')" color="warning" variant="subtle" title="Usage overview unavailable" />
     <AppCard class="usage-filter-panel">
+      <template #header>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="min-w-0"><h2 class="text-sm font-semibold">Filters</h2><p class="truncate text-xs text-[var(--ui-text-muted)]" :title="overviewScopeLabel">{{ overviewScopeLabel }}</p></div>
+          <div class="flex flex-wrap items-center gap-2">
+            <label class="inline-flex items-center gap-2 text-xs text-[var(--ui-text-muted)]"><USwitch v-model="autoRefresh" size="sm" aria-label="Automatically refresh usage overview and first-page attribution" /><span role="status" :title="'Attribution pauses beyond page one.'">{{ refreshStatus }}</span></label>
+            <AppButton size="sm" color="neutral" variant="outline" icon="i-tabler-refresh" :loading="loading" @click="refreshAll()">Refresh</AppButton>
+          </div>
+        </div>
+      </template>
       <form @submit.prevent="applyFilters">
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
           <UFormField label="Time range">
@@ -56,31 +60,14 @@
       </form>
     </AppCard>
 
-    <section>
-      <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-        <AppCard v-for="metric in chartMetrics" :key="metric.label" :ui="{ body: 'p-0' }">
-          <div class="flex items-start justify-between gap-3 px-4 pt-3"><div><p class="text-xs font-medium text-[var(--ui-text-muted)]">{{ metric.label }}</p><p class="mt-1 text-xl font-semibold tracking-tight">{{ metric.value }}</p></div><UIcon :name="metric.icon" class="mt-0.5 size-4 text-[var(--ui-text-muted)]" /></div>
-          <AdminUsageSparkline :values="metric.points" :label="`${metric.label} trend`" class="px-2" :class="metric.color" />
-          <p class="truncate border-t border-[var(--ui-border-muted)] px-4 py-2 text-[11px] text-[var(--ui-text-muted)]">{{ metric.hint }}</p>
-        </AppCard>
-        <AppCard>
-          <div class="mb-3 flex items-center justify-between"><p class="text-xs font-medium text-[var(--ui-text-muted)]">System health</p><UIcon name="i-tabler-activity-heartbeat" class="size-4 text-[var(--ui-text-muted)]" /></div>
-          <dl class="grid grid-cols-2 gap-x-4 gap-y-3">
-            <div><dt class="text-[11px] text-[var(--ui-text-muted)]">RPM</dt><dd class="mt-0.5 text-sm font-semibold tabular-nums">{{ formatDecimal(live.rpm) }}</dd></div>
-            <div><dt class="text-[11px] text-[var(--ui-text-muted)]">TPM</dt><dd class="mt-0.5 text-sm font-semibold tabular-nums">{{ formatCompactNumber(live.tpm) }}</dd></div>
-            <div><dt class="text-[11px] text-[var(--ui-text-muted)]">Error rate</dt><dd class="mt-0.5 text-sm font-semibold tabular-nums">{{ formatPercent(totals.error_rate) }}</dd></div>
-            <div><dt class="text-[11px] text-[var(--ui-text-muted)]">P50 latency</dt><dd class="mt-0.5 text-sm font-semibold tabular-nums">{{ formatMilliseconds(live.p50_latency_ms) }}</dd></div>
-          </dl>
-        </AppCard>
-      </div>
-    </section>
+    <AdminStatGrid label="Usage summary" :items="chartMetrics" :columns="4" :loading="loading && !overview" />
 
     <div class="grid items-start gap-3 xl:grid-cols-[minmax(0,1.7fr)_minmax(20rem,1fr)]">
       <AppCard :ui="{ body: 'p-0' }">
         <template #header>
           <div class="space-y-4">
             <div class="flex flex-wrap items-center justify-between gap-3">
-              <div><h2 class="text-lg font-semibold">Token usage over time</h2><p class="text-xs text-[var(--ui-text-muted)]">Canonical token categories across the selected range.</p></div>
+              <div><h2 class="text-sm font-semibold">Token usage over time</h2><p class="text-xs text-[var(--ui-text-muted)]">Canonical token categories across the selected range.</p></div>
               <div class="flex items-center gap-2">
                 <div class="inline-flex rounded-lg bg-[var(--ui-bg-muted)] p-1" role="group" aria-label="Chart overlay">
                   <AppButton v-for="option in chartOverlayOptions" :key="option.value" size="sm" color="neutral" :variant="chartOverlay === option.value ? 'solid' : 'ghost'" @click="chartOverlay = option.value">{{ option.label }}</AppButton>
@@ -88,8 +75,8 @@
                 <UBadge v-if="overviewTokenBreakdown" :color="tokenQualityColor(overviewTokenBreakdown.quality)" variant="subtle">{{ overviewTokenBreakdown.quality || 'unknown' }}</UBadge>
               </div>
             </div>
-            <div class="flex flex-wrap gap-2">
-              <span v-for="series in tokenSeriesLegend" :key="series.label" class="inline-flex items-center gap-2 rounded-lg border border-[var(--ui-border)] px-3 py-1.5 text-xs font-medium">
+            <div class="flex flex-wrap gap-1.5">
+              <span v-for="series in tokenSeriesLegend" :key="series.label" class="inline-flex items-center gap-1.5 rounded-full bg-[var(--ui-bg-muted)] px-2.5 py-1 text-xs font-medium">
                 <span class="size-2.5 rounded-full" :style="{ backgroundColor: series.color }" />{{ series.label }}
               </span>
             </div>
@@ -104,7 +91,7 @@
     </div>
 
     <div class="grid gap-3 lg:grid-cols-3">
-      <AppCard v-for="ranking in rankingCards" :key="ranking.key" :ui="{ body: 'p-0' }"><template #header><div class="flex items-center justify-between"><h2 class="text-sm font-semibold">{{ ranking.label }}</h2><AppButton size="xs" color="neutral" variant="ghost" @click="openRanking(ranking.key)">View all</AppButton></div></template><ol v-if="ranking.items.length" class="divide-y divide-[var(--ui-border-muted)]"><li v-for="(item, index) in ranking.items" :key="item.id || item.label" class="grid grid-cols-[1.5rem_minmax(0,1fr)_auto] items-center gap-2 px-4 py-3"><span class="text-xs font-semibold text-[var(--ui-text-muted)]">{{ index + 1 }}</span><div class="min-w-0"><p class="truncate text-sm font-medium">{{ item.label || item.id || 'Unknown' }}</p><p class="text-xs text-[var(--ui-text-muted)]">{{ formatNumber(item.request_count) }} requests</p></div><span class="whitespace-nowrap text-sm font-semibold">{{ formatAmount(item.total_amount, item.currency || totals.currency) }}</span></li></ol><p v-else class="px-4 py-6 text-center text-sm text-[var(--ui-text-muted)]">No ranking data.</p></AppCard>
+      <AppCard v-for="ranking in rankingCards" :key="ranking.key" :ui="{ body: 'p-0' }"><template #header><div class="flex items-center justify-between"><h2 class="text-sm font-semibold">{{ ranking.label }}</h2><AppButton size="xs" color="neutral" variant="ghost" @click="openRanking(ranking.key)">View all</AppButton></div></template><ol v-if="ranking.items.length" class="divide-y divide-[var(--ui-border-muted)]"><li v-for="(item, index) in ranking.items" :key="item.id || item.label" class="grid grid-cols-[1.5rem_minmax(0,1fr)_auto] items-center gap-x-2 gap-y-1.5 px-4 py-3"><span class="text-xs font-semibold text-[var(--ui-text-muted)]">{{ index + 1 }}</span><div class="min-w-0"><p class="truncate text-sm font-medium">{{ item.label || item.id || 'Unknown' }}</p><p class="text-xs text-[var(--ui-text-muted)]">{{ formatNumber(item.request_count) }} requests</p></div><span class="whitespace-nowrap text-sm font-semibold">{{ formatAmount(item.total_amount, item.currency || totals.currency) }}</span><div class="col-start-2 col-end-4 h-1 overflow-hidden rounded-full bg-[var(--ui-bg-accented)]" aria-hidden="true"><div class="h-full rounded-full bg-[var(--ui-primary)]" :style="{ width: `${rankingShare(item, ranking.items)}%` }" /></div></li></ol><p v-else class="px-4 py-6 text-center text-sm text-[var(--ui-text-muted)]">No ranking data.</p></AppCard>
     </div>
 
     <section>
@@ -112,19 +99,18 @@
       <div class="flex items-center justify-between border-b border-[var(--ui-border)] px-4 py-3"><div><h2 class="text-sm font-semibold">Execution credential usage</h2><p class="text-xs text-[var(--ui-text-muted)]">Requests, tokens, spend, success, and latest activity by execution credential.</p></div><AppButton size="sm" color="neutral" variant="ghost" icon="i-tabler-refresh" aria-label="Refresh execution credential usage" :loading="credentialsLoading" :disabled="!canAttribute" @click="loadCredentialUsage" /></div>
       <UAlert v-if="!canAttribute" color="warning" variant="subtle" title="Execution credential attribution unavailable" />
       <UAlert v-if="credentialError" color="error" variant="subtle" :description="credentialError" />
-      <div class="flex flex-wrap items-end gap-3 border-b border-[var(--ui-border)] px-4 py-3">
+      <div class="flex flex-wrap items-end gap-3 border-b border-[var(--ui-border)] bg-[var(--admin-control-bg)] px-4 py-2.5">
         <UFormField label="Sort metric"><USelect v-model="credentialMetric" :items="rankingMetricOptions" value-key="value" label-key="label" class="w-44" /></UFormField>
         <UFormField label="Direction"><USelect v-model="credentialDirection" :items="[{ label: 'Descending', value: 'desc' }, { label: 'Ascending', value: 'asc' }]" value-key="value" label-key="label" class="w-36" /></UFormField>
         <UFormField label="Rows"><USelect v-model="credentialLimit" :items="[10, 20, 50, 100]" class="w-24" /></UFormField>
       </div>
       <AppTable :columns="credentialColumns" :data="credentialUsage" :loading="credentialsLoading" class="min-w-[980px]"><template #credential-cell="{ row }"><div class="min-w-48"><p class="truncate text-sm font-medium">{{ rowValue(row).label || rowValue(row).id || 'Unknown credential' }}</p><p class="truncate font-mono text-xs text-[var(--ui-text-muted)]">{{ rowValue(row).id }}</p></div></template><template #provider-cell="{ row }"><span class="text-sm">{{ rowValue(row).metadata?.provider || 'Unknown' }}</span></template><template #status-cell="{ row }"><div><UBadge :color="Number(rowValue(row).error_rate) > 0.05 ? 'warning' : 'success'" variant="subtle">{{ formatPercent(rowValue(row).success_rate) }} success</UBadge><p class="mt-1 text-xs text-[var(--ui-text-muted)]">{{ formatNumber(rowValue(row).failed_count) }} failed</p></div></template><template #requests-cell="{ row }"><span class="tabular-nums">{{ formatNumber(rowValue(row).request_count) }}</span></template><template #tokens-cell="{ row }"><span class="tabular-nums">{{ formatCompactNumber(rowValue(row).total_tokens) }}</span></template><template #cost-cell="{ row }"><span class="whitespace-nowrap">{{ formatAmount(rowValue(row).total_amount, rowValue(row).currency || totals.currency) }}</span></template><template #lastUsed-cell="{ row }"><span class="whitespace-nowrap text-xs text-[var(--ui-text-muted)]">{{ formatDateTime(rowValue(row).last_used_at) }}</span></template><template #empty><div class="py-10 text-center text-sm text-[var(--ui-text-muted)]">No execution credential usage data.</div></template></AppTable>
+      <div class="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--ui-border)] px-4 py-3 text-xs text-[var(--ui-text-muted)]">
+        <span class="tabular-nums">Page {{ credentialPage }} of {{ credentialPages }} · {{ formatNumber(credentialTotal) }} execution credentials</span>
+        <div class="flex gap-2"><AppButton size="sm" color="neutral" variant="outline" icon="i-tabler-chevron-left" :disabled="credentialsLoading || credentialPage <= 1 || !canAttribute" @click="credentialPage--">Previous</AppButton><AppButton size="sm" color="neutral" variant="outline" trailing-icon="i-tabler-chevron-right" :disabled="credentialsLoading || credentialPage >= credentialPages || !canAttribute" @click="credentialPage++">Next</AppButton></div>
+      </div>
       </AppCard>
     </section>
-
-    <div class="flex flex-wrap items-center justify-between gap-3 text-xs text-[var(--ui-text-muted)]">
-      <span>Page {{ credentialPage }} of {{ credentialPages }} · {{ formatNumber(credentialTotal) }} execution credentials</span>
-      <div class="flex gap-2"><AppButton size="sm" color="neutral" variant="outline" :disabled="credentialsLoading || credentialPage <= 1 || !canAttribute" @click="credentialPage--">Previous credentials</AppButton><AppButton size="sm" color="neutral" variant="outline" :disabled="credentialsLoading || credentialPage >= credentialPages || !canAttribute" @click="credentialPage++">Next credentials</AppButton></div>
-    </div>
     <AdminUsageInsights :common-query="insightQuery" />
 
     <AppModal v-model:open="rankingOpen" title="Usage ranking" description="Aggregated usage for the selected dimension and metric." :ui="{ content: 'sm:max-w-6xl' }"><template #body><div class="space-y-4"><div class="grid gap-3 sm:grid-cols-3"><UFormField label="Group by"><USelect v-model="rankingGroup" :items="rankingGroupOptions" value-key="value" label-key="label" class="w-full" @update:model-value="loadRanking" /></UFormField><UFormField label="Metric"><USelect v-model="rankingMetric" :items="rankingMetricOptions" value-key="value" label-key="label" class="w-full" @update:model-value="loadRanking" /></UFormField><UFormField label="Rows"><USelect v-model="rankingLimit" :items="rankingLimitOptions" value-key="value" label-key="label" class="w-full" @update:model-value="loadRanking" /></UFormField></div><AppCard :ui="{ body: 'p-0' }"><AppTable :columns="rankingColumns" :data="rankingItems" :loading="rankingLoading" class="min-w-[980px]"><template #rank-cell="{ row }">{{ rankingItems.indexOf(rowValue(row)) + 1 }}</template><template #name-cell="{ row }"><div class="min-w-48"><p class="truncate font-medium">{{ rowValue(row).label || rowValue(row).id || 'Unknown' }}</p><p class="truncate font-mono text-xs text-[var(--ui-text-muted)]">{{ rowValue(row).id }}</p></div></template><template #amount-cell="{ row }">{{ formatAmount(rowValue(row).total_amount, rowValue(row).currency || totals.currency) }}</template><template #requests-cell="{ row }">{{ formatNumber(rowValue(row).request_count) }}</template><template #tokens-cell="{ row }">{{ formatCompactNumber(rowValue(row).total_tokens) }}</template><template #success-cell="{ row }">{{ formatPercent(rowValue(row).success_rate) }}</template><template #cache-cell="{ row }">{{ formatPercent(rowValue(row).cache_rate) }}</template><template #latency-cell="{ row }">{{ formatMilliseconds(rowValue(row).avg_latency_ms) }}</template></AppTable></AppCard></div></template></AppModal>
@@ -353,10 +339,15 @@ const overviewTokenBuckets = computed(() => overviewTokenBreakdown.value ? [
 const costBreakdown = computed(() => Array.isArray(overview.value?.cost_breakdown) ? overview.value.cost_breakdown : [])
 const top = computed(() => overview.value?.top || {})
 const chartMetrics = computed(() => [
-  { label: 'Total tokens', value: formatCompactNumber(totals.value.total_tokens), hint: `${formatCompactNumber(totals.value.input_tokens)} input · ${formatCompactNumber(totals.value.output_tokens)} output`, icon: 'i-tabler-database', color: 'text-violet-500', points: trend.value.map(point => Number(point.total_tokens) || 0) },
-  { label: 'Spend', value: formatAmount(totals.value.total_amount, totals.value.currency), hint: `${formatAmount(totals.value.blended_cost_per_1m_tokens, totals.value.currency)} / 1M tokens`, icon: 'i-tabler-wallet', color: 'text-emerald-500', points: trend.value.map(point => Number(point.total_amount) || 0) },
-  { label: 'Requests', value: formatNumber(totals.value.request_count), hint: `${formatNumber(totals.value.success_count)} successful · ${formatNumber(totals.value.failed_count)} failed`, icon: 'i-tabler-bolt', color: 'text-blue-500', points: trend.value.map(point => Number(point.request_count) || 0) }
+  { label: 'Total tokens', value: formatCompactNumber(totals.value.total_tokens), detail: `${formatCompactNumber(totals.value.input_tokens)} input · ${formatCompactNumber(totals.value.output_tokens)} output`, icon: 'i-tabler-database', tone: 'violet', points: trend.value.map(point => Number(point.total_tokens) || 0) },
+  { label: 'Spend', value: formatAmount(totals.value.total_amount, totals.value.currency), detail: `${formatAmount(totals.value.blended_cost_per_1m_tokens, totals.value.currency)} / 1M tokens`, icon: 'i-tabler-wallet', tone: 'emerald', points: trend.value.map(point => Number(point.total_amount) || 0) },
+  { label: 'Requests', value: formatNumber(totals.value.request_count), detail: `${formatNumber(totals.value.success_count)} ok · ${formatNumber(totals.value.failed_count)} failed · ${formatPercent(totals.value.error_rate)} errors`, icon: 'i-tabler-bolt', tone: 'blue', points: trend.value.map(point => Number(point.request_count) || 0) },
+  { label: 'Live throughput', value: `${formatDecimal(live.value.rpm)} RPM`, detail: `${formatCompactNumber(live.value.tpm)} TPM · P50 ${formatMilliseconds(live.value.p50_latency_ms)}`, icon: 'i-tabler-activity-heartbeat', tone: 'amber' }
 ])
+function rankingShare(item, items) {
+  const max = Math.max(0, ...items.map(entry => Number(entry.total_amount) || 0))
+  return max > 0 ? Math.max(3, Math.round(((Number(item.total_amount) || 0) / max) * 100)) : 0
+}
 const tokenSeriesLegend = [
   { label: 'Uncached input', color: '#8b5cf6' }, { label: 'Cache read', color: '#3b82f6' }, { label: 'Cache write', color: '#d946ef' },
   { label: 'Regular output', color: '#10b981' }, { label: 'Reasoning', color: '#f59e0b' }, { label: 'Unclassified', color: '#a1a1aa' }

@@ -1,26 +1,6 @@
 <template>
-  <div class="space-y-6">
-    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-      <div class="flex flex-wrap items-center gap-2">
-        <USelect v-model="pageSize" :items="pageSizeOptions" value-key="value" label-key="label" class="w-32" aria-label="Page size" @update:model-value="resetPages" />
-        <AppButton :color="liveRefresh ? 'primary' : 'neutral'" variant="outline" icon="i-tabler-refresh" @click="liveRefresh = !liveRefresh">
-          Live refresh {{ liveRefresh ? 'on' : 'off' }}
-        </AppButton>
-        <AppButton
-          v-if="activeView === 'application'"
-          color="error"
-          variant="outline"
-          icon="i-tabler-trash"
-          :disabled="applicationTotal === 0"
-          @click="clearConfirmOpen = true"
-        >
-          Clear application logs
-        </AppButton>
-        <AppButton color="neutral" variant="outline" icon="i-tabler-refresh" :loading="loading" @click="refreshActive">
-          Refresh
-        </AppButton>
-      </div>
-    </div>
+  <div class="space-y-4">
+    <AppPanelTabs :model-value="activeView" :items="views" label="Log views" @update:model-value="switchView" />
 
     <div
       v-if="errorMessage"
@@ -43,9 +23,32 @@
       Live refresh is paused while viewing historical pages. Refresh to return to the latest logs.
     </div>
 
-    <AppPanelTabs :model-value="activeView" :items="views" label="Log views" @update:model-value="switchView" />
-
     <AppCard>
+      <template #header>
+        <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div class="min-w-0"><h2 class="text-sm font-semibold">Filters</h2><p class="truncate text-xs text-[var(--ui-text-muted)]">{{ activeDescription }}</p></div>
+          <div class="flex flex-wrap items-center gap-2">
+            <USelect v-model="pageSize" :items="pageSizeOptions" value-key="value" label-key="label" size="sm" class="w-28" aria-label="Page size" @update:model-value="resetPages" />
+            <AppButton size="sm" :color="liveRefresh ? 'primary' : 'neutral'" :variant="liveRefresh ? 'soft' : 'outline'" :icon="liveRefresh ? 'i-tabler-broadcast' : 'i-tabler-broadcast-off'" :aria-pressed="liveRefresh" @click="liveRefresh = !liveRefresh">
+              Live {{ liveRefresh ? 'on' : 'off' }}
+            </AppButton>
+            <AppButton
+              v-if="activeView === 'application'"
+              size="sm"
+              color="error"
+              variant="outline"
+              icon="i-tabler-trash"
+              :disabled="applicationTotal === 0"
+              @click="clearConfirmOpen = true"
+            >
+              Clear application logs
+            </AppButton>
+            <AppButton size="sm" color="neutral" variant="outline" icon="i-tabler-refresh" :loading="loading" @click="refreshActive">
+              Refresh
+            </AppButton>
+          </div>
+        </div>
+      </template>
       <form class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-6" @submit.prevent="applyFilters">
         <template v-if="activeView === 'error-logs'">
           <UFormField label="Search filename" class="md:col-span-2">
@@ -105,7 +108,6 @@
         <div class="flex flex-wrap items-end gap-2 md:col-span-2 xl:col-span-6">
           <AppButton type="submit" color="primary" :loading="loading">Apply filters</AppButton>
           <AppButton color="neutral" variant="ghost" @click="resetFilters">Reset</AppButton>
-          <span class="ml-auto text-xs text-[var(--ui-text-muted)]">{{ activeDescription }}</span>
         </div>
       </form>
     </AppCard>

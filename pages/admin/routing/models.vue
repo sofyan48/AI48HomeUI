@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-6">
+  <div class="space-y-4">
     <UAlert
       v-if="pageError"
       color="error"
@@ -9,20 +9,14 @@
       :description="pageError"
     />
 
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-      <AppCard>
-        <p class="text-xs font-semibold uppercase tracking-wide text-[var(--ui-text-muted)]">Shown</p>
-        <p class="mt-2 text-2xl font-bold">{{ filteredModels.length }}</p>
-      </AppCard>
-      <AppCard>
-        <p class="text-xs font-semibold uppercase tracking-wide text-[var(--ui-text-muted)]">Providers</p>
-        <p class="mt-2 text-2xl font-bold">{{ providerCount }}</p>
-      </AppCard>
-      <AppCard>
-        <p class="text-xs font-semibold uppercase tracking-wide text-[var(--ui-text-muted)]">Channels</p>
-        <p class="mt-2 text-2xl font-bold">{{ channelCount }}</p>
-      </AppCard>
-    </div>
+    <AdminStatGrid
+      label="Model catalog summary"
+      :items="[
+        { label: 'Models shown', value: filteredModels.length, detail: `of ${modelsList.length} in this catalog`, icon: 'i-tabler-box-multiple', tone: 'violet', ratio: modelsList.length ? filteredModels.length / modelsList.length : null },
+        { label: 'Providers', value: providerCount, detail: 'Distinct upstream providers', icon: 'i-tabler-cloud-computing', tone: 'blue' },
+        { label: 'Channels', value: channelCount, detail: 'Channels exposing models', icon: 'i-tabler-route', tone: 'emerald' }
+      ]"
+    />
 
     <div class="flex flex-col gap-3 lg:flex-row lg:items-end">
       <UFormField label="Catalog" class="w-full lg:w-48">

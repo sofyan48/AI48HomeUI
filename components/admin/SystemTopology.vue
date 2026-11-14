@@ -13,7 +13,7 @@
             <UIcon name="i-tabler-alert-triangle" class="size-5" />
           </div>
           <div>
-            <h1 class="text-xl font-semibold">Runtime and diagnostics could not be loaded</h1>
+            <h2 class="text-lg font-semibold">Runtime and diagnostics could not be loaded</h2>
             <p class="mt-2 max-w-2xl text-sm leading-6 text-[var(--ui-text-muted)]">{{ fatalError }}</p>
           </div>
         </div>
@@ -30,7 +30,7 @@
             </div>
             <div class="min-w-0">
               <div class="flex flex-wrap items-center gap-2">
-                <h1 class="text-xl font-semibold tracking-normal">{{ verdict.title }}</h1>
+                <h2 class="text-lg font-semibold tracking-normal">{{ verdict.title }}</h2>
                 <UBadge :color="verdictColor" variant="subtle">{{ verdict.badge }}</UBadge>
               </div>
               <p class="mt-2 max-w-3xl text-sm leading-6 text-[var(--ui-text-muted)]">{{ verdict.description }}</p>
@@ -46,8 +46,8 @@
             <AppButton color="neutral" variant="outline" icon="i-tabler-square-terminal" @click="openDiagnostics">Diagnostics</AppButton>
           </div>
         </div>
-        <div class="mt-5 grid gap-2 border-t border-[var(--ui-border)] pt-4 sm:grid-cols-2 xl:grid-cols-4">
-          <div v-for="fact in verdictFacts" :key="fact.label" class="rounded-md border px-3 py-2 text-xs font-medium" :class="toneClasses(fact.tone)">{{ fact.label }}</div>
+        <div class="mt-4 flex flex-wrap gap-2 border-t border-[var(--ui-border)] pt-4">
+          <div v-for="fact in verdictFacts" :key="fact.label" class="inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium" :class="toneClasses(fact.tone)"><UIcon :name="fact.tone === 'success' ? 'i-tabler-circle-check' : 'i-tabler-alert-circle'" class="size-3.5 shrink-0" />{{ fact.label }}</div>
         </div>
       </AppCard>
 
@@ -59,20 +59,7 @@
         </template>
       </UAlert>
 
-      <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
-        <AppCard v-for="stat in summaryCards" :key="stat.label" :ui="{ body: 'p-3' }">
-          <div class="flex items-start justify-between gap-3">
-            <div class="min-w-0">
-              <p class="text-xs font-medium text-[var(--ui-text-muted)]">{{ stat.label }}</p>
-              <p class="mt-1.5 truncate text-lg font-semibold" :title="stat.value">{{ stat.value }}</p>
-            </div>
-            <div class="flex size-7 shrink-0 items-center justify-center rounded-md border" :class="toneClasses(stat.tone)">
-              <UIcon :name="stat.icon" class="size-4" />
-            </div>
-          </div>
-          <p class="mt-2 line-clamp-2 text-xs leading-5 text-[var(--ui-text-muted)]" :title="stat.detail">{{ stat.detail }}</p>
-        </AppCard>
-      </div>
+      <AdminStatGrid label="System summary" :items="summaryStats" :columns="6" />
 
       <AppCard :ui="{ body: 'p-4' }">
         <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
@@ -334,6 +321,12 @@ const summaryCards = computed(() => [
   { label: 'Attention', value: String(attentionCount.value), detail: attentionCount.value ? 'Topology needs review' : 'No attention items', tone: attentionCount.value ? 'warning' : 'success', icon: 'i-tabler-alert-triangle' },
   { label: 'Config', value: configSnapshot.value ? 'Available' : 'N/A', detail: configSnapshot.value ? 'Summary loaded' : 'Summary unavailable', tone: configSnapshot.value ? 'success' : 'warning', icon: 'i-tabler-adjustments' }
 ])
+const statTones: Record<string, 'emerald' | 'blue' | 'amber' | 'rose' | 'neutral'> = { success: 'emerald', info: 'blue', warning: 'amber', danger: 'rose', neutral: 'neutral' }
+const summaryStats = computed(() => summaryCards.value.map(stat => ({
+  ...stat,
+  tone: statTones[stat.tone] || 'neutral',
+  warning: stat.tone === 'warning' && stat.label === 'Attention'
+})))
 const topologyDescription = computed(() => nodesSupported.value ? topology.value ? `${cpaCount.value} CPA, ${homeCount.value} Home` : nodes.value.length ? `${nodes.value.length} CPA nodes across ${inferredHomeCount.value} Home nodes` : 'Node route is available, no connection records yet' : 'This runtime does not expose node queries')
 const configSummary = computed(() => normalizeTopologyConfig(configSnapshot.value))
 const diagnosticSignals = computed(() => [signal('Request logs', configSummary.value.requestLog), signal('Usage statistics', configSummary.value.usageStatistics), signal('File logging', configSummary.value.loggingToFile)])

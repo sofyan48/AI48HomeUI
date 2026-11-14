@@ -20,12 +20,12 @@
             type="button"
             :disabled="providerEditorOpen || deleteOpen"
             :aria-current="selectedProviderRoute === category.value ? 'page' : undefined"
-            class="flex w-full min-w-0 items-center justify-between gap-3 rounded-md border px-3 py-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-            :class="selectedProviderRoute === category.value ? 'border-[var(--ui-primary)] bg-[var(--ui-primary)]/10 text-[var(--ui-primary)]' : 'border-transparent hover:border-[var(--ui-border)] hover:bg-[var(--ui-bg-elevated)]'"
+            class="flex w-full min-w-0 items-center justify-between gap-3 rounded-lg border px-2.5 py-2 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+            :class="selectedProviderRoute === category.value ? 'border-[color-mix(in_oklch,var(--ui-primary)_30%,transparent)] bg-[var(--admin-selected)] text-[var(--ui-primary)]' : 'border-transparent hover:bg-[var(--ui-hover)]'"
             @click="selectedProviderRoute = category.value"
           >
             <span class="flex min-w-0 items-center gap-2.5">
-              <span class="flex size-6 shrink-0 items-center justify-center rounded-md border border-[var(--ui-border)] bg-[var(--ui-bg-elevated)] text-[10px] font-semibold" aria-hidden="true">{{ category.mark }}</span>
+              <span class="flex size-7 shrink-0 items-center justify-center rounded-md bg-[var(--ui-bg-muted)] text-[10px] font-semibold" aria-hidden="true">{{ category.mark }}</span>
               <span class="min-w-0">
               <span class="block truncate text-sm font-medium">{{ category.label }}</span>
               <span class="mt-0.5 block text-xs text-[var(--ui-text-muted)]">
@@ -34,7 +34,7 @@
               </span>
             </span>
             <UIcon v-if="categoryStats[category.value]?.disabled" name="i-tabler-alert-triangle" class="size-4 shrink-0 text-[var(--ui-warning)]" :aria-label="`${categoryStats[category.value].disabled} disabled entries`" />
-            <span v-else class="shrink-0 rounded-md border border-[var(--ui-border)] px-2 py-1 text-xs" :aria-label="categoryStats[category.value] ? `${categoryStats[category.value].total} entries` : 'Counts unavailable'">{{ categoryStats[category.value]?.total ?? '—' }}</span>
+            <span v-else class="shrink-0 rounded-full bg-[var(--ui-bg-muted)] px-2 py-0.5 text-xs tabular-nums" :aria-label="categoryStats[category.value] ? `${categoryStats[category.value].total} entries` : 'Counts unavailable'">{{ categoryStats[category.value]?.total ?? '—' }}</span>
           </button>
           </nav>
         </AppCard>
@@ -42,7 +42,7 @@
 
       <div class="min-w-0">
         <AppCard :ui="{ body: 'p-0' }">
-        <div class="flex flex-col gap-3 border-b border-[var(--ui-border)] px-4 py-4 md:flex-row md:items-center md:justify-between">
+        <div class="flex flex-col gap-3 border-b border-[var(--ui-border)] px-4 py-3 md:flex-row md:items-center md:justify-between">
           <div class="w-full sm:w-auto">
             <label class="mb-1.5 block text-sm font-medium xl:hidden">Provider category</label>
             <USelectMenu
@@ -73,12 +73,10 @@
           <template #endpoint-cell="{ row }">
             <p class="max-w-56 truncate font-mono text-xs text-[var(--ui-text-muted)]" :title="safeEndpoint(rowValue(row)['base-url'] || rowValue(row).base_url)">{{ safeEndpoint(rowValue(row)['base-url'] || rowValue(row).base_url) }}</p>
           </template>
-          <template #prefix-cell="{ row }"><span class="rounded-md border border-[var(--ui-border)] px-2 py-1 text-xs">{{ rowValue(row).prefix || 'None' }}</span></template>
+          <template #prefix-cell="{ row }"><span class="rounded-full bg-[var(--ui-bg-muted)] px-2 py-0.5 font-mono text-xs">{{ rowValue(row).prefix || 'None' }}</span></template>
           <template #models-cell="{ row }"><span class="text-xs text-[var(--ui-text-muted)]">{{ Array.isArray(rowValue(row).models) ? rowValue(row).models.length : 0 }} models · {{ Object.keys(rowValue(row).headers || {}).length }} headers</span></template>
           <template #status-cell="{ row }">
-            <span class="inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs font-medium" :class="rowValue(row).disabled ? 'border-[var(--ui-warning)] text-[var(--ui-warning)]' : 'border-[var(--ui-primary)] text-[var(--ui-primary)]'">
-              <UIcon :name="rowValue(row).disabled ? 'i-tabler-alert-triangle' : 'i-tabler-circle-check'" class="size-3" />{{ rowValue(row).disabled ? 'Disabled' : 'Active' }}
-            </span>
+            <UBadge :color="rowValue(row).disabled ? 'warning' : 'success'" variant="subtle" size="sm" :icon="rowValue(row).disabled ? 'i-tabler-alert-triangle' : 'i-tabler-circle-check'">{{ rowValue(row).disabled ? 'Disabled' : 'Active' }}</UBadge>
           </template>
 
           <template #actions-cell="{ row }">

@@ -23,20 +23,14 @@
       <AdminBillingFilterBar v-model:filters="overviewFilters" v-model:preset="overviewPreset" :range-options="rangeOptions" :user-options="userSearchOptions" :provider-options="providerSearchOptions" :model-options="modelSearchOptions" :loading="overviewLoading" @range="selectRange('overview', $event)" @apply="applyOverviewFilters" @reset="resetOverviewFilters" />
 
       <template v-if="overview">
-        <section class="overflow-hidden rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg)]" aria-label="Summary">
-          <dl class="grid grid-cols-2 divide-[var(--ui-border)] lg:grid-cols-4 lg:divide-x">
-            <div v-for="(metric, index) in financeMetrics" :key="metric.label" class="min-w-0 px-4 py-4 sm:px-5" :class="[index % 2 ? 'border-l border-[var(--ui-border)] lg:border-l-0' : '', index > 1 ? 'border-t border-[var(--ui-border)] lg:border-t-0' : '']">
-              <dt class="flex items-center justify-between text-xs text-[var(--ui-text-muted)]">{{ metric.label }}<span class="text-[10px] uppercase tracking-wide text-[var(--ui-text-dimmed)]">{{ metric.hint }}</span></dt>
-              <dd class="mt-1.5 truncate text-2xl font-semibold tabular-nums text-[var(--ui-text-highlighted)]" :title="metric.value">{{ metric.value }}</dd>
-            </div>
-          </dl>
-          <dl class="flex flex-wrap gap-x-6 gap-y-1 border-t border-[var(--ui-border)] bg-[var(--ui-bg-elevated)]/50 px-4 py-2.5 text-xs sm:px-5">
-            <div v-for="metric in usageMetrics" :key="metric.label" class="flex items-baseline gap-1.5"><dt class="text-[var(--ui-text-muted)]">{{ metric.label }}</dt><dd class="font-medium tabular-nums text-[var(--ui-text-highlighted)]">{{ metric.value }}</dd></div>
-          </dl>
-        </section>
+        <AdminStatGrid label="Billing summary" :items="financeMetrics" :columns="4" />
+        <dl class="app-surface flex flex-wrap items-center gap-x-6 gap-y-2 px-4 py-2.5 text-xs" aria-label="Usage in range">
+          <div class="flex items-center gap-1.5 font-medium text-[var(--ui-text-toned)]"><UIcon name="i-tabler-chart-bar" class="size-3.5" />Usage in range</div>
+          <div v-for="metric in usageMetrics" :key="metric.label" class="flex items-baseline gap-1.5"><dt class="text-[var(--ui-text-muted)]">{{ metric.label }}</dt><dd class="font-semibold tabular-nums text-[var(--ui-text-highlighted)]">{{ metric.value }}</dd></div>
+        </dl>
 
         <div class="grid grid-cols-1 gap-4 xl:grid-cols-3">
-          <section class="min-w-0 overflow-hidden rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg)] xl:col-span-2" aria-labelledby="billing-daily">
+          <section class="app-surface min-w-0 overflow-hidden xl:col-span-2" aria-labelledby="billing-daily">
             <header class="flex items-baseline justify-between gap-3 border-b border-[var(--ui-border)] px-4 py-3">
               <h2 id="billing-daily" class="text-sm font-semibold">Daily charges</h2>
               <span class="text-xs tabular-nums text-[var(--ui-text-muted)]">{{ overviewRange.from || 'All time' }} – {{ overviewRange.to || 'Now' }} · {{ overviewRange.timezone || savedReportTimezone }}</span>
@@ -52,7 +46,7 @@
             <p v-else class="py-12 text-center text-sm text-[var(--ui-text-muted)]">No charges in the selected range.</p>
           </section>
 
-          <section class="min-w-0 overflow-hidden rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg)]" aria-labelledby="billing-top-users">
+          <section class="app-surface min-w-0 overflow-hidden" aria-labelledby="billing-top-users">
             <header class="border-b border-[var(--ui-border)] px-4 py-3"><h2 id="billing-top-users" class="text-sm font-semibold">Top consumers</h2></header>
             <ol v-if="topUsers.length" class="max-h-96 overflow-y-auto">
               <li v-for="(item, index) in topUsers" :key="item.id || item.label" class="flex items-center gap-3 border-b border-[var(--ui-border)] px-4 py-2 last:border-b-0">
@@ -66,11 +60,11 @@
         </div>
 
         <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <section v-for="group in rankingGroups" :key="group.title" class="min-w-0 overflow-hidden rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg)]" :aria-label="group.title">
+          <section v-for="group in rankingGroups" :key="group.title" class="app-surface min-w-0 overflow-hidden" :aria-label="group.title">
             <header class="border-b border-[var(--ui-border)] px-4 py-3"><h2 class="text-sm font-semibold">{{ group.title }}</h2></header>
             <ul v-if="group.items.length" class="max-h-80 overflow-y-auto">
               <li v-for="item in group.items" :key="item.id || item.label" class="relative flex items-center justify-between gap-3 border-b border-[var(--ui-border)] px-4 py-2 text-sm last:border-b-0">
-                <span class="absolute inset-y-0 left-0 bg-[var(--ui-primary)]/8" :style="{ width: `${share(item.amount, group.items)}%` }" aria-hidden="true" />
+                <span class="absolute inset-y-0 left-0 bg-[var(--ui-primary)]/10" :style="{ width: `${share(item.amount, group.items)}%` }" aria-hidden="true" />
                 <span class="relative min-w-0 truncate" :title="item.label">{{ item.label }}</span>
                 <span class="relative shrink-0 font-medium tabular-nums">{{ formatCredits(item.amount) }}</span>
               </li>
@@ -477,10 +471,10 @@ const filteredModelCandidates = computed(() => {
 const selectedPriceCandidates = computed(() => selectedPriceCandidateKeys.value.map(key => modelCandidates.value.find(candidate => candidate.key === key)).filter(Boolean))
 const loading = computed(() => overviewLoading.value || chargesLoading.value || balancesLoading.value || pricesLoading.value || settingsLoading.value)
 const financeMetrics = computed(() => [
-  { label: 'Charged', value: formatCredits(overviewData.value.total_charge_amount), hint: 'Selected range' },
-  { label: 'Recharged', value: formatCredits(overviewData.value.total_recharge_amount), hint: 'Selected range' },
-  { label: 'Deducted', value: formatCredits(overviewData.value.total_deduct_amount), hint: 'Selected range' },
-  { label: 'Total balance', value: formatCredits(overviewData.value.total_balance), hint: 'Current snapshot' }
+  { label: 'Charged', value: formatCredits(overviewData.value.total_charge_amount), detail: 'Usage charges · selected range', icon: 'i-tabler-receipt', tone: 'violet' },
+  { label: 'Recharged', value: formatCredits(overviewData.value.total_recharge_amount), detail: 'Top-ups · selected range', icon: 'i-tabler-circle-plus', tone: 'emerald' },
+  { label: 'Deducted', value: formatCredits(overviewData.value.total_deduct_amount), detail: 'Manual deductions · selected range', icon: 'i-tabler-circle-minus', tone: 'amber' },
+  { label: 'Total balance', value: formatCredits(overviewData.value.total_balance), detail: 'Current snapshot across users', icon: 'i-tabler-wallet', tone: 'blue' }
 ])
 const usageMetrics = computed(() => [
   { label: 'Requests', value: formatNumber(overviewData.value.request_count) },

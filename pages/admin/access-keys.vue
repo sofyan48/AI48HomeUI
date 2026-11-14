@@ -1,9 +1,11 @@
 <template>
-  <section class="grid w-full gap-5">
-    <header
-      class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
-    >
-    </header>
+  <section class="grid w-full gap-4">
+    <AdminStatGrid
+      v-if="hasLoaded && !primaryError"
+      label="Access key summary"
+      :items="keySummary"
+      :columns="4"
+    />
 
     <AppCard v-if="primaryError">
       <div
@@ -602,6 +604,19 @@ const detailDescription = computed(() => {
   return selectedResource.value
     ? resourceSummary(selectedResource.value)
     : "Select a key or create a new one.";
+});
+
+const keySummary = computed(() => {
+  const total = resources.value.length;
+  const owned = resources.value.filter((resource) => resource.userId != null).length;
+  const credentialScoped = resources.value.filter((resource) => resource.channelGroupIds.length).length;
+  const modelScoped = resources.value.filter((resource) => resource.modelGroupIds.length).length;
+  return [
+    { label: "Access keys", value: total, detail: `${filteredResources.value.length} shown with current search`, icon: "i-tabler-key", tone: "violet" },
+    { label: "Assigned to users", value: owned, detail: `${total - owned} unassigned`, icon: "i-tabler-user-check", tone: "blue", ratio: total ? owned / total : null },
+    { label: "Credential scoped", value: credentialScoped, detail: `${channelGroups.value.length} credential groups available`, icon: "i-tabler-route", tone: "emerald", ratio: total ? credentialScoped / total : null },
+    { label: "Model scoped", value: modelScoped, detail: `${modelGroups.value.length} model groups available`, icon: "i-tabler-box-multiple", tone: "amber", ratio: total ? modelScoped / total : null },
+  ];
 });
 
 const filteredResources = computed(() => {

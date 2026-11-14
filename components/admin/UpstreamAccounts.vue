@@ -9,15 +9,18 @@
 
 
 
-    <section>
+    <section class="app-surface min-w-0 overflow-hidden" aria-label="Upstream accounts">
       <div class="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--ui-border)] px-4 py-3">
-        <h2 class="font-semibold">Upstream accounts</h2>
+        <div class="flex min-w-0 items-center gap-3">
+          <span class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[var(--admin-selected)] text-[var(--ui-primary)]" aria-hidden="true"><UIcon name="i-tabler-user-shield" class="size-4" /></span>
+          <div class="min-w-0"><h2 class="text-sm font-semibold">Upstream accounts</h2><p class="text-xs text-[var(--ui-text-muted)]">OAuth and file-backed credentials used for dispatch</p></div>
+        </div>
         <div class="flex items-center gap-2">
 
           <AppButton size="sm" icon="i-tabler-plus" :disabled="busy" @click="createOpen = true">Add credential</AppButton>
         </div>
       </div>
-      <div class="flex flex-col gap-3 border-b border-[var(--ui-border)] px-4 py-3 lg:flex-row lg:items-center">
+      <div class="flex flex-col gap-3 border-b border-[var(--ui-border)] bg-[var(--admin-control-bg)] px-4 py-2.5 lg:flex-row lg:items-center">
         <UInput v-model="search" type="search" icon="i-tabler-search" placeholder="Search credentials..." aria-label="Search credentials" class="w-full lg:max-w-80 lg:flex-1" />
         <div class="grid w-full grid-cols-1 items-center gap-2 min-[480px]:grid-cols-2 sm:flex sm:flex-wrap lg:flex-1">
           <USelect v-model="statusFilter" aria-label="Filter by status" :items="statusOptions" value-key="value" label-key="label" class="w-full sm:w-40" />
@@ -34,7 +37,7 @@
         </div>
       </div>
       <div>
-        <div v-if="selectedIDs.size" class="mb-3 flex flex-col gap-3 rounded-md border border-[var(--ui-border)] bg-[var(--ui-bg-elevated)] app-surface px-3 py-2.5 lg:flex-row lg:items-center lg:justify-between">
+        <div v-if="selectedIDs.size" class="flex flex-col gap-3 border-b border-[var(--ui-border)] bg-[var(--admin-selected)] px-4 py-2.5 lg:flex-row lg:items-center lg:justify-between">
           <div><p class="text-sm font-medium">{{ selectedIDs.size }} selected</p><p class="mt-0.5 text-xs text-[var(--ui-text-muted)]">{{ selectedEnabledCount }} enabled · {{ selectedDisabledCount }} disabled</p></div>
           <div class="flex flex-wrap gap-2">
             <AppButton size="sm" color="neutral" variant="ghost" :disabled="bulkBusy" @click="selectedIDs = new Set()">Clear selection</AppButton>
@@ -43,7 +46,7 @@
             <AppButton size="sm" color="error" variant="ghost" icon="i-tabler-trash" :disabled="busy || pending" @click="bulkDeleteOpen = true">Delete selected</AppButton>
           </div>
         </div>
-      <AppCard :ui="{ body: 'p-0' }">
+      <div class="min-w-0 overflow-x-auto">
       <AppTable :columns="columns" :data="filteredCredentials" :loading="pending" class="accounts-table min-w-0">
         <template #select-header><input type="checkbox" aria-label="Select all visible credentials" :checked="allVisibleSelected" :indeterminate="someVisibleSelected && !allVisibleSelected" :disabled="bulkBusy || pending || !filteredCredentials.length" @change="toggleAllVisible($event.target.checked)"></template>
         <template #select-cell="{ row }"><input type="checkbox" :aria-label="`Select ${value(row).label || value(row).name || value(row).id}`" :checked="selectedIDs.has(value(row).id)" :disabled="bulkBusy || pending" @change="toggleSelected(value(row).id, $event.target.checked)"></template>
@@ -70,7 +73,7 @@
         </template>
         <template #empty><div class="py-14 text-center text-sm text-[var(--ui-text-muted)]"><p>{{ pending ? 'Loading accounts…' : pageError ? 'Could not load accounts. Check the connection and refresh.' : hasActiveFilters ? 'No matching credentials.' : 'No credentials have been added.' }}</p><AppButton v-if="hasActiveFilters && !pending" class="mt-3" color="neutral" variant="outline" size="sm" @click="clearFilters">Clear filters</AppButton></div></template>
       </AppTable>
-      </AppCard>
+      </div>
       </div>
     </section>
 

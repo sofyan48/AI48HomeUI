@@ -1,5 +1,5 @@
 <template>
-    <div class="space-y-6">
+    <div class="space-y-4">
         <UAlert
             v-if="pageError"
             color="error"
@@ -7,36 +7,14 @@
             title="Plugin data could not be loaded"
             :description="pageError"
         />
-        <div class="grid gap-4 sm:grid-cols-3">
-            <AppCard
-                ><p
-                    class="text-xs font-semibold uppercase text-[var(--ui-text-muted)]"
-                >
-                    Configured / registered
-                </p>
-                <p class="mt-2 text-2xl font-bold">
-                    {{ installed.length }}
-                </p></AppCard
-            ><AppCard
-                ><p
-                    class="text-xs font-semibold uppercase text-[var(--ui-text-muted)]"
-                >
-                    Store entries
-                </p>
-                <p class="mt-2 text-2xl font-bold">
-                    {{ store.length }}
-                </p></AppCard
-            ><AppCard
-                ><p
-                    class="text-xs font-semibold uppercase text-[var(--ui-text-muted)]"
-                >
-                    Auth rules
-                </p>
-                <p class="mt-2 text-2xl font-bold">
-                    {{ authRules.length }}
-                </p></AppCard
-            >
-        </div>
+        <AdminStatGrid
+            label="Plugin summary"
+            :items="[
+                { label: 'Configured / registered', value: installed.length, detail: 'Plugins known to Home', icon: 'i-tabler-puzzle', tone: 'violet' },
+                { label: 'Store entries', value: store.length, detail: 'Available to install', icon: 'i-tabler-building-store', tone: 'blue' },
+                { label: 'Auth rules', value: authRules.length, detail: 'Plugin access rules', icon: 'i-tabler-shield-lock', tone: 'amber' }
+            ]"
+        />
         <UAlert
             v-if="operation"
             :color="operation.error ? 'error' : 'info'"

@@ -1,5 +1,5 @@
 <template>
-  <section class="grid gap-5">
+  <section class="grid gap-4">
     <UAlert
       v-if="capabilitiesError"
       color="warning"
@@ -24,6 +24,7 @@
     />
 
     <template v-else>
+      <AdminStatGrid label="Users summary" :items="userSummary" :columns="4" :loading="loading && !users.length" @select="selectSummary" />
       <AppPanelTabs v-model="activeTab" :items="tabs" label="Users & Access" />
 
       <AdminTablePanel
@@ -1375,6 +1376,22 @@ const unassignedKeyCount = computed(
     keys.value.filter((key) => key.user_id == null || Number(key.user_id) === 0)
       .length,
 );
+const userSummary = computed(() => {
+  const live = users.value.filter((user) => !user.deleted_at);
+  const pendingApproval = live.filter((user) => user.approval_pending).length;
+  const pendingTopups = live.filter((user) => user.pending_topup).length;
+  const totalCredits = live.reduce((sum, user) => sum + (Number(user.credits) || 0), 0);
+  return [
+    { key: "users", label: "Users", value: live.length, detail: `${live.length - pendingApproval} active · ${pendingApproval} pending approval`, icon: "i-tabler-users", tone: "violet", action: true, ariaLabel: "Show users", ratio: live.length ? (live.length - pendingApproval) / live.length : null },
+    { key: "pending", label: "Needs review", value: pendingApproval + pendingTopups, detail: `${pendingApproval} sign-ups · ${pendingTopups} top-ups`, icon: "i-tabler-user-exclamation", tone: "amber", action: true, ariaLabel: "Show users needing review", warning: pendingApproval + pendingTopups > 0 },
+    { key: "credits", label: "Credits held", value: formatCredits(totalCredits), detail: "Total balance across users", icon: "i-tabler-wallet", tone: "emerald" },
+    { key: "keys", label: "Client keys", value: keys.value.length, detail: `${unassignedKeyCount.value} unassigned`, icon: "i-tabler-key", tone: "blue", action: true, ariaLabel: "Show client keys" },
+  ];
+});
+function selectSummary(key) {
+  activeTab.value = key === "keys" ? "keys" : "users";
+  if (key === "pending") search.value = "pending";
+}
 const rowValue = (row) => row?.original ?? row;
 const userStatus = (user) => user.deleted_at ? "Deleted" : user.approval_pending ? "Pending approval" : "Active";
 const resetAllowanceSupported = computed(() => supports("user_reset_allowance", false));

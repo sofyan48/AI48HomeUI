@@ -7,42 +7,12 @@
       title="Upstream summary unavailable"
       :description="summaryError"
     />
-    <section aria-label="Upstream summary" :aria-busy="summaryPending" class="metric-strip">
-      <dl class="metric">
-        <dt>Accounts</dt>
-        <dd class="metric-value">{{ summaryPending && !accounts.length ? "—" : accounts.length }}</dd>
-        <dd class="metric-detail">
-          <span class="metric-dot bg-green-500" />{{ activeAccounts }} active
-          <span class="metric-dot ml-2 bg-zinc-400" />{{ disabledAccounts }} disabled
-          <template v-if="unavailableAccounts"><span class="metric-dot ml-2 bg-amber-500" />{{ unavailableAccounts }} unavailable</template>
-        </dd>
-      </dl>
-      <dl class="metric">
-        <dt>Provider keys</dt>
-        <dd class="metric-value">{{ providerKeyCount }}</dd>
-        <dd class="metric-detail truncate" :title="providerGroups">
-          {{ providerGroups || "No entries" }}
-        </dd>
-      </dl>
-      <button
-        type="button"
-        class="metric metric--action text-left"
-        :class="attentionCount && !quotaError ? 'metric--warning' : ''"
-        aria-label="Show accounts needing attention"
-        @click="showAttention"
-      >
-        <span class="flex items-center justify-between text-xs text-[var(--ui-text-muted)]">Needs attention<UIcon name="i-tabler-arrow-right" class="metric-arrow size-3.5" /></span>
-        <span class="metric-value block">{{ quotaError ? "—" : attentionCount }}</span>
-        <span class="metric-detail block">{{ quotaError ? "Quota snapshots unavailable" : "Quota status or stale collection" }}</span>
-      </button>
-      <dl class="metric">
-        <dt>WebSockets</dt>
-        <dd class="metric-value">
-          {{ accounts.filter((item) => item.websockets).length }}
-        </dd>
-        <dd class="metric-detail">Accounts with WebSockets on</dd>
-      </dl>
-    </section>
+    <AdminStatGrid
+      label="Upstream summary"
+      :items="summaryCards"
+      :loading="summaryPending && !accounts.length"
+      @select="showAttention"
+    />
 
     <AppPanelTabs
       :model-value="tab"
@@ -218,6 +188,48 @@ const providerGroups = computed(() =>
 const attentionCount = computed(
   () => (summaryQuota.value || []).filter(isQuotaAttention).length,
 );
+const summaryCards = computed(() => [
+  {
+    key: "accounts",
+    label: "Accounts",
+    value: accounts.value.length,
+    detail: [
+      `${activeAccounts.value} active`,
+      `${disabledAccounts.value} disabled`,
+      unavailableAccounts.value ? `${unavailableAccounts.value} unavailable` : "",
+    ].filter(Boolean).join(" · "),
+    icon: "i-tabler-user-shield",
+    tone: "violet",
+    ratio: accounts.value.length ? activeAccounts.value / accounts.value.length : null,
+  },
+  {
+    key: "providers",
+    label: "Provider keys",
+    value: providerKeyCount.value,
+    detail: providerGroups.value || "No entries",
+    icon: "i-tabler-key",
+    tone: "blue",
+  },
+  {
+    key: "attention",
+    label: "Needs attention",
+    value: quotaError.value ? "—" : attentionCount.value,
+    detail: quotaError.value ? "Quota snapshots unavailable" : "Quota status or stale collection",
+    icon: "i-tabler-alert-triangle",
+    tone: "amber",
+    action: true,
+    ariaLabel: "Show accounts needing attention",
+    warning: Boolean(attentionCount.value && !quotaError.value),
+  },
+  {
+    key: "websockets",
+    label: "WebSockets",
+    value: accounts.value.filter((item) => item.websockets).length,
+    detail: "Accounts with WebSockets on",
+    icon: "i-tabler-plug-connected",
+    tone: "emerald",
+  },
+]);
 function selectTab(value) {
   void router.replace({
     query: { ...route.query, tab: value, credential: undefined },
@@ -250,86 +262,3 @@ async function syncData() {
   }
 }
 </script>
-
-<style scoped>
-.metric-strip {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 1rem;
-}
-
-.metric {
-  position: relative;
-  min-width: 0;
-  overflow: hidden;
-  padding: 1rem 1.25rem 1.125rem;
-  border: 1px solid var(--admin-panel-border, var(--ui-border));
-  border-radius: 1rem;
-  background: var(--admin-panel-bg, var(--ui-bg));
-  box-shadow: var(--admin-panel-shadow);
-}
-
-.metric::after {
-  position: absolute;
-  inset-inline: 0;
-  bottom: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--metric-accent, var(--ui-primary)), transparent);
-  content: '';
-}
-.metric:nth-child(1) { --metric-accent: var(--color-violet-500); }
-.metric:nth-child(2) { --metric-accent: var(--color-blue-500); }
-.metric:nth-child(3) { --metric-accent: var(--color-amber-500); }
-.metric:nth-child(4) { --metric-accent: var(--color-emerald-500); }
-
-.metric dt,
-.metric-detail {
-  font-size: 0.75rem;
-  line-height: 1rem;
-  color: var(--ui-text-muted);
-}
-
-.metric-value {
-  margin-block: 0.375rem 0.25rem;
-  font-size: 1.75rem;
-  line-height: 2.25rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  font-variant-numeric: tabular-nums;
-  color: var(--ui-text-highlighted);
-}
-
-.metric-dot {
-  display: inline-block;
-  width: 0.375rem;
-  height: 0.375rem;
-  margin-right: 0.3125rem;
-  border-radius: 9999px;
-  vertical-align: middle;
-}
-
-.metric--action {
-  cursor: pointer;
-  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
-}
-
-.metric--action:hover {
-  transform: translateY(-2px);
-  border-color: color-mix(in oklch, var(--metric-accent) 40%, var(--ui-border));
-  box-shadow: 0 12px 28px -14px color-mix(in oklch, var(--metric-accent) 45%, transparent);
-}
-.metric--action:focus-visible { outline: 2px solid var(--ui-primary); outline-offset: 2px; }
-@media (prefers-reduced-motion: reduce) { .metric--action { transition: none; } }
-.metric--action .metric-arrow { opacity: 0; transition: opacity 120ms ease; }
-.metric--action:is(:hover, :focus-visible) .metric-arrow { opacity: 1; }
-.metric--warning .metric-value { color: var(--color-amber-600); }
-:global(.dark) .metric--warning .metric-value { color: var(--color-amber-400); }
-
-@media (min-width: 40rem) {
-  .metric-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-
-@media (min-width: 80rem) {
-  .metric-strip { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-}
-</style>

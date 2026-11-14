@@ -1,79 +1,121 @@
 <template>
-  <div class="space-y-6">
+  <div class="space-y-4">
     <AppPanelTabs v-model="activeView" :items="views" label="Diagnostics views" />
 
-    <section v-if="activeView === 'console'" class="space-y-6" role="tabpanel">
-      <div class="flex flex-wrap items-end gap-3">
-        <UFormField label="Overview window">
-          <USelect v-model="windowSeconds" :items="windowOptions" value-key="value" label-key="label" class="w-40" :disabled="loadingConsole" @update:model-value="refreshConsole" />
-        </UFormField>
-        <UFormField label="Realtime grouping">
-          <USelect v-model="groupBy" :items="['model', 'provider', 'client_key', 'credential']" class="w-40" :disabled="loadingConsole" @update:model-value="refreshConsole" />
-        </UFormField>
-        <AppButton icon="i-tabler-refresh" :loading="loadingConsole" @click="refreshConsole">Refresh</AppButton>
-        <label class="flex items-center gap-2 text-sm"><input v-model="autoRefresh" type="checkbox" /> Auto-refresh every 30s</label>
-        <span v-if="lastUpdated" class="text-xs text-[var(--ui-text-muted)]">Updated {{ formatTime(lastUpdated) }}</span>
-      </div>
-      <UAlert v-if="consoleError" color="error" variant="subtle" title="Some diagnostics could not be loaded" :description="consoleError" />
-      <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <AppCard v-for="metric in summaryMetrics" :key="metric.label">
-          <p class="text-sm text-[var(--ui-text-muted)]">{{ metric.label }}</p>
-          <p class="mt-2 text-2xl font-semibold tabular-nums">{{ metric.value }}</p>
-        </AppCard>
-      </div>
-      <div class="grid gap-6 xl:grid-cols-2">
-        <AppCard>
-          <template #header><h2 class="font-semibold">Realtime · last 15 minutes</h2></template>
-          <div class="grid grid-cols-3 gap-3 text-sm">
-            <div><p class="text-[var(--ui-text-muted)]">Requests/min</p><p class="font-semibold">{{ decimal(latestVelocity?.rpm) }}</p></div>
-            <div><p class="text-[var(--ui-text-muted)]">Tokens/min</p><p class="font-semibold">{{ number(latestVelocity?.tpm) }}</p></div>
-            <div><p class="text-[var(--ui-text-muted)]">Error rate</p><p class="font-semibold">{{ percent(latestVelocity?.error_rate) }}</p></div>
+    <section v-if="activeView === 'console'" class="space-y-4" role="tabpanel">
+      <AppCard :ui="{ body: 'p-3 sm:p-3' }">
+        <div class="flex flex-wrap items-end gap-3">
+          <UFormField label="Overview window">
+            <USelect v-model="windowSeconds" :items="windowOptions" value-key="value" label-key="label" class="w-40" :disabled="loadingConsole" @update:model-value="refreshConsole" />
+          </UFormField>
+          <UFormField label="Realtime grouping">
+            <USelect v-model="groupBy" :items="['model', 'provider', 'client_key', 'credential']" class="w-40" :disabled="loadingConsole" @update:model-value="refreshConsole" />
+          </UFormField>
+          <div class="ml-auto flex flex-wrap items-center gap-3">
+            <label class="flex items-center gap-2 text-sm"><USwitch v-model="autoRefresh" aria-label="Auto-refresh every 30 seconds" />Auto-refresh 30s</label>
+            <span v-if="lastUpdated" class="text-xs text-[var(--ui-text-muted)]" role="status">Updated {{ formatTime(lastUpdated) }}</span>
+            <AppButton icon="i-tabler-refresh" :loading="loadingConsole" @click="refreshConsole">Refresh</AppButton>
           </div>
-          <h3 class="mt-5 text-sm font-medium">Current usage by {{ groupBy }}</h3>
-          <div v-for="item in realtime?.current_usage || []" :key="item.id" class="flex justify-between gap-3 border-b border-[var(--ui-border)] py-2 text-sm"><span class="truncate">{{ item.label || item.id }}</span><span>{{ number(item.request_count) }} requests</span></div>
-          <p v-if="!realtime?.current_usage?.length" class="mt-3 text-sm text-[var(--ui-text-muted)]">No recent usage.</p>
-          <h3 class="mt-5 text-sm font-medium">Latency distribution</h3>
-          <div v-for="bucket in realtime?.latency_distribution || []" :key="bucket.bucket" class="flex justify-between gap-3 py-1 text-sm"><span>{{ bucket.bucket }}</span><span>{{ number(bucket.request_count) }}</span></div>
-          <p v-if="!realtime?.latency_distribution?.length" class="mt-2 text-sm text-[var(--ui-text-muted)]">No latency data.</p>
-        </AppCard>
-        <AppCard>
-          <template #header><h2 class="font-semibold">Recent activity</h2></template>
-          <div v-for="point in recentActivity" :key="point.bucket_start" class="flex items-center justify-between gap-3 border-b border-[var(--ui-border)] py-2 text-sm">
-            <span>{{ formatTime(point.bucket_start) }}</span><span>{{ number(point.request_count) }} requests · {{ percent(point.error_rate) }} errors</span><UBadge :color="healthColor(point.status)" variant="subtle">{{ point.status }}</UBadge>
-          </div>
-          <p v-if="!recentActivity.length" class="text-sm text-[var(--ui-text-muted)]">No activity in this window.</p>
-        </AppCard>
-        <AppCard v-for="section in healthSections" :key="section.label">
-          <template #header><h2 class="font-semibold">{{ section.label }} health</h2></template>
-          <div v-for="item in section.items" :key="item.id" class="border-b border-[var(--ui-border)] py-3 text-sm">
-            <div class="flex flex-wrap items-center justify-between gap-2"><span class="font-medium">{{ item.label || item.id }}</span><UBadge :color="healthColor(item.status)" variant="subtle">{{ item.status }}</UBadge></div>
-            <p class="text-xs text-[var(--ui-text-muted)]">{{ item.provider || item.credential_type || '' }} · {{ number(item.recent_success_count) }} success / {{ number(item.recent_failed_count) }} failed · {{ percent(item.recent_error_rate) }} errors · p95 {{ milliseconds(item.p95_latency_ms) }}</p>
-            <p v-if="item.last_error_message" class="break-words text-xs text-[var(--ui-text-muted)]">Last error{{ item.last_error_status ? ` (${item.last_error_status})` : '' }}: {{ item.last_error_message }} · {{ formatTime(item.last_error_at) }}</p>
-            <p v-if="item.next_retry_at" class="text-xs text-[var(--ui-text-muted)]">Next retry: {{ formatTime(item.next_retry_at) }}</p>
-          </div>
-          <p v-if="!section.items.length" class="text-sm text-[var(--ui-text-muted)]">No health data in this window.</p>
-        </AppCard>
-      </div>
-      <AppCard>
-        <template #header>
-          <div class="flex flex-wrap items-center justify-between gap-3"><div><h2 class="font-semibold">Request logs</h2><p class="text-xs text-[var(--ui-text-muted)]">{{ number(logs?.total) }} indexed requests · local availability or remote routability</p></div>
-            <form class="flex gap-2" @submit.prevent="applyLogSearch"><UInput v-model="logSearch" placeholder="Request ID, model, status or file" aria-label="Search request logs" /><AppButton type="submit" color="neutral" variant="outline" :disabled="loadingConsole">Search</AppButton></form>
-          </div>
-        </template>
-        <AppCard :ui="{ body: 'p-0' }"><AppTable native><table class="min-w-[42rem] text-left text-sm"><thead><tr><th>Request</th><th>Provider / model</th><th>Home</th><th>File</th><th>Status</th><th>Log</th></tr></thead><tbody>
-          <tr v-for="item in logItems" :key="item.id"><td><div>{{ formatTime(item.timestamp) }}</div><div class="font-mono text-xs">{{ item.request_id || '—' }}</div></td><td>{{ item.provider || '—' }} / {{ item.model || '—' }}</td><td>{{ item.home_ip || '—' }}{{ item.home_port ? `:${item.home_port}` : '' }}</td><td class="font-mono text-xs">{{ item.file_name || 'Remote / unavailable' }}</td><td>{{ item.status }}</td><td><AppButton size="xs" color="neutral" variant="outline" :disabled="!item.download_url" :loading="downloadingId === item.id" @click="downloadLog(item)">Download</AppButton></td></tr>
-        </tbody></table></AppTable></AppCard>
-        <p v-if="!logItems.length" class="py-5 text-center text-sm text-[var(--ui-text-muted)]">No request logs match this window and search.</p>
-        <div class="mt-4 flex items-center justify-end gap-3 text-sm"><AppButton size="sm" color="neutral" variant="outline" :disabled="logPage === 1 || loadingConsole" @click="changeLogPage(-1)">Previous</AppButton><span>Page {{ logPage }} / {{ logPages }}</span><AppButton size="sm" color="neutral" variant="outline" :disabled="logPage >= logPages || loadingConsole" @click="changeLogPage(1)">Next</AppButton></div>
+        </div>
       </AppCard>
+      <UAlert v-if="consoleError" color="error" variant="subtle" title="Some diagnostics could not be loaded" :description="consoleError" />
+      <AdminStatGrid label="Diagnostics summary" :items="summaryMetrics" :columns="4" :loading="loadingConsole && !overview" />
+
+      <div class="grid gap-4 xl:grid-cols-12">
+        <AppCard class="xl:col-span-7" :ui="{ body: 'p-0 sm:p-0' }">
+          <template #header>
+            <div class="flex items-center justify-between gap-3">
+              <div><h2 class="font-semibold">Realtime</h2><p class="text-xs text-[var(--ui-text-muted)]">Last 15 minutes · grouped by {{ groupBy }}</p></div>
+              <span class="inline-flex items-center gap-1.5 rounded-full bg-[var(--ui-bg-muted)] px-2.5 py-1 text-xs text-[var(--ui-text-muted)]"><span class="size-1.5 rounded-full" :class="latestVelocity ? 'bg-emerald-500' : 'bg-zinc-400'" />{{ latestVelocity ? 'Live' : 'Idle' }}</span>
+            </div>
+          </template>
+          <dl class="grid grid-cols-3 divide-x divide-[var(--ui-border)] border-b border-[var(--ui-border)]">
+            <div v-for="item in velocityItems" :key="item.label" class="px-4 py-3">
+              <dt class="text-xs text-[var(--ui-text-muted)]">{{ item.label }}</dt>
+              <dd class="mt-0.5 text-base font-semibold tabular-nums text-[var(--ui-text-highlighted)]">{{ item.value }}</dd>
+            </div>
+          </dl>
+          <div class="grid gap-0 md:grid-cols-2 md:divide-x md:divide-[var(--ui-border)]">
+            <div class="p-4">
+              <h3 class="mb-2 text-xs font-medium text-[var(--ui-text-muted)]">Current usage</h3>
+              <ul v-if="realtime?.current_usage?.length" class="space-y-2.5">
+                <li v-for="item in realtime.current_usage" :key="item.id" class="text-sm">
+                  <div class="flex justify-between gap-3"><span class="truncate" :title="item.label || item.id">{{ item.label || item.id }}</span><span class="shrink-0 tabular-nums text-[var(--ui-text-muted)]">{{ number(item.request_count) }}</span></div>
+                  <div class="mt-1 h-1 overflow-hidden rounded-full bg-[var(--ui-bg-accented)]"><div class="h-full rounded-full bg-violet-500" :style="{ width: `${shareOf(item.request_count, realtime.current_usage)}%` }" /></div>
+                </li>
+              </ul>
+              <p v-else class="py-4 text-sm text-[var(--ui-text-muted)]">No recent usage.</p>
+            </div>
+            <div class="border-t border-[var(--ui-border)] p-4 md:border-t-0">
+              <h3 class="mb-2 text-xs font-medium text-[var(--ui-text-muted)]">Latency distribution</h3>
+              <ul v-if="realtime?.latency_distribution?.length" class="space-y-2.5">
+                <li v-for="bucket in realtime.latency_distribution" :key="bucket.bucket" class="text-sm">
+                  <div class="flex justify-between gap-3"><span class="font-mono text-xs">{{ bucket.bucket }}</span><span class="tabular-nums text-[var(--ui-text-muted)]">{{ number(bucket.request_count) }}</span></div>
+                  <div class="mt-1 h-1 overflow-hidden rounded-full bg-[var(--ui-bg-accented)]"><div class="h-full rounded-full bg-blue-500" :style="{ width: `${shareOf(bucket.request_count, realtime.latency_distribution)}%` }" /></div>
+                </li>
+              </ul>
+              <p v-else class="py-4 text-sm text-[var(--ui-text-muted)]">No latency data.</p>
+            </div>
+          </div>
+        </AppCard>
+        <AppCard class="xl:col-span-5" :ui="{ body: 'p-0 sm:p-0' }">
+          <template #header><div><h2 class="font-semibold">Recent activity</h2><p class="text-xs text-[var(--ui-text-muted)]">Latest active buckets in this window</p></div></template>
+          <ol v-if="recentActivity.length" class="divide-y divide-[var(--ui-border)]">
+            <li v-for="point in recentActivity" :key="point.bucket_start" class="flex items-center gap-3 px-4 py-2 text-sm">
+              <span class="size-2 shrink-0 rounded-full" :class="healthDot(point.status)" aria-hidden="true" />
+              <span class="min-w-0 flex-1 truncate text-xs text-[var(--ui-text-muted)]">{{ formatTime(point.bucket_start) }}</span>
+              <span class="tabular-nums">{{ number(point.request_count) }} req</span>
+              <span class="w-14 text-right text-xs tabular-nums text-[var(--ui-text-muted)]">{{ percent(point.error_rate) }}</span>
+              <UBadge :color="healthColor(point.status)" variant="subtle" size="sm">{{ point.status }}</UBadge>
+            </li>
+          </ol>
+          <p v-else class="px-4 py-8 text-center text-sm text-[var(--ui-text-muted)]">No activity in this window.</p>
+        </AppCard>
+        <AppCard v-for="section in healthSections" :key="section.label" class="xl:col-span-6" :ui="{ body: 'p-0 sm:p-0' }">
+          <template #header>
+            <div class="flex items-center justify-between gap-3">
+              <h2 class="font-semibold">{{ section.label }} health</h2>
+              <div v-if="section.items.length" class="flex items-center gap-2 text-xs text-[var(--ui-text-muted)]">
+                <span v-for="count in healthCounts(section.items)" :key="count.status" class="inline-flex items-center gap-1"><span class="size-1.5 rounded-full" :class="healthDot(count.status)" />{{ count.total }} {{ count.status }}</span>
+              </div>
+            </div>
+          </template>
+          <ul v-if="section.items.length" class="max-h-96 divide-y divide-[var(--ui-border)] overflow-y-auto">
+            <li v-for="item in section.items" :key="item.id" class="px-4 py-2.5 text-sm">
+              <div class="flex items-center gap-2">
+                <span class="size-2 shrink-0 rounded-full" :class="healthDot(item.status)" aria-hidden="true" />
+                <span class="min-w-0 flex-1 truncate font-medium" :title="item.label || item.id">{{ item.label || item.id }}</span>
+                <span class="shrink-0 text-xs tabular-nums text-[var(--ui-text-muted)]">{{ percent(item.recent_error_rate) }} err · p95 {{ milliseconds(item.p95_latency_ms) }}</span>
+                <UBadge :color="healthColor(item.status)" variant="subtle" size="sm">{{ item.status }}</UBadge>
+              </div>
+              <p class="mt-0.5 pl-4 text-xs text-[var(--ui-text-muted)]">{{ item.provider || item.credential_type || '—' }} · {{ number(item.recent_success_count) }} success / {{ number(item.recent_failed_count) }} failed<template v-if="item.next_retry_at"> · retry {{ formatTime(item.next_retry_at) }}</template></p>
+              <p v-if="item.last_error_message" class="mt-0.5 break-words pl-4 text-xs text-[var(--ui-error)]">Last error{{ item.last_error_status ? ` (${item.last_error_status})` : '' }}: {{ item.last_error_message }} · {{ formatTime(item.last_error_at) }}</p>
+            </li>
+          </ul>
+          <p v-else class="px-4 py-8 text-center text-sm text-[var(--ui-text-muted)]">No health data in this window.</p>
+        </AppCard>
+      </div>
+
+      <AdminDataPanel title="Request logs" :description="`${number(logs?.total)} indexed · local availability or remote routability`">
+        <template #actions>
+          <form class="flex w-full gap-2 sm:w-auto" @submit.prevent="applyLogSearch"><UInput v-model="logSearch" icon="i-tabler-search" placeholder="Request ID, model, status or file" aria-label="Search request logs" class="w-full sm:w-72" /><AppButton type="submit" color="neutral" variant="outline" :disabled="loadingConsole">Search</AppButton></form>
+        </template>
+        <AppTable native><table class="min-w-[42rem] text-left text-sm"><thead><tr><th>Request</th><th>Provider / model</th><th>Home</th><th>File</th><th>Status</th><th>Log</th></tr></thead><tbody>
+          <tr v-for="item in logItems" :key="item.id"><td><div>{{ formatTime(item.timestamp) }}</div><div class="font-mono text-xs">{{ item.request_id || '—' }}</div></td><td>{{ item.provider || '—' }} / {{ item.model || '—' }}</td><td>{{ item.home_ip || '—' }}{{ item.home_port ? `:${item.home_port}` : '' }}</td><td class="font-mono text-xs">{{ item.file_name || 'Remote / unavailable' }}</td><td>{{ item.status }}</td><td><AppButton size="xs" color="neutral" variant="outline" :disabled="!item.download_url" :loading="downloadingId === item.id" @click="downloadLog(item)">Download</AppButton></td></tr>
+        </tbody></table></AppTable>
+        <p v-if="!logItems.length" class="py-8 text-center text-sm text-[var(--ui-text-muted)]">No request logs match this window and search.</p>
+        <template #footer>
+          <div class="flex items-center justify-end gap-3 text-sm"><AppButton size="sm" color="neutral" variant="outline" :disabled="logPage === 1 || loadingConsole" @click="changeLogPage(-1)">Previous</AppButton><span class="tabular-nums">Page {{ logPage }} / {{ logPages }}</span><AppButton size="sm" color="neutral" variant="outline" :disabled="logPage >= logPages || loadingConsole" @click="changeLogPage(1)">Next</AppButton></div>
+        </template>
+      </AdminDataPanel>
     </section>
 
-    <section v-else class="space-y-6" role="tabpanel">
+    <section v-else class="space-y-4" role="tabpanel">
     <p class="text-sm text-[var(--ui-text-muted)]">Send an HTTP request from Home, optionally using a stored credential for token substitution and credential-scoped proxy selection.</p>
     <UAlert color="warning" variant="subtle" icon="i-tabler-shield-exclamation" title="Administrative network access" description="Requests originate from Home and can reach addresses available to that server. Use only trusted URLs. Responses shown below may contain sensitive upstream data." />
     <UAlert v-if="errorMessage" color="error" variant="subtle" icon="i-tabler-alert-circle" title="Request failed" :description="errorMessage" />
 
-    <div class="grid gap-6 xl:grid-cols-2">
+    <div class="grid gap-4 xl:grid-cols-2">
       <AppCard>
         <template #header><h2 class="font-semibold">Request</h2></template>
         <form class="space-y-4" @submit.prevent="sendRequest">
@@ -173,16 +215,29 @@ const logPages = computed(() => Math.max(1, Math.ceil((logs.value?.total || 0) /
 const summaryMetrics = computed(() => {
   const totals = overview.value?.totals
   return [
-    { label: 'Requests', value: number(totals?.request_count) },
-    { label: 'Failures', value: number(totals?.failed_count) },
-    { label: 'Error rate', value: percent(totals?.error_rate) },
-    { label: 'Tokens', value: number(totals?.total_tokens) },
-    { label: 'P95 latency', value: milliseconds(totals?.p95_latency_ms) },
-    { label: 'Active credentials', value: number(totals?.active_credential_count) },
-    { label: 'Active models', value: number(totals?.active_model_count) },
-    { label: 'Billed amount', value: totals?.total_amount == null ? '—' : `${decimal(totals.total_amount)} ${totals.currency || 'credits'}` }
+    { label: 'Requests', value: number(totals?.request_count), detail: `${number(totals?.failed_count)} failed · ${percent(totals?.error_rate)} error rate`, icon: 'i-tabler-arrows-exchange', tone: 'violet', warning: Number(totals?.error_rate) > 0.05, ratio: totals?.request_count ? 1 - (Number(totals?.error_rate) || 0) : null },
+    { label: 'P95 latency', value: milliseconds(totals?.p95_latency_ms), detail: 'Slowest 5% of requests', icon: 'i-tabler-clock-bolt', tone: 'blue' },
+    { label: 'Tokens', value: number(totals?.total_tokens), detail: totals?.total_amount == null ? 'No billed amount' : `${decimal(totals.total_amount)} ${totals.currency || 'credits'} billed`, icon: 'i-tabler-database', tone: 'emerald' },
+    { label: 'Active credentials', value: number(totals?.active_credential_count), detail: `${number(totals?.active_model_count)} active models`, icon: 'i-tabler-id-badge-2', tone: 'amber' }
   ]
 })
+const velocityItems = computed(() => [
+  { label: 'Requests/min', value: decimal(latestVelocity.value?.rpm) },
+  { label: 'Tokens/min', value: number(latestVelocity.value?.tpm) },
+  { label: 'Error rate', value: percent(latestVelocity.value?.error_rate) }
+])
+function shareOf(value, items) {
+  const max = Math.max(1, ...(items || []).map(item => Number(item?.request_count) || 0))
+  return Math.max(2, Math.round(((Number(value) || 0) / max) * 100))
+}
+function healthDot(status) {
+  return status === 'healthy' ? 'bg-emerald-500' : status === 'degraded' ? 'bg-amber-500' : status === 'empty' || status === 'unknown' ? 'bg-zinc-400' : 'bg-rose-500'
+}
+function healthCounts(items) {
+  const counts = new Map()
+  for (const item of items) counts.set(item.status || 'unknown', (counts.get(item.status || 'unknown') || 0) + 1)
+  return [...counts].map(([status, total]) => ({ status, total }))
+}
 function consoleQueries() {
   const to = new Date()
   const from = new Date(to.getTime() - Number(windowSeconds.value) * 1000)

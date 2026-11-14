@@ -1,14 +1,17 @@
 <template>
-  <section class="space-y-5">
-    <h2 class="text-xl font-semibold">Advanced usage insights</h2>
+  <section class="space-y-4">
+    <div class="flex items-center gap-3 border-t border-[var(--ui-border)] pt-5">
+      <span class="flex size-8 items-center justify-center rounded-lg bg-[var(--admin-selected)] text-[var(--ui-primary)]" aria-hidden="true"><UIcon name="i-tabler-chart-dots-3" class="size-4" /></span>
+      <div><h2 class="text-base font-semibold">Advanced usage insights</h2><p class="text-xs text-[var(--ui-text-muted)]">Load deeper rankings and realtime snapshots on demand.</p></div>
+    </div>
     <UAlert v-if="capabilityError" color="warning" variant="subtle" title="Capabilities unavailable" description="Optional usage endpoints will be checked when requested." />
     <UAlert v-if="unavailableFeatures.length" color="warning" variant="subtle" title="Some usage features are unavailable" :description="unavailableFeatures.join(', ')" />
     <UAlert v-if="error" color="error" variant="subtle" :description="error" />
-    <div class="flex flex-wrap gap-3">
+    <div class="app-surface flex flex-wrap items-center gap-3 px-3 py-2.5">
       <USelect v-model="groupBy" :items="['model', 'provider', 'user', 'client_key', 'credential', 'endpoint', 'home_ip']" class="w-44" />
       <USelect v-model="metric" :items="['request_count', 'total_tokens', 'total_amount', 'failed_count', 'avg_latency_ms', 'p95_latency_ms']" class="w-48" />
       <AppButton :loading="loading" :disabled="loading || !canLoadInsights" @click="refresh">Load insights</AppButton>
-      <span class="text-xs text-[var(--ui-text-muted)]">Overview and insights support date, provider, model, credential type, endpoint, and Home IP filters; without dates aggregates default to 24 hours. Realtime uses the last 15 minutes.</span>
+      <span class="basis-full text-xs text-[var(--ui-text-muted)] xl:basis-auto xl:flex-1">Overview and insights support date, provider, model, credential type, endpoint, and Home IP filters; without dates aggregates default to 24 hours. Realtime uses the last 15 minutes.</span>
     </div>
     <div class="grid gap-4 xl:grid-cols-2">
       <AppCard v-if="available('usage_aggregates')">

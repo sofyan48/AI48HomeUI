@@ -1,14 +1,18 @@
 <template>
-  <div class="space-y-6">
+  <div class="space-y-4">
     <div class="workbench-toolbar justify-between"><div><h2 class="font-semibold">Provider quota snapshots</h2><p class="text-xs text-[var(--ui-text-muted)]">Inspect normalized quota windows and request active collection.</p></div><div class="flex gap-2"><AppButton color="neutral" variant="outline" icon="i-tabler-refresh" :loading="pending" @click="refreshQuota">Refresh</AppButton><AppButton icon="i-tabler-bolt" :loading="collectingAll" @click="collectAll">Collect all</AppButton></div></div>
     <p v-if="collectingAll || collectingIDs.size || collectionNotice" role="status" class="text-sm text-[var(--ui-text-muted)]">{{ collectingAll || collectingIDs.size ? 'Waiting for newer settled quota collection results…' : collectionNotice }}</p>
     <UAlert v-if="pageError" color="error" variant="subtle" title="Unable to load quota" :description="pageError" />
-    <div class="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-      <AppCard><p class="text-xs font-semibold uppercase text-[var(--ui-text-muted)]">Credentials</p><p class="mt-2 text-2xl font-bold">{{ summary.total_credentials ?? total }}</p></AppCard>
-      <AppCard><p class="text-xs font-semibold uppercase text-[var(--ui-text-muted)]">Healthy</p><p class="mt-2 text-2xl font-bold">{{ summary.healthy ?? 0 }}</p></AppCard>
-      <AppCard><p class="text-xs font-semibold uppercase text-[var(--ui-text-muted)]">Low / exhausted</p><p class="mt-2 text-2xl font-bold">{{ (summary.low ?? 0) + (summary.exhausted ?? 0) }}</p></AppCard>
-      <AppCard><p class="text-xs font-semibold uppercase text-[var(--ui-text-muted)]">Stale / never</p><p class="mt-2 text-2xl font-bold">{{ (summary.stale ?? 0) + (summary.never ?? 0) }}</p></AppCard>
-    </div>
+    <AdminStatGrid
+      label="Quota summary"
+      :columns="4"
+      :items="[
+        { label: 'Credentials', value: summary.total_credentials ?? total, detail: 'With quota snapshots', icon: 'i-tabler-id-badge-2', tone: 'violet' },
+        { label: 'Healthy', value: summary.healthy ?? 0, detail: 'Quota available', icon: 'i-tabler-circle-check', tone: 'emerald' },
+        { label: 'Low / exhausted', value: (summary.low ?? 0) + (summary.exhausted ?? 0), detail: 'May fail soon', icon: 'i-tabler-battery-2', tone: 'amber', warning: (summary.low ?? 0) + (summary.exhausted ?? 0) > 0 },
+        { label: 'Stale / never', value: (summary.stale ?? 0) + (summary.never ?? 0), detail: 'Needs collection', icon: 'i-tabler-clock-pause', tone: 'neutral' }
+      ]"
+    />
     <div class="workbench-toolbar grid lg:grid-cols-[1fr_220px_220px_auto]">
       <UInput v-model="search" icon="i-tabler-search" placeholder="Search label, account, project..." @keyup.enter="applyFilters" />
       <USelectMenu v-model="provider" :items="providerOptions" value-key="value" label-key="label" :search-input="{ placeholder: 'Search providers...' }" />

@@ -228,17 +228,15 @@
                 </div></template
               >
               <div class="space-y-4">
-                <div class="grid gap-2 sm:grid-cols-5">
-                  <AppCard
+                <div class="flex flex-wrap gap-2" aria-label="Rule counts">
+                  <span
                     v-for="mode in payloadModes"
                     :key="mode.value"
-                    :ui="{ body: 'p-3' }"
-                    ><p class="text-xs text-[var(--ui-text-muted)]">
-                      {{ mode.label }}
-                    </p>
-                    <p class="mt-1 text-xl font-semibold tabular-nums">
-                      {{ payloadDraft[mode.value]?.length || 0 }}
-                    </p></AppCard
+                    class="inline-flex items-center gap-1.5 rounded-full border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-2.5 py-1 text-xs"
+                    ><span class="text-[var(--ui-text-muted)]">{{ mode.label }}</span
+                    ><strong class="tabular-nums text-[var(--ui-text-highlighted)]">{{
+                      payloadDraft[mode.value]?.length || 0
+                    }}</strong></span
                   >
                 </div>
                 <div

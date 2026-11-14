@@ -1,32 +1,43 @@
 <template>
-  <div class="space-y-6">
-    <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-      <div>
-        <h1 class="text-2xl font-bold">Upstream proxies</h1>
-        <p class="mt-1 max-w-3xl text-sm text-[var(--ui-text-muted)]">Set the active global upstream proxy and maintain testable proxy-pool records.</p>
-      </div>
-      <AppButton color="neutral" variant="outline" icon="i-tabler-refresh" :loading="loading" @click="loadAll">Refresh</AppButton>
-    </div>
-
+  <div class="space-y-4">
     <UAlert v-if="errorMessage" color="error" variant="subtle" icon="i-tabler-alert-circle" title="Proxy request failed" :description="errorMessage" />
 
-    <AppCard>
-      <template #header>
-        <div>
-          <h2 class="font-semibold">Active global proxy</h2>
-          <p class="text-xs text-[var(--ui-text-muted)]">Used by runtime outbound traffic and by diagnostics when a selected credential has no proxy.</p>
-        </div>
-      </template>
-      <form class="flex flex-col gap-3 sm:flex-row sm:items-end" @submit.prevent="saveGlobalProxy">
-        <UFormField label="Proxy URL" class="flex-1">
-          <UInput v-model="globalProxy" placeholder="http://127.0.0.1:7890" class="w-full" />
-        </UFormField>
-        <AppButton type="submit" icon="i-tabler-check" :loading="savingGlobal">Save</AppButton>
-        <AppButton color="neutral" variant="outline" icon="i-tabler-x" :loading="savingGlobal" @click="clearGlobalProxy">Clear</AppButton>
-      </form>
-    </AppCard>
+    <div class="grid items-stretch gap-4 lg:grid-cols-12">
+      <AppCard class="lg:col-span-8">
+        <template #header>
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex min-w-0 items-center gap-3">
+              <span class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[var(--admin-selected)] text-[var(--ui-primary)]" aria-hidden="true"><UIcon name="i-tabler-world-share" class="size-4.5" /></span>
+              <div class="min-w-0">
+                <h2 class="font-semibold">Active global proxy</h2>
+                <p class="text-xs text-[var(--ui-text-muted)]">Used by runtime outbound traffic and by diagnostics when a selected credential has no proxy.</p>
+              </div>
+            </div>
+            <UBadge :color="globalProxy ? 'success' : 'neutral'" variant="subtle" class="shrink-0">{{ globalProxy ? 'Configured' : 'Direct' }}</UBadge>
+          </div>
+        </template>
+        <form class="flex flex-col gap-3 sm:flex-row sm:items-end" @submit.prevent="saveGlobalProxy">
+          <UFormField label="Proxy URL" class="flex-1">
+            <UInput v-model="globalProxy" icon="i-tabler-link" placeholder="http://127.0.0.1:7890" class="w-full" />
+          </UFormField>
+          <AppButton type="submit" icon="i-tabler-check" :loading="savingGlobal">Save</AppButton>
+          <AppButton color="neutral" variant="outline" icon="i-tabler-x" :loading="savingGlobal" @click="clearGlobalProxy">Clear</AppButton>
+          <AppButton color="neutral" variant="ghost" icon="i-tabler-refresh" :loading="loading" aria-label="Refresh proxies" @click="loadAll" />
+        </form>
+      </AppCard>
 
-    <UAlert color="info" variant="subtle" icon="i-tabler-info-circle" title="Pool records are informational" description="Proxy-pool records can be stored and tested, but they do not currently alter runtime priority, auth selection, dispatch, or outbound routing. Only the global proxy above is active." />
+      <AppCard class="lg:col-span-4" :ui="{ body: 'flex h-full flex-col justify-between gap-3' }">
+        <div>
+          <p class="text-xs font-medium text-[var(--ui-text-muted)]">Proxy pool</p>
+          <div class="mt-2 grid grid-cols-3 gap-2 text-center">
+            <div class="rounded-lg bg-[var(--ui-bg-muted)] px-2 py-2"><p class="text-base font-semibold tabular-nums">{{ pools.length }}</p><p class="text-[11px] text-[var(--ui-text-muted)]">Records</p></div>
+            <div class="rounded-lg bg-[var(--ui-bg-muted)] px-2 py-2"><p class="text-base font-semibold tabular-nums">{{ pools.filter(pool => pool.enabled).length }}</p><p class="text-[11px] text-[var(--ui-text-muted)]">Enabled</p></div>
+            <div class="rounded-lg bg-[var(--ui-bg-muted)] px-2 py-2"><p class="text-base font-semibold tabular-nums">{{ pools.filter(pool => pool.last_test_result === 'passed').length }}</p><p class="text-[11px] text-[var(--ui-text-muted)]">Passed test</p></div>
+          </div>
+        </div>
+        <p class="flex gap-2 text-xs text-[var(--ui-text-muted)]"><UIcon name="i-tabler-info-circle" class="mt-0.5 size-3.5 shrink-0 text-[var(--ui-info)]" />Pool records are informational. They can be stored and tested, but do not alter runtime priority, auth selection, dispatch, or outbound routing. Only the global proxy is active.</p>
+      </AppCard>
+    </div>
 
     <AppCard :ui="{ body: 'p-0' }">
       <template #header>
