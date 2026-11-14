@@ -1,6 +1,6 @@
 # AI48HomeUI
 
-The Nuxt UI can run separately during development or be embedded into CLIProxyAPIHome. Open `http://localhost:3000/admin/upstream` for the admin workspace, or `/app/login` for the user workspace.
+The Nuxt UI can run separately during development or be embedded into AI48Home. Open `http://localhost:3000/admin/upstream` for the admin workspace, or `/app/login` for the user workspace.
 
 Configure `NUXT_PUBLIC_API_URL` to reach Home from the browser. Prefer an origin-only value such as `http://127.0.0.1:8327`; a full URL ending in `/v8/management` is normalized to its origin. The Management UI always uses `/v8/management`. The management secret is entered at `/admin/connect`. Home must allow requests from the UI origin. Never put the management secret in a public runtime environment variable.
 
@@ -92,7 +92,7 @@ bun run preview
 
 ## Embedded Home build
 
-Generate the static bundle expected by `CLIProxyAPIHome/internal/managementasset`:
+Generate the static bundle expected by `AI48Home/internal/managementasset`:
 
 ```bash
 bun run build:embedded
@@ -103,7 +103,7 @@ This writes `dist/index.html`, `dist/management.html`, `dist/user.html`, and has
 With both repositories next to each other, build and copy the UI into Home with:
 
 ```bash
-make -C ../CLIProxyAPIHome panel-assets-local PANEL_SOURCE_DIR=../AI48HomeUI
+make -C ../AI48Home panel-assets-local PANEL_SOURCE_DIR=../AI48HomeUI
 ```
 
 The next Home build embeds those files through Go's `embed` package. Home serves the admin SPA under `/management.html` and `/admin/*`, and the user SPA under `/user.html` and `/app/*`.
@@ -112,18 +112,18 @@ Check out the [deployment documentation](https://nuxt.com/docs/getting-started/d
 
 ## Release and deployment
 
-Every push to `main` runs `.github/workflows/ci.yml`: install, request-telemetry tests, and `bun run build:embedded`. When it passes, the workflow sends a `panel-updated` dispatch to [CLIProxyAPIHome](https://github.com/sofyan48/CLIProxyAPIHome), which embeds this bundle and publishes `ghcr.io/sofyan48/cliproxyapihome:edge`. Release tags (`v*`) on CLIProxyAPIHome publish `:<version>` and `:latest`.
+Every push to `main` runs `.github/workflows/ci.yml`: install, request-telemetry tests, and `bun run build:embedded`. When it passes, the workflow sends a `panel-updated` dispatch to [AI48Home](https://github.com/sofyan48/AI48Home), which embeds this bundle and publishes `ghcr.io/sofyan48/ai48home:edge`. Release tags (`v*`) on AI48Home publish `:<version>` and `:latest`.
 
 The dispatch needs one repository secret here:
 
 | Secret | Value |
 | --- | --- |
-| `HOME_DISPATCH_TOKEN` | Fine-grained PAT for `sofyan48/CLIProxyAPIHome` with **Contents: Read and write** (classic PAT: `repo`). |
+| `HOME_DISPATCH_TOKEN` | Fine-grained PAT for `sofyan48/AI48Home` with **Contents: Read and write** (classic PAT: `repo`). |
 
 Without it, CI still builds and tests, and only skips the image trigger.
 
-Install the published image as described in the [CLIProxyAPIHome README](https://github.com/sofyan48/CLIProxyAPIHome#install-from-ghcr-ai48hub-build):
+Install the published image as described in the [AI48Home README](https://github.com/sofyan48/AI48Home#install-from-ghcr):
 
 ```bash
-docker pull ghcr.io/sofyan48/cliproxyapihome:latest   # or :edge for the newest panel
+docker pull ghcr.io/sofyan48/ai48home:latest   # or :edge for the newest panel
 ```

@@ -1,6 +1,6 @@
 name: ci
 
-# Verifies the embedded bundle, then asks CLIProxyAPIHome to publish a fresh :edge image.
+# Verifies the embedded bundle, then asks AI48Home to publish a fresh :edge image.
 on:
   pull_request:
   push:
@@ -37,9 +37,9 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
-      - name: Dispatch panel-updated to CLIProxyAPIHome
+      - name: Dispatch panel-updated to AI48Home
         env:
-          # Fine-grained PAT with "Contents: read and write" (or classic "repo") on sofyan48/CLIProxyAPIHome.
+          # Fine-grained PAT with "Contents: read and write" (or classic "repo") on sofyan48/AI48Home.
           HOME_DISPATCH_TOKEN: ${{ secrets.HOME_DISPATCH_TOKEN }}
         run: |
           set -euo pipefail
@@ -51,6 +51,6 @@ jobs:
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer ${HOME_DISPATCH_TOKEN}" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
-            https://api.github.com/repos/sofyan48/CLIProxyAPIHome/dispatches \
+            https://api.github.com/repos/sofyan48/AI48Home/dispatches \
             -d "{\"event_type\":\"panel-updated\",\"client_payload\":{\"ref\":\"main\",\"sha\":\"${GITHUB_SHA}\"}}"
-          echo "Requested ghcr.io/sofyan48/cliproxyapihome:edge for panel ${GITHUB_SHA::7}"
+          echo "Requested ghcr.io/sofyan48/ai48home:edge for panel ${GITHUB_SHA::7}"
