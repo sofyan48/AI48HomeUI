@@ -1,17 +1,15 @@
 <template>
   <div class="relative min-h-screen overflow-hidden bg-[var(--ui-bg)]">
-    <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.16),transparent_38%),radial-gradient(circle_at_bottom_right,rgba(99,102,241,0.14),transparent_42%)]" />
+    <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(124,58,237,0.16),transparent_38%),radial-gradient(circle_at_bottom_right,rgba(217,70,239,0.12),transparent_42%)]" />
 
     <div class="absolute right-4 top-4 z-10"><ConsoleLanguageSwitcher /></div>
 
         <div class="relative mx-auto grid min-h-screen max-w-6xl items-center gap-10 px-4 py-10 lg:grid-cols-[1.15fr_0.85fr] lg:px-8">
       <section class="hidden lg:block">
         <div class="mb-8 inline-flex items-center gap-3 rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-bg-elevated)]/80 px-4 py-3 shadow-sm backdrop-blur">
-          <div class="flex size-10 items-center justify-center rounded-xl bg-primary-500 text-white shadow-lg shadow-primary-500/25">
-            <UIcon name="i-tabler-terminal-2" class="size-6" />
-          </div>
+          <AppBrandMark size="lg" />
           <div>
-            <p class="font-semibold text-[var(--ui-text-highlighted)]">CPAHome</p>
+            <p class="font-bold tracking-tight text-[var(--ui-text-highlighted)]">AI48Hub</p>
             <p class="text-xs text-[var(--ui-text-muted)]">{{ t('connect.controlPlane') }}</p>
           </div>
         </div>
@@ -25,18 +23,18 @@
 
         <div class="mt-10 grid max-w-xl grid-cols-2 gap-4">
           <div v-for="item in highlights" :key="item.title" class="rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-bg-elevated)]/70 p-4 backdrop-blur">
-            <UIcon :name="item.icon" class="mb-3 size-5 text-primary-500" />
+            <span class="mb-3 flex size-9 items-center justify-center rounded-lg bg-primary-500/10 text-primary-500"><UIcon :name="item.icon" class="size-5" /></span>
             <p class="font-medium text-[var(--ui-text-highlighted)]">{{ item.title }}</p>
             <p class="mt-1 text-sm text-[var(--ui-text-muted)]">{{ item.description }}</p>
           </div>
         </div>
       </section>
 
-      <AppCard class="mx-auto w-full max-w-md shadow-2xl shadow-slate-950/10" :ui="{ body: 'p-6 sm:p-8', header: 'p-6 pb-0 sm:px-8 sm:pt-8' }">
+      <AppCard class="mx-auto w-full max-w-md shadow-2xl shadow-zinc-950/10" :ui="{ body: 'p-6 sm:p-8', header: 'p-6 pb-0 sm:px-8 sm:pt-8' }">
         <template #header>
           <div class="text-center">
-            <div class="mx-auto mb-4 flex size-12 items-center justify-center rounded-2xl bg-primary-500 text-white lg:hidden">
-              <UIcon name="i-tabler-terminal-2" class="size-7" />
+            <div class="mx-auto mb-4 flex justify-center lg:hidden">
+              <AppBrandMark size="lg" />
             </div>
             <h2 class="text-2xl font-bold text-[var(--ui-text-highlighted)]">{{ t('connect.signIn') }}</h2>
             <p class="mt-2 text-sm text-[var(--ui-text-muted)]">{{ t('connect.signInDescription') }}</p>

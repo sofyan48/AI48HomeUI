@@ -65,7 +65,6 @@
           <template #oauth-rules>
             <AppCard
               id="config-oauth-rules"
-              class="border-white/40 bg-white/40 dark:border-white/10 dark:bg-neutral-900/40"
             >
               <template #header
                 ><div>
@@ -218,7 +217,6 @@
             />
             <AppCard
               id="config-payload"
-              class="border-white/40 bg-white/40 dark:border-white/10 dark:bg-neutral-900/40"
             >
               <template #header
                 ><div>

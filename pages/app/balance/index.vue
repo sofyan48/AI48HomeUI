@@ -200,8 +200,8 @@ onMounted(() => { hydrateSession(); void refresh() })
 .balance-wallet-grid { display: grid; gap: 1.5rem; }
 .balance-hero {
   padding: 1.5rem;
-  border-radius: 1.25rem;
-  background: radial-gradient(ellipse at 0% 0%, color-mix(in oklch, var(--ui-success) 14%, transparent), transparent 75%), var(--ui-bg);
+  background: radial-gradient(ellipse at 100% 0%, color-mix(in oklch, var(--ui-success) 14%, transparent), transparent 70%), var(--user-panel-bg) !important;
+  border-color: color-mix(in oklch, var(--ui-success) 25%, var(--ui-border)) !important;
 }
 .balance-totals { display: flex; flex-wrap: wrap; align-items: center; gap: 1.25rem 2rem; margin-top: 1.25rem; }
 .balance-summary:first-child dt { display: none; }
@@ -210,27 +210,15 @@ onMounted(() => { hydrateSession(); void refresh() })
 .balance-summary + .balance-summary { padding-left: 1.25rem; border-left: 1px solid var(--ui-border); }
 .balance-summary + .balance-summary dd:first-of-type { margin-top: 0.5rem; font-size: 1.5rem; }
 .balance-summary + .balance-summary dd:last-child { display: none; }
-.balance-topup {
-  padding: 1.5rem;
-  border: 1px solid color-mix(in oklch, var(--ui-border) 50%, transparent);
-  border-radius: 1.25rem;
-  background: var(--ui-bg);
-}
+.balance-topup { padding: 1.5rem; }
 .balance-topup > p { margin-bottom: 1rem; }
 .balance-topup form > * + * { margin-top: 0.75rem; }
 @media (min-width: 768px) {
   .balance-wallet-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: stretch; }
 }
 
-.balance-workspace .balance-panel {
-  border-radius: 1.25rem;
-  border-color: color-mix(in oklch, var(--ui-border) 50%, transparent);
-  background: var(--ui-bg);
-  box-shadow: none;
-}
-
 .balance-workspace .balance-icon {
   color: var(--ui-primary);
-  background: color-mix(in oklch, var(--ui-primary) 10%, var(--ui-bg));
+  background: var(--user-selected);
 }
 </style>

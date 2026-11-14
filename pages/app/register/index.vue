@@ -3,7 +3,7 @@
     <AppCard>
       <template #header>
         <h1 class="text-2xl font-bold text-[var(--ui-text-highlighted)]">Create your account</h1>
-        <p class="mt-1 text-sm text-[var(--ui-text-muted)]">Start using models through CPAHome.</p>
+        <p class="mt-1 text-sm text-[var(--ui-text-muted)]">Start using models through AI48Hub.</p>
       </template>
       <UAlert v-if="approvalPending" color="warning" variant="subtle" icon="i-tabler-clock" title="Account awaiting approval" description="Your account has been created. An administrator must approve it before you can sign in to the user dashboard." />
             <form v-else class="space-y-5" @submit.prevent="submit">

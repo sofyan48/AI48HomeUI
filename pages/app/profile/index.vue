@@ -85,13 +85,5 @@ onMounted(loadProfile)
 </script>
 
 <style scoped>
-.profile-panel {
-  border-radius: 1.5rem;
-  border-color: color-mix(in oklch, var(--ui-border) 50%, transparent);
-  background: var(--ui-bg);
-  box-shadow: none;
-}
-.profile-panel :deep([data-slot="header"]),
-.profile-panel :deep([data-slot="footer"]) { border-color: color-mix(in oklch, var(--ui-border) 55%, transparent); }
-.profile-icon { color: var(--ui-primary); background: color-mix(in oklch, var(--ui-primary) 8%, var(--ui-bg)); }
+.profile-icon { color: var(--ui-primary); background: var(--user-selected); }
 </style>

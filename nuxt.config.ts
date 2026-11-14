@@ -6,10 +6,10 @@ export default defineNuxtConfig({
 
   app: {
     head: {
-      title: "CPAHome",
+      title: "AI48Hub",
       meta: [
         { name: "viewport", content: "width=device-width, initial-scale=1" },
-        { name: "theme-color", content: "#0f172a" },
+        { name: "theme-color", content: "#18181b" },
       ],
       link: [
         { rel: "icon", type: "image/png", href: "/favicon.png" }

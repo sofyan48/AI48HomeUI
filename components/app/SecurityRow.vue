@@ -18,11 +18,11 @@ defineEmits<{ action: [] }>()
 
 <style scoped>
 .security-row {
-  border-color: color-mix(in oklch, var(--ui-border) 75%, transparent);
-  background: color-mix(in oklch, var(--ui-bg-muted) 45%, var(--ui-bg));
+  border-color: var(--ui-border);
+  background: var(--user-inset-bg);
 }
 .security-row__icon {
   color: var(--ui-primary);
-  background: color-mix(in oklch, var(--ui-primary) 10%, var(--ui-bg));
+  background: var(--user-selected);
 }
 </style>

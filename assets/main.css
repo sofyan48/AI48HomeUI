@@ -4,6 +4,66 @@
 
 :root {
   --ui-container: var(--container-7xl);
+  /* AI48Hub brand, shared by admin and user shells. */
+  --brand-from: var(--color-violet-600);
+  --brand-to: var(--color-fuchsia-500);
+  --brand-gradient: linear-gradient(135deg, var(--brand-from), var(--brand-to));
+}
+
+/* User portal palette: mirrors the admin tokens in admin.css so both shells match. */
+:root:not([data-admin-console]) {
+  --ui-primary: var(--color-violet-600);
+  --ui-bg: var(--color-white);
+  --ui-bg-muted: var(--color-zinc-100);
+  --ui-bg-elevated: var(--color-zinc-50);
+  --ui-bg-accented: var(--color-zinc-200);
+  --ui-bg-inverted: var(--color-zinc-900);
+  --ui-text: var(--color-zinc-700);
+  --ui-text-toned: var(--color-zinc-600);
+  --ui-text-muted: var(--color-zinc-500);
+  --ui-text-dimmed: var(--color-zinc-500);
+  --ui-text-highlighted: var(--color-zinc-950);
+  --ui-text-inverted: var(--color-white);
+  --ui-border: var(--color-zinc-200);
+  --ui-border-muted: var(--color-zinc-200);
+  --ui-border-accented: var(--color-zinc-300);
+  --ui-focus: var(--ui-primary);
+  --ui-hover: color-mix(in oklch, var(--ui-primary) 6%, var(--ui-bg-elevated));
+  --user-selected: color-mix(in oklch, var(--ui-primary) 9%, var(--ui-bg));
+  --user-workspace-bg: color-mix(in oklch, var(--color-violet-50) 35%, var(--color-zinc-50));
+  --user-panel-bg: var(--ui-bg);
+  --user-panel-border: color-mix(in oklch, var(--color-zinc-200) 85%, transparent);
+  --user-panel-radius: 1rem;
+  --user-panel-shadow: 0 1px 2px rgb(24 24 27 / 4%), 0 6px 20px -10px rgb(24 24 27 / 10%);
+  --user-inset-bg: var(--color-zinc-50);
+  --workbench-bg: var(--user-workspace-bg);
+  --glass-soft: color-mix(in oklch, var(--ui-bg) 78%, transparent);
+  --glass-card: var(--user-panel-bg);
+}
+
+:root.dark:not([data-admin-console]) {
+  --ui-primary: var(--color-violet-400);
+  --ui-bg: var(--color-zinc-900);
+  --ui-bg-muted: var(--color-zinc-950);
+  --ui-bg-elevated: var(--color-zinc-800);
+  --ui-bg-accented: var(--color-zinc-700);
+  --ui-bg-inverted: var(--color-zinc-100);
+  --ui-text: var(--color-zinc-200);
+  --ui-text-toned: var(--color-zinc-300);
+  --ui-text-muted: var(--color-zinc-400);
+  --ui-text-dimmed: var(--color-zinc-400);
+  --ui-text-highlighted: var(--color-zinc-50);
+  --ui-text-inverted: var(--color-zinc-950);
+  --ui-border: var(--color-zinc-800);
+  --ui-border-muted: var(--color-zinc-800);
+  --ui-border-accented: var(--color-zinc-700);
+  --ui-hover: color-mix(in oklch, var(--ui-primary) 10%, var(--ui-bg));
+  --user-selected: color-mix(in oklch, var(--ui-primary) 14%, var(--ui-bg));
+  --user-workspace-bg: var(--color-zinc-950);
+  --user-panel-bg: var(--color-zinc-900);
+  --user-panel-border: var(--color-zinc-800);
+  --user-panel-shadow: 0 1px 2px rgb(0 0 0 / 30%);
+  --user-inset-bg: var(--color-zinc-950);
 }
 
 html {
@@ -18,11 +78,7 @@ body {
 }
 
 body:not([data-admin-console]) {
-  background:
-    radial-gradient(circle at 8% 8%, color-mix(in oklch, var(--ui-primary) 10%, transparent) 0, transparent 28rem),
-    radial-gradient(circle at 92% 16%, color-mix(in oklch, #7c8cff 7%, transparent) 0, transparent 30rem),
-    linear-gradient(145deg, color-mix(in oklch, var(--ui-bg-muted) 30%, var(--ui-bg)) 0%, var(--ui-bg) 48%, color-mix(in oklch, var(--ui-primary) 3%, var(--ui-bg)) 100%);
-  background-attachment: fixed;
+  background: var(--user-workspace-bg);
   color: var(--ui-text);
   font-size: 0.875rem;
 }
@@ -47,12 +103,9 @@ pre,
 }
 
 .workbench-sidebar {
-  background: color-mix(in oklch, var(--ui-bg) 30%, transparent);
+  background: var(--ui-bg);
   color: var(--ui-text-highlighted);
   border-color: var(--ui-border);
-  -webkit-backdrop-filter: blur(18px) saturate(115%);
-  backdrop-filter: blur(18px) saturate(115%);
-  box-shadow: 8px 0 32px rgba(20, 20, 18, 0.04);
 }
 
 .workbench-sidebar .workbench-brand,
@@ -92,11 +145,10 @@ pre,
 }
 
 .workbench-header {
-  background: color-mix(in oklch, var(--ui-bg) 50%, transparent);
+  background: var(--glass-soft);
   border-color: var(--ui-border);
-  -webkit-backdrop-filter: blur(16px) saturate(120%);
-  backdrop-filter: blur(16px) saturate(120%);
-  box-shadow: 0 1px 0 var(--ui-border), 0 8px 24px rgba(20, 20, 18, 0.035);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  backdrop-filter: blur(12px) saturate(140%);
 }
 
 .workbench-main {
@@ -283,7 +335,7 @@ pre,
   background: var(--ui-overlay) !important;
   -webkit-backdrop-filter: blur(18px) saturate(118%);
   backdrop-filter: blur(18px) saturate(118%);
-  box-shadow: 0 14px 38px rgba(20, 20, 18, 0.12), 0 4px 12px rgba(20, 20, 18, 0.07) !important;
+  box-shadow: 0 16px 40px -8px rgb(24 24 27 / 20%) !important;
 }
 
 [data-highlighted] {
@@ -303,13 +355,21 @@ button[aria-expanded="true"] > svg {
 }
 
 ::selection {
-  background: color-mix(in oklch, var(--ui-primary) 78%, black);
-  color: white;
+  background: color-mix(in oklch, var(--ui-primary) 24%, transparent);
+  color: var(--ui-text-highlighted);
 }
 
 ::-moz-selection {
-  background: color-mix(in oklch, var(--ui-primary) 78%, black);
-  color: white;
+  background: color-mix(in oklch, var(--ui-primary) 24%, transparent);
+  color: var(--ui-text-highlighted);
+}
+
+/* Shared user surfaces: every page panel uses the same radius, border, and elevation. */
+:is(.logs-panel, .catalog-panel, .profile-panel, .settings-panel, .finance-panel, .balance-panel, .dashboard-panel, .balance-topup, .balance-hero) {
+  border: 1px solid var(--user-panel-border) !important;
+  border-radius: var(--user-panel-radius) !important;
+  background-color: var(--user-panel-bg);
+  box-shadow: var(--user-panel-shadow) !important;
 }
 
 @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
@@ -338,9 +398,8 @@ button[aria-expanded="true"] > svg {
   align-items: end;
   gap: 0.625rem;
   padding: 0.75rem;
-  border: 1px solid var(--ui-border);
-  border-radius: 0.4375rem;
-  background: var(--ui-bg-elevated);
-  backdrop-filter: blur(12px);
+  border: 1px solid var(--user-panel-border);
+  border-radius: 0.625rem;
+  background: var(--user-panel-bg);
 }
 }

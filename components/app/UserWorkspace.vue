@@ -550,7 +550,7 @@ function errorMessage(error: any, fallback: string) { return error?.data?.messag
 function periodWindowLabel(id: string) { return id === '5h' ? '5 hours' : id === '1d' ? '1 day' : id === '7d' ? '7 days' : id === '30d' ? '1 month' : id }
 function periodWindowRatio(window: PeriodWindowStatus) { const limit = Number(window.limit); return limit > 0 ? Math.max(0, Math.min(1, Number(window.used || 0) / limit)) : 1 }
 function periodWindowColor(window: PeriodWindowStatus) { const ratio = periodWindowRatio(window); return ratio >= 1 ? 'text-red-500' : ratio >= 0.8 ? 'text-amber-500' : 'text-primary-500' }
-function periodWindowBarColor(window: PeriodWindowStatus) { const ratio = periodWindowRatio(window); return ratio >= 1 ? 'bg-red-600 dark:bg-red-400' : ratio >= 0.8 ? 'bg-amber-600 dark:bg-amber-400' : 'bg-sky-600 dark:bg-sky-400' }
+function periodWindowBarColor(window: PeriodWindowStatus) { const ratio = periodWindowRatio(window); return ratio >= 1 ? 'bg-red-600 dark:bg-red-400' : ratio >= 0.8 ? 'bg-amber-600 dark:bg-amber-400' : 'bg-violet-600 dark:bg-violet-400' }
 function formatPercent(value: number) { return `${Math.round(Math.max(0, Math.min(1, value)) * 100)}%` }
 
 async function loadPeriodLimits() {
@@ -792,7 +792,7 @@ async function showTOTP(regenerate: boolean) {
   totpError.value = ''
   totpLoading.value = true
   try {
-    totpSetup.value = await fetchAPI<TOTPSetup>('/totp', { query: { issuer: 'CPAHome', ...(regenerate ? { regenerate: true } : {}) } })
+    totpSetup.value = await fetchAPI<TOTPSetup>('/totp', { query: { issuer: 'AI48Hub', ...(regenerate ? { regenerate: true } : {}) } })
     totpCode.value = ''
   } catch (error: any) {
     totpError.value = errorMessage(error, 'Unable to load TOTP setup.')
@@ -806,7 +806,7 @@ async function bindTOTP() {
   if (!totpCode.value.trim()) return void (totpError.value = 'Enter the current authenticator code.')
   totpSaving.value = true
   try {
-    await fetchAPI('/totp', { method: 'POST', body: { secret: totpSetup.value.secret, issuer: totpSetup.value.issuer || 'CPAHome', code: totpCode.value.trim() } })
+    await fetchAPI('/totp', { method: 'POST', body: { secret: totpSetup.value.secret, issuer: totpSetup.value.issuer || 'AI48Hub', code: totpCode.value.trim() } })
     await loadCurrentUser()
     totpSetup.value = null
     totpCode.value = ''
@@ -902,17 +902,8 @@ onMounted(() => {
 <style scoped>
 .workspace-settings { max-width: 80rem; margin-inline: auto; padding-block: 0.75rem; }
 .workspace-settings .settings-panel h2 { font-size: 1rem; letter-spacing: -0.02em; }
-.workspace-settings .settings-icon { border-radius: 50%; }
-.workspace-settings :deep(input) { border-radius: 0.875rem; }
-.workspace-settings .settings-panel :deep(input) { border-radius: 0.625rem; }
-.workspace-settings .settings-panel :deep(button[type="submit"]) { border-radius: 0.75rem; }
+.workspace-settings .settings-icon { border-radius: 0.625rem; }
 
-.workspace-settings .settings-panel {
-  border-radius: 1.5rem;
-  border-color: color-mix(in oklch, var(--ui-border) 50%, transparent);
-  background: var(--ui-bg);
-  box-shadow: none;
-}
 
 .workspace-settings .settings-panel :deep([data-slot="header"]) {
   border-bottom: 0;
@@ -934,7 +925,7 @@ onMounted(() => {
 
 .workspace-settings .settings-icon {
   color: var(--ui-primary);
-  background: color-mix(in oklch, var(--ui-primary) 10%, var(--ui-bg));
+  background: var(--user-selected);
 }
 
 .workspace-settings .settings-setup {
@@ -942,12 +933,6 @@ onMounted(() => {
   background: color-mix(in oklch, var(--ui-primary) 4%, var(--ui-bg));
 }
 
-.workspace-finance .finance-panel {
-  border-radius: 1.25rem;
-  border-color: color-mix(in oklch, var(--ui-border) 75%, transparent);
-  background: var(--ui-bg);
-  box-shadow: 0 4px 20px color-mix(in oklch, var(--ui-text-highlighted) 4%, transparent);
-}
 
 .workspace-finance .finance-hero,
 .workspace-finance .finance-metric {
@@ -955,22 +940,25 @@ onMounted(() => {
   border-color: color-mix(in oklch, var(--ui-primary) 15%, var(--ui-border));
 }
 
-.workspace-finance[aria-labelledby="billing-title"] .finance-panel { box-shadow: none; border-color: color-mix(in oklch, var(--ui-border) 50%, transparent); }
-.workspace-finance .finance-usage { border-radius: 1.75rem; }
 .workspace-finance .finance-usage :deep([data-slot="header"]) { border-bottom: 0; padding-bottom: 0; }
 .finance-usage h2 { font-size: 1.125rem; letter-spacing: -0.025em; }
 .billing-range { padding-block: 0.25rem; }
 .billing-stat-strip { align-items: center; padding-block: 0.5rem; }
-.billing-stat { padding: 1.25rem 0.75rem; }
-.billing-stat--featured {
-  padding: 1.5rem;
-  border-radius: 1.25rem;
-  background: linear-gradient(135deg, color-mix(in oklch, var(--ui-primary) 12%, var(--ui-bg)), color-mix(in oklch, var(--ui-primary) 3%, var(--ui-bg)));
+.billing-stat {
+  height: 100%;
+  padding: 1rem 1.125rem;
+  border: 1px solid var(--ui-border);
+  border-radius: 0.875rem;
+  background: var(--user-inset-bg);
 }
-.billing-stat--featured > p:nth-child(2) { font-size: 2.75rem; line-height: 1.2; }
+.billing-stat--featured {
+  border-color: color-mix(in oklch, var(--ui-primary) 25%, var(--ui-border));
+  background: radial-gradient(ellipse at 100% 0%, color-mix(in oklch, var(--ui-primary) 14%, transparent), transparent 70%), color-mix(in oklch, var(--ui-primary) 5%, var(--user-panel-bg));
+}
+.billing-stat--featured > p:nth-child(2) { font-size: 2.25rem; line-height: 1.2; }
 .billing-stat-icon { color: var(--ui-primary); }
 .billing-stat--featured > p:first-child { color: var(--ui-text); }
-.billing-models { padding: 0.875rem 1rem; border-radius: 1rem; background: color-mix(in oklch, var(--ui-bg-muted) 40%, transparent); }
+.billing-models { padding: 0.875rem 1rem; border: 1px solid var(--ui-border); border-radius: 0.875rem; background: var(--user-inset-bg); }
 .billing-models summary { list-style: none; border-radius: 0.5rem; }
 .billing-models summary::-webkit-details-marker { display: none; }
 .billing-models summary:focus-visible { outline: 2px solid var(--ui-primary); outline-offset: 4px; }
@@ -984,15 +972,12 @@ onMounted(() => {
 }
 
 .workspace-keys { max-width: 80rem; margin-inline: auto; padding-block: 0.75rem; }
-.workspace-keys .finance-panel { border-radius: 1.5rem; box-shadow: none; border-color: color-mix(in oklch, var(--ui-border) 50%, transparent); }
-.keys-panel :deep(input) { border-radius: 0.875rem; }
 .workspace-keys .key-card {
-  background: linear-gradient(145deg, color-mix(in oklch, var(--ui-primary) 4%, var(--ui-bg)), var(--ui-bg) 55%);
   transition: border-color 150ms ease, box-shadow 150ms ease;
 }
 .workspace-keys .key-card:is(:hover, :focus-within) {
-  border-color: color-mix(in oklch, var(--ui-primary) 35%, var(--ui-border));
-  box-shadow: 0 8px 24px color-mix(in oklch, var(--ui-primary) 6%, transparent);
+  border-color: color-mix(in oklch, var(--ui-primary) 35%, var(--ui-border)) !important;
+  box-shadow: 0 12px 28px -14px color-mix(in oklch, var(--ui-primary) 40%, transparent) !important;
 }
 @media (prefers-reduced-motion: reduce) {
   .workspace-keys .key-card { transition: none; }
@@ -1000,7 +985,7 @@ onMounted(() => {
 
 .workspace-finance .finance-icon {
   color: var(--ui-primary);
-  background: color-mix(in oklch, var(--ui-primary) 10%, var(--ui-bg));
+  background: var(--user-selected);
 }
 
 .user-dashboard {
@@ -1023,14 +1008,14 @@ onMounted(() => {
 
 .user-dashboard .dashboard-balance {
   --dashboard-accent: var(--ui-success);
-  min-height: 12rem;
+  min-height: 11rem;
   overflow: hidden;
-  border-radius: 1.75rem;
-  border-color: color-mix(in oklch, var(--dashboard-accent) 18%, transparent);
+  border-radius: var(--user-panel-radius);
+  border-color: color-mix(in oklch, var(--dashboard-accent) 25%, var(--ui-border));
   background:
-    radial-gradient(ellipse at 100% 0%, color-mix(in oklch, var(--dashboard-accent) 20%, transparent), transparent 75%),
-    linear-gradient(135deg, var(--ui-bg), color-mix(in oklch, var(--ui-primary) 8%, var(--ui-bg)));
-  box-shadow: 0 12px 36px color-mix(in oklch, var(--dashboard-accent) 6%, transparent);
+    radial-gradient(ellipse at 100% 0%, color-mix(in oklch, var(--dashboard-accent) 16%, transparent), transparent 70%),
+    var(--user-panel-bg);
+  box-shadow: var(--user-panel-shadow);
 }
 
 .dashboard-balance::after {
@@ -1045,41 +1030,48 @@ onMounted(() => {
   pointer-events: none;
 }
 .dashboard-balance > div { position: relative; z-index: 1; }
-.dashboard-balance p:nth-child(2) { font-size: 3rem; }
+.dashboard-balance p:nth-child(2) { font-size: 2.5rem; }
 .user-dashboard .dashboard-balance .dashboard-icon { border-radius: 50%; }
 
 .user-dashboard .dashboard-icon {
   color: var(--dashboard-accent);
-  background: color-mix(in oklch, var(--dashboard-accent) 12%, var(--ui-bg));
+  background: color-mix(in oklch, var(--dashboard-accent) 13%, transparent);
 }
 
-.user-dashboard .dashboard-panel {
-  border-radius: 1.5rem;
-  border-color: color-mix(in oklch, var(--ui-border) 45%, transparent);
-  background: color-mix(in oklch, var(--ui-bg) 85%, transparent);
-  box-shadow: none;
-}
 
 .user-dashboard .dashboard-panel :deep([data-slot="header"]) { padding-bottom: 0.5rem; border-bottom: 0; }
 .user-dashboard .dashboard-panel h2 { font-size: 1rem; letter-spacing: -0.02em; }
 
-.user-dashboard .dashboard-panel :deep([data-slot="header"]),
-.user-dashboard .dashboard-panel :deep([data-slot="footer"]) {
-  border-color: color-mix(in oklch, var(--ui-border) 55%, transparent);
-}
 
 .user-dashboard .dashboard-metric {
-  padding: 1rem;
-  border: 0;
-  background: transparent;
-  box-shadow: none;
+  position: relative;
+  overflow: hidden;
+  padding: 1rem 1.125rem 1.125rem;
+  border: 1px solid var(--ui-border);
+  border-radius: 0.875rem;
+  background: var(--user-inset-bg);
+  transition: border-color 160ms ease, box-shadow 160ms ease;
 }
-.user-dashboard .dashboard-metric > p:first-of-type { font-size: 2rem; font-weight: 600; letter-spacing: -0.04em; }
-.user-dashboard .dashboard-metric .dashboard-icon { border-radius: 50%; }
-.user-dashboard .dashboard-shortcuts { background: transparent; border: 0; box-shadow: none; }
+.user-dashboard .dashboard-metric::after {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--dashboard-accent), transparent);
+  content: '';
+}
+@media (hover: hover) {
+  .user-dashboard .dashboard-metric:hover {
+    border-color: color-mix(in oklch, var(--dashboard-accent) 35%, var(--ui-border));
+    box-shadow: 0 10px 24px -14px color-mix(in oklch, var(--dashboard-accent) 50%, transparent);
+  }
+}
+.user-dashboard .dashboard-metric > p:first-of-type { font-size: 1.875rem; font-weight: 700; letter-spacing: -0.03em; }
+.user-dashboard .dashboard-metric .dashboard-icon { border-radius: 0.625rem; }
+.user-dashboard .dashboard-shortcuts { background: transparent !important; border: 0 !important; box-shadow: none !important; }
 .user-dashboard .dashboard-shortcuts :deep([data-slot="header"]),
 .user-dashboard .dashboard-shortcuts :deep([data-slot="body"]) { padding-inline: 0; }
-.dashboard-shortcut-list { margin-top: -0.5rem; }
+.dashboard-shortcut-list { row-gap: 0.75rem; }
 .dashboard-shortcut-icon {
   display: flex;
   width: 2.5rem;
@@ -1087,34 +1079,42 @@ onMounted(() => {
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
-  color: var(--ui-text-muted);
-  background: color-mix(in oklch, var(--ui-text-muted) 7%, transparent);
+  border-radius: 0.75rem;
+  color: var(--ui-primary);
+  background: var(--user-selected);
   transition: color 150ms ease, background-color 150ms ease;
 }
-.dashboard-limits { border-radius: 1.5rem; background: color-mix(in oklch, var(--ui-bg) 45%, transparent); overflow: hidden; }
+.dashboard-limits { overflow: hidden; border: 1px solid var(--user-panel-border); border-radius: var(--user-panel-radius); background: var(--user-panel-bg); box-shadow: var(--user-panel-shadow); }
 .dashboard-limit-grid { padding: 1.25rem; }
-.dashboard-limit-grid + :deep(.limit-reset) { margin-inline: 1.25rem; border-top: 1px solid color-mix(in oklch, var(--ui-border) 55%, transparent); }
+.dashboard-limit-grid + :deep(.limit-reset) { margin-inline: 1.25rem; border-top: 1px solid var(--ui-border); }
 .dashboard-limit { padding: 0.25rem; }
 
 .dashboard-metric--0 { --dashboard-accent: var(--ui-primary); }
 .dashboard-metric--1 { --dashboard-accent: var(--ui-success); }
-.dashboard-metric--2 { --dashboard-accent: var(--color-violet-500); }
-.dashboard-metric--3 { --dashboard-accent: var(--ui-info); }
+.dashboard-metric--2 { --dashboard-accent: var(--color-blue-500); }
+.dashboard-metric--3 { --dashboard-accent: var(--color-amber-500); }
 
 .user-dashboard .dashboard-action {
   display: flex;
   min-width: 0;
   align-items: center;
   gap: 0.875rem;
-  padding: 1rem 0.375rem;
-  border-bottom: 1px solid color-mix(in oklch, var(--ui-border) 55%, transparent);
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--user-panel-border);
+  border-radius: 0.875rem;
+  background: var(--user-panel-bg);
+  box-shadow: var(--user-panel-shadow);
   text-decoration: none;
+  transition: border-color 150ms ease, transform 150ms ease;
+}
+.user-dashboard .dashboard-action:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in oklch, var(--ui-primary) 35%, var(--ui-border));
 }
 
 .user-dashboard .dashboard-action:is(:hover, :focus-visible) .dashboard-shortcut-icon {
-  color: var(--ui-primary);
-  background: color-mix(in oklch, var(--ui-primary) 12%, transparent);
+  color: white;
+  background: var(--brand-gradient);
 }
 .user-dashboard .dashboard-action:focus-visible {
   outline: 2px solid var(--ui-primary);

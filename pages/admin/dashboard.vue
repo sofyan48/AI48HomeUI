@@ -19,27 +19,32 @@
     </UAlert>
 
     <template v-if="snapshot && !loadError">
-      <section aria-label="Service readiness" class="space-y-3 border-b border-[var(--ui-border)] pb-4">
+      <section aria-label="Service readiness" class="dashboard-hero space-y-4" :class="`dashboard-hero--${health.color}`">
         <header>
           <div class="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <div class="flex flex-wrap items-center gap-2">
-                <h1 class="font-semibold">{{ health.title }}</h1>
-                <UBadge :color="health.color" variant="subtle">{{
-                  health.label
-                }}</UBadge>
+            <div class="flex min-w-0 items-start gap-4">
+              <span class="dashboard-hero-icon" aria-hidden="true">
+                <UIcon :name="healthIcon" class="size-6" />
+              </span>
+              <div class="min-w-0">
+                <div class="flex flex-wrap items-center gap-2">
+                  <h1 class="font-semibold">{{ health.title }}</h1>
+                  <UBadge :color="health.color" variant="subtle" class="rounded-full">{{
+                    health.label
+                  }}</UBadge>
+                </div>
+                <p class="mt-1 max-w-3xl text-sm text-[var(--ui-text-muted)]">
+                  {{ health.description }}
+                </p>
               </div>
-              <p class="mt-1 text-sm text-[var(--ui-text-muted)]">
-                {{ health.description }}
-              </p>
             </div>
             <AppSyncButton :loading="loading" @click="refreshDashboard" />
           </div>
         </header>
-        <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-[var(--ui-text-muted)]">
-          <span>Server: {{ runtimeMode || "Home" }}</span>
-          <span>Version: {{ latestVersion || "Unavailable" }}</span>
-          <span>Synced: {{ lastUpdated ? lastUpdated.toLocaleString() : "Not synced" }}</span>
+        <div class="flex flex-wrap gap-2 text-xs">
+          <span class="dashboard-chip"><UIcon name="i-tabler-server" class="size-3.5" aria-hidden="true" />Server: {{ runtimeMode || "Home" }}</span>
+          <span class="dashboard-chip"><UIcon name="i-tabler-tag" class="size-3.5" aria-hidden="true" />Version: {{ latestVersion || "Unavailable" }}</span>
+          <span class="dashboard-chip"><UIcon name="i-tabler-clock" class="size-3.5" aria-hidden="true" />Synced: {{ lastUpdated ? lastUpdated.toLocaleString() : "Not synced" }}</span>
         </div>
         <div
           v-if="missingCapabilities.length"
@@ -70,17 +75,21 @@
         </div>
       </section>
 
-      <section aria-label="Operating metrics" class="dashboard-metric-strip">
+      <section aria-label="Operating metrics" class="dashboard-metric-grid">
         <NuxtLink
           v-for="card in operatingCards"
           :key="card.label"
           :to="card.to"
           class="dashboard-metric"
+          :class="[`dashboard-metric--${card.tone}`, { 'dashboard-metric--static': !card.to }]"
         >
+          <div class="metric-head">
+            <span class="metric-icon" aria-hidden="true"><UIcon :name="card.icon" class="size-5" /></span>
+            <UIcon v-if="card.to" name="i-tabler-arrow-up-right" class="metric-link-icon" aria-hidden="true" />
+          </div>
           <h2 class="metric-label">{{ card.label }}</h2>
           <p class="metric-value">{{ card.value }}</p>
           <p class="metric-detail">{{ card.detail }}</p>
-          <UIcon name="i-tabler-chevron-right" class="metric-link-icon" aria-hidden="true" />
         </NuxtLink>
       </section>
 
@@ -226,17 +235,21 @@
         </AppCard>
       </section>
 
-      <section aria-label="Service inventory" class="dashboard-metric-strip">
+      <section aria-label="Service inventory" class="dashboard-inventory-grid">
         <NuxtLink
           v-for="card in inventoryCards"
           :key="card.label"
           :to="card.to"
-          class="dashboard-metric"
+          class="dashboard-inventory"
+          :class="`dashboard-metric--${card.tone}`"
         >
-          <h2 class="metric-label">{{ card.label }}</h2>
-          <p class="metric-value">{{ formatNumber(card.value) }}</p>
-          <p class="metric-detail">{{ card.detail }}</p>
-          <UIcon name="i-tabler-chevron-right" class="metric-link-icon" aria-hidden="true" />
+          <span class="metric-icon" aria-hidden="true"><UIcon :name="card.icon" class="size-5" /></span>
+          <div class="min-w-0 flex-1">
+            <h2 class="metric-label">{{ card.label }}</h2>
+            <p class="metric-value metric-value--sm">{{ formatNumber(card.value) }}</p>
+            <p class="metric-detail truncate">{{ card.detail }}</p>
+          </div>
+          <UIcon name="i-tabler-chevron-right" class="metric-chevron" aria-hidden="true" />
         </NuxtLink>
       </section>
 
@@ -556,6 +569,13 @@ const health = computed(() => {
     color: "success" as const,
   };
 });
+const healthIcon = computed(() =>
+  health.value.color === "success"
+    ? "i-tabler-rosette-discount-check"
+    : health.value.color === "info"
+      ? "i-tabler-info-circle"
+      : "i-tabler-alert-triangle",
+);
 const suggestedActions = computed(() => {
   const actions: { label: string; to: string }[] = [];
   if (availableModels.value === null)
@@ -597,6 +617,8 @@ const operatingCards = computed(() => [
         ? `Across ${formatNumber(usage.value.totals?.active_model_count || 0)} active models`
         : "No usage yet",
     to: hasUsage.value ? "/admin/usage" : undefined,
+    icon: "i-tabler-coins",
+    tone: "violet",
   },
   {
     label: "Total requests",
@@ -607,6 +629,8 @@ const operatingCards = computed(() => [
       ? `${formatNumber(usage.value.totals?.failed_count)} failed requests`
       : "No requests yet",
     to: hasUsage.value ? "/admin/usage" : undefined,
+    icon: "i-tabler-arrows-exchange",
+    tone: "blue",
   },
   {
     label: "Request success rate",
@@ -617,6 +641,8 @@ const operatingCards = computed(() => [
       ? `${formatPercent(usage.value.totals?.error_rate)} error rate`
       : "No success rate yet",
     to: hasUsage.value ? "/admin/diagnostics" : undefined,
+    icon: "i-tabler-circle-check",
+    tone: "emerald",
   },
   {
     label: "Active access keys",
@@ -627,6 +653,8 @@ const operatingCards = computed(() => [
       ? `${formatNumber(usage.value.totals?.active_credential_count)} execution credentials used`
       : "No active keys yet",
     to: hasUsage.value ? "/admin/usage" : undefined,
+    icon: "i-tabler-key",
+    tone: "amber",
   },
 ]);
 const inventoryCards = computed(() => [
@@ -635,18 +663,24 @@ const inventoryCards = computed(() => [
     value: availableProviders.value,
     detail: `${providerRows.value.filter((item) => item.total > 0).length} model service types connected`,
     to: "/admin/providers",
+    icon: "i-tabler-cloud-computing",
+    tone: "violet",
   },
   {
     label: "Enabled account credentials",
     value: activeAccounts.value,
     detail: `${accountFiles.value.length} total records`,
     to: "/admin/credentials",
+    icon: "i-tabler-id-badge-2",
+    tone: "blue",
   },
   {
     label: "Client access keys",
     value: clientKeys.value.length,
     detail: `${clientKeys.value.length} keys can call the server API`,
     to: "/admin/access-keys",
+    icon: "i-tabler-key",
+    tone: "amber",
   },
   ...(supports("topology", false) || supports("nodes", false)
     ? [
@@ -655,6 +689,8 @@ const inventoryCards = computed(() => [
           value: cpaCount.value,
           detail: `${homeCount.value} Home instances`,
           to: "/admin/system-nodes",
+          icon: "i-tabler-server-2",
+          tone: "emerald",
         },
       ]
     : []),
@@ -940,61 +976,182 @@ onMounted(refreshDashboard);
 </script>
 
 <style scoped>
-.dashboard-metric-strip {
+/* Readiness banner, tinted by health state. */
+.dashboard-hero {
+  --hero-accent: var(--ui-primary);
+  position: relative;
+  overflow: hidden;
+  padding: 1.25rem;
+  border: 1px solid color-mix(in oklch, var(--hero-accent) 22%, var(--ui-border));
+  border-radius: 1rem;
+  background:
+    radial-gradient(ellipse at 100% 0%, color-mix(in oklch, var(--hero-accent) 14%, transparent), transparent 60%),
+    var(--admin-panel-bg, var(--ui-bg));
+  box-shadow: var(--admin-panel-shadow);
+}
+.dashboard-hero--success { --hero-accent: var(--ui-success); }
+.dashboard-hero--warning { --hero-accent: var(--ui-warning); }
+.dashboard-hero--info { --hero-accent: var(--ui-info); }
+.dashboard-hero-icon {
+  display: flex;
+  width: 3rem;
+  height: 3rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.875rem;
+  background: color-mix(in oklch, var(--hero-accent) 14%, transparent);
+  color: var(--hero-accent);
+}
+.dashboard-hero h1 { font-size: 1.25rem; line-height: 1.75rem; }
+.dashboard-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  border: 1px solid var(--ui-border);
+  border-radius: 9999px;
+  background: var(--ui-bg-elevated);
+  color: var(--ui-text-muted);
+}
+
+/* Info cards: one tinted icon + accent per metric. */
+.dashboard-metric--violet { --metric-accent: var(--color-violet-500); }
+.dashboard-metric--blue { --metric-accent: var(--color-blue-500); }
+.dashboard-metric--emerald { --metric-accent: var(--color-emerald-500); }
+.dashboard-metric--amber { --metric-accent: var(--color-amber-500); }
+
+.dashboard-metric-grid,
+.dashboard-inventory-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 1px;
+  gap: 1rem;
+}
+
+.dashboard-metric,
+.dashboard-inventory {
+  --metric-accent: var(--ui-primary);
+  position: relative;
+  min-width: 0;
   overflow: hidden;
-  border: 1px solid var(--ui-border);
-  border-radius: 0.5rem;
-  background: var(--ui-border);
+  border: 1px solid var(--admin-panel-border, var(--ui-border));
+  border-radius: 1rem;
+  background: var(--admin-panel-bg, var(--ui-bg));
+  box-shadow: var(--admin-panel-shadow);
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
 }
 
 .dashboard-metric {
-  position: relative;
-  min-width: 0;
-  padding: 0.75rem 2rem 0.75rem 1rem;
-  background: var(--ui-bg-elevated);
+  display: flex;
+  flex-direction: column;
+  padding: 1.125rem 1.25rem 1.25rem;
+}
+.dashboard-metric::after {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--metric-accent), color-mix(in oklch, var(--metric-accent) 10%, transparent));
+  content: '';
 }
 
-.dashboard-metric:focus-visible {
+.dashboard-inventory {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 1rem 1.125rem;
+}
+
+.dashboard-metric:focus-visible,
+.dashboard-inventory:focus-visible {
   z-index: 1;
   outline: 2px solid var(--ui-focus);
-  outline-offset: -2px;
+  outline-offset: 2px;
 }
 
-.metric-label,
-.metric-detail {
-  font-size: 0.75rem;
-  line-height: 1rem;
-  font-weight: 400;
+.metric-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.875rem;
+}
+
+.metric-icon {
+  display: flex;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.75rem;
+  background: color-mix(in oklch, var(--metric-accent) 13%, transparent);
+  color: var(--metric-accent);
+}
+
+.metric-label {
+  font-size: 0.8125rem;
+  line-height: 1.125rem;
+  font-weight: 500;
   color: var(--ui-text-muted);
 }
 
 .metric-value {
-  margin-block: 0.25rem;
-  font-size: 1.25rem;
-  line-height: 1.75rem;
-  font-weight: 600;
+  margin-block: 0.25rem 0.375rem;
+  font-size: 1.75rem;
+  line-height: 2.25rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ui-text-highlighted);
   font-variant-numeric: tabular-nums;
 }
-
-.metric-link-icon {
-  position: absolute;
-  top: 0.75rem;
-  right: 0.75rem;
-  color: var(--ui-text-muted);
+.metric-value--sm {
+  margin-block: 0.125rem;
+  font-size: 1.375rem;
+  line-height: 1.75rem;
 }
 
+.metric-detail {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  color: var(--ui-text-dimmed);
+}
+
+.metric-link-icon,
+.metric-chevron {
+  width: 1rem;
+  height: 1rem;
+  color: var(--ui-text-dimmed);
+  transition: color 160ms ease, transform 160ms ease;
+}
+.metric-chevron { flex-shrink: 0; }
+
 @media (hover: hover) {
-  .dashboard-metric:hover { background: var(--ui-hover); }
+  .dashboard-metric:not(.dashboard-metric--static):hover,
+  .dashboard-inventory:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in oklch, var(--metric-accent) 40%, var(--ui-border));
+    box-shadow: 0 12px 28px -14px color-mix(in oklch, var(--metric-accent) 45%, transparent);
+  }
+  .dashboard-metric:hover .metric-link-icon,
+  .dashboard-inventory:hover .metric-chevron {
+    color: var(--metric-accent);
+    transform: translate(2px, -2px);
+  }
+  .dashboard-inventory:hover .metric-chevron { transform: translateX(2px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-metric,
+  .dashboard-inventory { transition: none; }
 }
 
 @media (min-width: 40rem) {
-  .dashboard-metric-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dashboard-metric-grid,
+  .dashboard-inventory-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (min-width: 80rem) {
-  .dashboard-metric-strip { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .dashboard-metric-grid,
+  .dashboard-inventory-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 </style>

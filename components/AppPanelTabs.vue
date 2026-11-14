@@ -30,18 +30,32 @@ defineEmits<{ 'update:modelValue': [value: string] }>()
 
 <style scoped>
 .app-panel-tabs {
-  display: flex;
+  display: inline-flex;
+  max-width: 100%;
   gap: 0.25rem;
   overflow-x: auto;
-  border-bottom: 1px solid var(--ui-border);
+  padding: 0.25rem;
+  border: 1px solid var(--ui-border);
+  border-radius: 0.625rem;
+  background: var(--ui-bg-muted);
 }
 .app-panel-tabs :deep(button) {
-  border-radius: 0;
-  border-bottom: 2px solid transparent;
+  flex-shrink: 0;
+  border-radius: 0.4375rem;
+  background: transparent;
+  color: var(--ui-text-muted);
+  box-shadow: none;
+}
+.app-panel-tabs :deep(button:hover:not([aria-selected="true"])) {
+  background: color-mix(in oklch, var(--ui-bg) 60%, transparent);
+  color: var(--ui-text-highlighted);
 }
 .app-panel-tabs :deep(button[aria-selected="true"]) {
-  border-bottom-color: var(--ui-primary);
-  background: transparent;
+  background: var(--ui-bg);
+  color: var(--ui-text-highlighted);
+  box-shadow: 0 1px 2px rgb(24 24 27 / 8%), 0 0 0 1px var(--ui-border);
+}
+.app-panel-tabs :deep(button[aria-selected="true"] [data-slot="leadingIcon"]) {
   color: var(--ui-primary);
 }
 </style>

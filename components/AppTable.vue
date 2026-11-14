@@ -32,19 +32,17 @@ defineExpose({ nativeRoot })
 }
 
 .app-table:deep(thead) {
-  background: color-mix(in oklch, var(--ui-bg-muted) 72%, transparent);
+  background: var(--ui-bg-elevated);
 }
 
 .app-table:deep(th) {
   padding: 0.75rem 1rem;
   border-bottom: 1px solid var(--ui-border);
-  color: var(--ui-text-muted);
+  color: var(--ui-text-toned);
   font-size: 0.75rem;
   font-weight: 600;
-  letter-spacing: 0.025em;
   line-height: 1rem;
   text-align: left;
-  text-transform: uppercase;
   white-space: nowrap;
 }
 
@@ -65,7 +63,7 @@ defineExpose({ nativeRoot })
 }
 
 .app-table:deep(tbody tr:hover) {
-  background: color-mix(in oklch, var(--ui-bg-muted) 58%, transparent);
+  background: var(--ui-hover);
 }
 
 </style>

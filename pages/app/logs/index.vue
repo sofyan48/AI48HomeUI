@@ -198,15 +198,6 @@ function changePage(delta: number) { page.value += delta; void refresh() }
   padding-block: 0.75rem;
   margin-inline: auto;
 }
-.logs-workspace .logs-panel {
-  border-radius: 1.5rem;
-  border-color: color-mix(in oklch, var(--ui-border) 50%, transparent);
-  background: var(--ui-bg);
-  box-shadow: none;
-}
-:global(.dark) .logs-workspace .logs-panel {
-  box-shadow: none;
-}
 .logs-metric :deep(p.tabular-nums) { overflow-wrap: anywhere; }
 .logs-workspace :deep(input[type='datetime-local']) { min-width: 0; }
 </style>

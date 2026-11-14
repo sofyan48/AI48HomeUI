@@ -1,5 +1,5 @@
 <template>
-  <AppCard class="border-white/40 bg-white/40 dark:border-white/10 dark:bg-neutral-900/40" aria-labelledby="request-health-title">
+  <AppCard aria-labelledby="request-health-title">
     <template #header>
       <div class="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
         <div class="flex items-center gap-2.5">
@@ -83,7 +83,7 @@ const colors: Record<Health, string> = {
   degraded: 'bg-amber-500',
   unavailable: 'bg-rose-500',
   empty: 'border border-[var(--ui-border)] bg-[var(--ui-bg-muted)]',
-  unknown: 'bg-slate-400'
+  unknown: 'bg-zinc-400 dark:bg-zinc-500'
 }
 const safeCount = (value: number | null | undefined) => Number.isFinite(value) ? Math.max(0, Number(value)) : 0
 const buckets = computed<Bucket[]>(() => (Array.isArray(props.activity) ? props.activity : [])

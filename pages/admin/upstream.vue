@@ -13,7 +13,7 @@
         <dd class="metric-value">{{ summaryPending && !accounts.length ? "—" : accounts.length }}</dd>
         <dd class="metric-detail">
           <span class="metric-dot bg-green-500" />{{ activeAccounts }} active
-          <span class="metric-dot ml-2 bg-slate-400" />{{ disabledAccounts }} disabled
+          <span class="metric-dot ml-2 bg-zinc-400" />{{ disabledAccounts }} disabled
           <template v-if="unavailableAccounts"><span class="metric-dot ml-2 bg-amber-500" />{{ unavailableAccounts }} unavailable</template>
         </dd>
       </dl>
@@ -255,18 +255,32 @@ async function syncData() {
 .metric-strip {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 1px;
-  overflow: hidden;
-  border: 1px solid var(--ui-border);
-  border-radius: 0.5rem;
-  background: var(--ui-border);
+  gap: 1rem;
 }
 
 .metric {
+  position: relative;
   min-width: 0;
-  padding: 0.875rem 1.125rem;
-  background: var(--ui-bg);
+  overflow: hidden;
+  padding: 1rem 1.25rem 1.125rem;
+  border: 1px solid var(--admin-panel-border, var(--ui-border));
+  border-radius: 1rem;
+  background: var(--admin-panel-bg, var(--ui-bg));
+  box-shadow: var(--admin-panel-shadow);
 }
+
+.metric::after {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--metric-accent, var(--ui-primary)), transparent);
+  content: '';
+}
+.metric:nth-child(1) { --metric-accent: var(--color-violet-500); }
+.metric:nth-child(2) { --metric-accent: var(--color-blue-500); }
+.metric:nth-child(3) { --metric-accent: var(--color-amber-500); }
+.metric:nth-child(4) { --metric-accent: var(--color-emerald-500); }
 
 .metric dt,
 .metric-detail {
@@ -277,9 +291,10 @@ async function syncData() {
 
 .metric-value {
   margin-block: 0.375rem 0.25rem;
-  font-size: 1.5rem;
-  line-height: 2rem;
-  font-weight: 600;
+  font-size: 1.75rem;
+  line-height: 2.25rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
   color: var(--ui-text-highlighted);
 }
@@ -295,11 +310,16 @@ async function syncData() {
 
 .metric--action {
   cursor: pointer;
-  transition: background-color 120ms ease;
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
 }
 
-.metric--action:hover { background: var(--ui-bg-elevated); }
-.metric--action:focus-visible { outline: 2px solid var(--ui-primary); outline-offset: -2px; }
+.metric--action:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in oklch, var(--metric-accent) 40%, var(--ui-border));
+  box-shadow: 0 12px 28px -14px color-mix(in oklch, var(--metric-accent) 45%, transparent);
+}
+.metric--action:focus-visible { outline: 2px solid var(--ui-primary); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .metric--action { transition: none; } }
 .metric--action .metric-arrow { opacity: 0; transition: opacity 120ms ease; }
 .metric--action:is(:hover, :focus-visible) .metric-arrow { opacity: 1; }
 .metric--warning .metric-value { color: var(--color-amber-600); }

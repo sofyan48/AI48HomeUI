@@ -9,17 +9,15 @@
       :aria-modal="mobileOpen ? true : undefined"
       :aria-label="t('shell.management')"
       :inert="!desktopViewport && !mobileOpen"
-      class="admin-sidebar fixed inset-y-0 left-0 z-50 flex w-64 max-w-[calc(100vw-2rem)] flex-col border-r border-[var(--ui-border)] bg-white/95 shadow-[4px_0_24px_rgba(14,165,233,0.08)] backdrop-blur-xl dark:bg-neutral-950/95 lg:bg-white/30 lg:dark:bg-neutral-900/30 transition-[transform,width] duration-200 motion-reduce:transition-none lg:translate-x-0"
+      class="admin-sidebar fixed inset-y-0 left-0 z-50 flex w-64 max-w-[calc(100vw-2rem)] flex-col border-r border-[var(--ui-border)] bg-white dark:bg-zinc-900 transition-[transform,width] duration-200 motion-reduce:transition-none lg:translate-x-0"
       @keydown="handleSidebarKeydown"
       :class="[mobileOpen ? 'translate-x-0' : '-translate-x-full', sidebarCollapsed ? 'lg:w-16' : 'lg:w-64']"
     >
       <div class="flex h-16 shrink-0 items-center gap-3 border-b border-[var(--ui-border)] px-4" :class="sidebarCollapsed ? 'lg:justify-center lg:px-0' : ''">
-        <NuxtLink to="/admin/dashboard" class="admin-brand flex min-w-0 flex-1 items-center gap-3 rounded-md" :class="sidebarCollapsed ? 'lg:flex-none' : ''" title="CPAHome" aria-label="CPAHome" @click="closeMobile">
-          <div class="flex size-9 shrink-0 items-center justify-center rounded-md border border-[var(--ui-border)] bg-[var(--ui-bg-elevated)] text-[var(--ui-primary)]">
-            <UIcon name="i-tabler-terminal-2" class="size-5" />
-          </div>
+        <NuxtLink to="/admin/dashboard" class="admin-brand flex min-w-0 flex-1 items-center gap-3 rounded-md" :class="sidebarCollapsed ? 'lg:flex-none' : ''" title="AI48Hub" aria-label="AI48Hub" @click="closeMobile">
+          <AppBrandMark />
           <div class="min-w-0 leading-tight" :class="sidebarCollapsed ? 'lg:hidden' : ''">
-            <p class="truncate text-sm font-bold text-[var(--ui-text-highlighted)]">CPAHome</p>
+            <p class="truncate text-[15px] font-bold tracking-tight text-[var(--ui-text-highlighted)]">AI48<span class="admin-brand-accent">Hub</span></p>
             <p class="truncate text-[11px] text-[var(--ui-text-muted)]">{{ t('shell.tagline') }}</p>
           </div>
         </NuxtLink>
@@ -29,7 +27,7 @@
 
       <nav :aria-label="t('shell.management')" class="min-h-0 flex-1 overflow-y-auto px-2 py-3" :class="sidebarCollapsed ? 'lg:px-2' : ''">
         <div v-for="section in visibleSections" :key="section.label" class="mb-3 last:mb-0">
-          <p class="mb-1.5 px-2 text-[10px] font-semibold uppercase tracking-wider text-[var(--ui-text-muted)]" :class="sidebarCollapsed ? 'lg:sr-only' : ''">
+          <p class="mb-1.5 px-3 text-[11px] font-medium text-[var(--ui-text-dimmed)]" :class="sidebarCollapsed ? 'lg:sr-only' : ''">
             {{ section.label }}
           </p>
           <div class="space-y-1" :class="sidebarCollapsed && section.label !== t('nav.operate') ? 'lg:border-t lg:border-[var(--ui-border)] lg:pt-2' : ''">
@@ -41,7 +39,7 @@
               :color="isActive(item) ? 'primary' : 'neutral'"
               :variant="isActive(item) ? 'soft' : 'ghost'"
               size="lg"
-              class="admin-nav-item relative w-full justify-start rounded-md"
+              class="admin-nav-item relative w-full justify-start rounded-lg"
               :class="[sidebarCollapsed ? 'lg:justify-center lg:gap-0 lg:px-0' : '', isActive(item) ? 'admin-nav-item-active' : '']"
               :aria-label="item.label"
               :aria-current="isActive(item) ? 'page' : undefined"
@@ -54,17 +52,17 @@
         </div>
       </nav>
 
-      <div class="flex shrink-0 items-center gap-1 border-t border-[var(--ui-border)] p-2" :class="sidebarCollapsed ? 'lg:flex-col' : ''">
+      <div class="m-2 flex shrink-0 items-center gap-1 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg-elevated)] p-1" :class="sidebarCollapsed ? 'lg:flex-col' : ''">
         <button
           type="button"
           :aria-label="t('shell.manageConnection')"
-          class="admin-connection-status flex min-w-0 flex-1 items-center gap-2 rounded-md p-3 text-left"
+          class="admin-connection-status flex min-w-0 flex-1 items-center gap-2 rounded-lg px-2.5 py-2 text-left"
           :class="sidebarCollapsed ? 'lg:w-full lg:justify-center lg:px-0' : ''"
           :title="connectionStatus.label"
           @click="openConnection"
         >
           <div class="flex min-w-0 items-center gap-2">
-            <span aria-hidden="true" class="size-2 shrink-0 rounded-full" :class="connectionStatus.dot" />
+            <span aria-hidden="true" class="admin-status-dot size-2 shrink-0 rounded-full" :class="connectionStatus.dot" />
             <span role="status" class="truncate text-xs font-medium" :class="sidebarCollapsed ? 'lg:sr-only' : ''">{{ connectionStatus.label }}</span>
           </div>
 
@@ -76,7 +74,7 @@
 
     <div :inert="mobileOpen" class="relative z-10 flex h-full min-h-0 min-w-0 flex-col transition-[padding] duration-200 motion-reduce:transition-none" :class="sidebarCollapsed ? 'lg:pl-16' : 'lg:pl-64'">
       <div class="flex min-h-0 min-w-0 flex-1 flex-col bg-[var(--ui-bg)]">
-        <header class="admin-workspace-header z-30 flex h-16 shrink-0 items-center justify-between gap-2 border-b border-[var(--ui-border)] bg-white/50 backdrop-blur-xl dark:bg-neutral-900/50 px-3 sm:gap-3 sm:px-5">
+        <header class="admin-workspace-header z-30 flex h-16 shrink-0 items-center justify-between gap-2 border-b border-[var(--ui-border)] px-3 sm:gap-3 sm:px-5">
           <div class="flex min-w-0 flex-1 items-center gap-2">
             <AppButton class="shrink-0 lg:hidden" icon="i-tabler-menu-2" color="neutral" variant="ghost" :aria-label="t('shell.openNavigation')" aria-controls="management-sidebar" :aria-expanded="mobileOpen" @click="openMobile" />
             <AppButton
@@ -91,14 +89,18 @@
               @click="toggleSidebar"
             />
             <div class="flex min-w-0 items-center gap-3">
-              <p class="truncate text-sm font-semibold text-[var(--ui-text-highlighted)]">{{ pageTitle }}</p>
-              <span aria-hidden="true" class="hidden h-4 w-px shrink-0 bg-[var(--ui-border)] xl:block" />
-              <p class="hidden truncate text-xs text-[var(--ui-text-muted)] xl:block">{{ pageSubtitle }}</p>
+              <span v-if="currentNavigation" aria-hidden="true" class="hidden size-8 shrink-0 items-center justify-center rounded-lg bg-[var(--admin-selected)] text-[var(--ui-primary)] sm:flex">
+                <UIcon :name="currentNavigation.icon" class="size-4" />
+              </span>
+              <div class="min-w-0 leading-tight">
+                <p class="truncate text-sm font-semibold text-[var(--ui-text-highlighted)]">{{ pageTitle }}</p>
+                <p v-if="pageSubtitle" class="hidden truncate text-xs text-[var(--ui-text-muted)] md:block">{{ pageSubtitle }}</p>
+              </div>
             </div>
           </div>
 
           <div class="flex shrink-0 items-center gap-1 sm:gap-2">
-            <AppButton class="hidden w-44 justify-between md:inline-flex" icon="i-tabler-search" color="neutral" variant="outline" :aria-label="t('shell.search')" aria-haspopup="dialog" @click="openCommands">
+            <AppButton class="admin-search-trigger hidden w-52 justify-between rounded-full md:inline-flex" icon="i-tabler-search" color="neutral" variant="outline" :aria-label="t('shell.search')" aria-haspopup="dialog" @click="openCommands">
               <span class="min-w-0 flex-1 truncate text-left">{{ t('shell.search') }}</span>
               <kbd class="rounded bg-[var(--ui-bg-muted)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--ui-text-muted)]">⌘ K</kbd>
             </AppButton>
@@ -378,22 +380,34 @@ const handleDisconnect = () => {
 }
 
 .admin-connection-status:hover {
-  background: var(--ui-bg-elevated);
+  background: var(--admin-panel-bg);
+}
+
+.admin-brand-accent {
+  background: var(--admin-brand-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.admin-status-dot.bg-\[var\(--ui-success\)\] {
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--ui-success) 22%, transparent);
+}
+
+.admin-nav-item {
+  font-weight: 500;
 }
 
 .admin-nav-item-active {
-  background: color-mix(in srgb, var(--ui-primary) 12%, var(--ui-bg-muted));
+  background: var(--admin-selected);
   color: var(--ui-primary);
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--ui-primary) 16%, transparent);
 }
 
-.admin-nav-item-active::before {
-  position: absolute;
-  inset-block: 0.5rem;
-  inset-inline-start: 0;
-  width: 2px;
-  border-radius: 0 2px 2px 0;
-  background: var(--ui-primary);
-  content: '';
+.admin-search-trigger {
+  background: var(--ui-bg-elevated);
+  color: var(--ui-text-muted);
 }
 
 @media (max-width: 639px) {

@@ -134,12 +134,12 @@ const plot = { left: 66, right: 930, top: 20, bottom: 310, width: 864, height: 2
 const activeIndex = ref<number | null>(null)
 const chartElement = ref<HTMLElement | null>(null)
 const colors = {
-  uncached: '#65baf0',
-  cacheRead: '#50c7bd',
-  cacheWrite: '#e8ae45',
-  output: '#6dcc91',
-  reasoning: '#f49a45',
-  unclassified: '#9aa6b2'
+  uncached: '#8b5cf6',
+  cacheRead: '#3b82f6',
+  cacheWrite: '#d946ef',
+  output: '#10b981',
+  reasoning: '#f59e0b',
+  unclassified: '#a1a1aa'
 }
 const definitions = [
   { key: 'uncached', label: 'Uncached input', color: colors.uncached, group: 'input' },

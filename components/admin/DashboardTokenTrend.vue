@@ -1,5 +1,5 @@
 <template>
-  <AppCard class="border-white/40 bg-white/40 dark:border-white/10 dark:bg-neutral-900/40" aria-labelledby="token-trend-title">
+  <AppCard aria-labelledby="token-trend-title">
     <template #header>
       <div class="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
         <div class="flex items-center gap-2.5">

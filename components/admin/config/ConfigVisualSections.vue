@@ -212,7 +212,7 @@ const sections: Section[] = [
       { key: 'userEmailEnabled', label: 'Enable mail', type: 'switch', description: 'Enable email registration, verification, and password recovery when all settings are valid.' },
       { key: 'userEmailPublicUrl', label: 'Public user panel URL', type: 'url', placeholder: 'https://home.example.com/user.html', hint: 'HTTPS required; HTTP is allowed only for localhost or loopback.' },
       { key: 'userEmailFromAddress', label: 'From address', type: 'text', placeholder: 'no-reply@example.com', hint: 'A single mailbox without a display name.' },
-      { key: 'userEmailFromName', label: 'From name', type: 'text', placeholder: 'CPAHome' },
+      { key: 'userEmailFromName', label: 'From name', type: 'text', placeholder: 'AI48Hub' },
       { key: 'userEmailSenderType', label: 'Sender type', type: 'select', items: [{ label: 'SMTP', value: 'smtp' }] },
       { key: 'userEmailSmtpHost', label: 'SMTP host', type: 'text', placeholder: 'smtp.example.com' },
       { key: 'userEmailSmtpPort', label: 'SMTP port', type: 'number', min: 1, max: 65535, step: 1, hint: '587 recommended; 465 is unsupported.' },

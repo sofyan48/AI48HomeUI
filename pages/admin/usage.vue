@@ -353,13 +353,13 @@ const overviewTokenBuckets = computed(() => overviewTokenBreakdown.value ? [
 const costBreakdown = computed(() => Array.isArray(overview.value?.cost_breakdown) ? overview.value.cost_breakdown : [])
 const top = computed(() => overview.value?.top || {})
 const chartMetrics = computed(() => [
-  { label: 'Total tokens', value: formatCompactNumber(totals.value.total_tokens), hint: `${formatCompactNumber(totals.value.input_tokens)} input · ${formatCompactNumber(totals.value.output_tokens)} output`, icon: 'i-tabler-database', color: 'text-blue-500', points: trend.value.map(point => Number(point.total_tokens) || 0) },
+  { label: 'Total tokens', value: formatCompactNumber(totals.value.total_tokens), hint: `${formatCompactNumber(totals.value.input_tokens)} input · ${formatCompactNumber(totals.value.output_tokens)} output`, icon: 'i-tabler-database', color: 'text-violet-500', points: trend.value.map(point => Number(point.total_tokens) || 0) },
   { label: 'Spend', value: formatAmount(totals.value.total_amount, totals.value.currency), hint: `${formatAmount(totals.value.blended_cost_per_1m_tokens, totals.value.currency)} / 1M tokens`, icon: 'i-tabler-wallet', color: 'text-emerald-500', points: trend.value.map(point => Number(point.total_amount) || 0) },
-  { label: 'Requests', value: formatNumber(totals.value.request_count), hint: `${formatNumber(totals.value.success_count)} successful · ${formatNumber(totals.value.failed_count)} failed`, icon: 'i-tabler-bolt', color: 'text-violet-500', points: trend.value.map(point => Number(point.request_count) || 0) }
+  { label: 'Requests', value: formatNumber(totals.value.request_count), hint: `${formatNumber(totals.value.success_count)} successful · ${formatNumber(totals.value.failed_count)} failed`, icon: 'i-tabler-bolt', color: 'text-blue-500', points: trend.value.map(point => Number(point.request_count) || 0) }
 ])
 const tokenSeriesLegend = [
-  { label: 'Uncached input', color: '#65baf0' }, { label: 'Cache read', color: '#50c7bd' }, { label: 'Cache write', color: '#e8ae45' },
-  { label: 'Regular output', color: '#6dcc91' }, { label: 'Reasoning', color: '#f49a45' }, { label: 'Unclassified', color: '#9aa6b2' }
+  { label: 'Uncached input', color: '#8b5cf6' }, { label: 'Cache read', color: '#3b82f6' }, { label: 'Cache write', color: '#d946ef' },
+  { label: 'Regular output', color: '#10b981' }, { label: 'Reasoning', color: '#f59e0b' }, { label: 'Unclassified', color: '#a1a1aa' }
 ]
 const rankingCards = computed(() => [
   { key: 'user', label: 'User ranking', items: Array.isArray(top.value.users) ? top.value.users.slice(0, 3) : [] },

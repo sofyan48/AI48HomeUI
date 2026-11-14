@@ -87,7 +87,7 @@
 
           <template #empty>
             <div class="flex flex-col items-center justify-center px-6 py-14 text-center">
-              <div class="mb-3 rounded-full bg-white/40 p-3 dark:bg-neutral-900/40">
+              <div class="mb-3 rounded-full bg-[var(--ui-bg-muted)] p-3 text-[var(--ui-text-muted)]">
                 <UIcon name="i-tabler-server-2" class="size-6 text-[var(--ui-text-muted)]" />
               </div>
               <p class="font-medium">{{ pending ? 'Loading provider entries…' : pageError ? 'Provider entries unavailable' : providerSearch ? 'No matching entries' : `No ${selectedProvider.label} entries` }}</p>
