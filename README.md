@@ -1,4 +1,4 @@
-# CLIProxyHomeUI
+# AI48HomeUI
 
 The Nuxt UI can run separately during development or be embedded into CLIProxyAPIHome. Open `http://localhost:3000/admin/upstream` for the admin workspace, or `/app/login` for the user workspace.
 
