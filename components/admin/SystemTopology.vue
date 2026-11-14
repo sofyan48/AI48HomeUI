@@ -140,6 +140,24 @@
         <div v-else class="mt-3 rounded-md border border-dashed p-8 text-center text-sm text-[var(--ui-text-muted)]">No config summary yet.</div>
       </AppCard>
 
+      <section class="credits" aria-labelledby="system-credits-title">
+        <div class="flex min-w-0 items-start gap-3">
+          <AppBrandMark size="sm" />
+          <div class="min-w-0">
+            <h2 id="system-credits-title" class="text-sm font-semibold text-[var(--ui-text-highlighted)]">About AI48Hub</h2>
+            <p class="mt-0.5 text-xs leading-5 text-[var(--ui-text-muted)]">
+              AI48Hub is inspired by and built upon
+              <a href="https://github.com/router-for-me/CLIProxyAPIHome" target="_blank" rel="noopener noreferrer" class="credits__link">router-for-me/CLIProxyAPIHome</a>.
+              Thanks to its authors and contributors for the original control plane for CLIProxyAPI.
+            </p>
+          </div>
+        </div>
+        <div class="flex shrink-0 flex-wrap items-center gap-2">
+          <span class="inline-flex items-center gap-1.5 rounded-full bg-[var(--ui-bg-muted)] px-2.5 py-1 font-mono text-[11px] text-[var(--ui-text-muted)]"><UIcon name="i-tabler-tag" class="size-3.5" aria-hidden="true" />{{ currentVersion }}</span>
+          <AppButton to="https://github.com/router-for-me/CLIProxyAPIHome" target="_blank" rel="noopener noreferrer" size="sm" color="neutral" variant="outline" icon="i-tabler-brand-github" trailing-icon="i-tabler-external-link">Original project</AppButton>
+        </div>
+      </section>
+
       <USlideover v-model:open="diagnosticsOpen" title="Management API diagnostic request" description="Send one upstream request from the server to diagnose connectivity, credential, or upstream API issues." :ui="{ content: 'sm:max-w-xl' }">
         <template #body>
           <div class="space-y-4">
@@ -422,6 +440,22 @@ onMounted(refreshSystem)
 </script>
 
 <style scoped>
+/* Attribution card for the upstream project. */
+.credits {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+  padding: 0.875rem 1rem;
+  border: 1px dashed var(--admin-panel-border);
+  border-radius: 0.875rem;
+  background: color-mix(in oklch, var(--admin-panel-bg) 70%, transparent);
+}
+.credits__link { font-weight: 500; color: var(--ui-primary); text-decoration: underline; text-underline-offset: 2px; text-decoration-color: color-mix(in oklch, var(--ui-primary) 40%, transparent); }
+.credits__link:hover { text-decoration-color: currentColor; }
+.credits__link:focus-visible { outline: 2px solid var(--ui-primary); outline-offset: 2px; border-radius: 2px; }
+
 /* System signature: dark console panel with status LED and mono key/values. */
 .console {
   --led: var(--color-emerald-400);
