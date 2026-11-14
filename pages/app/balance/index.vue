@@ -52,7 +52,7 @@
               </div>
             </template>
       <div class="min-h-64 overflow-x-auto">
-        <AppTable :data="records" :columns="recordColumns" :loading="loading || recordsLoading" empty="No balance adjustments yet." class="min-w-[720px]">
+        <AppTable :data="records" :columns="recordColumns" :loading="loading || recordsLoading" :number-offset="(recordPage - 1) * pageSize" empty="No balance adjustments yet." class="min-w-[720px]">
           <template #created_at-cell="{ row }">{{ formatDate(balanceRow(row).created_at) }}</template>
           <template #type-cell="{ row }"><UBadge :color="balanceRow(row).type === 'recharge' ? 'success' : 'warning'" variant="subtle">{{ balanceRow(row).type }}</UBadge></template>
           <template #amount-cell="{ row }"><span class="font-mono font-semibold">{{ balanceRow(row).type === 'recharge' ? '+' : '−' }}{{ formatCredits(balanceRow(row).amount) }}</span></template>

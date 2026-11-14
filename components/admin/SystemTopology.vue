@@ -22,34 +22,30 @@
     </AppCard>
 
     <template v-else>
-      <AppCard :ui="{ body: 'p-5' }">
-        <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-          <div class="flex min-w-0 gap-4">
-            <div class="flex size-11 shrink-0 items-center justify-center rounded-md border" :class="verdictClasses.icon">
-              <UIcon :name="verdictIcon" class="size-5" />
-            </div>
-            <div class="min-w-0">
-              <div class="flex flex-wrap items-center gap-2">
-                <h2 class="text-lg font-semibold tracking-normal">{{ verdict.title }}</h2>
-                <UBadge :color="verdictColor" variant="subtle">{{ verdict.badge }}</UBadge>
-              </div>
-              <p class="mt-2 max-w-3xl text-sm leading-6 text-[var(--ui-text-muted)]">{{ verdict.description }}</p>
-              <div class="mt-4 flex flex-wrap gap-2">
-                <UBadge color="neutral" variant="subtle">Runtime: {{ runtimeLabel }}</UBadge>
-                <UBadge color="neutral" variant="subtle">Capabilities checked {{ formatDate(probedAt) }}</UBadge>
-                <UBadge color="neutral" variant="subtle">Last synced: {{ formatDate(fetchedAt) }}</UBadge>
-              </div>
-            </div>
+      <section class="console" :class="`console--${verdictLevel}`" aria-label="System verdict">
+        <div class="console__main">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="console__led" aria-hidden="true" />
+            <span class="font-mono text-[11px] uppercase tracking-[0.14em] text-zinc-400">{{ runtimeLabel }} · system</span>
+            <UBadge :color="verdictColor" variant="subtle" size="sm">{{ verdict.badge }}</UBadge>
           </div>
-          <div class="flex shrink-0 flex-wrap gap-2 lg:justify-end">
+          <h2 class="console__title">{{ verdict.title }}</h2>
+          <p class="max-w-3xl text-sm leading-6 text-zinc-400">{{ verdict.description }}</p>
+          <div class="mt-4 flex flex-wrap gap-2">
+            <span v-for="fact in verdictFacts" :key="fact.label" class="console__fact" :class="fact.tone === 'success' ? 'console__fact--ok' : 'console__fact--warn'"><UIcon :name="fact.tone === 'success' ? 'i-tabler-circle-check' : 'i-tabler-alert-circle'" class="size-3.5" />{{ fact.label }}</span>
+          </div>
+        </div>
+        <div class="console__side">
+          <dl class="grid grid-cols-2 gap-2 font-mono text-[11px]">
+            <div class="console__kv"><dt>capabilities</dt><dd>{{ formatDate(probedAt) }}</dd></div>
+            <div class="console__kv"><dt>last sync</dt><dd>{{ formatDate(fetchedAt) }}</dd></div>
+          </dl>
+          <div class="flex flex-wrap gap-2">
             <AppSyncButton :loading="loading" @click="refreshSystem" />
             <AppButton color="neutral" variant="outline" icon="i-tabler-square-terminal" @click="openDiagnostics">Diagnostics</AppButton>
           </div>
         </div>
-        <div class="mt-4 flex flex-wrap gap-2 border-t border-[var(--ui-border)] pt-4">
-          <div v-for="fact in verdictFacts" :key="fact.label" class="inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium" :class="toneClasses(fact.tone)"><UIcon :name="fact.tone === 'success' ? 'i-tabler-circle-check' : 'i-tabler-alert-circle'" class="size-3.5 shrink-0" />{{ fact.label }}</div>
-        </div>
-      </AppCard>
+      </section>
 
       <UAlert v-if="issues.length" color="warning" variant="subtle" icon="i-tabler-alert-triangle" title="Some diagnostic data could not be loaded">
         <template #description>
@@ -424,3 +420,33 @@ async function runDiagnostic() {
 useDataSync('admin:system-topology:sync', refreshSystem)
 onMounted(refreshSystem)
 </script>
+
+<style scoped>
+/* System signature: dark console panel with status LED and mono key/values. */
+.console {
+  --led: var(--color-emerald-400);
+  display: grid;
+  gap: 1.25rem 2rem;
+  padding: 1.25rem 1.375rem;
+  border-radius: var(--admin-panel-radius);
+  background:
+    radial-gradient(ellipse 60% 120% at 100% 0%, color-mix(in oklch, var(--page-accent) 22%, transparent), transparent 70%),
+    linear-gradient(rgb(255 255 255 / 3%) 1px, transparent 1px) 0 0 / 100% 1.5rem,
+    oklch(0.19 0.02 270);
+  color: var(--color-zinc-200);
+  box-shadow: 0 20px 40px -24px rgb(0 0 0 / 50%);
+}
+.console--limited { --led: var(--color-blue-400); }
+.console--degraded { --led: var(--color-amber-400); }
+.console--blocked, .console--unavailable { --led: var(--color-rose-400); }
+@media (min-width: 64rem) { .console { grid-template-columns: minmax(0, 1fr) auto; align-items: end; } }
+.console__led { width: 0.625rem; height: 0.625rem; border-radius: 9999px; background: var(--led); box-shadow: 0 0 0 3px color-mix(in oklch, var(--led) 25%, transparent), 0 0 12px var(--led); }
+.console__title { margin-block: 0.625rem 0.25rem; font-family: var(--admin-display-font); font-size: 1.375rem; line-height: 1.875rem; font-weight: 800; letter-spacing: -0.02em; color: white; }
+.console__fact { display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.25rem 0.625rem; border-radius: 9999px; font-size: 0.6875rem; font-weight: 500; }
+.console__fact--ok { background: rgb(16 185 129 / 14%); color: var(--color-emerald-300); }
+.console__fact--warn { background: rgb(245 158 11 / 14%); color: var(--color-amber-300); }
+.console__side { display: grid; gap: 0.75rem; }
+.console__kv { padding: 0.375rem 0.625rem; border: 1px solid rgb(255 255 255 / 8%); border-radius: 0.5rem; background: rgb(255 255 255 / 4%); }
+.console__kv dt { color: var(--color-zinc-500); }
+.console__kv dd { color: var(--color-zinc-200); }
+</style>

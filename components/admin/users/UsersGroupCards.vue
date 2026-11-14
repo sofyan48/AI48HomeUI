@@ -21,6 +21,7 @@
         <table class="text-left text-sm">
           <thead>
             <tr>
+              <th class="app-table-number-head">No.</th>
               <th>{{ kind === 'channel' ? 'Credential ID' : 'Model ID' }}</th>
               <th v-if="kind === 'model' && channelBindingsSupported">Credential scope</th>
               <th class="whitespace-nowrap">Updated</th>
@@ -29,9 +30,10 @@
           </thead>
           <tbody>
             <tr v-if="!groupDetails(group).length">
-              <td :colspan="kind === 'model' && channelBindingsSupported ? 4 : 3" class="px-4 py-12 text-center text-sm text-muted">No bindings yet.</td>
+              <td :colspan="kind === 'model' && channelBindingsSupported ? 5 : 4" class="px-4 py-12 text-center text-sm text-muted">No bindings yet.</td>
             </tr>
-            <tr v-for="detail in groupDetails(group)" :key="detail.id">
+            <tr v-for="(detail, index) in groupDetails(group)" :key="detail.id">
+              <td class="app-table-number-cell"><span class="app-table-number">{{ index + 1 }}</span></td>
               <td class="min-w-32 max-w-64 truncate font-mono text-xs" :title="target(detail)">{{ target(detail) }}</td>
               <td v-if="kind === 'model' && channelBindingsSupported" class="min-w-32 max-w-64 truncate text-muted" :title="channels(detail)">{{ channels(detail) }}</td>
               <td class="whitespace-nowrap text-muted">{{ updated(detail) }}</td>

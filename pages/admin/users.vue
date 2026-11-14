@@ -24,13 +24,37 @@
     />
 
     <template v-else>
-      <AdminStatGrid label="Users summary" :items="userSummary" :columns="4" :loading="loading && !users.length" @select="selectSummary" />
+      <section class="members" aria-label="Users summary" :aria-busy="loading && !users.length">
+        <div class="members__lead">
+          <span class="members__icon" aria-hidden="true"><UIcon name="i-tabler-users" class="size-4" /></span>
+          <div class="min-w-0">
+            <p class="members__count">{{ loading && !users.length ? '—' : compactNumber(liveUsers.length) }}<span> members</span></p>
+            <p class="truncate text-[11px] text-[var(--ui-text-muted)]">{{ userSummary[2].value }} credits held · {{ compactNumber(keys.length) }} keys · {{ compactNumber(unassignedKeyCount) }} unassigned</p>
+          </div>
+        </div>
+        <div class="members__segments" role="group" aria-label="Filter users by status">
+          <button
+            v-for="segment in userSegments"
+            :key="segment.value"
+            type="button"
+            class="members__segment"
+            :class="[`members__segment--${segment.tone}`, { 'members__segment--active': userSegment === segment.value }]"
+            :aria-pressed="userSegment === segment.value"
+            :disabled="segment.value !== 'all' && !segment.count"
+            @click="selectSegment(segment.value)"
+          >
+            <span class="members__dot" aria-hidden="true" />
+            <span>{{ segment.label }}</span>
+            <strong class="tabular-nums">{{ compactNumber(segment.count) }}</strong>
+          </button>
+        </div>
+      </section>
       <AppPanelTabs v-model="activeTab" :items="tabs" label="Users & Access" />
 
       <AdminTablePanel
         v-if="activeTab === 'users'"
         title="Users"
-        :description="`${filteredUsers.length} of ${users.length} users`"
+        :description="`${compactNumber(filteredUsers.length)} of ${compactNumber(users.length)} users${userSegment !== 'all' ? ` · ${userSegments.find(item => item.value === userSegment)?.label}` : ''}`"
       >
         <template #actions>
           <UInput
@@ -40,7 +64,7 @@
             aria-label="Search users"
             class="w-full sm:w-72"
           />
-          <AppButton icon="i-tabler-plus" @click="openUserCreate">New user</AppButton>
+          <AppButton icon="i-tabler-user-plus" @click="openUserCreate">New user</AppButton>
         </template>
 
         <template v-if="selectedUsers.length" #bulk>
@@ -79,8 +103,7 @@
           :data="filteredUsers"
           :virtualize="{ estimateSize: 64, overscan: 8 }"
           :get-row-id="(user) => String(user.id)"
-          class="max-h-[65dvh]"
-          :ui="{ base: 'w-full table-fixed lg:min-w-[90rem]', thead: 'sticky top-0 z-10 bg-[var(--ui-bg)]' }"
+          :ui="{ base: 'w-full table-fixed lg:min-w-[90rem]' }"
           :loading="loading"
           empty="No users match the current filter."
         >
@@ -1388,9 +1411,45 @@ const userSummary = computed(() => {
     { key: "keys", label: "Client keys", value: keys.value.length, detail: `${unassignedKeyCount.value} unassigned`, icon: "i-tabler-key", tone: "blue", action: true, ariaLabel: "Show client keys" },
   ];
 });
+const liveUsers = computed(() => users.value.filter((user) => !user.deleted_at));
+// Status segments: counts are computed once per data change, so they stay cheap with thousands of users.
+const userSegment = ref("all");
+const segmentCounts = computed(() => {
+  const counts = { all: 0, active: 0, approval: 0, topup: 0, deleted: 0 };
+  for (const user of users.value) {
+    counts.all++;
+    if (user.deleted_at) { counts.deleted++; continue; }
+    if (user.approval_pending) counts.approval++;
+    else counts.active++;
+    if (user.pending_topup) counts.topup++;
+  }
+  return counts;
+});
+const userSegments = computed(() => [
+  { value: "all", label: "All", tone: "neutral", count: segmentCounts.value.all },
+  { value: "active", label: "Active", tone: "emerald", count: segmentCounts.value.active },
+  { value: "approval", label: "Pending approval", tone: "amber", count: segmentCounts.value.approval },
+  { value: "topup", label: "Top-up requests", tone: "blue", count: segmentCounts.value.topup },
+  ...(segmentCounts.value.deleted ? [{ value: "deleted", label: "Deleted", tone: "rose", count: segmentCounts.value.deleted }] : []),
+]);
+function inSegment(user) {
+  switch (userSegment.value) {
+    case "active": return !user.deleted_at && !user.approval_pending;
+    case "approval": return !user.deleted_at && Boolean(user.approval_pending);
+    case "topup": return !user.deleted_at && Boolean(user.pending_topup);
+    case "deleted": return Boolean(user.deleted_at);
+    default: return true;
+  }
+}
+function selectSegment(value) {
+  userSegment.value = value;
+  activeTab.value = "users";
+}
+const compactFormatter = new Intl.NumberFormat(undefined, { notation: "compact", maximumFractionDigits: 1 });
+const compactNumber = (value) => (Number(value) >= 10000 ? compactFormatter.format(Number(value)) : new Intl.NumberFormat().format(Number(value) || 0));
 function selectSummary(key) {
   activeTab.value = key === "keys" ? "keys" : "users";
-  if (key === "pending") search.value = "pending";
+  if (key === "pending") userSegment.value = "approval";
 }
 const rowValue = (row) => row?.original ?? row;
 const userStatus = (user) => user.deleted_at ? "Deleted" : user.approval_pending ? "Pending approval" : "Active";
@@ -1527,7 +1586,7 @@ const matches = (values) => {
   return !query || values.some((value) => normalize(value).includes(query));
 };
 const filteredUsers = computed(() =>
-  users.value.filter((user) => matches([user.id, user.username, userStatus(user)])),
+  users.value.filter((user) => inSegment(user) && matches([user.id, user.username, userStatus(user)])),
 );
 
 const filteredKeys = computed(() =>
@@ -3109,3 +3168,55 @@ async function performDelete() {
   }
 }
 </script>
+
+<style scoped>
+/* Users signature: compact lead plus status segments that double as table filters.
+   Fixed-size content, so it stays the same with ten users or ten thousand. */
+.members {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+  padding: 0.75rem 0.875rem;
+  border: 1px solid var(--admin-panel-border);
+  border-radius: 0.875rem;
+  background:
+    linear-gradient(135deg, color-mix(in oklch, var(--page-accent) 6%, transparent), transparent 55%),
+    var(--admin-panel-bg);
+  box-shadow: 0 1px 2px rgb(24 24 27 / 4%);
+}
+.members__lead { display: flex; min-width: 0; align-items: center; gap: 0.75rem; }
+.members__icon { display: flex; width: 2rem; height: 2rem; flex-shrink: 0; align-items: center; justify-content: center; border-radius: 0.625rem; background: color-mix(in oklch, var(--page-accent) 12%, transparent); color: var(--page-accent); }
+.members__count { font-size: 1.1875rem; line-height: 1.5rem; font-weight: 650; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; color: var(--ui-text-highlighted); }
+.members__count span { font-size: 0.8125rem; font-weight: 500; letter-spacing: normal; color: var(--ui-text-muted); }
+.members__segments { display: flex; min-width: 0; flex-wrap: wrap; gap: 0.375rem; }
+.members__segment {
+  --seg: var(--color-zinc-400);
+  display: inline-flex;
+  min-height: 2rem !important;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0 0.75rem;
+  border: 1px solid var(--admin-panel-border);
+  border-radius: 9999px !important;
+  background: var(--admin-panel-bg);
+  font-size: 0.75rem;
+  color: var(--ui-text-toned);
+  transition: background-color 140ms ease, border-color 140ms ease;
+}
+.members__segment strong { color: var(--ui-text-highlighted); }
+.members__segment--emerald { --seg: var(--color-emerald-500); }
+.members__segment--amber { --seg: var(--color-amber-500); }
+.members__segment--blue { --seg: var(--color-blue-500); }
+.members__segment--rose { --seg: var(--color-rose-500); }
+.members__dot { width: 0.4375rem; height: 0.4375rem; border-radius: 9999px; background: var(--seg); }
+.members__segment:hover:not(:disabled) { border-color: color-mix(in oklch, var(--seg) 45%, var(--admin-panel-border)); }
+.members__segment:disabled { opacity: 0.5; cursor: default; }
+.members__segment--active {
+  border-color: color-mix(in oklch, var(--seg) 55%, transparent);
+  background: color-mix(in oklch, var(--seg) 12%, var(--admin-panel-bg));
+}
+.members__segment:focus-visible { outline: 2px solid var(--ui-primary); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .members__segment { transition: none; } }
+</style>

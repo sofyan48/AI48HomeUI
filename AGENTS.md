@@ -116,6 +116,6 @@ Keep the root-level source layout used by this repository; do not move it into a
 make -C ../CLIProxyAPIHome panel-assets-local PANEL_SOURCE_DIR=../CPAHomeUI
 ```
 
-- This command copies build artifacts into the backend repository; run it only when the task requires updating embedded Home assets.
 - Preserve SPA deep-link support and same-origin API behavior. Do not replace embedded entry points with development-only URLs.
 - Do not hand-edit or commit generated `dist/`, `.nuxt/`, `.output/`, or dependency files under `node_modules/`; change the source or packaging script instead.
+- Home ini adalah merupakan pengembangan lebih jauh dari Home Management Center (https://github.com/router-for-me/Home-Management-Center) jika ada perubahan baru di repositories tersebut segera terapkan perubahan dengan cara design saat ini ada

@@ -21,7 +21,7 @@
     />
     </div>
 
-        <AppTable :columns="columns" :data="sortedPools" :loading="loading" class="min-w-[1180px]">
+        <AppTable :columns="columns" :data="sortedPools" :loading="loading" searchable search-placeholder="Search proxy pools…" class="min-w-[1180px]">
           <template #name-cell="{ row }">
             <span class="font-medium text-[var(--ui-text-highlighted)]">{{ rowValue(row).name }}</span>
           </template>

@@ -1,21 +1,19 @@
 <template>
   <div v-if="visibleActions.length" class="inline-flex items-center justify-end gap-1 whitespace-nowrap" @click.stop>
-    <AppButton
-      v-for="action in inlineActions"
-      :key="action.id"
-      type="button"
-      size="sm"
-      variant="link"
-      :color="action.destructive ? 'error' : 'neutral'"
-      :icon="action.icon"
-      :aria-label="action.ariaLabel || action.label"
-      :loading="action.loading"
-      :disabled="action.disabled || action.loading"
-      :ui="buttonUI"
-      @click="selectAction(action)"
-    >
-      {{ action.label }}
-    </AppButton>
+    <UTooltip v-for="action in inlineActions" :key="action.id" :text="action.label" :delay-duration="250">
+      <AppButton
+        type="button"
+        size="xs"
+        variant="ghost"
+        :color="action.destructive ? 'error' : 'neutral'"
+        :icon="action.icon"
+        :aria-label="action.ariaLabel || action.label"
+        :loading="action.loading"
+        :disabled="action.disabled || action.loading"
+        :ui="buttonUI"
+        @click="selectAction(action)"
+      />
+    </UTooltip>
     <UDropdownMenu
       v-if="overflowActions.length"
       :items="menuItems"
@@ -24,15 +22,14 @@
     >
       <AppButton
         type="button"
-        size="sm"
+        size="xs"
         color="neutral"
-        variant="link"
-        icon="i-tabler-dots"
+        variant="ghost"
+        icon="i-tabler-dots-vertical"
         :aria-label="`More actions for ${menuLabel}`"
+        :title="`More actions`"
         :ui="buttonUI"
-      >
-        More
-      </AppButton>
+      />
     </UDropdownMenu>
   </div>
 </template>
@@ -57,7 +54,7 @@ const props = defineProps<{
   maxInline?: number
 }>()
 
-const buttonUI = { base: 'admin-table-action no-underline hover:no-underline min-h-10 sm:min-h-0' }
+const buttonUI = { base: 'admin-table-action min-h-10 sm:min-h-0' }
 const compact = ref(false)
 let mediaQuery: MediaQueryList | undefined
 const updateViewport = () => { compact.value = !mediaQuery?.matches }

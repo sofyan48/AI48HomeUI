@@ -20,7 +20,7 @@
       <AppButton color="neutral" variant="outline" @click="applyFilters">Apply filters</AppButton>
     </div>
     <AppCard :ui="{ body: 'p-0' }">
-      <AppTable :columns="columns" :data="items" :loading="pending">
+      <AppTable :columns="columns" :data="items" :loading="pending" :number-offset="offset">
         <template #identity-cell="{ row }"><button class="min-w-0 text-left" @click="openDetail(value(row))"><p class="truncate font-medium text-primary-500 hover:underline">{{ value(row).label || value(row).credential_id }}</p><p class="mt-1 max-w-64 truncate font-mono text-xs text-[var(--ui-text-muted)]">{{ value(row).credential_id }}</p></button></template>
         <template #provider-cell="{ row }"><div><UBadge color="neutral" variant="subtle">{{ value(row).provider }}</UBadge><p v-if="value(row).plan?.name" class="mt-1 text-xs text-[var(--ui-text-muted)]">{{ value(row).plan.name }}</p></div></template>
         <template #quota-cell="{ row }"><div><UBadge :color="statusColor(value(row).quota_status)" variant="subtle">{{ value(row).quota_status }}</UBadge><p class="mt-1 text-xs text-[var(--ui-text-muted)]">{{ value(row).window_count || 0 }} window(s)</p><p v-if="quotaHistorical(value(row))" class="text-xs text-amber-500">Retained / historical observation</p></div></template>

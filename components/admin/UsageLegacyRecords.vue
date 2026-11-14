@@ -25,7 +25,7 @@
       </form>
     </AppCard>
     <AppCard :ui="{ body: 'p-0' }">
-      <AppTable :columns="columns" :data="items" :loading="loading" class="min-w-[960px]">
+      <AppTable :columns="columns" :data="items" :loading="loading" :number-offset="(page - 1) * limit" class="min-w-[960px]">
         <template #request-cell="{ row }"><p class="font-mono text-xs">{{ value(row).request_id || value(row).id }}</p><p class="text-xs text-[var(--ui-text-muted)]">{{ date(value(row).timestamp) }}</p></template>
         <template #model-cell="{ row }"><p>{{ value(row).model || 'Unknown model' }}</p><p class="text-xs text-[var(--ui-text-muted)]">{{ value(row).provider || 'Unknown provider' }} · {{ value(row).endpoint }}</p></template>
         <template #status-cell="{ row }"><UBadge :color="value(row).failed ? 'error' : 'success'" variant="subtle">{{ value(row).status || (value(row).failed ? 'Failed' : 'Success') }}</UBadge></template>

@@ -32,7 +32,7 @@
         <UFormField label="Model" class="w-full sm:w-56">
           <UInputMenu v-model="filters.model" :items="modelSuggestions" create-item @create="filters.model = $event.trim()" placeholder="All models" class="w-full" />
         </UFormField>
-        <AppButton type="button" color="neutral" :variant="showAdvancedFilters ? 'soft' : 'ghost'" icon="i-tabler-adjustments-horizontal" :aria-expanded="showAdvancedFilters" @click="showAdvancedFilters = !showAdvancedFilters">{{ showAdvancedFilters ? 'Less' : 'More' }}</AppButton>
+        <AppButton type="button" color="neutral" :variant="showAdvancedFilters ? 'soft' : 'ghost'" icon="i-tabler-dots-vertical" :aria-label="showAdvancedFilters ? 'Hide advanced filters' : 'Show advanced filters'" :title="showAdvancedFilters ? 'Hide advanced filters' : 'Advanced filters'" :aria-expanded="showAdvancedFilters" @click="showAdvancedFilters = !showAdvancedFilters" />
         <AppButton type="submit" color="primary" icon="i-tabler-filter" :loading="loading">Apply</AppButton>
         <AppButton type="button" color="neutral" variant="ghost" @click="resetFilters">Reset</AppButton>
         <div class="ml-auto flex items-center gap-2 self-center">
@@ -48,7 +48,20 @@
       <p class="mt-2 truncate text-xs text-[var(--ui-text-muted)]" :title="overviewScopeLabel"><UIcon name="i-tabler-filter" class="mr-1 inline size-3.5 align-[-2px]" />{{ overviewScopeLabel }}</p>
     </form>
 
-    <AdminStatGrid label="Usage summary" :items="chartMetrics" :columns="4" :loading="loading && !overview" />
+    <section class="meter" aria-label="Usage summary" :aria-busy="loading && !overview">
+      <div class="meter__lead">
+        <p class="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--ui-text-muted)]">Tokens processed</p>
+        <p class="meter__total">{{ chartMetrics[0].value }}</p>
+        <div v-if="tokenRibbon.length" class="meter__ribbon" role="img" :aria-label="tokenRibbon.map(part => `${part.label} ${part.percent}%`).join(', ')">
+          <span v-for="part in tokenRibbon" :key="part.label" :style="{ flexGrow: part.value, background: part.color }" :title="`${part.label} · ${part.percent}%`" />
+        </div>
+        <div v-if="tokenRibbon.length" class="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-[var(--ui-text-muted)]">
+          <span v-for="part in tokenRibbon" :key="part.label" class="inline-flex items-center gap-1"><span class="size-2 rounded-sm" :style="{ background: part.color }" />{{ part.label }} {{ part.percent }}%</span>
+        </div>
+        <p v-else class="mt-1 text-xs text-[var(--ui-text-muted)]">{{ chartMetrics[0].detail }}</p>
+      </div>
+      <AdminStatGrid class="meter__side" label="Usage details" :items="chartMetrics.slice(1)" :columns="3" :loading="loading && !overview" />
+    </section>
 
     <div class="grid items-start gap-3 xl:grid-cols-[minmax(0,1.7fr)_minmax(20rem,1fr)]">
       <AppCard :ui="{ body: 'p-0' }">
@@ -92,7 +105,7 @@
         <UFormField label="Direction"><USelect v-model="credentialDirection" :items="[{ label: 'Descending', value: 'desc' }, { label: 'Ascending', value: 'asc' }]" value-key="value" label-key="label" class="w-36" /></UFormField>
         <UFormField label="Rows"><USelect v-model="credentialLimit" :items="[10, 20, 50, 100]" class="w-24" /></UFormField>
       </div>
-      <AppTable :columns="credentialColumns" :data="credentialUsage" :loading="credentialsLoading" class="min-w-[980px]"><template #credential-cell="{ row }"><div class="min-w-48"><p class="truncate text-sm font-medium">{{ rowValue(row).label || rowValue(row).id || 'Unknown credential' }}</p><p class="truncate font-mono text-xs text-[var(--ui-text-muted)]">{{ rowValue(row).id }}</p></div></template><template #provider-cell="{ row }"><span class="text-sm">{{ rowValue(row).metadata?.provider || 'Unknown' }}</span></template><template #status-cell="{ row }"><div><UBadge :color="Number(rowValue(row).error_rate) > 0.05 ? 'warning' : 'success'" variant="subtle">{{ formatPercent(rowValue(row).success_rate) }} success</UBadge><p class="mt-1 text-xs text-[var(--ui-text-muted)]">{{ formatNumber(rowValue(row).failed_count) }} failed</p></div></template><template #requests-cell="{ row }"><span class="tabular-nums">{{ formatNumber(rowValue(row).request_count) }}</span></template><template #tokens-cell="{ row }"><span class="tabular-nums">{{ formatCompactNumber(rowValue(row).total_tokens) }}</span></template><template #cost-cell="{ row }"><span class="whitespace-nowrap">{{ formatAmount(rowValue(row).total_amount, rowValue(row).currency || totals.currency) }}</span></template><template #lastUsed-cell="{ row }"><span class="whitespace-nowrap text-xs text-[var(--ui-text-muted)]">{{ formatDateTime(rowValue(row).last_used_at) }}</span></template><template #empty><div class="py-10 text-center text-sm text-[var(--ui-text-muted)]">No execution credential usage data.</div></template></AppTable>
+      <AppTable :columns="credentialColumns" :data="credentialUsage" :loading="credentialsLoading" :number-offset="(credentialPage - 1) * credentialLimit" class="min-w-[980px]"><template #credential-cell="{ row }"><div class="min-w-48"><p class="truncate text-sm font-medium">{{ rowValue(row).label || rowValue(row).id || 'Unknown credential' }}</p><p class="truncate font-mono text-xs text-[var(--ui-text-muted)]">{{ rowValue(row).id }}</p></div></template><template #provider-cell="{ row }"><span class="text-sm">{{ rowValue(row).metadata?.provider || 'Unknown' }}</span></template><template #status-cell="{ row }"><div><UBadge :color="Number(rowValue(row).error_rate) > 0.05 ? 'warning' : 'success'" variant="subtle">{{ formatPercent(rowValue(row).success_rate) }} success</UBadge><p class="mt-1 text-xs text-[var(--ui-text-muted)]">{{ formatNumber(rowValue(row).failed_count) }} failed</p></div></template><template #requests-cell="{ row }"><span class="tabular-nums">{{ formatNumber(rowValue(row).request_count) }}</span></template><template #tokens-cell="{ row }"><span class="tabular-nums">{{ formatCompactNumber(rowValue(row).total_tokens) }}</span></template><template #cost-cell="{ row }"><span class="whitespace-nowrap">{{ formatAmount(rowValue(row).total_amount, rowValue(row).currency || totals.currency) }}</span></template><template #lastUsed-cell="{ row }"><span class="whitespace-nowrap text-xs text-[var(--ui-text-muted)]">{{ formatDateTime(rowValue(row).last_used_at) }}</span></template><template #empty><div class="py-10 text-center text-sm text-[var(--ui-text-muted)]">No execution credential usage data.</div></template></AppTable>
       <div class="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--ui-border)] px-4 py-3 text-xs text-[var(--ui-text-muted)]">
         <span class="tabular-nums">Page {{ credentialPage }} of {{ credentialPages }} · {{ formatNumber(credentialTotal) }} execution credentials</span>
         <div class="flex gap-2"><AppButton size="sm" color="neutral" variant="outline" icon="i-tabler-chevron-left" :disabled="credentialsLoading || credentialPage <= 1 || !canAttribute" @click="credentialPage--">Previous</AppButton><AppButton size="sm" color="neutral" variant="outline" trailing-icon="i-tabler-chevron-right" :disabled="credentialsLoading || credentialPage >= credentialPages || !canAttribute" @click="credentialPage++">Next</AppButton></div>
@@ -101,7 +114,7 @@
     </section>
     <AdminUsageInsights :common-query="insightQuery" />
 
-    <AppModal v-model:open="rankingOpen" title="Usage ranking" description="Aggregated usage for the selected dimension and metric." :ui="{ content: 'sm:max-w-6xl' }"><template #body><div class="space-y-4"><div class="grid gap-3 sm:grid-cols-3"><UFormField label="Group by"><USelect v-model="rankingGroup" :items="rankingGroupOptions" value-key="value" label-key="label" class="w-full" @update:model-value="loadRanking" /></UFormField><UFormField label="Metric"><USelect v-model="rankingMetric" :items="rankingMetricOptions" value-key="value" label-key="label" class="w-full" @update:model-value="loadRanking" /></UFormField><UFormField label="Rows"><USelect v-model="rankingLimit" :items="rankingLimitOptions" value-key="value" label-key="label" class="w-full" @update:model-value="loadRanking" /></UFormField></div><AppCard :ui="{ body: 'p-0' }"><AppTable :columns="rankingColumns" :data="rankingItems" :loading="rankingLoading" class="min-w-[980px]"><template #rank-cell="{ row }">{{ rankingItems.indexOf(rowValue(row)) + 1 }}</template><template #name-cell="{ row }"><div class="min-w-48"><p class="truncate font-medium">{{ rowValue(row).label || rowValue(row).id || 'Unknown' }}</p><p class="truncate font-mono text-xs text-[var(--ui-text-muted)]">{{ rowValue(row).id }}</p></div></template><template #amount-cell="{ row }">{{ formatAmount(rowValue(row).total_amount, rowValue(row).currency || totals.currency) }}</template><template #requests-cell="{ row }">{{ formatNumber(rowValue(row).request_count) }}</template><template #tokens-cell="{ row }">{{ formatCompactNumber(rowValue(row).total_tokens) }}</template><template #success-cell="{ row }">{{ formatPercent(rowValue(row).success_rate) }}</template><template #cache-cell="{ row }">{{ formatPercent(rowValue(row).cache_rate) }}</template><template #latency-cell="{ row }">{{ formatMilliseconds(rowValue(row).avg_latency_ms) }}</template></AppTable></AppCard></div></template></AppModal>
+    <AppModal v-model:open="rankingOpen" title="Usage ranking" description="Aggregated usage for the selected dimension and metric." :ui="{ content: 'sm:max-w-6xl' }"><template #body><div class="space-y-4"><div class="grid gap-3 sm:grid-cols-3"><UFormField label="Group by"><USelect v-model="rankingGroup" :items="rankingGroupOptions" value-key="value" label-key="label" class="w-full" @update:model-value="loadRanking" /></UFormField><UFormField label="Metric"><USelect v-model="rankingMetric" :items="rankingMetricOptions" value-key="value" label-key="label" class="w-full" @update:model-value="loadRanking" /></UFormField><UFormField label="Rows"><USelect v-model="rankingLimit" :items="rankingLimitOptions" value-key="value" label-key="label" class="w-full" @update:model-value="loadRanking" /></UFormField></div><AppCard :ui="{ body: 'p-0' }"><AppTable :columns="rankingColumns" :data="rankingItems" :loading="rankingLoading" class="min-w-[980px]"><template #rank-cell="{ row }"><span class="app-table-number">{{ rankingItems.indexOf(rowValue(row)) + 1 }}</span></template><template #name-cell="{ row }"><div class="min-w-48"><p class="truncate font-medium">{{ rowValue(row).label || rowValue(row).id || 'Unknown' }}</p><p class="truncate font-mono text-xs text-[var(--ui-text-muted)]">{{ rowValue(row).id }}</p></div></template><template #amount-cell="{ row }">{{ formatAmount(rowValue(row).total_amount, rowValue(row).currency || totals.currency) }}</template><template #requests-cell="{ row }">{{ formatNumber(rowValue(row).request_count) }}</template><template #tokens-cell="{ row }">{{ formatCompactNumber(rowValue(row).total_tokens) }}</template><template #success-cell="{ row }">{{ formatPercent(rowValue(row).success_rate) }}</template><template #cache-cell="{ row }">{{ formatPercent(rowValue(row).cache_rate) }}</template><template #latency-cell="{ row }">{{ formatMilliseconds(rowValue(row).avg_latency_ms) }}</template></AppTable></AppCard></div></template></AppModal>
 
     <AppModal v-model:open="detailOpen" title="Usage record details" description="Redacted request, execution, token, and billing metadata.">
       <template #body>
@@ -336,6 +349,15 @@ function rankingShare(item, items) {
   const max = Math.max(0, ...items.map(entry => Number(entry.total_amount) || 0))
   return max > 0 ? Math.max(3, Math.round(((Number(item.total_amount) || 0) / max) * 100)) : 0
 }
+// Ribbon of canonical token categories; colours follow the chart legend.
+const tokenRibbon = computed(() => {
+  const colors = ['#8b5cf6', '#3b82f6', '#d946ef', '#10b981', '#f59e0b', '#a1a1aa']
+  const labels = ['Uncached input', 'Cache read', 'Cache write', 'Regular output', 'Reasoning', 'Unclassified']
+  const values = overviewTokenBuckets.value.map(bucket => Number(bucket.value) || 0)
+  const total = values.reduce((sum, value) => sum + value, 0)
+  if (!total) return []
+  return values.map((value, index) => ({ label: labels[index], value, color: colors[index], percent: Math.round((value / total) * 100) })).filter(part => part.value > 0)
+})
 const tokenSeriesLegend = [
   { label: 'Uncached input', color: '#8b5cf6' }, { label: 'Cache read', color: '#3b82f6' }, { label: 'Cache write', color: '#d946ef' },
   { label: 'Regular output', color: '#10b981' }, { label: 'Reasoning', color: '#f59e0b' }, { label: 'Unclassified', color: '#a1a1aa' }
@@ -349,7 +371,7 @@ const chartOverlayValues = computed(() => chartOverlay.value === 'requests' ? tr
 const rankingGroupOptions = [{ label: 'User', value: 'user' }, { label: 'Model', value: 'model' }, { label: 'Client key', value: 'client_key' }, { label: 'Execution credential', value: 'credential' }, { label: 'Provider', value: 'provider' }, { label: 'Endpoint', value: 'endpoint' }, { label: 'Home node', value: 'home_ip' }, { label: 'Executor', value: 'executor_type' }]
 const rankingMetricOptions = [{ label: 'Spend', value: 'total_amount' }, { label: 'Requests', value: 'request_count' }, { label: 'Total tokens', value: 'total_tokens' }, { label: 'Failures', value: 'failed_count' }, { label: 'Average latency', value: 'avg_latency_ms' }, { label: 'P95 latency', value: 'p95_latency_ms' }]
 const rankingLimitOptions = [{ label: 'Top 10', value: 10 }, { label: 'Top 50', value: 50 }]
-const rankingColumns = [{ accessorKey: 'rank', header: '#' }, { accessorKey: 'name', header: 'Name' }, { accessorKey: 'amount', header: 'Spend' }, { accessorKey: 'requests', header: 'Requests' }, { accessorKey: 'tokens', header: 'Tokens' }, { accessorKey: 'success', header: 'Success' }, { accessorKey: 'cache', header: 'Cache rate' }, { accessorKey: 'latency', header: 'Avg latency' }]
+const rankingColumns = [{ accessorKey: 'rank', header: 'No.', meta: { class: { th: 'app-table-number-head', td: 'app-table-number-cell' } } }, { accessorKey: 'name', header: 'Name' }, { accessorKey: 'amount', header: 'Spend' }, { accessorKey: 'requests', header: 'Requests' }, { accessorKey: 'tokens', header: 'Tokens' }, { accessorKey: 'success', header: 'Success' }, { accessorKey: 'cache', header: 'Cache rate' }, { accessorKey: 'latency', header: 'Avg latency' }]
 const credentialColumns = [{ accessorKey: 'credential', header: 'Credential' }, { accessorKey: 'provider', header: 'Provider' }, { accessorKey: 'status', header: 'Status' }, { accessorKey: 'requests', header: 'Requests' }, { accessorKey: 'tokens', header: 'Tokens' }, { accessorKey: 'cost', header: 'Cost' }, { accessorKey: 'lastUsed', header: 'Last used' }]
 const records = computed(() => Array.isArray(recordsResponse.value?.items) ? recordsResponse.value.items : [])
 const providerSuggestions = computed(() => [...new Set(records.value.map(item => item.provider).filter(Boolean))].sort())
@@ -615,3 +637,22 @@ useDataSync('admin:usage:sync', () => refreshAll())
 onMounted(async () => { await refreshCapabilities().catch(() => {}); if (!disposed) { capabilitiesReady.value = true; await refreshAll() } })
 onScopeDispose(() => { disposed = true; overviewVersion++; credentialVersion++; rankingVersion++; requestController.abort() })
 </script>
+
+<style scoped>
+/* Usage signature: token meter card with category ribbon, next to separate KPI cards. */
+.meter { display: grid; gap: 0.75rem; }
+@media (min-width: 64rem) { .meter { grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); align-items: stretch; } }
+.meter__lead {
+  padding: 1rem 1.125rem;
+  border: 1px solid var(--admin-panel-border);
+  border-radius: 0.875rem;
+  background:
+    radial-gradient(ellipse 90% 120% at 0% 0%, color-mix(in oklch, var(--page-accent) 14%, transparent), transparent 70%),
+    var(--admin-panel-bg);
+  box-shadow: 0 1px 2px rgb(24 24 27 / 4%);
+}
+.meter__total { margin-top: 0.125rem; font-family: var(--admin-display-font); font-size: 1.75rem; line-height: 2.25rem; font-weight: 800; letter-spacing: -0.03em; color: var(--ui-text-highlighted); font-variant-numeric: tabular-nums; }
+.meter__ribbon { display: flex; height: 0.5rem; gap: 2px; margin-top: 0.625rem; overflow: hidden; border-radius: 9999px; }
+.meter__ribbon > span { flex-basis: 0; min-width: 3px; }
+.meter__side { align-content: stretch; }
+</style>

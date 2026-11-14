@@ -52,7 +52,7 @@ const onScroll = () => {
           <span>{{ row.timestamp }}</span>
           <UBadge color="neutral" variant="subtle" size="sm">{{ row.level || 'unknown' }}</UBadge>
           <span>{{ row.home_ip || 'Unknown Home' }} · {{ row.request_id || 'No request ID' }}</span>
-          <AppButton size="sm" color="neutral" variant="ghost" @click="emit('detail', row)">Details</AppButton>
+          <AdminTableAction action="view" label="View log details" @click="emit('detail', row)" />
         </div>
         <p class="whitespace-pre-wrap break-words font-mono text-xs">{{ row.line || '—' }}</p>
       </div>

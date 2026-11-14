@@ -9,6 +9,21 @@
       :description="pageError"
     />
 
+    <section class="catalog" aria-label="Model catalog summary">
+      <div class="min-w-0">
+        <p class="catalog__count">{{ filteredModels.length }}<span> of {{ modelsList.length }} models</span></p>
+        <p class="text-xs text-[var(--ui-text-muted)]">{{ providerCount }} providers · {{ channelCount }} channels</p>
+      </div>
+      <div v-if="providerSpectrum.length" class="min-w-0 flex-1">
+        <div class="catalog__spectrum" role="img" :aria-label="providerSpectrum.map(item => `${item.name} ${item.count}`).join(', ')">
+          <span v-for="item in providerSpectrum" :key="item.name" :style="{ flexGrow: item.count, background: item.color }" :title="`${item.name} · ${item.count} models`" />
+        </div>
+        <div class="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-[var(--ui-text-muted)]">
+          <span v-for="item in providerSpectrum" :key="item.name" class="inline-flex items-center gap-1"><span class="size-2 rounded-full" :style="{ background: item.color }" />{{ item.name }} {{ item.count }}</span>
+        </div>
+      </div>
+    </section>
+
     <div class="app-surface flex flex-col gap-3 p-3 lg:flex-row lg:items-end">
       <UFormField label="Catalog" class="w-full lg:w-48">
         <USelect v-model="scope" :items="scopeOptions" value-key="value" label-key="label" class="w-full" />
@@ -19,11 +34,6 @@
       <UFormField label="Search" class="w-full lg:flex-1">
         <UInput v-model="search" icon="i-tabler-search" placeholder="Model ID, name, provider, or channel..." class="w-full" />
       </UFormField>
-      <div class="flex flex-wrap gap-1.5 text-xs lg:pb-2" aria-label="Model catalog summary">
-        <span class="inline-flex items-center gap-1 rounded-full bg-[var(--admin-selected)] px-2.5 py-1 text-[var(--ui-primary)]"><strong class="tabular-nums">{{ filteredModels.length }}</strong>/{{ modelsList.length }} models</span>
-        <span class="inline-flex items-center gap-1 rounded-full bg-[var(--ui-bg-muted)] px-2.5 py-1"><strong class="tabular-nums">{{ providerCount }}</strong> providers</span>
-        <span class="inline-flex items-center gap-1 rounded-full bg-[var(--ui-bg-muted)] px-2.5 py-1"><strong class="tabular-nums">{{ channelCount }}</strong> channels</span>
-      </div>
     </div>
 
     <div v-if="pending && !modelsList.length" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
@@ -167,6 +177,16 @@ const filteredModels = computed(() => {
       .some(value => String(value || '').toLowerCase().includes(query))
   })
 })
+// Provider share across the full catalog; top six plus "other".
+const providerSpectrum = computed(() => {
+  const palette = ['#8b5cf6', '#3b82f6', '#d946ef', '#10b981', '#f59e0b', '#06b6d4']
+  const counts = new Map()
+  for (const model of modelsList.value) for (const provider of (model.providers?.length ? model.providers : ['unknown'])) counts.set(provider, (counts.get(provider) || 0) + 1)
+  const sorted = [...counts].sort((a, b) => b[1] - a[1])
+  const top = sorted.slice(0, 6).map(([name, count], index) => ({ name, count, color: palette[index] }))
+  const rest = sorted.slice(6).reduce((sum, [, count]) => sum + count, 0)
+  return rest ? [...top, { name: 'other', count: rest, color: '#a1a1aa' }] : top
+})
 const providerCount = computed(() => new Set(modelsList.value.flatMap(model => model.providers || [])).size)
 const channelCount = computed(() => new Set(modelsList.value.map(model => model.channel).filter(Boolean)).size)
 const modelMetadataGroups = computed(() => {
@@ -202,6 +222,12 @@ function errorMessage(error) {
 </script>
 
 <style scoped>
+/* Models signature: provider spectrum across the catalog. */
+.catalog { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 2rem; padding: 1rem 1.25rem; border: 1px solid var(--admin-panel-border); border-radius: 0.875rem; background: radial-gradient(ellipse 50% 140% at 0% 50%, color-mix(in oklch, var(--page-accent) 12%, transparent), transparent 70%), var(--admin-panel-bg); box-shadow: 0 1px 2px rgb(24 24 27 / 4%); }
+.catalog__count { font-family: var(--admin-display-font); font-size: 1.5rem; line-height: 2rem; font-weight: 800; letter-spacing: -0.02em; color: var(--ui-text-highlighted); }
+.catalog__count span { font-size: 0.875rem; font-weight: 500; letter-spacing: normal; color: var(--ui-text-muted); }
+.catalog__spectrum { display: flex; height: 0.625rem; gap: 2px; overflow: hidden; border-radius: 9999px; }
+.catalog__spectrum > span { flex-basis: 0; min-width: 3px; }
 .model-tile { transition: border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease; }
 .model-tile:hover { transform: translateY(-1px); border-color: color-mix(in oklch, var(--ui-primary) 35%, var(--admin-panel-border)) !important; }
 .model-tile:focus-visible { outline: 2px solid var(--ui-primary); outline-offset: 2px; }

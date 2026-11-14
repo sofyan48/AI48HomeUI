@@ -49,7 +49,7 @@
           <AppButton icon="i-tabler-plus" @click="openCreate">Add proxy</AppButton>
         </div>
       </template>
-      <AppTable :columns="columns" :data="pools" :loading="loading">
+      <AppTable :columns="columns" :data="pools" :loading="loading" searchable search-placeholder="Search proxies…">
         <template #identity-cell="{ row }">
           <div class="min-w-48">
             <p class="font-medium">{{ value(row).name }}</p>
@@ -67,9 +67,9 @@
         <template #note-cell="{ row }"><span class="text-sm text-[var(--ui-text-muted)]">{{ value(row).note || '—' }}</span></template>
         <template #actions-cell="{ row }">
           <div class="flex justify-end gap-1">
-            <AppButton size="sm" color="neutral" variant="ghost" icon="i-tabler-antenna-bars-5" :loading="testingId === value(row).id" @click="testPool(value(row))">Test</AppButton>
-            <AppButton size="sm" color="neutral" variant="ghost" icon="i-tabler-pencil" @click="openEdit(value(row))">Edit</AppButton>
-            <AppButton size="sm" color="error" variant="ghost" icon="i-tabler-trash" @click="removePool(value(row))" />
+            <AdminTableAction action="test" label="Test proxy" :loading="testingId === value(row).id" @click="testPool(value(row))" />
+            <AdminTableAction action="edit" label="Edit proxy" @click="openEdit(value(row))" />
+            <AdminTableAction action="delete" label="Delete proxy" destructive @click="removePool(value(row))" />
           </div>
         </template>
         <template #empty><div class="py-12 text-center text-sm text-[var(--ui-text-muted)]">No proxy-pool records.</div></template>

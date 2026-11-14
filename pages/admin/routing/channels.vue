@@ -43,8 +43,8 @@
           </template>
           <template #actions-cell="{ row }">
             <div class="flex justify-end gap-1">
-              <AppButton color="neutral" variant="ghost" size="sm" icon="i-tabler-pencil" aria-label="Edit group" @click.stop="openEditGroup(rowValue(row))" />
-              <AppButton color="error" variant="ghost" size="sm" icon="i-tabler-trash" aria-label="Delete group" @click.stop="confirmDelete('group', rowValue(row))" />
+              <AdminTableAction action="edit" label="Edit group" @click.stop="openEditGroup(rowValue(row))" />
+              <AdminTableAction action="delete" label="Delete group" destructive @click.stop="confirmDelete('group', rowValue(row))" />
             </div>
           </template>
           <template #empty>
@@ -66,7 +66,7 @@
             <AppButton color="primary" variant="soft" icon="i-tabler-plus" @click="openCreateDetail">Add credential</AppButton>
           </div>
         </template>
-        <AppTable :columns="detailColumns" :data="details" :loading="detailsPending">
+        <AppTable :columns="detailColumns" :data="details" :loading="detailsPending" searchable search-placeholder="Search bindings…">
           <template #credential-cell="{ row }">
             <div class="min-w-0">
               <p class="truncate font-medium">{{ credentialLabel(rowValue(row).auth_id) }}</p>
@@ -78,8 +78,8 @@
           </template>
           <template #actions-cell="{ row }">
             <div class="flex justify-end gap-1">
-              <AppButton color="neutral" variant="ghost" size="sm" icon="i-tabler-pencil" aria-label="Edit credential binding" @click="openEditDetail(rowValue(row))" />
-              <AppButton color="error" variant="ghost" size="sm" icon="i-tabler-trash" aria-label="Delete credential binding" @click="confirmDelete('detail', rowValue(row))" />
+              <AdminTableAction action="edit" label="Edit credential binding" @click="openEditDetail(rowValue(row))" />
+              <AdminTableAction action="delete" label="Delete credential binding" destructive @click="confirmDelete('detail', rowValue(row))" />
             </div>
           </template>
           <template #empty>

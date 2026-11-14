@@ -7,12 +7,37 @@
       title="Upstream summary unavailable"
       :description="summaryError"
     />
-    <AdminStatGrid
-      label="Upstream summary"
-      :items="summaryCards"
-      :loading="summaryPending && !accounts.length"
-      @select="showAttention"
-    />
+    <section class="fleet" aria-label="Upstream fleet" :aria-busy="summaryPending && !accounts.length">
+      <div class="fleet__card">
+        <span class="fleet__icon" aria-hidden="true"><UIcon name="i-tabler-user-shield" class="size-4" /></span>
+        <div class="min-w-0 flex-1">
+          <div class="flex items-baseline justify-between gap-2">
+            <span class="truncate text-xs font-medium text-[var(--ui-text-muted)]">Accounts</span>
+            <span class="shrink-0 text-[11px] tabular-nums text-[var(--ui-text-muted)]">{{ accounts.length ? Math.round((activeAccounts / accounts.length) * 100) : 0 }}% dispatchable</span>
+          </div>
+          <div class="flex min-w-0 items-baseline gap-3">
+            <span class="fleet__count">{{ summaryPending && !accounts.length ? '—' : accounts.length }}</span>
+            <span class="flex min-w-0 flex-wrap gap-x-2.5 text-[11px] text-[var(--ui-text-muted)]">
+              <span class="inline-flex items-center gap-1"><span class="size-1.5 rounded-full bg-emerald-500" />{{ activeAccounts }} active</span>
+              <span v-if="unavailableAccounts" class="inline-flex items-center gap-1"><span class="size-1.5 rounded-full bg-amber-500" />{{ unavailableAccounts }} unavailable</span>
+              <span class="inline-flex items-center gap-1"><span class="size-1.5 rounded-full bg-zinc-400" />{{ disabledAccounts }} disabled</span>
+            </span>
+          </div>
+          <div class="fleet__bar" role="img" :aria-label="`${activeAccounts} active, ${unavailableAccounts} unavailable, ${disabledAccounts} disabled`">
+            <span class="bg-emerald-500" :style="{ flexGrow: activeAccounts }" />
+            <span class="bg-amber-500" :style="{ flexGrow: unavailableAccounts }" />
+            <span class="bg-zinc-400 dark:bg-zinc-600" :style="{ flexGrow: disabledAccounts }" />
+          </div>
+        </div>
+      </div>
+      <AdminStatGrid
+        label="Upstream details"
+        :items="summaryCards.slice(1)"
+        :columns="3"
+        :loading="summaryPending && !accounts.length"
+        @select="showAttention"
+      />
+    </section>
 
     <AppPanelTabs
       :model-value="tab"
@@ -262,3 +287,54 @@ async function syncData() {
   }
 }
 </script>
+
+<style scoped>
+/* Upstream summary: one compact row; each card is only as tall as its content. */
+.fleet { display: grid; gap: 0.75rem; align-items: start; }
+@media (min-width: 64rem) { .fleet { grid-template-columns: minmax(0, 1.15fr) minmax(0, 2fr); } }
+.fleet :deep(.kpi) { align-self: start; }
+.fleet__card {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem 0.875rem;
+  border: 1px solid var(--admin-panel-border);
+  border-radius: 0.875rem;
+  background:
+    linear-gradient(135deg, color-mix(in oklch, var(--page-accent) 6%, transparent), transparent 55%),
+    var(--admin-panel-bg);
+  box-shadow: 0 1px 2px rgb(24 24 27 / 4%);
+}
+.fleet__icon {
+  display: flex;
+  width: 2rem;
+  height: 2rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.625rem;
+  background: color-mix(in oklch, var(--page-accent) 12%, transparent);
+  color: var(--page-accent);
+}
+.fleet__count {
+  flex-shrink: 0;
+  font-size: 1.1875rem;
+  line-height: 1.5rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ui-text-highlighted);
+}
+.fleet__bar {
+  display: flex;
+  height: 0.25rem;
+  gap: 2px;
+  margin-top: 0.375rem;
+  overflow: hidden;
+  border-radius: 9999px;
+  background: var(--ui-bg-muted);
+}
+.fleet__bar > span { flex-basis: 0; border-radius: 9999px; transition: flex-grow 400ms ease; }
+@media (prefers-reduced-motion: reduce) { .fleet__bar > span { transition: none; } }
+</style>

@@ -23,105 +23,89 @@
       Live refresh is paused while viewing historical pages. Refresh to return to the latest logs.
     </div>
 
-    <section class="admin-toolbar" aria-label="Log filters">
-      <div class="mb-3 flex flex-col gap-3 border-b border-[var(--ui-border)] pb-3 lg:flex-row lg:items-center lg:justify-between">
-          <div class="min-w-0"><h2 class="text-sm font-semibold">Filters</h2><p class="truncate text-xs text-[var(--ui-text-muted)]">{{ activeDescription }}</p></div>
-          <div class="flex flex-wrap items-center gap-2">
-            <USelect v-model="pageSize" :items="pageSizeOptions" value-key="value" label-key="label" size="sm" class="w-28" aria-label="Page size" @update:model-value="resetPages" />
-            <AppButton size="sm" :color="liveRefresh ? 'primary' : 'neutral'" :variant="liveRefresh ? 'soft' : 'outline'" :icon="liveRefresh ? 'i-tabler-broadcast' : 'i-tabler-broadcast-off'" :aria-pressed="liveRefresh" @click="liveRefresh = !liveRefresh">
-              Live {{ liveRefresh ? 'on' : 'off' }}
-            </AppButton>
-            <AppButton
-              v-if="activeView === 'application'"
-              size="sm"
-              color="error"
-              variant="outline"
-              icon="i-tabler-trash"
-              :disabled="applicationTotal === 0"
-              @click="clearConfirmOpen = true"
-            >
-              Clear application logs
-            </AppButton>
-            <AppButton size="sm" color="neutral" variant="outline" icon="i-tabler-refresh" :loading="loading" @click="refreshActive">
-              Refresh
-            </AppButton>
-          </div>
-      </div>
-      <form class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6" @submit.prevent="applyFilters">
+    <form class="admin-toolbar log-filters" aria-label="Log filters" @submit.prevent="applyFilters">
+      <div class="flex flex-wrap items-center gap-2">
         <template v-if="activeView === 'error-logs'">
-          <UFormField label="Search filename" class="sm:col-span-2">
-            <UInput v-model="errorLogSearch" placeholder="e.g. error-2026-05-27.log" icon="i-tabler-search" class="w-full" />
-          </UFormField>
+          <UInput v-model="errorLogSearch" icon="i-tabler-search" placeholder="Filename, e.g. error-2026-05-27.log" aria-label="Filename" class="w-full sm:w-80" />
         </template>
         <template v-else-if="activeView !== 'application'">
-          <UFormField label="From">
-            <AppDateInput v-model="requestFilters.from" type="date" :max="requestFilters.to" class="w-full" />
-          </UFormField>
-          <UFormField label="To">
-            <AppDateInput v-model="requestFilters.to" type="date" :min="requestFilters.from" class="w-full" />
-          </UFormField>
-          <UFormField label="Provider">
-            <UInput v-model="requestFilters.provider" placeholder="e.g. openai" class="w-full" />
-          </UFormField>
-          <UFormField label="Model">
-            <UInput v-model="requestFilters.model" placeholder="Contains model name" class="w-full" />
-          </UFormField>
-          <UFormField label="Status">
-            <USelect :model-value="requestFilters.status || allOptionValue" @update:model-value="requestFilters.status = $event === allOptionValue ? '' : $event" :items="requestStatusOptions" value-key="value" label-key="label" class="w-full" />
-          </UFormField>
-          <UFormField label="Search">
-            <UInput
-              v-model="requestFilters.search"
-              :placeholder="activeView === 'events' ? 'Request, user, key, node...' : 'Request ID, file, provider...'"
-              icon="i-tabler-search"
-              class="w-full"
-            />
-          </UFormField>
+          <UInput v-model="requestFilters.search" icon="i-tabler-search" :placeholder="activeView === 'events' ? 'Request, user, key, node…' : 'Request ID, file, provider…'" aria-label="Search" class="w-full sm:w-72" />
+          <USelect :model-value="requestFilters.status || allOptionValue" :items="requestStatusOptions" value-key="value" label-key="label" icon="i-tabler-circle-dot" aria-label="Status" class="w-36" @update:model-value="requestFilters.status = $event === allOptionValue ? '' : $event" />
+          <div class="log-filters__range">
+            <UInput v-model="requestFilters.from" type="date" :max="requestFilters.to || undefined" aria-label="From date" variant="none" class="w-36" />
+            <span aria-hidden="true">→</span>
+            <UInput v-model="requestFilters.to" type="date" :min="requestFilters.from || undefined" aria-label="To date" variant="none" class="w-36" />
+          </div>
         </template>
-
         <template v-else>
-          <UFormField label="Search log content" class="sm:col-span-2 lg:col-span-3 2xl:col-span-6">
-            <UInput v-model="applicationFilters.search" placeholder="Case-insensitive search across stored log lines" icon="i-tabler-search" class="w-full" />
-          </UFormField>
-          <UFormField label="After">
-            <AppDateInput v-model="applicationFilters.after" type="datetime-local" :max="applicationFilters.before" class="w-full" />
-          </UFormField>
-          <UFormField label="Before">
-            <AppDateInput v-model="applicationFilters.before" type="datetime-local" :min="applicationFilters.after" class="w-full" />
-          </UFormField>
-          <UFormField label="Level">
-            <USelect :model-value="applicationFilters.level || allOptionValue" @update:model-value="applicationFilters.level = $event === allOptionValue ? '' : $event" :items="levelOptions" value-key="value" label-key="label" class="w-full" />
-          </UFormField>
-          <UFormField label="Home IP">
-            <UInput v-model="applicationFilters.home_ip" placeholder="192.0.2.10" class="w-full" />
-          </UFormField>
-          <UFormField label="Client IP">
-            <UInput v-model="applicationFilters.client_ip" placeholder="10.0.0.5" class="w-full" />
-          </UFormField>
-          <UFormField label="Request ID">
-            <UInput v-model="applicationFilters.request_id" placeholder="Full or 8-character request ID" class="w-full" />
-          </UFormField>
+          <UInput v-model="applicationFilters.search" icon="i-tabler-search" placeholder="Search log content…" aria-label="Search log content" class="w-full sm:w-72" />
+          <USelect :model-value="applicationFilters.level || allOptionValue" :items="levelOptions" value-key="value" label-key="label" icon="i-tabler-stack-2" aria-label="Level" class="w-36" @update:model-value="applicationFilters.level = $event === allOptionValue ? '' : $event" />
+          <div class="log-filters__range">
+            <UInput v-model="applicationFilters.after" type="datetime-local" :max="applicationFilters.before || undefined" aria-label="After" variant="none" class="w-48" />
+            <span aria-hidden="true">→</span>
+            <UInput v-model="applicationFilters.before" type="datetime-local" :min="applicationFilters.after || undefined" aria-label="Before" variant="none" class="w-48" />
+          </div>
         </template>
 
-        <div class="flex flex-wrap items-end gap-2 sm:col-span-2 lg:col-span-3 2xl:col-span-6">
-          <AppButton type="submit" color="primary" icon="i-tabler-filter" :loading="loading">Apply filters</AppButton>
-          <AppButton color="neutral" variant="ghost" @click="resetFilters">Reset</AppButton>
+        <UChip v-if="activeView !== 'error-logs'" :show="advancedLogFilterCount > 0 && !showAdvancedLogFilters" size="sm" inset>
+          <AppButton
+            type="button"
+            color="neutral"
+            :variant="showAdvancedLogFilters ? 'soft' : 'ghost'"
+            icon="i-tabler-dots-vertical"
+            :aria-label="showAdvancedLogFilters ? 'Hide advanced filters' : 'Show advanced filters'"
+            :title="advancedLogFilterCount ? `${advancedLogFilterCount} advanced filter(s) active` : 'Advanced filters'"
+            :aria-expanded="showAdvancedLogFilters"
+            @click="showAdvancedLogFilters = !showAdvancedLogFilters"
+          />
+        </UChip>
+        <AppButton type="button" color="neutral" variant="ghost" @click="resetFilters">Reset</AppButton>
+        <AppButton type="submit" icon="i-tabler-filter" :loading="loading">Apply</AppButton>
+
+        <span class="mx-1 hidden h-5 w-px bg-[var(--ui-border)] lg:block" aria-hidden="true" />
+
+        <div class="flex items-center gap-1.5 lg:ml-auto">
+          <USelect v-model="pageSize" :items="pageSizeOptions" value-key="value" label-key="label" aria-label="Page size" class="w-28" @update:model-value="resetPages" />
+          <AppButton :color="liveRefresh ? 'primary' : 'neutral'" :variant="liveRefresh ? 'soft' : 'ghost'" :icon="liveRefresh ? 'i-tabler-broadcast' : 'i-tabler-broadcast-off'" :aria-pressed="liveRefresh" :title="liveRefresh ? 'Live refresh on' : 'Live refresh off'" @click="liveRefresh = !liveRefresh">Live</AppButton>
+          <AppButton color="neutral" variant="ghost" icon="i-tabler-refresh" :loading="loading" aria-label="Refresh" title="Refresh" @click="refreshActive" />
+          <AppButton
+            v-if="activeView === 'application'"
+            color="error"
+            variant="ghost"
+            icon="i-tabler-trash"
+            :disabled="applicationTotal === 0"
+            aria-label="Clear application logs"
+            title="Clear application logs"
+            @click="clearConfirmOpen = true"
+          />
         </div>
-      </form>
-    </section>
+      </div>
+
+      <div v-if="showAdvancedLogFilters && activeView !== 'error-logs'" class="mt-2.5 flex flex-wrap items-center gap-2 border-t border-[var(--ui-border)] pt-2.5">
+        <template v-if="activeView !== 'application'">
+          <UInput v-model="requestFilters.provider" icon="i-tabler-cloud" placeholder="Provider, e.g. openai" aria-label="Provider" class="w-full sm:w-52" />
+          <UInput v-model="requestFilters.model" icon="i-tabler-box" placeholder="Model contains…" aria-label="Model" class="w-full sm:w-60" />
+        </template>
+        <template v-else>
+          <UInput v-model="applicationFilters.home_ip" icon="i-tabler-server" placeholder="Home IP" aria-label="Home IP" class="w-full sm:w-44" />
+          <UInput v-model="applicationFilters.client_ip" icon="i-tabler-device-desktop" placeholder="Client IP" aria-label="Client IP" class="w-full sm:w-44" />
+          <UInput v-model="applicationFilters.request_id" icon="i-tabler-hash" placeholder="Request ID (full or 8 chars)" aria-label="Request ID" class="w-full sm:w-64" />
+        </template>
+      </div>
+    </form>
 
     <AppCard v-if="activeView === 'events'" :ui="{ body: 'p-0' }">
       <template #header>
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 class="font-semibold">Request events</h2>
-            <p class="text-xs text-[var(--ui-text-muted)]">{{ formatNumber(eventsTotal) }} matching persisted requests</p>
+            <p class="text-xs text-[var(--ui-text-muted)]" :title="activeDescription">{{ formatNumber(eventsTotal) }} matching persisted requests · raw payloads and credentials are not exposed</p>
           </div>
           <USelect v-model="eventSort" :items="eventSortOptions" value-key="value" label-key="label" class="w-full sm:w-52" @update:model-value="applyFilters" />
         </div>
       </template>
 
-      <AppTable :columns="eventColumns" :data="events" :loading="eventsLoading">
+      <AppTable :columns="eventColumns" :data="events" :loading="eventsLoading" :number-offset="(eventsPage - 1) * pageSize">
         <template #empty>
           <EmptyState icon="i-tabler-list" message="No request events match these filters." />
         </template>
@@ -159,19 +143,14 @@
         </template>
         <template #actions-cell="{ row }">
           <div class="flex justify-end gap-1">
-            <AppButton
+            <AdminTableAction
               v-if="rowValue(row).related?.request_log?.download_url"
-              size="sm"
-              color="neutral"
-              variant="ghost"
-              icon="i-tabler-download"
-              title="Download request log"
+              action="download"
+              label="Download request log"
               :loading="downloadingId === rowValue(row).request_id"
               @click="downloadRequestLog(rowValue(row).related.request_log.download_url, rowValue(row).request_id)"
             />
-            <AppButton size="sm" color="neutral" variant="ghost" icon="i-tabler-eye" @click="openEventDetail(rowValue(row))">
-              Details
-            </AppButton>
+            <AdminTableAction action="view" label="View event details" @click="openEventDetail(rowValue(row))" />
           </div>
         </template>
       </AppTable>
@@ -183,11 +162,11 @@
       <template #header>
         <div>
           <h2 class="font-semibold">Request log files</h2>
-          <p class="text-xs text-[var(--ui-text-muted)]">{{ formatNumber(requestLogsTotal) }} indexed requests; availability is verified locally or routed to the owning Home.</p>
+          <p class="text-xs text-[var(--ui-text-muted)]" :title="activeDescription">{{ formatNumber(requestLogsTotal) }} indexed requests · downloads may be forwarded to the owning Home</p>
         </div>
       </template>
 
-      <AppTable :columns="requestLogColumns" :data="requestLogs" :loading="requestLogsLoading">
+      <AppTable :columns="requestLogColumns" :data="requestLogs" :loading="requestLogsLoading" :number-offset="(requestLogsPage - 1) * pageSize">
         <template #empty>
           <EmptyState icon="i-tabler-file-search" message="No request log files match these filters." />
         </template>
@@ -219,17 +198,13 @@
         </template>
         <template #actions-cell="{ row }">
           <div class="flex justify-end">
-            <AppButton
-              size="sm"
-              color="neutral"
-              variant="outline"
-              icon="i-tabler-download"
+            <AdminTableAction
+              action="download"
+              label="Download request log"
               :disabled="!rowValue(row).download_url"
               :loading="downloadingId === rowValue(row).request_id"
               @click="downloadRequestLog(rowValue(row).download_url, rowValue(row).request_id)"
-            >
-              Download
-            </AppButton>
+            />
           </div>
         </template>
       </AppTable>
@@ -244,14 +219,14 @@
           <p class="text-xs text-[var(--ui-text-muted)]">{{ formatNumber(filteredErrorLogs.length) }} local files match. Files are listed only when detailed request logging is disabled.</p>
         </div>
       </template>
-      <AppTable :columns="errorLogColumns" :data="pagedErrorLogs" :loading="errorLogsLoading">
+      <AppTable :columns="errorLogColumns" :data="pagedErrorLogs" :loading="errorLogsLoading" :number-offset="(errorLogsPage - 1) * errorLogPageSize">
         <template #empty><EmptyState icon="i-tabler-file-search" message="No local request error logs match this filename." /></template>
         <template #modified-cell="{ row }">{{ formatDateTime(Number(rowValue(row).modified) * 1000) }}</template>
         <template #size-cell="{ row }">{{ formatBytes(rowValue(row).size) }}</template>
         <template #actions-cell="{ row }">
-          <AppButton size="sm" color="neutral" variant="outline" icon="i-tabler-download"
+          <div class="flex justify-end"><AdminTableAction action="download" label="Download error log"
             :disabled="!validErrorLogName(rowValue(row).name)" :loading="downloadingId === rowValue(row).name"
-            @click="downloadErrorLog(rowValue(row).name)">Download</AppButton>
+            @click="downloadErrorLog(rowValue(row).name)" /></div>
         </template>
       </AppTable>
       <TablePager :page="errorLogsPage" :total="filteredErrorLogs.length" :page-size="errorLogPageSize" :loading="errorLogsLoading" @previous="changeErrorLogsPage(-1)" @next="changeErrorLogsPage(1)" />
@@ -261,7 +236,7 @@
       <template #header>
         <div>
           <h2 class="font-semibold">Application logs</h2>
-          <p class="text-xs text-[var(--ui-text-muted)]">{{ formatNumber(applicationTotal) }} database-backed log lines across Home and CPA nodes</p>
+          <p class="text-xs text-[var(--ui-text-muted)]" :title="activeDescription">{{ formatNumber(applicationTotal) }} database-backed log lines across Home and CPA nodes · filters do not affect clear-all</p>
           <div class="mt-3 flex gap-2">
             <AppButton color="neutral" variant="outline" :aria-pressed="applicationMode === 'pages'" :disabled="clearingLogs" @click="changeApplicationMode('pages')">Pages</AppButton>
             <AppButton color="neutral" variant="outline" :aria-pressed="applicationMode === 'tail'" :disabled="clearingLogs" @click="changeApplicationMode('tail')">Tail</AppButton>
@@ -275,7 +250,7 @@
         :disabled="applicationLoading || applicationCursorExpired || applicationSearchUnsupported || clearingLogs"
         :truncated="tail.truncated.value" @following="tail.setFollowing" @accept="tail.accept"
         @older="loadOlderApplicationTail" @detail="selectedApplicationLog = $event" />
-      <AppTable v-else :columns="applicationColumns" :data="applicationLogs" :loading="applicationLoading">
+      <AppTable v-else :columns="applicationColumns" :data="applicationLogs" :loading="applicationLoading" :number-offset="(applicationPage - 1) * applicationPageSize">
         <template #empty>
           <EmptyState icon="i-tabler-terminal-2" message="No application logs match these filters." />
         </template>
@@ -303,7 +278,7 @@
           <span class="font-mono text-xs">{{ rowValue(row).request_id || '—' }}</span>
         </template>
         <template #actions-cell="{ row }">
-          <AppButton size="sm" color="neutral" variant="ghost" icon="i-tabler-eye" @click="selectedApplicationLog = rowValue(row)">Details</AppButton>
+          <div class="flex justify-end"><AdminTableAction action="view" label="View log details" @click="selectedApplicationLog = rowValue(row)" /></div>
         </template>
       </AppTable>
 
@@ -445,10 +420,15 @@ const defaultApplicationFilters = () => ({
   request_id: '',
 })
 
+const showAdvancedLogFilters = ref(false)
+// Count secondary filters so a collapsed row still signals that something is applied.
+const advancedLogFilterCount = computed(() => activeView.value === 'application'
+  ? ['home_ip', 'client_ip', 'request_id'].filter(key => String(applicationFilters.value[key] || '').trim()).length
+  : ['provider', 'model'].filter(key => String(requestFilters.value[key] || '').trim()).length)
 const views = [
   { value: 'events', label: 'Request events', icon: 'i-tabler-list' },
   { value: 'request-logs', label: 'Request log files', icon: 'i-tabler-file-download' },
-  { value: 'error-logs', label: 'Request error logs', icon: 'i-tabler-alert-triangle' },
+  { value: 'error-logs', label: 'Error logs', icon: 'i-tabler-alert-triangle' },
   { value: 'application', label: 'Application logs', icon: 'i-tabler-terminal-2' },
 ]
 
@@ -1008,3 +988,21 @@ export default {
   },
 }
 </script>
+
+<style scoped>
+/* Runtime logs filter bar: one label-free row like Billing; date range shares one control. */
+.log-filters { padding: 0.625rem 0.75rem; }
+.log-filters__range {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding-inline: 0.25rem;
+  border: 1px solid var(--ui-border-accented);
+  border-radius: var(--admin-control-radius);
+  background: var(--admin-control-bg);
+  color: var(--ui-text-dimmed);
+  font-size: 0.75rem;
+}
+.log-filters__range:focus-within { border-color: var(--ui-primary); }
+.log-filters__range :deep(input) { min-height: calc(var(--admin-control-height) - 2px) !important; }
+</style>

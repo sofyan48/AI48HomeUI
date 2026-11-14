@@ -23,19 +23,20 @@
       <AdminBillingFilterBar v-model:filters="overviewFilters" v-model:preset="overviewPreset" :range-options="rangeOptions" :user-options="userSearchOptions" :provider-options="providerSearchOptions" :model-options="modelSearchOptions" :loading="overviewLoading" @range="selectRange('overview', $event)" @apply="applyOverviewFilters" @reset="resetOverviewFilters" />
 
       <template v-if="overview">
-        <div class="billing-hero">
-          <div class="min-w-0">
-            <p class="text-xs font-medium text-white/75">Charged in range</p>
-            <p class="mt-0.5 truncate text-2xl font-semibold tracking-tight tabular-nums">{{ financeMetrics[0].value }}</p>
-            <p class="mt-1 text-xs text-white/75">{{ overviewRange.from || 'All time' }} – {{ overviewRange.to || 'Now' }} · {{ overviewRange.timezone || savedReportTimezone }}</p>
+        <section class="ledger" aria-label="Billing summary">
+          <div class="ledger__total">
+            <p class="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--ui-text-muted)]"><UIcon name="i-tabler-receipt" class="size-3.5" />Charged in range</p>
+            <p class="ledger__amount">{{ financeMetrics[0].value }}</p>
+            <p class="font-mono text-[11px] text-[var(--ui-text-muted)]">{{ overviewRange.from || 'All time' }} → {{ overviewRange.to || 'Now' }} · {{ overviewRange.timezone || savedReportTimezone }}</p>
           </div>
-          <dl class="grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-3 lg:w-[34rem]">
-            <div v-for="metric in financeMetrics.slice(1)" :key="metric.label" class="rounded-lg bg-white/12 px-3 py-2 ring-1 ring-white/15">
-              <dt class="flex items-center gap-1.5 text-[11px] text-white/75"><UIcon :name="metric.icon" class="size-3.5" />{{ metric.label }}</dt>
-              <dd class="truncate text-sm font-semibold tabular-nums" :title="metric.value">{{ metric.value }}</dd>
+          <dl class="ledger__lines">
+            <div v-for="metric in financeMetrics.slice(1)" :key="metric.label" class="ledger__line">
+              <dt class="inline-flex items-center gap-2 text-sm text-[var(--ui-text-toned)]"><UIcon :name="metric.icon" class="size-4" :class="metric.tone === 'emerald' ? 'text-emerald-500' : metric.tone === 'amber' ? 'text-amber-500' : 'text-blue-500'" />{{ metric.label }}</dt>
+              <span class="ledger__dots" aria-hidden="true" />
+              <dd class="font-mono text-sm font-semibold tabular-nums text-[var(--ui-text-highlighted)]" :title="metric.value">{{ metric.tone === 'emerald' ? '+' : metric.tone === 'amber' ? '−' : '' }}{{ metric.value }}</dd>
             </div>
           </dl>
-        </div>
+        </section>
         <dl class="flex flex-wrap gap-2" aria-label="Usage in range">
           <div v-for="metric in usageMetrics" :key="metric.label" class="inline-flex items-baseline gap-1.5 rounded-full border border-[var(--admin-panel-border)] bg-[var(--admin-panel-bg)] px-3 py-1 text-xs"><dt class="text-[var(--ui-text-muted)]">{{ metric.label }}</dt><dd class="font-semibold tabular-nums text-[var(--ui-text-highlighted)]">{{ metric.value }}</dd></div>
         </dl>
@@ -94,7 +95,7 @@
         <template #toolbar>
           <AdminBillingFilterBar v-model:filters="chargeFilters" v-model:preset="chargePreset" :range-options="rangeOptions" :user-options="userSearchOptions" :provider-options="providerSearchOptions" :model-options="modelSearchOptions" :loading="chargesLoading" @range="selectRange('charges', $event)" @apply="applyChargeFilters" @reset="resetChargeFilters" />
         </template>
-        <AppTable :columns="chargeColumns" :data="charges" :loading="chargesLoading" class="min-w-[56rem]">
+        <AppTable :columns="chargeColumns" :data="charges" :loading="chargesLoading" :number-offset="(chargePage - 1) * chargePageSize" class="min-w-[56rem]">
           <template #created_at-cell="{ row }"><p class="whitespace-nowrap text-sm">{{ formatDateTime(rowValue(row).created_at) }}</p><p class="max-w-44 truncate font-mono text-xs text-[var(--ui-text-muted)]" :title="rowValue(row).request_id || rowValue(row).id">{{ rowValue(row).request_id || rowValue(row).id }}</p></template>
           <template #user-cell="{ row }"><p class="text-sm font-medium">{{ chargeUserName(rowValue(row)) }}</p><p class="max-w-40 truncate font-mono text-xs text-[var(--ui-text-muted)]">{{ rowValue(row).api_key_masked || rowValue(row).api_key_label || 'No client key' }}</p></template>
           <template #model-cell="{ row }"><p class="max-w-64 truncate text-sm font-medium" :title="rowValue(row).model">{{ rowValue(row).model || 'Unknown' }}</p><p class="max-w-64 truncate text-xs text-[var(--ui-text-muted)]">{{ rowValue(row).provider || 'Unknown' }}<span v-if="rowValue(row).original_model && rowValue(row).original_model !== rowValue(row).model"> · from {{ rowValue(row).original_model }}</span></p></template>
@@ -117,7 +118,7 @@
         <template #toolbar>
           <AdminBillingFilterBar v-model:filters="balanceFilters" v-model:preset="balancePreset" :range-options="rangeOptions" :user-options="userSearchOptions" :loading="balancesLoading" @range="selectRange('balances', $event)" @apply="applyBalanceFilters" @reset="resetBalanceFilters" />
         </template>
-        <AppTable :columns="balanceColumns" :data="balanceRecords" :loading="balancesLoading" class="min-w-[52rem]">
+        <AppTable :columns="balanceColumns" :data="balanceRecords" :loading="balancesLoading" :number-offset="(balancePage - 1) * balancePageSize" class="min-w-[52rem]">
           <template #created_at-cell="{ row }"><p class="whitespace-nowrap text-sm">{{ formatDateTime(rowValue(row).created_at) }}</p><p class="font-mono text-xs text-[var(--ui-text-muted)]">#{{ rowValue(row).id }}</p></template>
           <template #user_id-cell="{ row }"><span class="text-sm font-medium">{{ balanceUserName(rowValue(row)) }}</span></template>
           <template #type-cell="{ row }"><span class="inline-flex items-center gap-1.5 text-sm capitalize"><span class="size-1.5 rounded-full" :class="rowValue(row).type === 'recharge' ? 'bg-green-500' : 'bg-amber-500'" />{{ rowValue(row).type }}</span></template>
@@ -138,7 +139,7 @@
       <AdminDataPanel title="Model prices" :description="`${filteredPriceRules.length} of ${priceRules.length} rules`">
         <template #actions>
           <UDropdownMenu :items="priceMenuItems" :content="{ align: 'end' }">
-            <AppButton size="sm" color="neutral" variant="outline" trailing-icon="i-tabler-chevron-down">More</AppButton>
+            <AppButton size="sm" color="neutral" variant="outline" icon="i-tabler-dots-vertical" aria-label="More price actions" title="More price actions" />
           </UDropdownMenu>
           <AppButton size="sm" icon="i-tabler-plus" @click="openPriceForm()">New price</AppButton>
         </template>
@@ -748,19 +749,31 @@ onMounted(loadBilling)
 </script>
 
 <style scoped>
-.billing-hero {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  padding: 1rem 1.25rem;
-  border-radius: 1rem;
+/* Billing signature: receipt-style ledger with a perforated edge and dotted leaders. */
+.ledger {
+  position: relative;
+  display: grid;
+  gap: 1rem 2rem;
+  padding: 1.125rem 1.375rem 1.375rem;
+  border: 1px solid var(--admin-panel-border);
+  border-radius: 0.875rem;
   background:
-    radial-gradient(ellipse 70% 120% at 100% 0%, rgb(255 255 255 / 16%), transparent 60%),
-    var(--admin-brand-gradient);
-  color: white;
-  box-shadow: 0 18px 40px -20px color-mix(in oklch, var(--color-violet-600) 70%, transparent);
+    radial-gradient(ellipse 60% 140% at 0% 0%, color-mix(in oklch, var(--page-accent) 12%, transparent), transparent 70%),
+    var(--admin-panel-bg);
+  box-shadow: 0 1px 2px rgb(24 24 27 / 4%);
 }
-@media (min-width: 64rem) {
-  .billing-hero { flex-direction: row; align-items: center; justify-content: space-between; }
+.ledger::after {
+  position: absolute;
+  inset-inline: 1rem;
+  bottom: 0.5rem;
+  height: 0.375rem;
+  background: radial-gradient(circle, var(--admin-workspace-bg) 0.1875rem, transparent 0.21rem) 0 50% / 0.75rem 0.375rem repeat-x;
+  content: '';
+  opacity: 0.9;
 }
+@media (min-width: 64rem) { .ledger { grid-template-columns: minmax(16rem, 0.9fr) minmax(0, 1.4fr); align-items: center; } }
+.ledger__amount { margin-block: 0.125rem 0.25rem; font-family: var(--admin-display-font); font-size: 2.25rem; line-height: 2.75rem; font-weight: 800; letter-spacing: -0.035em; color: var(--ui-text-highlighted); font-variant-numeric: tabular-nums; }
+.ledger__lines { display: grid; gap: 0.5rem; }
+.ledger__line { display: flex; min-width: 0; align-items: baseline; gap: 0.625rem; }
+.ledger__dots { min-width: 1rem; flex: 1; border-bottom: 2px dotted var(--ui-border-accented); transform: translateY(-0.25rem); }
 </style>

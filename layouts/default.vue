@@ -1,5 +1,5 @@
 <template>
-  <div class="admin-console relative h-dvh w-full overflow-hidden bg-[var(--ui-bg)] text-[var(--ui-text)]">
+  <div class="admin-console admin-shell relative h-dvh w-full overflow-hidden text-[var(--ui-text)]" :data-page-tone="pageTone">
     <div v-if="mobileOpen" aria-hidden="true" class="admin-navigation-overlay fixed inset-0 z-40 lg:hidden" @click="closeMobile" />
 
     <aside
@@ -9,15 +9,15 @@
       :aria-modal="mobileOpen ? true : undefined"
       :aria-label="t('shell.management')"
       :inert="!desktopViewport && !mobileOpen"
-      class="admin-sidebar fixed inset-y-0 left-0 z-50 flex w-64 max-w-[calc(100vw-2rem)] flex-col border-r border-[var(--ui-border)] bg-white dark:bg-zinc-900 transition-[transform,width] duration-200 motion-reduce:transition-none lg:translate-x-0"
+      class="admin-sidebar admin-rail fixed inset-y-0 left-0 z-50 flex w-64 max-w-[calc(100vw-2rem)] flex-col transition-[transform,width] duration-200 motion-reduce:transition-none lg:inset-y-3 lg:left-3 lg:translate-x-0"
       @keydown="handleSidebarKeydown"
-      :class="[mobileOpen ? 'translate-x-0' : '-translate-x-full', sidebarCollapsed ? 'lg:w-16' : 'lg:w-64']"
+      :class="[mobileOpen ? 'translate-x-0' : '-translate-x-full', sidebarCollapsed ? 'lg:w-[4.25rem]' : 'lg:w-64']"
     >
-      <div class="flex h-16 shrink-0 items-center gap-3 border-b border-[var(--ui-border)] px-4" :class="sidebarCollapsed ? 'lg:justify-center lg:px-0' : ''">
-        <NuxtLink to="/admin/dashboard" class="admin-brand flex min-w-0 flex-1 items-center gap-3 rounded-md" :class="sidebarCollapsed ? 'lg:flex-none' : ''" title="AI48Hub" aria-label="AI48Hub" @click="closeMobile">
+      <div class="flex h-16 shrink-0 items-center gap-3 px-4" :class="sidebarCollapsed ? 'lg:justify-center lg:px-0' : ''">
+        <NuxtLink to="/admin/dashboard" class="admin-brand flex min-w-0 flex-1 items-center gap-3 rounded-lg" :class="sidebarCollapsed ? 'lg:flex-none' : ''" title="AI48Hub" aria-label="AI48Hub" @click="closeMobile">
           <AppBrandMark />
           <div class="min-w-0 leading-tight" :class="sidebarCollapsed ? 'lg:hidden' : ''">
-            <p class="truncate text-[15px] font-bold tracking-tight text-[var(--ui-text-highlighted)]">AI48<span class="admin-brand-accent">Hub</span></p>
+            <p class="admin-wordmark truncate">AI48<span class="admin-brand-accent">Hub</span></p>
             <p class="truncate text-[11px] text-[var(--ui-text-muted)]">{{ t('shell.tagline') }}</p>
           </div>
         </NuxtLink>
@@ -25,56 +25,59 @@
         <AppButton class="lg:hidden" icon="i-tabler-x" color="neutral" variant="ghost" :aria-label="t('shell.closeNavigation')" @click="closeMobile" />
       </div>
 
-      <nav :aria-label="t('shell.management')" class="min-h-0 flex-1 overflow-y-auto px-2 py-3" :class="sidebarCollapsed ? 'lg:px-2' : ''">
-        <div v-for="section in visibleSections" :key="section.label" class="mb-3 last:mb-0">
-          <p class="mb-1.5 px-3 text-[11px] font-medium text-[var(--ui-text-dimmed)]" :class="sidebarCollapsed ? 'lg:sr-only' : ''">
+      <div class="admin-rail__divider" aria-hidden="true" />
+
+      <nav :aria-label="t('shell.management')" class="admin-rail__nav min-h-0 flex-1 overflow-y-auto px-2.5 py-3">
+        <div v-for="section in visibleSections" :key="section.label" class="mb-4 last:mb-0">
+          <p class="admin-rail__section" :class="sidebarCollapsed ? 'lg:sr-only' : ''">
             {{ section.label }}
           </p>
-          <div class="space-y-1" :class="sidebarCollapsed && section.label !== t('nav.operate') ? 'lg:border-t lg:border-[var(--ui-border)] lg:pt-2' : ''">
-            <AppButton
+          <div class="space-y-0.5" :class="sidebarCollapsed && section.label !== t('nav.operate') ? 'lg:border-t lg:border-[var(--ui-border)] lg:pt-2' : ''">
+            <NuxtLink
               v-for="item in section.items"
               :key="item.to"
               :to="item.to"
-              :icon="item.icon"
-              :color="isActive(item) ? 'primary' : 'neutral'"
-              :variant="isActive(item) ? 'soft' : 'ghost'"
-              size="lg"
-              class="admin-nav-item relative w-full justify-start rounded-lg"
-              :class="[sidebarCollapsed ? 'lg:justify-center lg:gap-0 lg:px-0' : '', isActive(item) ? 'admin-nav-item-active' : '']"
+              class="admin-rail__item"
+              :data-tone="section.tone"
+              :class="[sidebarCollapsed ? 'lg:justify-center lg:px-0' : '', { 'admin-rail__item--active': isActive(item) }]"
               :aria-label="item.label"
               :aria-current="isActive(item) ? 'page' : undefined"
               :title="sidebarCollapsed ? item.label : undefined"
               @click="closeMobile"
             >
-              <span class="min-w-0 truncate" :class="sidebarCollapsed ? 'lg:hidden' : ''">{{ item.label }}</span>
-            </AppButton>
+              <span class="admin-rail__glyph" aria-hidden="true"><UIcon :name="item.icon" class="size-[1.0625rem]" /></span>
+              <span class="min-w-0 flex-1 truncate" :class="sidebarCollapsed ? 'lg:hidden' : ''">{{ item.label }}</span>
+              <UIcon v-if="isActive(item)" name="i-tabler-chevron-right" class="size-3.5 shrink-0 opacity-70" :class="sidebarCollapsed ? 'lg:hidden' : ''" aria-hidden="true" />
+            </NuxtLink>
           </div>
         </div>
       </nav>
 
-      <div class="m-2 flex shrink-0 items-center gap-1 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg-elevated)] p-1" :class="sidebarCollapsed ? 'lg:flex-col' : ''">
+      <div class="admin-rail__footer" :class="sidebarCollapsed ? 'lg:flex-col lg:px-1.5' : ''">
         <button
           type="button"
           :aria-label="t('shell.manageConnection')"
-          class="admin-connection-status flex min-w-0 flex-1 items-center gap-2 rounded-lg px-2.5 py-2 text-left"
+          class="admin-connection-status flex min-w-0 flex-1 items-center gap-2.5 rounded-xl px-2.5 py-2 text-left"
           :class="sidebarCollapsed ? 'lg:w-full lg:justify-center lg:px-0' : ''"
           :title="connectionStatus.label"
           @click="openConnection"
         >
-          <div class="flex min-w-0 items-center gap-2">
-            <span aria-hidden="true" class="admin-status-dot size-2 shrink-0 rounded-full" :class="connectionStatus.dot" />
-            <span role="status" class="truncate text-xs font-medium" :class="sidebarCollapsed ? 'lg:sr-only' : ''">{{ connectionStatus.label }}</span>
-          </div>
-
+          <span class="admin-rail__avatar" aria-hidden="true">
+            <UIcon name="i-tabler-shield-check" class="size-4" />
+            <span class="admin-status-dot absolute -right-0.5 -bottom-0.5 size-2.5 rounded-full ring-2 ring-[var(--admin-rail-bg)]" :class="connectionStatus.dot" />
+          </span>
+          <span class="min-w-0 leading-tight" :class="sidebarCollapsed ? 'lg:sr-only' : ''">
+            <span class="block truncate text-xs font-semibold text-[var(--ui-text-highlighted)]">{{ t('shell.management') }}</span>
+            <span role="status" class="block truncate text-[11px] text-[var(--ui-text-muted)]">{{ connectionStatus.label }}</span>
+          </span>
         </button>
-        <AppButton icon="i-tabler-plug-off" color="neutral" variant="ghost" :aria-label="t('shell.disconnect')" :title="t('shell.disconnect')" :disabled="!token" @click="handleDisconnect" />
-
+        <AppButton icon="i-tabler-plug-off" color="neutral" variant="ghost" size="sm" :aria-label="t('shell.disconnect')" :title="t('shell.disconnect')" :disabled="!token" @click="handleDisconnect" />
       </div>
     </aside>
 
-    <div :inert="mobileOpen" class="relative z-10 flex h-full min-h-0 min-w-0 flex-col transition-[padding] duration-200 motion-reduce:transition-none" :class="sidebarCollapsed ? 'lg:pl-16' : 'lg:pl-64'">
-      <div class="flex min-h-0 min-w-0 flex-1 flex-col bg-[var(--ui-bg)]">
-        <header class="admin-workspace-header z-30 flex h-16 shrink-0 items-center justify-between gap-2 border-b border-[var(--ui-border)] px-3 sm:gap-3 sm:px-5">
+    <div :inert="mobileOpen" class="relative z-10 flex h-full min-h-0 min-w-0 flex-col transition-[padding] duration-200 motion-reduce:transition-none lg:py-3 lg:pr-3" :class="sidebarCollapsed ? 'lg:pl-[5.75rem]' : 'lg:pl-[17.5rem]'">
+      <div class="admin-canvas flex min-h-0 min-w-0 flex-1 flex-col">
+        <header class="admin-workspace-header z-30 flex h-[4.25rem] shrink-0 items-center justify-between gap-2 px-3 sm:gap-3 sm:px-6">
           <div class="flex min-w-0 flex-1 items-center gap-2">
             <AppButton class="shrink-0 lg:hidden" icon="i-tabler-menu-2" color="neutral" variant="ghost" :aria-label="t('shell.openNavigation')" aria-controls="management-sidebar" :aria-expanded="mobileOpen" @click="openMobile" />
             <AppButton
@@ -88,43 +91,44 @@
               aria-controls="management-sidebar"
               @click="toggleSidebar"
             />
-            <div class="flex min-w-0 items-center gap-3">
-              <span v-if="currentNavigation" aria-hidden="true" class="hidden size-8 shrink-0 items-center justify-center rounded-lg bg-[var(--admin-selected)] text-[var(--ui-primary)] sm:flex">
-                <UIcon :name="currentNavigation.icon" class="size-4" />
-              </span>
-              <nav aria-label="Breadcrumb" class="flex min-w-0 items-center gap-1.5 text-sm leading-tight">
-                <span v-if="currentSection" class="hidden truncate text-[var(--ui-text-muted)] sm:inline">{{ currentSection }}</span>
-                <UIcon v-if="currentSection" name="i-tabler-chevron-right" class="hidden size-3.5 shrink-0 text-[var(--ui-text-dimmed)] sm:block" aria-hidden="true" />
-                <span class="truncate font-semibold text-[var(--ui-text-highlighted)]" aria-current="page">{{ pageTitle }}</span>
-                <span v-if="pageSubtitle" class="hidden min-w-0 truncate border-l border-[var(--ui-border)] pl-2.5 text-xs text-[var(--ui-text-muted)] xl:inline">{{ pageSubtitle }}</span>
+            <span v-if="currentNavigation" class="admin-page-glyph hidden sm:flex" aria-hidden="true"><UIcon :name="currentNavigation.icon" class="size-[1.125rem]" /></span>
+            <div class="min-w-0 leading-tight">
+              <nav aria-label="Breadcrumb" class="hidden items-center gap-1 text-[11px] font-medium text-[var(--ui-text-muted)] sm:flex">
+                <span>AI48Hub</span>
+                <template v-if="currentSection"><UIcon name="i-tabler-slash" class="size-3 text-[var(--ui-text-dimmed)]" aria-hidden="true" /><span class="truncate">{{ currentSection }}</span></template>
               </nav>
+              <p class="admin-page-title truncate" :title="pageSubtitle || undefined" aria-current="page">{{ pageTitle }}</p>
             </div>
           </div>
 
-          <div class="flex shrink-0 items-center gap-1 sm:gap-2">
-            <AppButton class="admin-search-trigger hidden w-52 justify-between rounded-full md:inline-flex" icon="i-tabler-search" color="neutral" variant="outline" :aria-label="t('shell.search')" aria-haspopup="dialog" @click="openCommands">
+          <div class="flex shrink-0 items-center gap-2">
+            <button type="button" class="admin-search hidden md:flex" :aria-label="t('shell.search')" aria-haspopup="dialog" @click="openCommands">
+              <UIcon name="i-tabler-search" class="size-4 shrink-0" aria-hidden="true" />
               <span class="min-w-0 flex-1 truncate text-left">{{ t('shell.search') }}</span>
-              <kbd class="rounded bg-[var(--ui-bg-muted)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--ui-text-muted)]">⌘ K</kbd>
-            </AppButton>
-            <AppButton class="md:hidden" icon="i-tabler-search" color="neutral" variant="ghost" :aria-label="t('shell.search')" :title="t('shell.search')" aria-haspopup="dialog" @click="openCommands" />
-            <ThemeSwitcher />
-            <ConsoleLanguageSwitcher />
-            <AppButton icon="i-tabler-plug" color="neutral" variant="ghost" :aria-label="t('shell.manageConnection')" :title="t('shell.manageConnection')" aria-haspopup="dialog" @click="openConnection" />
-            <AppButton
-              icon="i-tabler-refresh"
-              color="neutral"
-              variant="ghost"
-              :loading="syncing"
-              :disabled="syncing || !token"
-              :aria-label="t('shell.sync')"
-              :title="t('shell.sync')"
-              @click="syncData"
-            />
-
+              <kbd>⌘K</kbd>
+            </button>
+            <div class="admin-dock">
+              <AppButton class="md:hidden" icon="i-tabler-search" color="neutral" variant="ghost" size="sm" :aria-label="t('shell.search')" :title="t('shell.search')" aria-haspopup="dialog" @click="openCommands" />
+              <ThemeSwitcher />
+              <ConsoleLanguageSwitcher />
+              <AppButton icon="i-tabler-plug" color="neutral" variant="ghost" size="sm" :aria-label="t('shell.manageConnection')" :title="t('shell.manageConnection')" aria-haspopup="dialog" @click="openConnection" />
+              <AppButton
+                icon="i-tabler-refresh"
+                color="primary"
+                variant="solid"
+                size="sm"
+                class="rounded-full"
+                :loading="syncing"
+                :disabled="syncing || !token"
+                :aria-label="t('shell.sync')"
+                :title="t('shell.sync')"
+                @click="syncData"
+              />
+            </div>
           </div>
         </header>
 
-        <main class="workbench-main min-h-0 min-w-0 flex-1 overflow-x-clip overflow-y-auto [scrollbar-gutter:stable] !p-4 sm:!p-5 lg:!p-6">
+        <main class="workbench-main admin-canvas__body min-h-0 min-w-0 flex-1 overflow-x-clip overflow-y-auto [scrollbar-gutter:stable] !px-3 !pb-6 !pt-1 sm:!px-6">
           <UAlert
             v-if="capabilitiesError"
             class="mx-auto mb-4 max-w-[96rem]"
@@ -263,13 +267,13 @@ onMounted(() => {
   onBeforeUnmount(() => desktopQuery.removeEventListener('change', updateViewport))
 })
 
-const navigationSections = computed<Array<{ label: string; items: NavigationItem[] }>>(() => [
+const navigationSections = computed<Array<{ label: string; tone: string; items: NavigationItem[] }>>(() => [
   {
-    label: t('nav.operate'),
+    label: t('nav.operate'), tone: 'violet',
     items: [{ label: t('nav.dashboard'), to: '/admin/dashboard', icon: 'i-tabler-grid-dots', subtitle: t('nav.dashboardDescription') }]
   },
   {
-    label: t('nav.gateway'),
+    label: t('nav.gateway'), tone: 'violet',
     items: [
       { label: t('nav.upstream'), to: '/admin/upstream', icon: 'i-tabler-cloud-upload', subtitle: t('nav.upstreamDescription') },
       { label: t('nav.models'), to: '/admin/routing/models', icon: 'i-tabler-box-multiple', subtitle: t('nav.modelsDescription') },
@@ -278,7 +282,7 @@ const navigationSections = computed<Array<{ label: string; items: NavigationItem
     ]
   },
   {
-    label: t('nav.observe'),
+    label: t('nav.observe'), tone: 'blue',
     items: [
       { label: t('nav.usage'), to: '/admin/usage', icon: 'i-tabler-chart-bar', subtitle: t('nav.usageDescription'), capability: 'usage_records' },
       { label: t('nav.diagnostics'), to: '/admin/diagnostics', icon: 'i-tabler-tools', subtitle: t('nav.diagnosticsDescription') },
@@ -286,11 +290,11 @@ const navigationSections = computed<Array<{ label: string; items: NavigationItem
     ]
   },
   {
-    label: t('nav.finance'),
+    label: t('nav.finance'), tone: 'emerald',
     items: [{ label: t('nav.billing'), to: '/admin/billing', icon: 'i-tabler-cash-banknote', subtitle: t('nav.billingDescription') }]
   },
   {
-    label: t('nav.control'),
+    label: t('nav.control'), tone: 'amber',
     items: [
       { label: t('nav.config'), to: '/admin/config', icon: 'i-tabler-adjustments-horizontal', subtitle: t('nav.configDescription') },
       { label: t('nav.plugins'), to: '/admin/plugins', icon: 'i-tabler-puzzle', subtitle: t('nav.pluginsDescription') },
@@ -317,7 +321,10 @@ const isActive = (item: NavigationItem) => item.to === '/admin/upstream'
 const currentNavigation = computed(() => navigationSections.value.flatMap(section => section.items).find(isActive))
 const pageTitle = computed(() => currentNavigation.value?.label || t('shell.management'))
 const pageSubtitle = computed(() => currentNavigation.value?.subtitle || '')
-const currentSection = computed(() => navigationSections.value.find(section => section.items.some(isActive))?.label || '')
+const currentSectionEntry = computed(() => navigationSections.value.find(section => section.items.some(isActive)))
+const currentSection = computed(() => currentSectionEntry.value?.label || '')
+// Section tone drives --page-accent so every area of the console has its own colour.
+const pageTone = computed(() => currentSectionEntry.value?.tone || 'violet')
 
 const commandGroups = computed(() => [
   ...visibleSections.value.map(section => ({
@@ -374,51 +381,219 @@ const handleDisconnect = () => {
 </script>
 
 <style scoped>
-.admin-navigation-overlay {
-  background: color-mix(in srgb, var(--ui-text-highlighted) 35%, transparent);
+/* AI48Hub shell: floating ink rail + rounded canvas. */
+.admin-shell {
+  background:
+    radial-gradient(60rem 40rem at 0% 0%, color-mix(in oklch, var(--color-violet-500) 14%, transparent), transparent 60%),
+    radial-gradient(50rem 30rem at 100% 100%, color-mix(in oklch, var(--color-fuchsia-500) 10%, transparent), transparent 60%),
+    var(--admin-shell-bg);
 }
 
-.admin-brand:focus-visible,
-.admin-connection-status:focus-visible {
-  outline: 2px solid var(--ui-primary);
-  outline-offset: 2px;
-}
+.admin-navigation-overlay { background: var(--admin-scrim); }
 
-.admin-connection-status:hover {
-  background: var(--admin-panel-bg);
+/* Rail always uses a dark ink palette, in light and dark themes. */
+.admin-rail {
+  --ui-primary: var(--color-violet-300);
+  --ui-bg: var(--admin-rail-bg);
+  --ui-bg-elevated: rgb(255 255 255 / 6%);
+  --ui-bg-muted: rgb(255 255 255 / 4%);
+  --ui-bg-accented: rgb(255 255 255 / 10%);
+  --ui-text: var(--color-zinc-300);
+  --ui-text-toned: var(--color-zinc-300);
+  --ui-text-muted: var(--color-zinc-400);
+  --ui-text-dimmed: var(--color-zinc-500);
+  --ui-text-highlighted: var(--color-white);
+  --ui-border: rgb(255 255 255 / 8%);
+  --ui-hover: rgb(255 255 255 / 7%);
+  color: var(--ui-text);
+  background:
+    radial-gradient(18rem 14rem at 0% 0%, color-mix(in oklch, var(--color-violet-500) 28%, transparent), transparent 70%),
+    radial-gradient(16rem 12rem at 100% 100%, color-mix(in oklch, var(--color-fuchsia-500) 16%, transparent), transparent 70%),
+    var(--admin-rail-bg) !important;
+  border: 1px solid rgb(255 255 255 / 6%) !important;
+  color-scheme: dark;
 }
-
+@media (min-width: 64rem) {
+  .admin-rail {
+    border-radius: 1.375rem !important;
+    box-shadow: 0 24px 48px -24px rgb(24 12 48 / 55%) !important;
+  }
+}
+.admin-rail__divider {
+  height: 1px;
+  margin-inline: 1rem;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 12%), transparent);
+}
+.admin-wordmark {
+  font-size: 1.0625rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--ui-text-highlighted);
+}
 .admin-brand-accent {
-  background: var(--admin-brand-gradient);
+  background: linear-gradient(90deg, var(--color-violet-300), var(--color-fuchsia-300));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
-
-.admin-status-dot.bg-\[var\(--ui-success\)\] {
-  box-shadow: 0 0 0 3px color-mix(in oklch, var(--ui-success) 22%, transparent);
+.admin-rail__section {
+  margin-bottom: 0.375rem;
+  padding-inline: 0.75rem;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ui-text-dimmed);
 }
-
-.admin-nav-item {
+.admin-rail__item {
+  position: relative;
+  display: flex;
+  min-height: 2.5rem;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.3125rem 0.625rem 0.3125rem 0.3125rem;
+  border-radius: 0.875rem;
+  font-size: 0.8125rem;
   font-weight: 500;
+  color: var(--ui-text);
+  transition: background-color 140ms ease, color 140ms ease;
 }
-
-.admin-nav-item-active {
-  background: var(--admin-selected);
-  color: var(--ui-primary);
+.admin-rail__glyph {
+  display: flex;
+  width: 1.875rem;
+  height: 1.875rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.625rem;
+  background: rgb(255 255 255 / 5%);
+  color: var(--ui-text-muted);
+  transition: background-color 140ms ease, color 140ms ease;
+}
+.admin-rail__item:hover { background: var(--ui-hover); color: var(--ui-text-highlighted); }
+.admin-rail__item:hover .admin-rail__glyph { color: var(--ui-text-highlighted); }
+.admin-rail__item:focus-visible { outline: 2px solid var(--color-violet-300); outline-offset: 1px; }
+.admin-rail__item--active,
+.admin-rail__item--active:hover {
+  background: linear-gradient(90deg, color-mix(in oklch, var(--item-a) 30%, transparent), color-mix(in oklch, var(--item-b) 10%, transparent)) !important;
+  color: var(--color-white) !important;
   font-weight: 600;
-  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--ui-primary) 16%, transparent);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 8%);
+}
+.admin-rail__item--active .admin-rail__glyph {
+  background: linear-gradient(135deg, var(--item-a), var(--item-b));
+  color: var(--color-white);
+  box-shadow: 0 6px 16px -6px color-mix(in oklch, var(--item-b) 70%, transparent);
+}
+.admin-rail__footer {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.25rem;
+  margin: 0.625rem;
+  padding: 0.25rem;
+  border: 1px solid rgb(255 255 255 / 7%);
+  border-radius: 1rem;
+  background: rgb(255 255 255 / 4%);
+}
+.admin-rail__avatar {
+  position: relative;
+  display: flex;
+  width: 2rem;
+  height: 2rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.625rem;
+  background: rgb(255 255 255 / 8%);
+  color: var(--color-violet-200);
+}
+.admin-brand:focus-visible,
+.admin-connection-status:focus-visible {
+  outline: 2px solid var(--color-violet-300);
+  outline-offset: 2px;
+}
+.admin-connection-status:hover { background: var(--ui-hover); }
+
+/* Section tones: one accent per console area. */
+.admin-shell { --page-accent: var(--color-violet-500); --page-accent-2: var(--color-fuchsia-500); }
+.admin-shell[data-page-tone="blue"] { --page-accent: var(--color-blue-500); --page-accent-2: var(--color-cyan-400); }
+.admin-shell[data-page-tone="emerald"] { --page-accent: var(--color-emerald-500); --page-accent-2: var(--color-teal-400); }
+.admin-shell[data-page-tone="amber"] { --page-accent: var(--color-amber-500); --page-accent-2: var(--color-orange-500); }
+.admin-rail__item[data-tone="blue"] { --item-a: var(--color-blue-500); --item-b: var(--color-cyan-400); }
+.admin-rail__item[data-tone="emerald"] { --item-a: var(--color-emerald-500); --item-b: var(--color-teal-400); }
+.admin-rail__item[data-tone="amber"] { --item-a: var(--color-amber-500); --item-b: var(--color-orange-500); }
+.admin-rail__item { --item-a: var(--color-violet-500); --item-b: var(--color-fuchsia-500); }
+.admin-page-glyph {
+  width: 2.375rem;
+  height: 2.375rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.875rem;
+  background: linear-gradient(135deg, var(--page-accent), var(--page-accent-2));
+  color: white;
+  box-shadow: 0 8px 18px -8px color-mix(in oklch, var(--page-accent) 70%, transparent);
 }
 
-.admin-search-trigger {
-  background: var(--ui-bg-elevated);
+/* Canvas: one rounded sheet holding header and content. */
+.admin-canvas { background: var(--admin-workspace-bg); }
+@media (min-width: 64rem) {
+  .admin-canvas {
+    overflow: hidden;
+    border: 1px solid var(--admin-panel-border);
+    border-radius: 1.375rem;
+    box-shadow: 0 1px 2px rgb(24 24 27 / 4%), 0 30px 60px -40px rgb(76 29 149 / 30%);
+  }
+}
+.admin-canvas__body {
+  background:
+    radial-gradient(circle at 1px 1px, color-mix(in oklch, var(--ui-text-dimmed) 22%, transparent) 1px, transparent 0) 0 0 / 22px 22px,
+    var(--admin-workspace-bg) !important;
+}
+.admin-page-title {
+  font-size: 1.125rem;
+  line-height: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ui-text-highlighted);
+}
+.admin-search {
+  width: 15rem;
+  height: 2.375rem;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 0.5rem 0 0.875rem;
+  border: 1px solid var(--admin-panel-border);
+  border-radius: 9999px;
+  background: var(--admin-panel-bg);
+  font-size: 0.8125rem;
+  color: var(--ui-text-muted);
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+.admin-search:hover { border-color: var(--admin-hover-border); }
+.admin-search:focus-visible { outline: 2px solid var(--ui-primary); outline-offset: 2px; }
+.admin-search kbd {
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  background: var(--ui-bg-muted);
+  font-family: ui-monospace, monospace;
+  font-size: 0.625rem;
   color: var(--ui-text-muted);
 }
+.admin-dock {
+  display: flex;
+  align-items: center;
+  gap: 0.125rem;
+  padding: 0.1875rem;
+  border: 1px solid var(--admin-panel-border);
+  border-radius: 9999px;
+  background: var(--admin-panel-bg);
+}
+.admin-dock :deep(button),
+.admin-dock :deep(a) { border-radius: 9999px; }
 
-@media (max-width: 639px) {
-  .admin-workspace-header {
-    gap: 0.25rem;
-    padding-inline: 0.5rem;
-  }
+@media (prefers-reduced-motion: reduce) {
+  .admin-rail__item, .admin-rail__glyph, .admin-search { transition: none; }
 }
 </style>

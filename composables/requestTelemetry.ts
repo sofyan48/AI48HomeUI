@@ -84,7 +84,9 @@ export function saveRequestPreference<T>(key: string, value: T, normalize: (valu
   try { globalThis.localStorage?.setItem(key, JSON.stringify({ version: 1, value: normalize(value) })) } catch {}
 }
 
-export const requestColumnDefaults: Record<string, number> = { timestamp: 168, event: 224, status: 96, model: 208, runtime: 176, client: 176, credential: 176, tokens: 224, latency: 144, cost: 144, request: 192, actions: 96 }
+export const requestColumnDefaults: Record<string, number> = { timestamp: 152, event: 200, status: 96, model: 208, runtime: 168, client: 168, credential: 168, tokens: 168, latency: 112, cost: 120, request: 184, actions: 80 }
+// Technical columns start hidden to keep the default table compact; users can enable them from the Columns menu.
+export const requestColumnsHiddenByDefault = new Set(['runtime', 'credential', 'request'])
 export function clampRequestColumnWidth(key: string, width: number) {
   return Math.round(Math.max(key === 'status' ? 96 : 120, Math.min(640, width)))
 }
@@ -98,7 +100,7 @@ export function normalizeRequestColumnVisibility(value: unknown): Record<string,
 }
 export function visibleRequestColumns(overrides: Record<string, boolean>) {
   // Keep the identity and detail actions reachable even if stored data says otherwise.
-  return Object.keys(requestColumnDefaults).filter(key => key === 'timestamp' || key === 'actions' || overrides[key] !== false)
+  return Object.keys(requestColumnDefaults).filter(key => key === 'timestamp' || key === 'actions' || (requestColumnsHiddenByDefault.has(key) ? overrides[key] === true : overrides[key] !== false))
 }
 export function estimateRequestColumnWidths(events: any[]) {
   const widths = { ...requestColumnDefaults }

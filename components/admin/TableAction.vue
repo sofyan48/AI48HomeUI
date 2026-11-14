@@ -13,9 +13,7 @@
         :disabled="disabled"
         class="admin-table-action shrink-0 whitespace-nowrap"
         @click="$emit('click', $event)"
-      >
-        {{ text }}
-      </AppButton>
+      />
     </span>
   </UTooltip>
 </template>

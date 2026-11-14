@@ -19,7 +19,29 @@
         </div>
       </AppCard>
       <UAlert v-if="consoleError" color="error" variant="subtle" title="Some diagnostics could not be loaded" :description="consoleError" />
-      <AdminStatGrid label="Diagnostics summary" :items="summaryMetrics" :columns="4" :loading="loadingConsole && !overview" />
+      <section class="pulse" aria-label="Diagnostics summary" :aria-busy="loadingConsole && !overview">
+        <div class="pulse__head">
+          <div class="flex min-w-0 items-center gap-3">
+            <span class="pulse__beacon" :class="`pulse__beacon--${overallHealth.tone}`" aria-hidden="true" />
+            <div class="min-w-0">
+              <p class="text-sm font-semibold text-[var(--ui-text-highlighted)]">{{ overallHealth.label }}</p>
+              <p class="text-xs text-[var(--ui-text-muted)]">{{ windowOptions.find(option => option.value === windowSeconds)?.label || 'Selected window' }} · {{ activityBars.length }} activity buckets</p>
+            </div>
+          </div>
+        </div>
+        <div v-if="activityBars.length" class="pulse__timeline" role="img" :aria-label="`Request volume and errors across ${activityBars.length} buckets`">
+          <span
+            v-for="bar in activityBars"
+            :key="bar.key"
+            class="pulse__bar"
+            :class="`pulse__bar--${bar.tone}`"
+            :style="{ height: `${bar.height}%` }"
+            :title="bar.title"
+          />
+        </div>
+        <p v-else class="pulse__empty">No request activity in this window.</p>
+      </section>
+      <AdminStatGrid label="Diagnostics figures" :items="summaryMetrics" :columns="4" :loading="loadingConsole && !overview" />
 
       <div class="grid gap-4 xl:grid-cols-12">
         <AppCard class="xl:col-span-7" :ui="{ body: 'p-0 sm:p-0' }">
@@ -29,14 +51,14 @@
               <span class="inline-flex items-center gap-1.5 rounded-full bg-[var(--ui-bg-muted)] px-2.5 py-1 text-xs text-[var(--ui-text-muted)]"><span class="size-1.5 rounded-full" :class="latestVelocity ? 'bg-emerald-500' : 'bg-zinc-400'" />{{ latestVelocity ? 'Live' : 'Idle' }}</span>
             </div>
           </template>
-          <dl class="grid grid-cols-3 divide-x divide-[var(--ui-border)] border-b border-[var(--ui-border)]">
-            <div v-for="item in velocityItems" :key="item.label" class="px-4 py-3">
-              <dt class="text-xs text-[var(--ui-text-muted)]">{{ item.label }}</dt>
-              <dd class="mt-0.5 text-base font-semibold tabular-nums text-[var(--ui-text-highlighted)]">{{ item.value }}</dd>
+          <dl class="grid grid-cols-3 gap-2 p-3">
+            <div v-for="item in velocityItems" :key="item.label" class="velocity-tile">
+              <dt class="text-[11px] text-[var(--ui-text-muted)]">{{ item.label }}</dt>
+              <dd class="mt-0.5 font-[family-name:var(--admin-display-font)] text-base font-bold tabular-nums text-[var(--ui-text-highlighted)]">{{ item.value }}</dd>
             </div>
           </dl>
-          <div class="grid gap-0 md:grid-cols-2 md:divide-x md:divide-[var(--ui-border)]">
-            <div class="p-4">
+          <div class="grid gap-3 px-3 pb-3 md:grid-cols-2">
+            <div class="velocity-panel">
               <h3 class="mb-2 text-xs font-medium text-[var(--ui-text-muted)]">Current usage</h3>
               <ul v-if="realtime?.current_usage?.length" class="space-y-2.5">
                 <li v-for="item in realtime.current_usage" :key="item.id" class="text-sm">
@@ -46,7 +68,7 @@
               </ul>
               <p v-else class="py-4 text-sm text-[var(--ui-text-muted)]">No recent usage.</p>
             </div>
-            <div class="border-t border-[var(--ui-border)] p-4 md:border-t-0">
+            <div class="velocity-panel">
               <h3 class="mb-2 text-xs font-medium text-[var(--ui-text-muted)]">Latency distribution</h3>
               <ul v-if="realtime?.latency_distribution?.length" class="space-y-2.5">
                 <li v-for="bucket in realtime.latency_distribution" :key="bucket.bucket" class="text-sm">
@@ -100,8 +122,8 @@
         <template #actions>
           <form class="flex w-full gap-2 sm:w-auto" @submit.prevent="applyLogSearch"><UInput v-model="logSearch" icon="i-tabler-search" placeholder="Request ID, model, status or file" aria-label="Search request logs" class="w-full sm:w-72" /><AppButton type="submit" color="neutral" variant="outline" :disabled="loadingConsole">Search</AppButton></form>
         </template>
-        <AppTable native><table class="min-w-[42rem] text-left text-sm"><thead><tr><th>Request</th><th>Provider / model</th><th>Home</th><th>File</th><th>Status</th><th>Log</th></tr></thead><tbody>
-          <tr v-for="item in logItems" :key="item.id"><td><div>{{ formatTime(item.timestamp) }}</div><div class="font-mono text-xs">{{ item.request_id || '—' }}</div></td><td>{{ item.provider || '—' }} / {{ item.model || '—' }}</td><td>{{ item.home_ip || '—' }}{{ item.home_port ? `:${item.home_port}` : '' }}</td><td class="font-mono text-xs">{{ item.file_name || 'Remote / unavailable' }}</td><td>{{ item.status }}</td><td><AppButton size="xs" color="neutral" variant="outline" :disabled="!item.download_url" :loading="downloadingId === item.id" @click="downloadLog(item)">Download</AppButton></td></tr>
+        <AppTable native><table class="min-w-[42rem] text-left"><thead><tr><th class="app-table-number-head">No.</th><th>Request</th><th>Provider / model</th><th>Home</th><th>File</th><th>Status</th><th class="w-px text-right">Actions</th></tr></thead><tbody>
+          <tr v-for="(item, index) in logItems" :key="item.id"><td class="app-table-number-cell"><span class="app-table-number">{{ (logPage - 1) * logPageSize + index + 1 }}</span></td><td><div>{{ formatTime(item.timestamp) }}</div><div class="font-mono text-xs">{{ item.request_id || '—' }}</div></td><td>{{ item.provider || '—' }} / {{ item.model || '—' }}</td><td>{{ item.home_ip || '—' }}{{ item.home_port ? `:${item.home_port}` : '' }}</td><td class="font-mono text-xs">{{ item.file_name || 'Remote / unavailable' }}</td><td>{{ item.status }}</td><td><div class="flex justify-end"><AdminTableAction action="download" label="Download request log" :disabled="!item.download_url" :loading="downloadingId === item.id" @click="downloadLog(item)" /></div></td></tr>
         </tbody></table></AppTable>
         <p v-if="!logItems.length" class="py-8 text-center text-sm text-[var(--ui-text-muted)]">No request logs match this window and search.</p>
         <template #footer>
@@ -206,6 +228,28 @@ const formatTime = value => value ? new Date(value).toLocaleString() : '—'
 const healthColor = status => status === 'healthy' ? 'success' : status === 'degraded' ? 'warning' : status === 'empty' || status === 'unknown' ? 'neutral' : 'error'
 const latestVelocity = computed(() => realtime.value?.velocity?.at(-1))
 const recentActivity = computed(() => (overview.value?.activity || []).filter(point => point.request_count > 0).slice(-10).reverse())
+const activityBars = computed(() => {
+  const points = (overview.value?.activity || []).slice(-60)
+  const max = Math.max(1, ...points.map(point => Number(point.request_count) || 0))
+  return points.map(point => {
+    const count = Number(point.request_count) || 0
+    const errors = Number(point.error_rate) || 0
+    return {
+      key: point.bucket_start,
+      height: count ? Math.max(8, Math.round((count / max) * 100)) : 4,
+      tone: !count ? 'idle' : errors > 0.2 ? 'bad' : errors > 0.05 ? 'warn' : 'good',
+      title: `${formatTime(point.bucket_start)} · ${number(count)} requests · ${percent(errors)} errors`
+    }
+  })
+})
+const overallHealth = computed(() => {
+  const rate = Number(overview.value?.totals?.error_rate) || 0
+  if (!overview.value) return { label: 'Waiting for data', tone: 'idle' }
+  if (!Number(overview.value?.totals?.request_count)) return { label: 'No traffic in this window', tone: 'idle' }
+  if (rate > 0.2) return { label: 'Error rate is high', tone: 'bad' }
+  if (rate > 0.05) return { label: 'Some requests are failing', tone: 'warn' }
+  return { label: 'Traffic is healthy', tone: 'good' }
+})
 const healthSections = computed(() => [
   { label: 'Provider', items: providerHealth.value?.items || [] },
   { label: 'Credential', items: credentialHealth.value?.items || [] }
@@ -330,3 +374,42 @@ async function copyBody() {
   toast.add({ title: 'Response body copied', color: 'success' })
 }
 </script>
+
+<style scoped>
+/* Diagnostics signature: health beacon, inline figures and a per-bucket uptime timeline. */
+.pulse {
+  padding: 1rem 1.125rem;
+  border: 1px solid var(--admin-panel-border);
+  border-radius: 0.875rem;
+  background:
+    linear-gradient(180deg, color-mix(in oklch, var(--page-accent) 6%, transparent), transparent 60%),
+    var(--admin-panel-bg);
+  box-shadow: var(--admin-panel-shadow);
+}
+.pulse__head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem 2rem; }
+.pulse__beacon { position: relative; width: 0.75rem; height: 0.75rem; flex-shrink: 0; border-radius: 9999px; background: var(--color-zinc-400); }
+.pulse__beacon::after { position: absolute; inset: -0.3125rem; border-radius: inherit; background: inherit; opacity: 0.25; content: ''; animation: pulse-ring 1.8s ease-out infinite; }
+.pulse__beacon--good { background: var(--color-emerald-500); }
+.pulse__beacon--warn { background: var(--color-amber-500); }
+.pulse__beacon--bad { background: var(--color-rose-500); }
+.pulse__beacon--idle::after { animation: none; }
+@keyframes pulse-ring { from { transform: scale(0.6); opacity: 0.45; } to { transform: scale(1.6); opacity: 0; } }
+.pulse__timeline { display: flex; height: 3.5rem; align-items: flex-end; gap: 3px; margin-top: 1rem; }
+.pulse__bar { min-width: 3px; flex: 1; border-radius: 3px 3px 1px 1px; background: var(--color-emerald-500); opacity: 0.85; transition: opacity 120ms ease; }
+.pulse__bar:hover { opacity: 1; }
+.pulse__bar--warn { background: var(--color-amber-500); }
+.pulse__bar--bad { background: var(--color-rose-500); }
+.pulse__bar--idle { background: var(--ui-bg-accented); }
+.velocity-tile {
+  padding: 0.625rem 0.75rem;
+  border-radius: 0.75rem;
+  background: linear-gradient(135deg, color-mix(in oklch, var(--page-accent) 9%, transparent), transparent 70%), var(--ui-bg-muted);
+}
+.velocity-panel {
+  padding: 0.875rem;
+  border: 1px solid var(--admin-panel-border);
+  border-radius: 0.75rem;
+}
+.pulse__empty { margin-top: 1rem; padding: 1rem; border-radius: 0.75rem; background: var(--ui-bg-muted); text-align: center; font-size: 0.75rem; color: var(--ui-text-muted); }
+@media (prefers-reduced-motion: reduce) { .pulse__beacon::after { animation: none; } .pulse__bar { transition: none; } }
+</style>

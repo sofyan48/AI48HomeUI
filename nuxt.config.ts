@@ -23,6 +23,11 @@ export default defineNuxtConfig({
 
   modules: ["@pinia/nuxt", "@nuxt/ui"],
 
+  // Brand display face for headings and figures; bundled locally by @nuxt/fonts.
+  fonts: {
+    families: [{ name: "Plus Jakarta Sans", weights: [500, 600, 700, 800] }],
+  },
+
   runtimeConfig: {
     public: {
       apiUrl: "",

@@ -59,7 +59,7 @@
         </div>
       </template>
       <div class="overflow-x-auto">
-        <AppTable :data="items" :columns="columns" :loading="pending" empty="No request logs match the current filters." class="min-w-[900px]">
+        <AppTable :data="items" :columns="columns" :loading="pending" :number-offset="(page - 1) * pageSize" empty="No request logs match the current filters." class="min-w-[900px]">
           <template #timestamp-cell="{ row }"><span class="whitespace-nowrap">{{ formatTime(row.original.timestamp) }}</span></template>
           <template #event_type-cell="{ row }">{{ row.original.event_type || '—' }}</template>
           <template #status-cell="{ row }"><UBadge :color="row.original.status === 'failed' ? 'error' : 'success'" variant="subtle">{{ row.original.status }}</UBadge></template>

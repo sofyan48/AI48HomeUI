@@ -177,7 +177,7 @@ pre,
   row-gap: 1.125rem;
 }
 
-.workbench-main h1 {
+body:not([data-admin-console]) .workbench-main h1 {
   font-size: 1.5rem;
   line-height: 2rem;
   letter-spacing: -0.015em;
@@ -188,17 +188,17 @@ pre,
   letter-spacing: -0.005em;
 }
 
-/* Modern compact surfaces: restrained radius, crisp borders, minimal elevation. */
-.workbench-main .rounded-md { border-radius: 0.3125rem; }
-.workbench-main .rounded-lg { border-radius: 0.4375rem; }
-.workbench-main .rounded-xl,
-.workbench-main .rounded-2xl,
-.workbench-main .rounded-3xl { border-radius: 0.5rem; }
+/* Legacy compact radii stay for the user portal only; the admin shell uses its own scale. */
+body:not([data-admin-console]) .workbench-main .rounded-md { border-radius: 0.3125rem; }
+body:not([data-admin-console]) .workbench-main .rounded-lg { border-radius: 0.4375rem; }
+body:not([data-admin-console]) .workbench-main .rounded-xl,
+body:not([data-admin-console]) .workbench-main .rounded-2xl,
+body:not([data-admin-console]) .workbench-main .rounded-3xl { border-radius: 0.5rem; }
 
-.workbench-main input:not([type="checkbox"]):not([type="radio"]),
-.workbench-main textarea,
-.workbench-main select,
-.workbench-main button:not([role="switch"]):not([role="checkbox"]) {
+body:not([data-admin-console]) .workbench-main input:not([type="checkbox"]):not([type="radio"]),
+body:not([data-admin-console]) .workbench-main textarea,
+body:not([data-admin-console]) .workbench-main select,
+body:not([data-admin-console]) .workbench-main button:not([role="switch"]):not([role="checkbox"]) {
   border-radius: 0.3125rem;
   transition: border-color 120ms ease, background-color 120ms ease, color 120ms ease, box-shadow 120ms ease;
 }
@@ -402,4 +402,11 @@ button[aria-expanded="true"] > svg {
   border-radius: 0.625rem;
   background: var(--user-panel-bg);
 }
+}
+
+/* Row number shared by AppTable and page-owned number/rank cells: plain muted figure. */
+.app-table-number {
+  color: var(--ui-text-muted);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
 }
