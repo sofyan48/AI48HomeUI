@@ -1,102 +1,103 @@
 <template>
-  <div :class="section === 'dashboard' ? 'user-dashboard space-y-6' : 'space-y-8'">
+  <div :class="section === 'dashboard' ? 'user-dashboard space-y-5' : 'space-y-8'">
 
     <UAlert v-if="pageError" color="error" variant="subtle" icon="i-tabler-alert-triangle" title="Some workspace data could not be loaded" :description="pageError" />
 
-    <section v-if="section === 'dashboard'" class="dashboard-hero" aria-labelledby="dashboard-title">
-      <div class="relative grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(17rem,0.55fr)] lg:items-center">
-        <div class="min-w-0">
-          <p class="flex items-center gap-2 text-xs font-medium text-[var(--ui-text-muted)]"><UIcon name="i-tabler-sparkles" class="size-4 text-[var(--ui-primary)]" aria-hidden="true" /> YOUR WORKSPACE</p>
-          <h1 id="dashboard-title" class="mt-2 break-words text-2xl font-semibold tracking-tight text-[var(--ui-text-highlighted)] sm:text-3xl">Welcome back{{ user?.username ? `, ${user.username}` : '' }}.</h1>
-          <p class="mt-3 max-w-lg text-sm leading-relaxed text-[var(--ui-text-muted)]">Ready for your next idea? Your credits and activity are right here.</p>
-          <div class="mt-6 flex flex-wrap items-center gap-3">
-            <AppButton to="/app/api-keys" icon="i-tabler-key" class="dashboard-primary-action rounded-full">Manage API keys</AppButton>
-            <AppButton to="/app/models" color="neutral" variant="ghost" trailing-icon="i-tabler-arrow-right" class="rounded-full">Explore models</AppButton>
+    <div v-if="section === 'dashboard'" class="dashboard-bento">
+      <section class="dashboard-hero" aria-labelledby="dashboard-title">
+        <p class="dashboard-eyebrow"><UIcon name="i-tabler-sparkles" class="size-3.5" aria-hidden="true" /> Your workspace</p>
+        <h1 id="dashboard-title" class="mt-3 break-words font-bold tracking-tight text-[var(--ui-text-highlighted)]">Welcome back{{ user?.username ? `, ${user.username}` : '' }}.</h1>
+        <p class="mt-2 max-w-lg text-sm leading-relaxed text-[var(--ui-text-muted)]">Ready for your next idea? Your credits and activity are right here.</p>
+        <div class="mt-auto flex flex-wrap items-center gap-2 pt-6">
+          <AppButton to="/app/api-keys" icon="i-tabler-key" class="dashboard-primary-action rounded-full">Manage API keys</AppButton>
+          <AppButton to="/app/models" color="neutral" variant="outline" trailing-icon="i-tabler-arrow-right" class="rounded-full">Explore models</AppButton>
+        </div>
+      </section>
+
+      <section class="dashboard-balance" aria-label="Available credits">
+        <div class="flex items-center justify-between gap-3">
+          <span class="dashboard-balance-icon"><UIcon name="i-tabler-wallet" class="size-5" aria-hidden="true" /></span>
+          <AppButton to="/app/balance" size="xs" color="neutral" variant="ghost" class="rounded-full" trailing-icon="i-tabler-arrow-up-right">Manage</AppButton>
+        </div>
+        <p class="mt-6 text-xs font-medium text-[var(--ui-text-muted)]">Available credits</p>
+        <p class="dashboard-balance-value mt-1 break-all font-bold tabular-nums tracking-tight text-[var(--ui-text-highlighted)]">{{ user ? formatCredits(user.credits) : '—' }}</p>
+        <div class="mt-auto grid grid-cols-2 gap-2 pt-5 text-xs">
+          <div class="dashboard-balance-stat"><span class="text-[var(--ui-text-muted)]">Today</span><strong class="tabular-nums">{{ billingLoading ? '—' : billingMetrics[1]?.value }}</strong></div>
+          <div class="dashboard-balance-stat"><span class="text-[var(--ui-text-muted)]">This month</span><strong class="tabular-nums">{{ billingLoading ? '—' : billingMetrics[2]?.value }}</strong></div>
+        </div>
+      </section>
+
+      <AppCard class="dashboard-panel dashboard-usage min-w-0" :ui="{ body: 'space-y-4' }">
+        <template #header>
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3"><span class="dashboard-icon flex size-9 items-center justify-center rounded-lg"><UIcon name="i-tabler-chart-bar" class="size-5" aria-hidden="true" /></span><div><h2 class="text-sm font-semibold">Usage summary</h2><p class="text-xs text-[var(--ui-text-muted)]">A closer look at your requests and spending.</p></div></div>
+            <form class="flex flex-wrap items-end gap-2" @submit.prevent="applyBillingRange">
+              <USelect v-model="rangePreset" :items="rangeOptions" value-key="value" label-key="label" class="w-36" aria-label="Time range" @update:model-value="selectRange" />
+              <template v-if="rangePreset === 'custom'">
+                <UInput v-model="rangeFrom" type="date" aria-label="From (UTC)" />
+                <UInput v-model="rangeTo" type="date" aria-label="To (UTC)" />
+                <AppButton type="submit" :loading="billingLoading">Apply</AppButton>
+              </template>
+              <AppButton type="button" color="neutral" variant="ghost" icon="i-tabler-refresh" :loading="billingLoading" aria-label="Refresh report" title="Refresh report" @click="loadBilling" />
+            </form>
           </div>
-        </div>
-        <div class="dashboard-balance relative flex min-w-0 items-center gap-4 rounded-2xl border p-5 sm:p-6">
-          <span class="dashboard-icon flex size-11 shrink-0 items-center justify-center rounded-xl"><UIcon name="i-tabler-wallet" class="size-6" aria-hidden="true" /></span>
-          <div class="min-w-0">
-            <p class="text-xs font-medium text-[var(--ui-text-muted)]">Available credits</p>
-            <p class="mt-2 break-all text-4xl font-semibold tabular-nums tracking-tight text-[var(--ui-text-highlighted)]">{{ user ? formatCredits(user.credits) : '—' }}</p>
-            <AppButton to="/app/balance" size="xs" variant="link" class="mt-1 p-0" trailing-icon="i-tabler-arrow-up-right">Manage balance</AppButton>
-          </div>
-        </div>
-      </div>
-    </section>
-
-
-    <section v-if="section === 'dashboard'" class="dashboard-limits" aria-label="Account period limits">
-          <div v-if="activePeriodWindows.length" class="dashboard-limit-grid grid grid-cols-1 gap-5" :style="dashboardGridStyle">
-      <div v-for="window in activePeriodWindows" :key="window.id" class="dashboard-limit min-w-0">
-        <div class="flex items-start justify-between gap-3">
-          <div class="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
-            <p class="shrink-0 text-sm font-semibold">{{ periodWindowLabel(window.id) }}</p>
-            <p v-if="window.reset_at" class="text-xs text-[var(--ui-text-dimmed)]">Resets {{ formatDate(window.reset_at) }}</p>
-          </div>
-          <span class="shrink-0 text-xs font-medium tabular-nums" :class="periodWindowColor(window)">{{ formatPercent(periodWindowRatio(window)) }}</span>
-        </div>
-        <div class="period-progress-track mt-3 h-1.5 overflow-hidden rounded-full"><div class="h-full rounded-full transition-[width]" :class="periodWindowBarColor(window)" :style="{ width: `${periodWindowRatio(window) * 100}%`, minWidth: periodWindowRatio(window) > 0 ? '3px' : '0' }" /></div>
-        <div class="mt-3 flex items-end justify-between gap-3"><div><p class="text-xs text-[var(--ui-text-muted)]">Used</p><p class="font-semibold tabular-nums">{{ formatCredits(window.used) }} / {{ formatCredits(window.limit) }}</p></div><div class="text-right"><p class="text-xs text-[var(--ui-text-muted)]">Remaining</p><p class="text-sm font-medium tabular-nums">{{ formatCredits(window.remaining) }}</p></div></div>
-
-      </div>
-      </div>
-      <AppLimitReset @reset="loadPeriodLimits" />
-    </section>
-
-    <section v-if="section === 'dashboard'" class="dashboard-overview grid min-w-0 gap-5" aria-label="CPA endpoint and usage summary">
-    <AppCard v-if="serverInfo.cpa_public_url" class="dashboard-panel dashboard-endpoint min-w-0" :ui="{ body: 'space-y-4' }">
-      <template #header><div class="flex items-center gap-3"><span class="dashboard-icon flex size-9 items-center justify-center rounded-lg"><UIcon name="i-tabler-terminal-2" class="size-5" aria-hidden="true" /></span><div><h2 class="text-sm font-semibold">Connect your app</h2><p class="text-xs text-[var(--ui-text-muted)]">Your CPA endpoint and a ready-to-copy example.</p></div></div></template>
-      <div class="space-y-2"><h3 class="text-xs font-medium text-[var(--ui-text-muted)]">Endpoint</h3>
-      <div class="flex min-w-0 items-start gap-3 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] p-4 shadow-inner">
-        <code class="min-w-0 flex-1 break-all font-mono text-sm leading-6 text-[var(--ui-text-highlighted)]">{{ serverInfo.cpa_public_url }}</code>
-        <AppButton type="button" size="xs" class="shrink-0" color="neutral" variant="ghost" icon="i-tabler-copy" aria-label="Copy endpoint" title="Copy endpoint" @click="copyText(serverInfo.cpa_public_url, 'Endpoint copied')" />
-      </div></div>
-      <div class="space-y-2">
-        <h3 class="text-sm font-semibold">Example</h3>
-        <div class="relative rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] shadow-inner">
-          <AppButton type="button" size="xs" class="absolute right-3 top-3 z-10" color="neutral" variant="ghost" icon="i-tabler-copy" aria-label="Copy curl example" title="Copy example" @click="copyText(curlExample, 'Example copied')" />
-          <pre class="overflow-x-auto p-4 pr-14 text-xs leading-6 text-[var(--ui-text-highlighted)]"><code class="font-mono">{{ curlExample }}</code></pre>
-        </div>
-      </div>
-    </AppCard>
-    <AppCard class="dashboard-panel dashboard-usage min-w-0" :ui="{ body: 'space-y-4' }">
-      <template #header><div class="flex items-center gap-3"><span class="dashboard-icon flex size-9 items-center justify-center rounded-lg"><UIcon name="i-tabler-chart-bar" class="size-5" aria-hidden="true" /></span><div><h2 class="text-sm font-semibold">Usage summary</h2><p class="text-xs text-[var(--ui-text-muted)]">A closer look at your requests and spending.</p></div></div></template>
-      <form class="flex flex-wrap items-end gap-3" @submit.prevent="applyBillingRange">
-        <UFormField label="Time range">
-          <USelect v-model="rangePreset" :items="rangeOptions" value-key="value" label-key="label" class="w-44" @update:model-value="selectRange" />
-        </UFormField>
-        <template v-if="rangePreset === 'custom'">
-          <UFormField label="From (UTC)"><UInput v-model="rangeFrom" type="date" /></UFormField>
-          <UFormField label="To (UTC)"><UInput v-model="rangeTo" type="date" /></UFormField>
-          <AppButton type="submit" :loading="billingLoading">Apply range</AppButton>
         </template>
-        <AppButton type="button" class="ml-auto" color="neutral" variant="outline" icon="i-tabler-refresh" :loading="billingLoading" @click="loadBilling">Refresh report</AppButton>
-      </form>
-    <div class="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="Usage summary" :aria-busy="billingLoading">
-      <div v-for="(metric, index) in billingMetrics" :key="metric.label" class="dashboard-metric min-w-0" :class="`dashboard-metric--${index}`">
-        <div class="flex items-center justify-between gap-2"><p class="text-xs font-medium text-[var(--ui-text-muted)]">{{ metric.label }}</p><span class="dashboard-icon flex size-8 shrink-0 items-center justify-center rounded-lg"><UIcon :name="dashboardMetricIcons[index]" class="size-4" aria-hidden="true" /></span></div>
-        <p class="mt-2 break-words text-2xl font-bold tabular-nums text-[var(--ui-text-highlighted)]">{{ billingLoading ? '—' : metric.value }}</p>
-        <p class="mt-2 text-xs leading-relaxed text-[var(--ui-text-muted)]">{{ metric.detail }}</p>
-      </div>
-    </div>
-    </AppCard>
-    </section>
-    <UAlert v-if="section === 'dashboard' && billingError" color="error" variant="subtle" title="Usage summary could not be loaded" :description="billingError" />
+        <div class="grid min-w-0 gap-3 sm:grid-cols-2" aria-label="Usage summary" :aria-busy="billingLoading">
+          <div v-for="(metric, index) in billingMetrics" :key="metric.label" class="dashboard-metric min-w-0" :class="`dashboard-metric--${index}`">
+            <div class="flex items-center gap-2.5"><span class="dashboard-icon flex size-8 shrink-0 items-center justify-center rounded-lg"><UIcon :name="dashboardMetricIcons[index]" class="size-4" aria-hidden="true" /></span><p class="min-w-0 truncate text-xs font-medium text-[var(--ui-text-muted)]">{{ metric.label }}</p></div>
+            <p class="mt-3 break-words text-2xl font-bold tabular-nums text-[var(--ui-text-highlighted)]">{{ billingLoading ? '—' : metric.value }}</p>
+            <p class="mt-1 text-xs leading-relaxed text-[var(--ui-text-muted)]">{{ metric.detail }}</p>
+          </div>
+        </div>
+        <UAlert v-if="billingError" color="error" variant="subtle" title="Usage summary could not be loaded" :description="billingError" />
+      </AppCard>
 
-    <section v-if="section === 'dashboard'" class="min-w-0" aria-label="Quick actions">
-      <AppCard class="dashboard-panel dashboard-shortcuts min-w-0">
-        <template #header><h2 class="text-sm font-semibold">Shortcuts</h2><p class="mt-1 text-xs text-[var(--ui-text-muted)]">Everything you need, one click away.</p></template>
-        <nav class="dashboard-shortcut-list grid gap-x-5 sm:grid-cols-2 xl:grid-cols-4" aria-label="Dashboard shortcuts">
+      <AppCard class="dashboard-panel dashboard-shortcuts min-w-0" :ui="{ body: 'p-2 sm:p-2' }">
+        <template #header><h2 class="text-sm font-semibold">Shortcuts</h2><p class="mt-0.5 text-xs text-[var(--ui-text-muted)]">Everything you need, one click away.</p></template>
+        <nav class="dashboard-shortcut-list" aria-label="Dashboard shortcuts">
           <NuxtLink v-for="action in dashboardActions" :key="action.to" :to="action.to" class="dashboard-action">
-            <span class="dashboard-shortcut-icon"><UIcon :name="action.icon" class="size-5" aria-hidden="true" /></span>
-            <span class="min-w-0"><span class="block text-sm font-medium text-[var(--ui-text-highlighted)]">{{ action.label }}</span><span class="mt-1 block text-xs leading-relaxed text-[var(--ui-text-muted)]">{{ action.detail }}</span></span>
+            <span class="dashboard-shortcut-icon"><UIcon :name="action.icon" class="size-[18px]" aria-hidden="true" /></span>
+            <span class="min-w-0 flex-1"><span class="block truncate text-sm font-medium text-[var(--ui-text-highlighted)]">{{ action.label }}</span><span class="block truncate text-xs text-[var(--ui-text-muted)]">{{ action.detail }}</span></span>
+            <UIcon name="i-tabler-chevron-right" class="dashboard-action-chevron size-4" aria-hidden="true" />
           </NuxtLink>
         </nav>
       </AppCard>
 
-    </section>
+      <AppCard v-if="serverInfo.cpa_public_url" class="dashboard-panel dashboard-endpoint min-w-0" :ui="{ body: 'space-y-4' }">
+        <template #header><div class="flex items-center gap-3"><span class="dashboard-icon flex size-9 items-center justify-center rounded-lg"><UIcon name="i-tabler-terminal-2" class="size-5" aria-hidden="true" /></span><div><h2 class="text-sm font-semibold">Connect your app</h2><p class="text-xs text-[var(--ui-text-muted)]">Your CPA endpoint and a ready-to-copy example.</p></div></div></template>
+        <div class="flex min-w-0 items-center gap-2 rounded-xl border border-[var(--ui-border)] bg-[var(--user-inset-bg)] py-2 pl-3 pr-1.5">
+          <span class="shrink-0 rounded-md bg-[var(--user-selected)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--ui-primary)]">URL</span>
+          <code class="min-w-0 flex-1 truncate font-mono text-sm text-[var(--ui-text-highlighted)]" :title="serverInfo.cpa_public_url">{{ serverInfo.cpa_public_url }}</code>
+          <AppButton type="button" size="xs" class="shrink-0" color="neutral" variant="ghost" icon="i-tabler-copy" aria-label="Copy endpoint" title="Copy endpoint" @click="copyText(serverInfo.cpa_public_url, 'Endpoint copied')" />
+        </div>
+        <div class="dashboard-code relative overflow-hidden rounded-xl">
+          <div class="flex items-center justify-between gap-2 border-b px-3 py-1.5">
+            <span class="flex items-center gap-1.5" aria-hidden="true"><span class="size-2.5 rounded-full bg-rose-400/80" /><span class="size-2.5 rounded-full bg-amber-400/80" /><span class="size-2.5 rounded-full bg-emerald-400/80" /></span>
+            <span class="font-mono text-[11px] opacity-70">curl</span>
+            <AppButton type="button" size="xs" color="neutral" variant="ghost" icon="i-tabler-copy" class="dashboard-code-copy" aria-label="Copy curl example" title="Copy example" @click="copyText(curlExample, 'Example copied')" />
+          </div>
+          <pre class="overflow-x-auto p-4 text-xs leading-6"><code class="font-mono">{{ curlExample }}</code></pre>
+        </div>
+      </AppCard>
 
+      <section v-if="activePeriodWindows.length || capabilities.user_reset_allowance === true" class="dashboard-limits" :class="{ 'dashboard-limits--full': !serverInfo.cpa_public_url }" aria-label="Account period limits">
+        <div class="flex items-center gap-3 px-5 pt-5"><span class="dashboard-icon flex size-9 items-center justify-center rounded-lg"><UIcon name="i-tabler-gauge" class="size-5" aria-hidden="true" /></span><div><h2 class="text-sm font-semibold">Period limits</h2><p class="text-xs text-[var(--ui-text-muted)]">How much of each spending window you have used.</p></div></div>
+        <div v-if="activePeriodWindows.length" class="dashboard-limit-grid grid grid-cols-1 gap-3">
+          <div v-for="window in activePeriodWindows" :key="window.id" class="dashboard-limit min-w-0">
+            <div class="flex items-start justify-between gap-3">
+              <div class="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
+                <p class="shrink-0 text-sm font-semibold">{{ periodWindowLabel(window.id) }}</p>
+                <p v-if="window.reset_at" class="text-xs text-[var(--ui-text-dimmed)]">Resets {{ formatDate(window.reset_at) }}</p>
+              </div>
+              <span class="shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums" :class="periodWindowColor(window)">{{ formatPercent(periodWindowRatio(window)) }}</span>
+            </div>
+            <div class="period-progress-track mt-3 h-2 overflow-hidden rounded-full"><div class="h-full rounded-full transition-[width]" :class="periodWindowBarColor(window)" :style="{ width: `${periodWindowRatio(window) * 100}%`, minWidth: periodWindowRatio(window) > 0 ? '4px' : '0' }" /></div>
+            <div class="mt-2.5 flex items-end justify-between gap-3 text-xs"><p class="text-[var(--ui-text-muted)]">Used <strong class="font-semibold tabular-nums text-[var(--ui-text-highlighted)]">{{ formatCredits(window.used) }}</strong> / {{ formatCredits(window.limit) }}</p><p class="text-[var(--ui-text-muted)]">Remaining <strong class="font-semibold tabular-nums text-[var(--ui-text-highlighted)]">{{ formatCredits(window.remaining) }}</strong></p></div>
+          </div>
+        </div>
+        <AppLimitReset @reset="loadPeriodLimits" />
+      </section>
+    </div>
 
     <section v-if="section === 'billing'" class="workspace-finance space-y-5" aria-labelledby="billing-title">
       <AppCard class="finance-panel finance-usage" :ui="{ body: 'space-y-5' }">
@@ -228,9 +229,16 @@
         </div>
         <AppButton to="/app/profile" color="neutral" variant="ghost" size="sm" class="rounded-full" trailing-icon="i-tabler-arrow-right">View profile</AppButton>
       </div>
-      <div class="grid min-w-0 items-start gap-5 lg:grid-cols-2">
-        <div class="min-w-0 space-y-5">
-        <AppCard class="settings-panel min-w-0">
+      <div class="settings-layout">
+        <nav class="settings-nav" aria-label="Security sections">
+          <a v-for="item in settingsSections" :key="item.id" :href="`#${item.id}`" class="settings-nav-link" @click.prevent="scrollToSection(item.id)">
+            <UIcon :name="item.icon" class="size-4 shrink-0" aria-hidden="true" />
+            <span class="min-w-0 flex-1 truncate">{{ item.label }}</span>
+            <span class="settings-nav-dot" :class="item.done ? 'settings-nav-dot--on' : ''" :title="item.done ? 'Configured' : 'Not configured'" />
+          </a>
+        </nav>
+        <div class="min-w-0 space-y-4">
+        <AppCard id="settings-password" class="settings-panel min-w-0">
           <template #header><div class="flex items-start gap-3"><span class="settings-icon flex size-9 shrink-0 items-center justify-center rounded-xl"><UIcon name="i-tabler-lock" class="size-5" aria-hidden="true" /></span><div><h2 class="text-sm font-semibold">Password</h2><p class="mt-1 text-xs leading-relaxed text-[var(--ui-text-muted)]">Changing your password refreshes the active session.</p></div></div></template>
           <form class="space-y-4" @submit.prevent="changePassword">
             <UAlert v-if="passwordError" color="error" variant="subtle" :description="passwordError" />
@@ -240,7 +248,7 @@
           </form>
         </AppCard>
 
-        <AppCard class="settings-panel min-w-0">
+        <AppCard id="settings-email" class="settings-panel min-w-0">
           <template #header><div class="flex items-start gap-3"><span class="settings-icon flex size-9 shrink-0 items-center justify-center rounded-xl"><UIcon name="i-tabler-mail" class="size-5" aria-hidden="true" /></span><div><h2 class="text-sm font-semibold">Recovery email</h2><p class="mt-1 text-xs leading-relaxed text-[var(--ui-text-muted)]">{{ emailDetail }}</p></div></div></template>
           <form v-if="capabilities.email_verification !== false" class="space-y-4" @submit.prevent="updateEmail">
             <UAlert v-if="emailError" color="error" variant="subtle" :description="emailError" />
@@ -253,9 +261,7 @@
           </form>
         </AppCard>
 
-        </div>
-        <div class="min-w-0 space-y-5">
-        <AppCard class="settings-panel min-w-0">
+        <AppCard id="settings-totp" class="settings-panel min-w-0">
           <template #header>
             <div class="flex flex-wrap items-start justify-between gap-3">
               <div class="flex min-w-0 flex-1 items-start gap-3"><span class="settings-icon flex size-9 shrink-0 items-center justify-center rounded-xl"><UIcon name="i-tabler-device-mobile" class="size-5" aria-hidden="true" /></span><div class="min-w-0"><h2 class="text-sm font-semibold">Authenticator app</h2><p class="mt-1 text-xs leading-relaxed text-[var(--ui-text-muted)]">{{ user?.totp_enabled ? 'TOTP is enabled for this account.' : 'Add a time-based one-time password.' }}</p></div></div>
@@ -286,7 +292,7 @@
           </div>
         </AppCard>
 
-        <AppCard class="settings-panel settings-passkeys min-w-0 overflow-hidden" :ui="{ body: 'p-0' }">
+        <AppCard id="settings-passkeys" class="settings-panel settings-passkeys min-w-0 overflow-hidden" :ui="{ body: 'p-0' }">
           <template #header><div class="flex items-start gap-3"><span class="settings-icon flex size-9 shrink-0 items-center justify-center rounded-xl"><UIcon name="i-tabler-fingerprint" class="size-5" aria-hidden="true" /></span><div><h2 class="text-sm font-semibold">Passkeys</h2><p class="mt-1 text-xs leading-relaxed text-[var(--ui-text-muted)]">Use a device authenticator or hardware security key.</p></div></div></template>
           <div class="settings-passkey-form">
             <form class="flex flex-col gap-3 sm:flex-row sm:items-end" @submit.prevent="addPasskey">
@@ -430,11 +436,6 @@ const chargeRangeStart = computed(() => chargesTotal.value ? (chargePage.value -
 const chargeRangeEnd = computed(() => Math.min(chargePage.value * chargePageSize.value, chargesTotal.value))
 const topModels = computed(() => (selectedOverview.value?.top_models || []).slice(0, 5))
 const activePeriodWindows = computed(() => (periodLimits.value?.windows || []).filter(window => window.enabled && window.limit != null))
-const dashboardGridStyle = computed(() => ({
-  '--dashboard-columns': activePeriodWindows.value.length
-    ? `repeat(${activePeriodWindows.value.length}, minmax(0, 1fr))`
-    : 'minmax(0, 1fr)'
-}))
 
 const keyFormOpen = ref(false)
 const keyFormError = useWorkspaceState('user:workspace:key-form-error', () => '')
@@ -493,6 +494,17 @@ const billingMetrics = computed(() => [
   { label: 'Requests', value: formatNumber(selectedOverview.value?.request_count), detail: `${formatNumber(selectedOverview.value?.input_tokens)} input · ${formatNumber(selectedOverview.value?.output_tokens)} output tokens` }
 ])
 
+const settingsSections = computed(() => [
+  { id: 'settings-password', label: 'Password', icon: 'i-tabler-lock', done: true },
+  { id: 'settings-email', label: 'Recovery email', icon: 'i-tabler-mail', done: Boolean(user.value?.email_status?.verified) },
+  { id: 'settings-totp', label: 'Authenticator app', icon: 'i-tabler-device-mobile', done: Boolean(user.value?.totp_enabled) },
+  { id: 'settings-passkeys', label: 'Passkeys', icon: 'i-tabler-fingerprint', done: Boolean(user.value?.passkey_count) }
+])
+function scrollToSection(id: string) {
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  document.getElementById(id)?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' })
+}
+
 const emailDetail = computed(() => {
   if (capabilities.value.email_verification === false) return 'Email recovery is not enabled on this Home server.'
   if (!user.value?.email_status.configured) return 'No recovery email configured.'
@@ -549,7 +561,7 @@ function normalizeKey(entry: unknown, index: number): WorkspaceKey | null {
 function errorMessage(error: any, fallback: string) { return error?.data?.message || error?.data?.error || error?.message || fallback }
 function periodWindowLabel(id: string) { return id === '5h' ? '5 hours' : id === '1d' ? '1 day' : id === '7d' ? '7 days' : id === '30d' ? '1 month' : id }
 function periodWindowRatio(window: PeriodWindowStatus) { const limit = Number(window.limit); return limit > 0 ? Math.max(0, Math.min(1, Number(window.used || 0) / limit)) : 1 }
-function periodWindowColor(window: PeriodWindowStatus) { const ratio = periodWindowRatio(window); return ratio >= 1 ? 'text-red-500' : ratio >= 0.8 ? 'text-amber-500' : 'text-primary-500' }
+function periodWindowColor(window: PeriodWindowStatus) { const ratio = periodWindowRatio(window); return ratio >= 1 ? 'bg-red-500/10 text-red-600 dark:text-red-400' : ratio >= 0.8 ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' : 'bg-violet-500/10 text-violet-600 dark:text-violet-400' }
 function periodWindowBarColor(window: PeriodWindowStatus) { const ratio = periodWindowRatio(window); return ratio >= 1 ? 'bg-red-600 dark:bg-red-400' : ratio >= 0.8 ? 'bg-amber-600 dark:bg-amber-400' : 'bg-violet-600 dark:bg-violet-400' }
 function formatPercent(value: number) { return `${Math.round(Math.max(0, Math.min(1, value)) * 100)}%` }
 
@@ -902,6 +914,38 @@ onMounted(() => {
 <style scoped>
 .workspace-settings { max-width: 80rem; margin-inline: auto; padding-block: 0.75rem; }
 .workspace-settings .settings-panel h2 { font-size: 1rem; letter-spacing: -0.02em; }
+.workspace-settings .settings-panel { scroll-margin-top: 1rem; }
+.settings-layout { display: grid; gap: 1rem; }
+.settings-nav {
+  display: flex;
+  gap: 0.25rem;
+  overflow-x: auto;
+  padding: 0.25rem;
+  border: 1px solid var(--user-panel-border);
+  border-radius: 0.875rem;
+  background: var(--user-panel-bg);
+  box-shadow: var(--user-panel-shadow);
+}
+.settings-nav-link {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.625rem;
+  color: var(--ui-text-muted);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+.settings-nav-link:hover { background: var(--ui-hover); color: var(--ui-text-highlighted); }
+.settings-nav-link:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 2px; }
+.settings-nav-dot { width: 0.5rem; height: 0.5rem; flex-shrink: 0; border-radius: 9999px; background: var(--ui-border-accented); }
+.settings-nav-dot--on { background: var(--ui-success); box-shadow: 0 0 0 3px color-mix(in oklch, var(--ui-success) 20%, transparent); }
+@media (min-width: 1024px) {
+  .settings-layout { grid-template-columns: 15rem minmax(0, 1fr); align-items: start; }
+  .settings-nav { position: sticky; top: 0; flex-direction: column; overflow: visible; padding: 0.375rem; }
+}
 .workspace-settings .settings-icon { border-radius: 0.625rem; }
 
 
@@ -992,61 +1036,129 @@ onMounted(() => {
   --dashboard-accent: var(--ui-primary);
   max-width: 80rem;
   margin-inline: auto;
-  padding-block: 1rem;
+  padding-block: 0.25rem 1rem;
 }
 
-.user-dashboard > * + * { margin-top: 2rem; }
+/* Bento grid: hero + balance, usage + shortcuts, endpoint + limits. */
+.dashboard-bento {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+}
+.dashboard-bento > * { min-width: 0; }
 
 .user-dashboard .dashboard-hero {
   position: relative;
-  padding: 0.5rem 0;
-}
-
-.dashboard-hero h1 { font-size: clamp(1.75rem, 3vw, 2.5rem); line-height: 1.2; letter-spacing: -0.04em; }
-.dashboard-hero > div > div > p:first-child { letter-spacing: 0.14em; font-size: 0.6875rem; }
-.user-dashboard .dashboard-primary-action { padding: 0.75rem 1.125rem; box-shadow: 0 4px 16px color-mix(in oklch, var(--ui-primary) 18%, transparent); }
-
-.user-dashboard .dashboard-balance {
-  --dashboard-accent: var(--ui-success);
-  min-height: 11rem;
+  display: flex;
+  min-height: 13rem;
+  flex-direction: column;
   overflow: hidden;
-  border-radius: var(--user-panel-radius);
-  border-color: color-mix(in oklch, var(--dashboard-accent) 25%, var(--ui-border));
+  padding: 1.5rem;
+  border: 1px solid color-mix(in oklch, var(--brand-from) 22%, var(--user-panel-border));
+  border-radius: 1.25rem;
   background:
-    radial-gradient(ellipse at 100% 0%, color-mix(in oklch, var(--dashboard-accent) 16%, transparent), transparent 70%),
+    radial-gradient(ellipse 70% 90% at 100% 0%, color-mix(in oklch, var(--brand-to) 14%, transparent), transparent 70%),
+    radial-gradient(ellipse 60% 80% at 0% 100%, color-mix(in oklch, var(--brand-from) 12%, transparent), transparent 70%),
     var(--user-panel-bg);
   box-shadow: var(--user-panel-shadow);
 }
-
-.dashboard-balance::after {
-  content: '';
+.user-dashboard .dashboard-hero::after {
   position: absolute;
-  width: 12rem;
-  height: 12rem;
-  right: -5rem;
-  bottom: -7rem;
-  border: 1.5rem solid color-mix(in oklch, var(--dashboard-accent) 7%, transparent);
-  border-radius: 50%;
+  top: -3rem;
+  right: -3rem;
+  width: 14rem;
+  height: 14rem;
+  background-image: radial-gradient(color-mix(in oklch, var(--brand-from) 22%, transparent) 1px, transparent 1px);
+  background-size: 14px 14px;
+  -webkit-mask-image: radial-gradient(circle, black, transparent 70%);
+  mask-image: radial-gradient(circle, black, transparent 70%);
+  content: '';
   pointer-events: none;
 }
-.dashboard-balance > div { position: relative; z-index: 1; }
-.dashboard-balance p:nth-child(2) { font-size: 2.5rem; }
-.user-dashboard .dashboard-balance .dashboard-icon { border-radius: 50%; }
+.user-dashboard .dashboard-hero > * { position: relative; z-index: 1; }
+.dashboard-hero h1 { font-size: clamp(1.625rem, 2.6vw, 2.25rem); line-height: 1.15; letter-spacing: -0.035em; }
+.dashboard-eyebrow {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  border: 1px solid color-mix(in oklch, var(--brand-from) 22%, var(--ui-border));
+  border-radius: 9999px;
+  background: color-mix(in oklch, var(--user-panel-bg) 70%, transparent);
+  color: var(--ui-primary);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.user-dashboard .dashboard-primary-action {
+  background: var(--brand-gradient);
+  color: white;
+  box-shadow: 0 6px 18px -6px color-mix(in oklch, var(--brand-from) 60%, transparent);
+}
+.user-dashboard .dashboard-primary-action:hover { filter: brightness(1.06); }
+
+.user-dashboard .dashboard-balance {
+  --dashboard-accent: var(--ui-success);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 1.25rem;
+  border: 1px solid color-mix(in oklch, var(--dashboard-accent) 25%, var(--user-panel-border));
+  border-radius: 1.25rem;
+  background:
+    radial-gradient(ellipse 90% 70% at 100% 0%, color-mix(in oklch, var(--dashboard-accent) 16%, transparent), transparent 70%),
+    var(--user-panel-bg);
+  box-shadow: var(--user-panel-shadow);
+}
+.dashboard-balance::after {
+  position: absolute;
+  right: -4rem;
+  bottom: -5rem;
+  width: 11rem;
+  height: 11rem;
+  border: 1.5rem solid color-mix(in oklch, var(--dashboard-accent) 8%, transparent);
+  border-radius: 9999px;
+  content: '';
+  pointer-events: none;
+}
+.dashboard-balance > * { position: relative; z-index: 1; }
+.dashboard-balance-icon {
+  display: flex;
+  width: 2.5rem;
+  height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: color-mix(in oklch, var(--dashboard-accent) 15%, transparent);
+  color: var(--dashboard-accent);
+}
+.dashboard-balance-value { font-size: clamp(2rem, 3.2vw, 2.75rem); line-height: 1.1; }
+.dashboard-balance-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--ui-border);
+  border-radius: 0.75rem;
+  background: color-mix(in oklch, var(--user-panel-bg) 75%, transparent);
+}
+.dashboard-balance-stat strong { color: var(--ui-text-highlighted); font-size: 0.875rem; }
 
 .user-dashboard .dashboard-icon {
   color: var(--dashboard-accent);
   background: color-mix(in oklch, var(--dashboard-accent) 13%, transparent);
 }
 
-
-.user-dashboard .dashboard-panel :deep([data-slot="header"]) { padding-bottom: 0.5rem; border-bottom: 0; }
-.user-dashboard .dashboard-panel h2 { font-size: 1rem; letter-spacing: -0.02em; }
-
+.user-dashboard .dashboard-panel :deep([data-slot="header"]) { border-bottom: 0; padding-bottom: 0.25rem; }
+.user-dashboard .dashboard-panel h2 { font-size: 0.9375rem; letter-spacing: -0.01em; }
 
 .user-dashboard .dashboard-metric {
   position: relative;
   overflow: hidden;
-  padding: 1rem 1.125rem 1.125rem;
+  padding: 0.875rem 1rem 1rem;
   border: 1px solid var(--ui-border);
   border-radius: 0.875rem;
   background: var(--user-inset-bg);
@@ -1066,77 +1178,90 @@ onMounted(() => {
     box-shadow: 0 10px 24px -14px color-mix(in oklch, var(--dashboard-accent) 50%, transparent);
   }
 }
-.user-dashboard .dashboard-metric > p:first-of-type { font-size: 1.875rem; font-weight: 700; letter-spacing: -0.03em; }
-.user-dashboard .dashboard-metric .dashboard-icon { border-radius: 0.625rem; }
-.user-dashboard .dashboard-shortcuts { background: transparent !important; border: 0 !important; box-shadow: none !important; }
-.user-dashboard .dashboard-shortcuts :deep([data-slot="header"]),
-.user-dashboard .dashboard-shortcuts :deep([data-slot="body"]) { padding-inline: 0; }
-.dashboard-shortcut-list { row-gap: 0.75rem; }
-.dashboard-shortcut-icon {
-  display: flex;
-  width: 2.5rem;
-  height: 2.5rem;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: center;
-  border-radius: 0.75rem;
-  color: var(--ui-primary);
-  background: var(--user-selected);
-  transition: color 150ms ease, background-color 150ms ease;
-}
-.dashboard-limits { overflow: hidden; border: 1px solid var(--user-panel-border); border-radius: var(--user-panel-radius); background: var(--user-panel-bg); box-shadow: var(--user-panel-shadow); }
-.dashboard-limit-grid { padding: 1.25rem; }
-.dashboard-limit-grid + :deep(.limit-reset) { margin-inline: 1.25rem; border-top: 1px solid var(--ui-border); }
-.dashboard-limit { padding: 0.25rem; }
-
 .dashboard-metric--0 { --dashboard-accent: var(--ui-primary); }
 .dashboard-metric--1 { --dashboard-accent: var(--ui-success); }
 .dashboard-metric--2 { --dashboard-accent: var(--color-blue-500); }
 .dashboard-metric--3 { --dashboard-accent: var(--color-amber-500); }
 
+.dashboard-shortcut-list { display: grid; gap: 0.125rem; }
 .user-dashboard .dashboard-action {
   display: flex;
   min-width: 0;
   align-items: center;
-  gap: 0.875rem;
-  padding: 0.875rem 1rem;
+  gap: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: 0.75rem;
+  text-decoration: none;
+  transition: background-color 150ms ease;
+}
+.user-dashboard .dashboard-action:hover { background: var(--ui-hover); }
+.dashboard-shortcut-icon {
+  display: flex;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.625rem;
+  color: var(--ui-primary);
+  background: var(--user-selected);
+  transition: color 150ms ease, background 150ms ease;
+}
+.dashboard-action-chevron { flex-shrink: 0; color: var(--ui-text-dimmed); transition: transform 150ms ease, color 150ms ease; }
+.user-dashboard .dashboard-action:is(:hover, :focus-visible) .dashboard-shortcut-icon { color: white; background: var(--brand-gradient); }
+.user-dashboard .dashboard-action:is(:hover, :focus-visible) .dashboard-action-chevron { color: var(--ui-primary); transform: translateX(2px); }
+.user-dashboard .dashboard-action:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 2px; }
+
+.dashboard-code {
+  border: 1px solid var(--color-zinc-800);
+  background: var(--color-zinc-950);
+  color: var(--color-zinc-200);
+}
+.dashboard-code > div { border-color: var(--color-zinc-800); color: var(--color-zinc-400); }
+.dashboard-code :deep(.dashboard-code-copy) { color: var(--color-zinc-400); }
+.dashboard-code :deep(.dashboard-code-copy:hover) { background: var(--color-zinc-800); color: white; }
+
+.dashboard-limits {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   border: 1px solid var(--user-panel-border);
-  border-radius: 0.875rem;
+  border-radius: var(--user-panel-radius);
   background: var(--user-panel-bg);
   box-shadow: var(--user-panel-shadow);
-  text-decoration: none;
-  transition: border-color 150ms ease, transform 150ms ease;
 }
-.user-dashboard .dashboard-action:hover {
-  transform: translateY(-1px);
-  border-color: color-mix(in oklch, var(--ui-primary) 35%, var(--ui-border));
+.dashboard-limit-grid { padding: 1rem 1.25rem 0.5rem; }
+.dashboard-limit {
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--ui-border);
+  border-radius: 0.875rem;
+  background: var(--user-inset-bg);
 }
+.dashboard-limits :deep(.limit-reset) { margin: auto 1.25rem 0; padding-block: 0.875rem 1rem; }
+.dashboard-limit-grid + :deep(.limit-reset) { border-top: 1px solid var(--ui-border); }
 
-.user-dashboard .dashboard-action:is(:hover, :focus-visible) .dashboard-shortcut-icon {
-  color: white;
-  background: var(--brand-gradient);
-}
-.user-dashboard .dashboard-action:focus-visible {
-  outline: 2px solid var(--ui-primary);
-  outline-offset: 3px;
-  border-radius: 0.5rem;
-}
-
-.dashboard-usage { order: -1; }
-
-@media (min-width: 1280px) {
-  .dashboard-overview:has(.dashboard-endpoint) {
-    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
-    align-items: stretch;
-  }
-  .dashboard-overview:has(.dashboard-endpoint) .dashboard-usage :deep([aria-label="Usage summary"]) {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+@media (min-width: 768px) {
+  .dashboard-bento { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dashboard-bento > .dashboard-hero { grid-column: 1 / -1; }
+  .dashboard-bento > .dashboard-usage { grid-column: 1 / -1; }
 }
 
-@media (min-width: 640px) {
-  .user-dashboard .dashboard-hero { padding: 0.5rem 0 1rem; }
+@media (min-width: 1024px) {
+  .dashboard-bento { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+  .dashboard-bento > .dashboard-hero { grid-column: span 8; }
+  .dashboard-bento > .dashboard-balance { grid-column: span 4; }
+  .dashboard-bento > .dashboard-usage { grid-column: span 8; }
+  .dashboard-bento > .dashboard-shortcuts { grid-column: span 4; }
+  .dashboard-bento > .dashboard-endpoint { grid-column: span 7; }
+  .dashboard-bento > .dashboard-limits { grid-column: span 5; }
+  .dashboard-bento > .dashboard-limits--full { grid-column: 1 / -1; }
+  .dashboard-limits--full .dashboard-limit-grid { grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); }
+}
 
+@media (prefers-reduced-motion: reduce) {
+  .user-dashboard .dashboard-metric,
+  .user-dashboard .dashboard-action,
+  .dashboard-action-chevron { transition: none; }
 }
 
 .period-progress-track {
@@ -1144,7 +1269,4 @@ onMounted(() => {
 }
 
 .dashboard-limit-grid > :deep(*) { min-width: 0; }
-@media (min-width: 768px) {
-  .dashboard-limit-grid { grid-template-columns: var(--dashboard-columns); }
-}
 </style>

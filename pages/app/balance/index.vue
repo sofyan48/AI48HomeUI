@@ -19,7 +19,7 @@
     </section>
 
     <section class="balance-topup min-w-0" aria-labelledby="topup-title">
-      <h2 id="topup-title" class="text-lg font-semibold tracking-tight">Add credits</h2>
+      <h2 id="topup-title" class="flex items-center gap-2.5 text-lg font-semibold tracking-tight"><span class="balance-icon flex size-8 items-center justify-center rounded-lg"><UIcon name="i-tabler-circle-plus" class="size-4" aria-hidden="true" /></span>Add credits</h2>
       <p class="mt-2 mb-6 text-sm leading-relaxed text-[var(--ui-text-muted)]">{{ topupApprovalEnabled ? 'Enter an amount to request a topup. Credits are added after administrator approval.' : 'Enter the amount you want to add to your balance.' }}</p>
       <div class="min-w-0 space-y-3">
 
@@ -31,6 +31,9 @@
           <UFormField label="Amount (credits)" required>
             <div class="flex flex-col gap-4">
               <UInput v-model="amount" type="number" min="0" step="any" placeholder="Enter credit amount" size="xl" class="w-full" :disabled="saving || loading || !requestStateLoaded || !!pendingTopup" required />
+              <div class="flex flex-wrap gap-2" role="group" aria-label="Quick amounts">
+                <button v-for="preset in amountPresets" :key="preset" type="button" class="balance-preset" :class="{ 'balance-preset--active': Number(amount) === preset }" :disabled="saving || loading || !requestStateLoaded || !!pendingTopup" @click="amount = String(preset)">{{ formatCredits(preset) }}</button>
+              </div>
               <AppButton type="submit" icon="i-tabler-plus" size="lg" class="justify-center rounded-full" :loading="saving" :disabled="!validAmount || !token || loading || !requestStateLoaded || !!pendingTopup">{{ topupApprovalEnabled ? 'Request topup' : 'Topup' }} {{ validAmount ? formatCredits(Number(amount)) : '' }}</AppButton>
             </div>
           </UFormField>
@@ -81,6 +84,7 @@ const pageError = useWorkspaceState('user:balance:page-error', () => '')
 const rechargeError = useWorkspaceState('user:balance:recharge-error', () => '')
 const toast = useToast()
 const amount = ref('')
+const amountPresets = [10, 50, 100, 500]
 const validAmount = computed(() => Number.isFinite(Number(amount.value)) && Number(amount.value) > 0)
 const overview = useWorkspaceState<BillingOverview | null>('user:balance:overview', () => null)
 const records = useWorkspaceState<BillingBalanceRecord[]>('user:balance:records', () => [])
@@ -196,9 +200,11 @@ onMounted(() => { hydrateSession(); void refresh() })
 </script>
 
 <style scoped>
-.balance-workspace { max-width: 76rem; margin-inline: auto; }
-.balance-wallet-grid { display: grid; gap: 1.5rem; }
+.balance-workspace { max-width: 80rem; margin-inline: auto; padding-block: 0.25rem; }
+.balance-wallet-grid { display: grid; gap: 1rem; }
 .balance-hero {
+  position: relative;
+  overflow: hidden;
   padding: 1.5rem;
   background: radial-gradient(ellipse at 100% 0%, color-mix(in oklch, var(--ui-success) 14%, transparent), transparent 70%), var(--user-panel-bg) !important;
   border-color: color-mix(in oklch, var(--ui-success) 25%, var(--ui-border)) !important;
@@ -213,8 +219,35 @@ onMounted(() => { hydrateSession(); void refresh() })
 .balance-topup { padding: 1.5rem; }
 .balance-topup > p { margin-bottom: 1rem; }
 .balance-topup form > * + * { margin-top: 0.75rem; }
-@media (min-width: 768px) {
-  .balance-wallet-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: stretch; }
+.balance-hero::after {
+  position: absolute;
+  right: -4rem;
+  bottom: -6rem;
+  width: 14rem;
+  height: 14rem;
+  border: 1.75rem solid color-mix(in oklch, var(--ui-success) 8%, transparent);
+  border-radius: 9999px;
+  content: '';
+  pointer-events: none;
+}
+.balance-hero > * { position: relative; z-index: 1; }
+.balance-preset {
+  padding: 0.375rem 0.875rem;
+  border: 1px solid var(--ui-border);
+  border-radius: 9999px;
+  background: var(--user-inset-bg);
+  color: var(--ui-text);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  transition: border-color 120ms ease, background-color 120ms ease, color 120ms ease;
+}
+.balance-preset:hover:not(:disabled) { border-color: color-mix(in oklch, var(--ui-primary) 40%, var(--ui-border)); color: var(--ui-primary); }
+.balance-preset--active { border-color: var(--ui-primary); background: var(--user-selected); color: var(--ui-primary); }
+.balance-preset:disabled { cursor: not-allowed; opacity: 0.5; }
+.balance-preset:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 2px; }
+@media (min-width: 1024px) {
+  .balance-wallet-grid { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); align-items: stretch; }
 }
 
 .balance-workspace .balance-icon {

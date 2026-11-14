@@ -1,20 +1,30 @@
 <template>
   <div class="user-profile mx-auto min-w-0 max-w-[80rem] space-y-5 py-3" :aria-busy="loading">
-    <section class="flex flex-wrap items-center justify-between gap-3" aria-labelledby="profile-title">
-      <div class="flex min-w-0 items-center gap-3">
-        <span class="profile-icon flex size-9 shrink-0 items-center justify-center rounded-xl"><UIcon name="i-tabler-user-circle" class="size-5" aria-hidden="true" /></span>
-        <div class="min-w-0"><h1 id="profile-title" class="break-words text-base font-semibold tracking-tight text-[var(--ui-text-highlighted)]">{{ user?.username || 'User' }}</h1><p class="mt-0.5 text-xs text-[var(--ui-text-muted)]">Account #{{ user?.id || '—' }} · Profile and security</p></div>
+    <section class="profile-hero" aria-labelledby="profile-title">
+      <div class="profile-cover" aria-hidden="true" />
+      <div class="relative flex flex-wrap items-end justify-between gap-4 px-5 pb-5 sm:px-6">
+        <div class="flex min-w-0 items-end gap-4">
+          <span class="profile-avatar" aria-hidden="true">{{ (user?.username || '?').charAt(0).toUpperCase() }}</span>
+          <div class="min-w-0 pb-1"><h1 id="profile-title" class="break-words text-xl font-bold tracking-tight text-[var(--ui-text-highlighted)]">{{ user?.username || 'User' }}</h1><p class="mt-0.5 text-xs text-[var(--ui-text-muted)]">Account #{{ user?.id || '—' }} · Profile and security</p></div>
+        </div>
+        <div class="flex gap-2 pb-1">
+          <AppButton to="/app/settings" class="rounded-full" color="neutral" variant="outline" size="sm" icon="i-tabler-settings">Settings</AppButton>
+          <AppButton class="rounded-full" color="neutral" variant="ghost" size="sm" icon="i-tabler-refresh" :loading="loading" aria-label="Refresh profile" @click="loadProfile">Refresh</AppButton>
+        </div>
       </div>
-      <AppButton class="shrink-0 rounded-full" color="neutral" variant="ghost" size="sm" icon="i-tabler-refresh" :loading="loading" @click="loadProfile">Refresh</AppButton>
+      <dl class="profile-stats" aria-label="Account summary">
+        <div v-for="(stat, index) in stats" :key="stat.label" class="profile-stat min-w-0">
+          <dt class="flex items-center gap-2 text-xs font-medium text-[var(--ui-text-muted)]"><UIcon :name="profileStatIcons[index]" class="size-4 text-[var(--ui-primary)]" aria-hidden="true" />{{ stat.label }}</dt>
+          <dd class="mt-1.5 break-words text-lg font-bold tabular-nums tracking-tight text-[var(--ui-text-highlighted)]">{{ stat.value }}</dd>
+          <dd class="text-xs text-[var(--ui-text-dimmed)]">{{ stat.detail }}</dd>
+        </div>
+      </dl>
     </section>
 
     <UAlert v-if="error" color="error" variant="subtle" title="Profile could not be loaded" :description="error" />
 
     <AppCard v-if="activePeriods.length" class="profile-panel"><template #header><div class="flex items-center gap-3"><span class="profile-icon flex size-9 shrink-0 items-center justify-center rounded-xl"><UIcon name="i-tabler-gauge" class="size-5" aria-hidden="true" /></span><div><h2 class="text-sm font-semibold">Period limits</h2><p class="text-xs text-[var(--ui-text-muted)]">Active limits currently applied to your account.</p></div></div></template><div class="grid gap-x-6 gap-y-4 sm:grid-cols-2"><div v-for="window in activePeriods" :key="window.id" class="min-w-0"><div class="flex items-center justify-between"><span class="font-medium">{{ periodLabel(window.id) }}</span><span class="text-xs font-semibold">{{ percent(window) }}%</span></div><div class="mt-2 h-2 overflow-hidden rounded-full bg-[var(--ui-bg-muted)]"><div class="h-full rounded-full bg-[var(--ui-primary)]" :style="{ width: `${percent(window)}%` }" /></div><p class="mt-2 text-xs text-[var(--ui-text-muted)]">{{ credits(window.used) }} used · {{ credits(window.remaining) }} remaining</p></div></div></AppCard>
 
-    <section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="Account summary">
-      <AppCard v-for="(stat, index) in stats" :key="stat.label" class="profile-panel min-w-0" :ui="{ body: 'p-4' }"><div class="flex items-center justify-between gap-2"><p class="text-xs font-medium text-[var(--ui-text-muted)]">{{ stat.label }}</p><span class="profile-icon flex size-8 shrink-0 items-center justify-center rounded-lg"><UIcon :name="profileStatIcons[index]" class="size-4" aria-hidden="true" /></span></div><p class="mt-2 break-words text-lg font-semibold tabular-nums tracking-tight text-[var(--ui-text-highlighted)]">{{ stat.value }}</p><p class="mt-1 text-xs text-[var(--ui-text-dimmed)]">{{ stat.detail }}</p></AppCard>
-    </section>
 
     <div class="grid items-start gap-5 lg:grid-cols-2">
       <AppCard class="profile-panel"><template #header><div class="flex items-center gap-3"><span class="profile-icon flex size-9 shrink-0 items-center justify-center rounded-xl"><UIcon name="i-tabler-id" class="size-5" aria-hidden="true" /></span><div><h2 class="text-sm font-semibold">Account details</h2><p class="text-xs text-[var(--ui-text-muted)]">Identity and recovery information.</p></div></div></template><dl class="divide-y divide-[var(--ui-border)]/50"><div v-for="item in accountDetails" :key="item.label" class="grid min-w-0 gap-1 py-3 first:pt-0 last:pb-0 sm:grid-cols-[8rem_minmax(0,1fr)] sm:gap-4"><dt class="text-xs font-medium text-[var(--ui-text-muted)]">{{ item.label }}</dt><dd class="min-w-0 break-words text-sm" :class="item.mono ? 'font-mono text-xs' : ''">{{ item.value }}</dd></div></dl></AppCard>
@@ -86,4 +96,48 @@ onMounted(loadProfile)
 
 <style scoped>
 .profile-icon { color: var(--ui-primary); background: var(--user-selected); }
+.profile-hero {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--user-panel-border);
+  border-radius: 1.25rem;
+  background: var(--user-panel-bg);
+  box-shadow: var(--user-panel-shadow);
+}
+.profile-cover {
+  height: 6rem;
+  background:
+    radial-gradient(circle at 20% 120%, color-mix(in oklch, white 22%, transparent), transparent 45%),
+    var(--brand-gradient);
+}
+.profile-avatar {
+  display: flex;
+  width: 4.5rem;
+  height: 4.5rem;
+  flex-shrink: 0;
+  margin-top: -2.25rem;
+  align-items: center;
+  justify-content: center;
+  border: 4px solid var(--user-panel-bg);
+  border-radius: 1.25rem;
+  background: var(--brand-gradient);
+  color: white;
+  font-size: 1.75rem;
+  font-weight: 800;
+  box-shadow: 0 8px 20px -8px color-mix(in oklch, var(--brand-from) 60%, transparent);
+}
+.profile-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border-top: 1px solid var(--ui-border);
+}
+.profile-stat { padding: 1rem 1.25rem; }
+.profile-stat:nth-child(odd) { border-right: 1px solid var(--ui-border); }
+.profile-stat:nth-child(-n + 2) { border-bottom: 1px solid var(--ui-border); }
+@media (min-width: 1024px) {
+  .profile-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .profile-stat { border-bottom: 0 !important; }
+  .profile-stat:not(:last-child) { border-right: 1px solid var(--ui-border); }
+  .profile-stat { padding-inline: 1.5rem; }
+}
 </style>
