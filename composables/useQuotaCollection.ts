@@ -2,7 +2,7 @@ import { computed, onScopeDispose, ref, watch } from 'vue'
 import { useNuxtApp } from '#imports'
 import { useApi } from '~/composables/useApi'
 import { useCapabilities } from '~/composables/useCapabilities'
-import { quotaCollectionMessage, quotaCollectionSettled, type QuotaCollectionEntry } from '~/composables/upstreamQuota'
+import { normalizeQuotaEntries, normalizeQuotaEntry, quotaCollectionMessage, quotaCollectionSettled, type QuotaCollectionEntry } from '~/composables/upstreamQuota'
 
 const scopes = new WeakMap<object, ReturnType<typeof createState>>()
 function createState() {
@@ -60,7 +60,7 @@ export function useQuotaCollection() {
     const readDetail = async () => {
       const detail = await fetchAPI<any>(`/quota/credentials/${encodeURIComponent(id!)}`, { signal })
       check()
-      state.details.value = { ...state.details.value, [id!]: detail }
+      state.details.value = { ...state.details.value, [id!]: { ...detail, credential: normalizeQuotaEntry(detail.credential) } }
       state.revision.value++
       return [detail.credential as QuotaCollectionEntry]
     }
@@ -72,7 +72,7 @@ export function useQuotaCollection() {
           signal, query: ids ? { ids: ids.slice(offset, offset + 200).join(','), limit: 200 } : { limit: 200, offset, sort: 'label_asc' }
         })
         check()
-        entries.push(...result.items)
+        entries.push(...normalizeQuotaEntries(result.items || []))
         if (offset + 200 >= (ids ? ids.length : result.total)) break
       }
       return entries

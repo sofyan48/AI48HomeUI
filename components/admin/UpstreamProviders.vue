@@ -215,7 +215,7 @@
                     <div class="flex gap-2"><AppButton type="button" size="sm" color="neutral" variant="ghost" @click="selectAllDiscoveredModels">Select all</AppButton><AppButton type="button" size="sm" color="neutral" variant="ghost" @click="selectedDiscovered = []">Clear</AppButton></div>
                   </div>
                   <div class="max-h-40 space-y-1 overflow-y-auto">
-                    <UCheckbox v-for="model in filteredDiscoveredModels" :key="model.name" :model-value="existingModelNames.has(model.name.toLowerCase()) || selectedDiscovered.includes(model.name)" :disabled="existingModelNames.has(model.name.toLowerCase())" :label="existingModelNames.has(model.name.toLowerCase()) ? `${model.name} · Already added` : model.alias ? `${model.name} · ${model.alias}` : model.name" @update:model-value="toggleDiscoveredModel(model.name, $event)" />
+                    <UCheckbox v-for="model in filteredDiscoveredModels" :key="model.name" :model-value="existingModelNames.has(model.name.toLowerCase()) || selectedDiscovered.includes(model.name)" :disabled="existingModelNames.has(model.name.toLowerCase())" :label="existingModelNames.has(model.name.toLowerCase()) ? `${model.name} · Already added` : model.displayName ? `${model.name} · ${model.displayName}` : model.name" @update:model-value="toggleDiscoveredModel(model.name, $event)" />
                   </div>
                   <div class="flex justify-end gap-2"><AppButton type="button" size="sm" color="neutral" variant="ghost" @click="discoveryVisible = false">Close</AppButton><AppButton type="button" size="sm" color="primary" :disabled="!selectedDiscovered.length" @click="applyDiscoveredModels">Apply</AppButton></div>
                 </div>
@@ -385,9 +385,13 @@ const discoveryAuthIndex = computed(() => {
   if (providerEditorMode.value !== 'edit') return ''
   const entry = editingProviderEntry.value
   if (isCompat.value) {
-    const credential = compatKeyRows.value[0]?.source
-    if (credential) return String(credential.auth_index || credential.id || credential.uuid || '').trim()
-    return entry?.__v8KeyIndex === -1 ? String(entry.__v8Group?.id || entry.__v8Group?.uuid || '').trim() : ''
+    if (compatKeyRows.value.length === 1) {
+      const credential = compatKeyRows.value[0]?.source
+      return String(credential?.auth_index || credential?.id || credential?.uuid || '').trim()
+    }
+    return compatKeyRows.value.length === 0 && entry?.__v8KeyIndex === -1
+      ? String(entry.__v8Group?.auth_index || entry.__v8Group?.id || entry.__v8Group?.uuid || '').trim()
+      : ''
   }
   return String(entry?.auth_index || entry?.id || '').trim()
 })
@@ -397,7 +401,7 @@ const hasProviderAuthHeader = computed(() => Object.entries(discoveryHeaders.val
   name.toLowerCase() === (['gemini-api-key', 'interactions-api-key'].includes(selectedProviderRoute.value) ? 'x-goog-api-key' : selectedProviderRoute.value === 'claude-api-key' ? 'x-api-key' : 'authorization') && String(value).trim()))
 const discoveryReady = computed(() => (primaryProviderKey.value || discoveryAuthIndex.value || hasProviderAuthHeader.value) && (!requiresBaseURL.value || String(providerForm.value['base-url'] || '').trim()))
 const existingModelNames = computed(() => new Set(providerForm.value.models.map(model => String(model.name || '').trim().toLowerCase()).filter(Boolean)))
-const filteredDiscoveredModels = computed(() => discoveredModels.value.filter(model => `${model.name} ${model.alias || ''} ${model.description || ''}`.toLowerCase().includes(discoverySearch.value.trim().toLowerCase())))
+const filteredDiscoveredModels = computed(() => discoveredModels.value.filter(model => `${model.name} ${model.displayName || ''} ${model.description || ''}`.toLowerCase().includes(discoverySearch.value.trim().toLowerCase())))
 const defaultDiscoveryURL = computed(() => {
   const rawBase = String(providerForm.value['base-url'] || '').trim().replace(/\/+$/, '')
   const base = rawBase && !/^https?:\/\//i.test(rawBase) ? `https://${rawBase}` : rawBase
@@ -450,8 +454,9 @@ function flattenV8Groups(groups, category) {
     return groupEntries.map((sourceKey, keyIndex) => {
       const key = cloneValue(sourceKey) || {}
       const entry = compat
-        ? { ...group, id: key.id || group.id, uuid: key.uuid || group.uuid, weight: key.weight ?? 1, 'api-key-entries': sourceKey ? [key] : [] }
+        ? { ...group, id: key.id || key.uuid || key.auth_index || key['auth-index'] || group.id, uuid: key.uuid || group.uuid, auth_index: key.auth_index || key['auth-index'] || group.auth_index, weight: key.weight ?? 1, 'api-key-entries': sourceKey ? [key] : [] }
         : { ...group, ...key, weight: key.weight ?? 1 }
+      if (compat) delete entry['excluded-models']
       entry.__v8Group = group
       entry.__v8GroupIndex = groupIndex
       entry.__v8KeyIndex = sourceKey ? keyIndex : -1
@@ -570,7 +575,7 @@ const providerMetadataFields = computed(() => {
   const entry = editingProviderEntry.value || {}
   return [
     { label: 'Auth index', value: entry.auth_index || 'Not available' },
-    { label: 'Excluded models', value: String(entry['excluded-models']?.length || 0) },
+    ...(isCompat.value ? [] : [{ label: 'Excluded models', value: String(entry['excluded-models']?.length || 0) }]),
     { label: 'API key entries', value: String(entry['api-key-entries']?.length || 0) },
     { label: 'Priority', value: entry.priority ?? 'Not set' },
     { label: 'Weight', value: entry.weight ?? 'Default (1)' },
@@ -690,7 +695,10 @@ async function discoverModels() {
         const normalized = typeof name === 'string' ? (['gemini-api-key', 'interactions-api-key'].includes(route) ? name.replace(/^\/?models\//i, '') : name).trim() : ''
         if (!normalized || seen.has(normalized.toLowerCase())) continue
         seen.add(normalized.toLowerCase())
-        models.push({ name: normalized, alias: typeof item?.alias === 'string' ? item.alias : '', description: typeof item?.description === 'string' ? item.description : '' })
+        const displayName = item && typeof item === 'object' && typeof (item.display_name || item.displayName || item.alias) === 'string'
+          ? (item.display_name || item.displayName || item.alias).trim()
+          : ''
+        models.push({ name: normalized, displayName: displayName && displayName !== normalized ? displayName : '', description: typeof item?.description === 'string' ? item.description : '' })
       }
       pageToken = typeof payload?.nextPageToken === 'string' ? payload.nextPageToken : ''
       if (!pageToken) break
@@ -769,7 +777,7 @@ function applyDiscoveredModels() {
   for (const model of discoveredModels.value) {
     if (!selectedDiscovered.value.includes(model.name) || existing.has(model.name.toLowerCase())) continue
     if (providerForm.value.models.length === 1 && !String(providerForm.value.models[0].name || '').trim() && !String(providerForm.value.models[0].alias || '').trim()) providerForm.value.models.splice(0, 1)
-    providerForm.value.models.push({ name: model.name, alias: model.alias || '' })
+    providerForm.value.models.push({ name: model.name, alias: '', ...(model.displayName ? { 'display-name': model.displayName } : {}) })
     existing.add(model.name.toLowerCase())
   }
   selectedDiscovered.value = []
@@ -797,7 +805,7 @@ function loadGuidedEntry(entry) {
   if (providerEditorMode.value === 'create' && !isCompat.value) providerKey.value = providerForm.value['api-key'] || ''
   if (providerEditorMode.value === 'create' && isCompat.value) providerKey.value = providerForm.value['api-key-entries']?.[0]?.['api-key'] || ''
   if (!providerForm.value.models.length) providerForm.value.models = [{ name: '', alias: '' }]
-  excludedModelsText.value = Array.isArray(entry['excluded-models']) ? entry['excluded-models'].join('\n') : ''
+  excludedModelsText.value = !isCompat.value && Array.isArray(entry['excluded-models']) ? entry['excluded-models'].join('\n') : ''
   testModel.value = String(entry['test-model'] || automaticTestModel)
   testError.value = ''
   testSuccess.value = false

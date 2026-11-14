@@ -143,12 +143,20 @@
             >
               {{ rowValue(row).displayName }}
             </p>
-            <p
-              v-if="rowValue(row).identifier"
-              class="truncate font-mono text-xs font-medium"
-            >
-              {{ rowValue(row).identifier }}
-            </p>
+            <div v-if="rowValue(row).identifier" class="flex min-w-0 items-center gap-1.5">
+              <p class="min-w-0 truncate font-mono text-xs font-medium">
+                {{ rowValue(row).identifier }}
+              </p>
+              <AppButton
+                color="neutral"
+                variant="ghost"
+                size="xs"
+                icon="i-tabler-clipboard"
+                :aria-label="`Copy identifier ${rowValue(row).identifier}`"
+                :title="`Copy identifier ${rowValue(row).identifier}`"
+                @click.stop="copyText(rowValue(row).identifier, 'Access-key identifier copied.')"
+              />
+            </div>
             <p v-else class="truncate text-xs text-[var(--ui-text-muted)]">
               No stable identifier
             </p>
