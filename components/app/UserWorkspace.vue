@@ -1,15 +1,15 @@
 <template>
   <div :class="section === 'dashboard' ? 'user-dashboard space-y-5' : 'space-y-8'">
 
-    <UAlert v-if="pageError" color="error" variant="subtle" icon="i-tabler-alert-triangle" title="Some workspace data could not be loaded" :description="pageError" />
+    <UAlert v-if="pageError" color="error" variant="subtle" icon="i-tabler-alert-triangle" :title="t('ws.pageError')" :description="pageError" />
 
     <div v-if="section === 'dashboard'" class="dashboard-bento">
       <header class="dashboard-greeting" aria-labelledby="dashboard-title">
         <div class="min-w-0">
-          <h1 id="dashboard-title" class="break-words font-bold tracking-tight text-[var(--ui-text-highlighted)]">Welcome back{{ user?.username ? `, ${user.username}` : '' }}</h1>
+          <h1 id="dashboard-title" class="break-words font-bold tracking-tight text-[var(--ui-text-highlighted)]">{{ user?.username ? t('ws.dashboard.welcomeUser', { name: user.username }) : t('ws.dashboard.welcome') }}</h1>
           <p class="mt-1 text-sm text-[var(--ui-text-muted)]">{{ dashboardStatusLine }}</p>
         </div>
-        <AppButton v-if="capabilities.request_logs === true" to="/app/logs" icon="i-tabler-list-details" color="neutral" variant="ghost" size="sm" class="rounded-full">Request logs</AppButton>
+        <AppButton v-if="capabilities.request_logs === true" to="/app/logs" icon="i-tabler-list-details" color="neutral" variant="ghost" size="sm" class="rounded-full">{{ t('ws.dashboard.requestLogs') }}</AppButton>
       </header>
 
       <!-- Spotlight 1: how to start sending requests. -->
@@ -17,40 +17,40 @@
         <div class="flex flex-wrap items-start justify-between gap-3">
           <div class="flex items-center gap-3">
             <span class="dashboard-connect-icon"><UIcon name="i-tabler-plug-connected" class="size-5" aria-hidden="true" /></span>
-            <div><h2 id="connect-title" class="text-base font-semibold text-[var(--ui-text-highlighted)]">Connect your app</h2><p class="text-xs text-[var(--ui-text-muted)]">Three steps to your first request.</p></div>
+            <div><h2 id="connect-title" class="text-base font-semibold text-[var(--ui-text-highlighted)]">{{ t('ws.dashboard.connectTitle') }}</h2><p class="text-xs text-[var(--ui-text-muted)]">{{ t('ws.dashboard.connectSubtitle') }}</p></div>
           </div>
-          <AppButton to="/app/models" size="xs" color="neutral" variant="ghost" class="rounded-full" trailing-icon="i-tabler-arrow-right">Find a model ID</AppButton>
+          <AppButton to="/app/models" size="xs" color="neutral" variant="ghost" class="rounded-full" trailing-icon="i-tabler-arrow-right">{{ t('ws.dashboard.findModel') }}</AppButton>
         </div>
 
         <ol class="dashboard-steps mt-5">
           <li class="dashboard-step">
             <span class="dashboard-step-index" aria-hidden="true">1</span>
             <div class="min-w-0 flex-1">
-              <p class="text-sm font-semibold text-[var(--ui-text-highlighted)]">Create an API key</p>
-              <p class="mt-0.5 text-xs text-[var(--ui-text-muted)]">Use a separate key for each app and keep it out of public code.</p>
+              <p class="text-sm font-semibold text-[var(--ui-text-highlighted)]">{{ t('ws.dashboard.step1Title') }}</p>
+              <p class="mt-0.5 text-xs text-[var(--ui-text-muted)]">{{ t('ws.dashboard.step1Detail') }}</p>
             </div>
-            <AppButton to="/app/api-keys" size="sm" icon="i-tabler-key" class="dashboard-primary-action shrink-0 rounded-full">API keys</AppButton>
+            <AppButton to="/app/api-keys" size="sm" icon="i-tabler-key" class="dashboard-primary-action shrink-0 rounded-full">{{ t('ws.dashboard.apiKeys') }}</AppButton>
           </li>
           <li class="dashboard-step">
             <span class="dashboard-step-index" aria-hidden="true">2</span>
             <div class="min-w-0 flex-1">
-              <p class="text-sm font-semibold text-[var(--ui-text-highlighted)]">Point your client at the endpoint</p>
+              <p class="text-sm font-semibold text-[var(--ui-text-highlighted)]">{{ t('ws.dashboard.step2Title') }}</p>
               <div v-if="serverInfo.cpa_public_url" class="dashboard-endpoint-field mt-2">
                 <code class="min-w-0 flex-1 truncate font-mono text-sm text-[var(--ui-text-highlighted)]" :title="serverInfo.cpa_public_url">{{ serverInfo.cpa_public_url }}</code>
-                <AppButton type="button" size="xs" class="shrink-0" color="neutral" variant="soft" icon="i-tabler-copy" aria-label="Copy endpoint" @click="copyText(serverInfo.cpa_public_url, 'Endpoint copied')">Copy</AppButton>
+                <AppButton type="button" size="xs" class="shrink-0" color="neutral" variant="soft" icon="i-tabler-copy" :aria-label="t('ws.dashboard.copyEndpoint')" @click="copyText(serverInfo.cpa_public_url, t('ws.dashboard.endpointCopied'))">{{ t('common.copy') }}</AppButton>
               </div>
-              <p v-else class="mt-0.5 text-xs text-[var(--ui-text-muted)]">Your administrator has not published a public endpoint yet. Ask them for the base URL.</p>
+              <p v-else class="mt-0.5 text-xs text-[var(--ui-text-muted)]">{{ t('ws.dashboard.noEndpoint') }}</p>
             </div>
           </li>
           <li class="dashboard-step">
             <span class="dashboard-step-index" aria-hidden="true">3</span>
             <div class="min-w-0 flex-1">
-              <p class="text-sm font-semibold text-[var(--ui-text-highlighted)]">Send a request</p>
-              <p class="mt-0.5 text-xs text-[var(--ui-text-muted)]">OpenAI-compatible: replace the key and model ID.</p>
+              <p class="text-sm font-semibold text-[var(--ui-text-highlighted)]">{{ t('ws.dashboard.step3Title') }}</p>
+              <p class="mt-0.5 text-xs text-[var(--ui-text-muted)]">{{ t('ws.dashboard.step3Detail') }}</p>
               <div v-if="serverInfo.cpa_public_url" class="dashboard-code mt-2 overflow-hidden rounded-xl">
                 <div class="flex items-center justify-between gap-2 border-b px-3 py-1.5">
                   <span class="font-mono text-[11px] opacity-70">curl</span>
-                  <AppButton type="button" size="xs" color="neutral" variant="ghost" icon="i-tabler-copy" class="dashboard-code-copy" aria-label="Copy curl example" @click="copyText(curlExample, 'Example copied')">Copy</AppButton>
+                  <AppButton type="button" size="xs" color="neutral" variant="ghost" icon="i-tabler-copy" class="dashboard-code-copy" :aria-label="t('ws.dashboard.copyCurl')" @click="copyText(curlExample, t('ws.dashboard.exampleCopied'))">{{ t('common.copy') }}</AppButton>
                 </div>
                 <pre class="overflow-x-auto p-4 text-xs leading-6"><code class="font-mono">{{ curlExample }}</code></pre>
               </div>
@@ -62,33 +62,33 @@
       <!-- Spotlight 2: what the user can still spend. -->
       <section class="dashboard-credits" aria-labelledby="credits-title">
         <div class="flex items-center justify-between gap-3">
-          <h2 id="credits-title" class="flex items-center gap-2 text-sm font-semibold text-[var(--ui-text-highlighted)]"><span class="dashboard-balance-icon"><UIcon name="i-tabler-wallet" class="size-4" aria-hidden="true" /></span>Credits & limits</h2>
+          <h2 id="credits-title" class="flex items-center gap-2 text-sm font-semibold text-[var(--ui-text-highlighted)]"><span class="dashboard-balance-icon"><UIcon name="i-tabler-wallet" class="size-4" aria-hidden="true" /></span>{{ t('ws.dashboard.creditsTitle') }}</h2>
           <UBadge v-if="limitAlert" :color="limitAlert.color" variant="subtle" class="rounded-full">{{ limitAlert.label }}</UBadge>
         </div>
         <div class="mt-4 flex flex-wrap items-end justify-between gap-3">
           <div class="min-w-0">
-            <p class="text-xs font-medium text-[var(--ui-text-muted)]">Available credits</p>
+            <p class="text-xs font-medium text-[var(--ui-text-muted)]">{{ t('ws.dashboard.availableCredits') }}</p>
             <p class="dashboard-balance-value mt-1 break-all font-bold tabular-nums tracking-tight text-[var(--ui-text-highlighted)]">{{ user ? formatCredits(user.credits) : '—' }}</p>
           </div>
-          <AppButton to="/app/balance" size="sm" icon="i-tabler-plus" color="success" variant="soft" class="rounded-full">Top up</AppButton>
+          <AppButton to="/app/balance" size="sm" icon="i-tabler-plus" color="success" variant="soft" class="rounded-full">{{ t('ws.dashboard.topUp') }}</AppButton>
         </div>
 
-        <div class="dashboard-limit-list mt-5" aria-label="Account period limits">
-          <p class="mb-2 text-xs font-medium text-[var(--ui-text-muted)]">Spending limits</p>
+        <div class="dashboard-limit-list mt-5" :aria-label="t('ws.dashboard.periodLimits')">
+          <p class="mb-2 text-xs font-medium text-[var(--ui-text-muted)]">{{ t('ws.dashboard.spendingLimits') }}</p>
           <template v-if="activePeriodWindows.length">
             <div v-for="window in activePeriodWindows" :key="window.id" class="dashboard-limit min-w-0">
               <div class="flex items-center justify-between gap-3">
                 <p class="text-sm font-semibold">{{ periodWindowLabel(window.id) }}</p>
                 <span class="shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums" :class="periodWindowColor(window)">{{ formatPercent(periodWindowRatio(window)) }}</span>
               </div>
-              <div class="period-progress-track mt-2 h-2 overflow-hidden rounded-full" role="progressbar" :aria-label="`${periodWindowLabel(window.id)} limit used`" aria-valuemin="0" aria-valuemax="100" :aria-valuenow="Math.round(periodWindowRatio(window) * 100)"><div class="h-full rounded-full transition-[width]" :class="periodWindowBarColor(window)" :style="{ width: `${periodWindowRatio(window) * 100}%`, minWidth: periodWindowRatio(window) > 0 ? '4px' : '0' }" /></div>
+              <div class="period-progress-track mt-2 h-2 overflow-hidden rounded-full" role="progressbar" :aria-label="t('ws.dashboard.limitUsed', { label: periodWindowLabel(window.id) })" aria-valuemin="0" aria-valuemax="100" :aria-valuenow="Math.round(periodWindowRatio(window) * 100)"><div class="h-full rounded-full transition-[width]" :class="periodWindowBarColor(window)" :style="{ width: `${periodWindowRatio(window) * 100}%`, minWidth: periodWindowRatio(window) > 0 ? '4px' : '0' }" /></div>
               <div class="mt-1.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5 text-xs text-[var(--ui-text-muted)]">
-                <span><strong class="font-semibold tabular-nums text-[var(--ui-text-highlighted)]">{{ formatCredits(window.remaining) }}</strong> left of {{ formatCredits(window.limit) }}</span>
-                <span v-if="window.reset_at" class="text-[var(--ui-text-dimmed)]">Resets {{ formatDate(window.reset_at) }}</span>
+                <span><strong class="font-semibold tabular-nums text-[var(--ui-text-highlighted)]">{{ formatCredits(window.remaining) }}</strong> {{ t('ws.dashboard.leftOf', { limit: formatCredits(window.limit) }) }}</span>
+                <span v-if="window.reset_at" class="text-[var(--ui-text-dimmed)]">{{ t('ws.dashboard.resets', { date: formatDate(window.reset_at) }) }}</span>
               </div>
             </div>
           </template>
-          <p v-else class="rounded-xl border border-dashed border-[var(--ui-border)] px-3 py-3 text-xs text-[var(--ui-text-muted)]">No spending limits apply to your account. Only your credit balance limits usage.</p>
+          <p v-else class="rounded-xl border border-dashed border-[var(--ui-border)] px-3 py-3 text-xs text-[var(--ui-text-muted)]">{{ t('ws.dashboard.noLimits') }}</p>
         </div>
         <AppLimitReset class="mt-auto" @reset="loadPeriodLimits" />
       </section>
@@ -97,16 +97,16 @@
       <AppCard class="dashboard-panel dashboard-usage min-w-0" :ui="{ body: 'pt-2' }">
         <template #header>
           <div class="flex flex-wrap items-center justify-between gap-3">
-            <div class="flex items-center gap-3"><span class="dashboard-icon flex size-9 items-center justify-center rounded-lg"><UIcon name="i-tabler-chart-bar" class="size-5" aria-hidden="true" /></span><div><h2 class="text-sm font-semibold">Usage</h2><p class="text-xs text-[var(--ui-text-muted)]">{{ appliedRange.from === appliedRange.to ? appliedRange.from : `${appliedRange.from} – ${appliedRange.to}` }}<template v-if="monthOverview"> · {{ formatCredits(monthOverview.total_charge_amount ?? monthOverview.month_spend) }} credits this month</template></p></div></div>
+            <div class="flex items-center gap-3"><span class="dashboard-icon flex size-9 items-center justify-center rounded-lg"><UIcon name="i-tabler-chart-bar" class="size-5" aria-hidden="true" /></span><div><h2 class="text-sm font-semibold">{{ t('ws.dashboard.usage') }}</h2><p class="text-xs text-[var(--ui-text-muted)]">{{ appliedRange.from === appliedRange.to ? appliedRange.from : `${appliedRange.from} – ${appliedRange.to}` }}<template v-if="monthOverview"> · {{ t('ws.dashboard.creditsThisMonth', { amount: formatCredits(monthOverview.total_charge_amount ?? monthOverview.month_spend) }) }}</template></p></div></div>
             <form class="flex flex-wrap items-center gap-2" @submit.prevent="applyBillingRange">
-              <USelect v-model="rangePreset" :items="rangeOptions" value-key="value" label-key="label" class="w-36" aria-label="Time range" @update:model-value="selectRange" />
+              <USelect v-model="rangePreset" :items="rangeOptions" value-key="value" label-key="label" class="w-36" :aria-label="t('ws.dashboard.timeRange')" @update:model-value="selectRange" />
               <template v-if="rangePreset === 'custom'">
-                <UInput v-model="rangeFrom" type="date" aria-label="From (UTC)" />
-                <UInput v-model="rangeTo" type="date" aria-label="To (UTC)" />
-                <AppButton type="submit" :loading="billingLoading">Apply</AppButton>
+                <UInput v-model="rangeFrom" type="date" :aria-label="t('ws.dashboard.fromUtc')" />
+                <UInput v-model="rangeTo" type="date" :aria-label="t('ws.dashboard.toUtc')" />
+                <AppButton type="submit" :loading="billingLoading">{{ t('ws.dashboard.apply') }}</AppButton>
               </template>
-              <AppButton type="button" color="neutral" variant="ghost" icon="i-tabler-refresh" :loading="billingLoading" aria-label="Refresh usage" title="Refresh usage" @click="loadBilling" />
-              <AppButton to="/app/balance" color="neutral" variant="ghost" size="sm" trailing-icon="i-tabler-arrow-right">Details</AppButton>
+              <AppButton type="button" color="neutral" variant="ghost" icon="i-tabler-refresh" :loading="billingLoading" :aria-label="t('ws.dashboard.refreshUsage')" :title="t('ws.dashboard.refreshUsage')" @click="loadBilling" />
+              <AppButton to="/app/balance" color="neutral" variant="ghost" size="sm" trailing-icon="i-tabler-arrow-right">{{ t('ws.dashboard.details') }}</AppButton>
             </form>
           </div>
         </template>
@@ -116,27 +116,27 @@
             <dd class="mt-1.5 break-words text-2xl font-bold tabular-nums tracking-tight text-[var(--ui-text-highlighted)]">{{ billingLoading ? '—' : metric.value }}</dd>
           </div>
         </dl>
-        <UAlert v-if="billingError" class="mt-3" color="error" variant="subtle" title="Usage could not be loaded" :description="billingError" />
+        <UAlert v-if="billingError" class="mt-3" color="error" variant="subtle" :title="t('ws.dashboard.usageError')" :description="billingError" />
       </AppCard>
     </div>
 
     <section v-if="section === 'billing'" class="workspace-finance space-y-5" aria-labelledby="billing-title">
       <AppCard class="finance-panel finance-usage" :ui="{ body: 'space-y-5' }">
-        <template #header><div class="flex items-center gap-3"><span class="finance-icon flex size-9 shrink-0 items-center justify-center rounded-xl"><UIcon name="i-tabler-chart-bar" class="size-5" aria-hidden="true" /></span><div><h2 id="billing-title" class="text-sm font-semibold">Usage & spending</h2><p class="mt-0.5 text-xs text-[var(--ui-text-muted)]">Explore your usage and charges by time range.</p></div></div></template>
+        <template #header><div class="flex items-center gap-3"><span class="finance-icon flex size-9 shrink-0 items-center justify-center rounded-xl"><UIcon name="i-tabler-chart-bar" class="size-5" aria-hidden="true" /></span><div><h2 id="billing-title" class="text-sm font-semibold">{{ t('ws.billing.title') }}</h2><p class="mt-0.5 text-xs text-[var(--ui-text-muted)]">{{ t('ws.billing.subtitle') }}</p></div></div></template>
         <form class="billing-range flex flex-wrap items-end gap-3" @submit.prevent="applyBillingRange">
-          <UFormField label="Time range">
+          <UFormField :label="t('ws.dashboard.timeRange')">
             <USelect v-model="rangePreset" :items="rangeOptions" value-key="value" label-key="label" class="w-44" @update:model-value="selectRange" />
           </UFormField>
           <template v-if="rangePreset === 'custom'">
-            <UFormField label="From (UTC)"><UInput v-model="rangeFrom" type="date" /></UFormField>
-            <UFormField label="To (UTC)"><UInput v-model="rangeTo" type="date" /></UFormField>
-            <AppButton type="submit" :loading="billingLoading">Apply range</AppButton>
+            <UFormField :label="t('ws.dashboard.fromUtc')"><UInput v-model="rangeFrom" type="date" /></UFormField>
+            <UFormField :label="t('ws.dashboard.toUtc')"><UInput v-model="rangeTo" type="date" /></UFormField>
+            <AppButton type="submit" :loading="billingLoading">{{ t('ws.billing.applyRange') }}</AppButton>
           </template>
-          <AppButton type="button" class="ml-auto shrink-0 rounded-full" color="neutral" variant="ghost" icon="i-tabler-refresh" :loading="billingLoading" @click="loadBilling">Refresh</AppButton>
+          <AppButton type="button" class="ml-auto shrink-0 rounded-full" color="neutral" variant="ghost" icon="i-tabler-refresh" :loading="billingLoading" @click="loadBilling">{{ t('common.refresh') }}</AppButton>
         </form>
-        <UAlert v-if="billingError" class="mt-4" color="error" variant="subtle" title="Billing request failed" :description="billingError" />
+        <UAlert v-if="billingError" class="mt-4" color="error" variant="subtle" :title="t('ws.billing.error')" :description="billingError" />
 
-        <div class="billing-stat-strip grid min-w-0 grid-cols-2 gap-5 lg:grid-cols-4" aria-label="Usage summary" :aria-busy="billingLoading">
+        <div class="billing-stat-strip grid min-w-0 grid-cols-2 gap-5 lg:grid-cols-4" :aria-label="t('ws.billing.summaryAria')" :aria-busy="billingLoading">
           <div v-for="(metric, index) in billingMetrics" :key="metric.label" class="billing-stat min-w-0" :class="{ 'billing-stat--featured': index === 0 }">
             <p class="flex items-center gap-2 text-sm text-[var(--ui-text-muted)]"><UIcon :name="dashboardMetricIcons[index]" class="size-4 billing-stat-icon" aria-hidden="true" />{{ metric.label }}</p>
             <p class="mt-2 break-words text-3xl font-semibold tracking-tight tabular-nums text-[var(--ui-text-highlighted)]">{{ billingLoading ? '—' : metric.value }}</p>
@@ -144,17 +144,17 @@
           </div>
         </div>
         <details class="billing-models">
-          <summary class="flex cursor-pointer items-center gap-3 text-sm font-medium"><UIcon name="i-tabler-stack-2" class="size-4 text-[var(--ui-text-muted)]" aria-hidden="true" /><span>Model breakdown</span><UIcon name="i-tabler-chevron-down" class="billing-model-chevron ml-auto size-4 text-[var(--ui-text-muted)]" aria-hidden="true" /></summary>
+          <summary class="flex cursor-pointer items-center gap-3 text-sm font-medium"><UIcon name="i-tabler-stack-2" class="size-4 text-[var(--ui-text-muted)]" aria-hidden="true" /><span>{{ t('ws.billing.modelBreakdown') }}</span><UIcon name="i-tabler-chevron-down" class="billing-model-chevron ml-auto size-4 text-[var(--ui-text-muted)]" aria-hidden="true" /></summary>
           <div v-if="topModels.length" class="space-y-4">
             <div v-for="(model, index) in topModels" :key="model.id || model.label" class="flex items-center justify-between gap-4">
               <div class="min-w-0">
-                <p class="truncate text-sm font-medium">{{ index + 1 }}. {{ model.label || model.id || 'Unknown model' }}</p>
-                <p class="text-xs text-[var(--ui-text-muted)]">{{ formatNumber(model.request_count) }} requests</p>
+                <p class="truncate text-sm font-medium">{{ index + 1 }}. {{ model.label || model.id || t('ws.billing.unknownModel') }}</p>
+                <p class="text-xs text-[var(--ui-text-muted)]">{{ t('ws.billing.modelRequests', { count: formatNumber(model.request_count) }) }}</p>
               </div>
               <span class="shrink-0 font-mono text-sm font-semibold">{{ formatCredits(model.amount) }}</span>
             </div>
           </div>
-          <p v-else class="py-5 text-sm text-[var(--ui-text-muted)]">No model charges in this range.</p>
+          <p v-else class="py-5 text-sm text-[var(--ui-text-muted)]">{{ t('ws.billing.noModelCharges') }}</p>
         </details>
       </AppCard>
 
@@ -164,16 +164,16 @@
           <template #header>
             <div class="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <h3 class="flex items-center gap-2 text-sm font-semibold"><UIcon name="i-tabler-receipt" class="size-4 text-[var(--ui-primary)]" aria-hidden="true" /> Recent charges</h3>
-                <p class="text-xs text-[var(--ui-text-muted)]">{{ formatNumber(chargesTotal) }} matching records</p>
+                <h3 class="flex items-center gap-2 text-sm font-semibold"><UIcon name="i-tabler-receipt" class="size-4 text-[var(--ui-primary)]" aria-hidden="true" /> {{ t('ws.billing.recentCharges') }}</h3>
+                <p class="text-xs text-[var(--ui-text-muted)]">{{ t('ws.billing.matchingRecords', { count: formatNumber(chargesTotal) }) }}</p>
               </div>
-              <UFormField label="Rows per page">
+              <UFormField :label="t('ws.billing.rowsPerPage')">
                 <USelect v-model="chargePageSize" :items="pageSizeOptions" value-key="value" label-key="label" class="w-28" @update:model-value="changePageSize" />
               </UFormField>
             </div>
           </template>
           <div class="min-h-64 overflow-x-auto">
-            <AppTable :data="charges" :columns="chargeColumns" :loading="billingLoading" empty="No billing charges found." class="min-w-[800px]">
+            <AppTable :data="charges" :columns="chargeColumns" :loading="billingLoading" :empty="t('ws.billing.noCharges')" class="min-w-[800px]">
               <template #created_at-cell="{ row }"><span class="whitespace-nowrap text-sm">{{ formatDate(rowValue(row).created_at) }}</span></template>
               <template #provider-cell="{ row }"><span class="text-sm">{{ rowValue(row).provider || '—' }}</span></template>
               <template #model-cell="{ row }"><span class="text-sm font-medium">{{ rowValue(row).model || '—' }}</span></template>
@@ -185,11 +185,11 @@
           </div>
           <template #footer>
           <div class="flex flex-wrap items-center justify-between gap-3 text-sm">
-            <span class="text-[var(--ui-text-muted)]">Showing {{ chargeRangeStart }}–{{ chargeRangeEnd }} of {{ formatNumber(chargesTotal) }}</span>
+            <span class="text-[var(--ui-text-muted)]">{{ t('ws.billing.showing', { start: chargeRangeStart, end: chargeRangeEnd, total: formatNumber(chargesTotal) }) }}</span>
             <div class="flex items-center gap-2">
-              <AppButton size="sm" color="neutral" variant="outline" :disabled="chargePage <= 1 || billingLoading" @click="changeChargePage(-1)">Previous</AppButton>
-              <span>Page {{ chargePage }} of {{ chargePages }}</span>
-              <AppButton size="sm" color="neutral" variant="outline" :disabled="chargePage >= chargePages || billingLoading" @click="changeChargePage(1)">Next</AppButton>
+              <AppButton size="sm" color="neutral" variant="outline" :disabled="chargePage <= 1 || billingLoading" @click="changeChargePage(-1)">{{ t('ws.billing.previous') }}</AppButton>
+              <span>{{ t('ws.billing.page', { page: chargePage, pages: chargePages }) }}</span>
+              <AppButton size="sm" color="neutral" variant="outline" :disabled="chargePage >= chargePages || billingLoading" @click="changeChargePage(1)">{{ t('ws.billing.next') }}</AppButton>
             </div>
           </div>
           </template>
@@ -201,43 +201,43 @@
     <section v-if="section === 'api-keys'" class="workspace-finance workspace-keys space-y-5" aria-labelledby="keys-title">
       <AppCard class="finance-panel keys-panel">
         <div class="flex flex-wrap items-end gap-4">
-          <UFormField label="Search" class="min-w-0 flex-1">
-            <UInput v-model="keySearch" icon="i-tabler-search" placeholder="Find a key by name or value…" aria-label="Search API keys" size="lg" class="w-full" />
+          <UFormField :label="t('ws.keys.search')" class="min-w-0 flex-1">
+            <UInput v-model="keySearch" icon="i-tabler-search" :placeholder="t('ws.keys.searchPlaceholder')" :aria-label="t('ws.keys.searchAria')" size="lg" class="w-full" />
           </UFormField>
-          <AppButton icon="i-tabler-plus" size="lg" class="shrink-0 rounded-full" @click="openKeyForm()">Create key</AppButton>
+          <AppButton icon="i-tabler-plus" size="lg" class="shrink-0 rounded-full" @click="openKeyForm()">{{ t('ws.keys.create') }}</AppButton>
         </div>
-        <p class="mt-4 text-xs leading-relaxed text-[var(--ui-text-muted)]">Use a separate key for each app. Keep your keys private and out of public code.</p>
+        <p class="mt-4 text-xs leading-relaxed text-[var(--ui-text-muted)]">{{ t('ws.keys.hint') }}</p>
       </AppCard>
       <div class="flex flex-wrap items-center justify-between gap-2">
-        <h2 id="keys-title" class="flex items-center gap-2 text-sm font-semibold"><UIcon name="i-tabler-key" class="size-4 text-[var(--ui-text-muted)]" aria-hidden="true" /> Your keys</h2>
-        <span class="rounded-full bg-[var(--ui-bg-muted)] px-3 py-1 text-xs tabular-nums text-[var(--ui-text-muted)]">{{ keysLoading ? '—' : `${filteredKeys.length} of ${keys.length}` }} keys</span>
+        <h2 id="keys-title" class="flex items-center gap-2 text-sm font-semibold"><UIcon name="i-tabler-key" class="size-4 text-[var(--ui-text-muted)]" aria-hidden="true" /> {{ t('ws.keys.yourKeys') }}</h2>
+        <span class="rounded-full bg-[var(--ui-bg-muted)] px-3 py-1 text-xs tabular-nums text-[var(--ui-text-muted)]">{{ keysLoading ? t('ws.keys.countLoading') : t('ws.keys.count', { shown: filteredKeys.length, total: keys.length }) }}</span>
       </div>
-      <div v-if="keysLoading" class="grid gap-5 sm:grid-cols-2 xl:grid-cols-3" aria-label="Loading keys" aria-busy="true">
+      <div v-if="keysLoading" class="grid gap-5 sm:grid-cols-2 xl:grid-cols-3" :aria-label="t('ws.keys.loadingAria')" aria-busy="true">
         <USkeleton v-for="index in 3" :key="index" class="h-56 rounded-3xl" />
       </div>
       <div v-else-if="filteredKeys.length" class="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
         <AppCard v-for="key in filteredKeys" :key="key.api_key" class="finance-panel key-card min-w-0" :ui="{ body: 'flex h-full flex-col p-5 sm:p-6' }">
           <span class="finance-icon flex size-10 items-center justify-center rounded-full"><UIcon name="i-tabler-key" class="size-5" aria-hidden="true" /></span>
-          <h3 class="mt-3 break-words text-base font-semibold tracking-tight text-[var(--ui-text-highlighted)]">{{ key.display_name || 'Unnamed key' }}</h3>
+          <h3 class="mt-3 break-words text-base font-semibold tracking-tight text-[var(--ui-text-highlighted)]">{{ key.display_name || t('ws.keys.unnamed') }}</h3>
           <div class="mt-1 flex min-w-0 items-center gap-2">
             <code class="min-w-0 break-all text-xs text-[var(--ui-text-muted)]">{{ maskKey(key.api_key) }}</code>
-            <AppButton type="button" size="xs" class="shrink-0" color="neutral" variant="ghost" icon="i-tabler-copy" :aria-label="`Copy ${maskKey(key.api_key)}`" @click="copyKey(key.api_key)" />
+            <AppButton type="button" size="xs" class="shrink-0" color="neutral" variant="ghost" icon="i-tabler-copy" :aria-label="t('ws.keys.copyAria', { key: maskKey(key.api_key) })" @click="copyKey(key.api_key)" />
           </div>
           <dl class="my-4 space-y-2 text-xs">
-            <div class="flex flex-wrap justify-between gap-2"><dt class="text-[var(--ui-text-muted)]">Created</dt><dd>{{ formatDate(key.created_at) }}</dd></div>
-            <div class="flex flex-wrap justify-between gap-2"><dt class="text-[var(--ui-text-muted)]">Updated</dt><dd>{{ formatDate(key.updated_at || key.created_at) }}</dd></div>
+            <div class="flex flex-wrap justify-between gap-2"><dt class="text-[var(--ui-text-muted)]">{{ t('ws.keys.created') }}</dt><dd>{{ formatDate(key.created_at) }}</dd></div>
+            <div class="flex flex-wrap justify-between gap-2"><dt class="text-[var(--ui-text-muted)]">{{ t('ws.keys.updated') }}</dt><dd>{{ formatDate(key.updated_at || key.created_at) }}</dd></div>
           </dl>
           <div class="mt-auto flex items-center justify-between gap-3 border-t border-[var(--ui-border)] pt-3">
-            <AppButton color="primary" variant="ghost" size="sm" class="rounded-full" icon="i-tabler-pencil" :aria-label="`Edit ${key.display_name || 'key'}`" @click="openKeyForm(key)">Edit key</AppButton>
-            <AppButton color="error" variant="ghost" size="sm" class="rounded-full" icon="i-tabler-trash" :aria-label="`Delete ${key.display_name || 'key'}`" @click="confirmKeyDelete(key)">Delete</AppButton>
+            <AppButton color="primary" variant="ghost" size="sm" class="rounded-full" icon="i-tabler-pencil" :aria-label="t('ws.keys.editAria', { name: key.display_name || t('ws.keys.keyFallback') })" @click="openKeyForm(key)">{{ t('ws.keys.edit') }}</AppButton>
+            <AppButton color="error" variant="ghost" size="sm" class="rounded-full" icon="i-tabler-trash" :aria-label="t('ws.keys.deleteAria', { name: key.display_name || t('ws.keys.keyFallback') })" @click="confirmKeyDelete(key)">{{ t('ws.keys.delete') }}</AppButton>
           </div>
         </AppCard>
       </div>
       <div v-else class="flex flex-col items-center px-5 py-12 text-center">
         <span class="finance-icon mb-4 flex size-12 items-center justify-center rounded-2xl"><UIcon :name="keys.length ? 'i-tabler-search' : 'i-tabler-key'" class="size-6" aria-hidden="true" /></span>
-        <h2 class="text-sm font-semibold">{{ keys.length ? 'No matching keys' : 'Connect your first app' }}</h2>
-        <p class="mt-2 max-w-sm text-sm text-[var(--ui-text-muted)]">{{ keys.length ? 'Try another name or key value to find what you need.' : 'Create a client access key to authenticate requests to your CPA endpoint.' }}</p>
-        <AppButton v-if="keys.length" class="mt-5 rounded-full" color="neutral" variant="soft" size="sm" @click="keySearch = ''">Clear search</AppButton>
+        <h2 class="text-sm font-semibold">{{ keys.length ? t('ws.keys.noMatch') : t('ws.keys.emptyTitle') }}</h2>
+        <p class="mt-2 max-w-sm text-sm text-[var(--ui-text-muted)]">{{ keys.length ? t('ws.keys.noMatchDetail') : t('ws.keys.emptyDetail') }}</p>
+        <AppButton v-if="keys.length" class="mt-5 rounded-full" color="neutral" variant="soft" size="sm" @click="keySearch = ''">{{ t('ws.keys.clearSearch') }}</AppButton>
       </div>
 
     </section>
@@ -245,39 +245,39 @@
     <section v-if="section === 'settings'" class="workspace-settings min-w-0 space-y-5" aria-labelledby="security-title">
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 id="security-title" class="text-base font-semibold tracking-tight">Sign-in & recovery</h1>
-          <p class="mt-1 text-xs text-[var(--ui-text-muted)]">Manage your password, recovery email, and secure sign-in methods.</p>
+          <h1 id="security-title" class="text-base font-semibold tracking-tight">{{ t('ws.settings.title') }}</h1>
+          <p class="mt-1 text-xs text-[var(--ui-text-muted)]">{{ t('ws.settings.subtitle') }}</p>
         </div>
-        <AppButton to="/app/profile" color="neutral" variant="ghost" size="sm" class="rounded-full" trailing-icon="i-tabler-arrow-right">View profile</AppButton>
+        <AppButton to="/app/profile" color="neutral" variant="ghost" size="sm" class="rounded-full" trailing-icon="i-tabler-arrow-right">{{ t('ws.settings.viewProfile') }}</AppButton>
       </div>
       <div class="settings-layout">
-        <nav class="settings-nav" aria-label="Security sections">
+        <nav class="settings-nav" :aria-label="t('ws.settings.navAria')">
           <a v-for="item in settingsSections" :key="item.id" :href="`#${item.id}`" class="settings-nav-link" @click.prevent="scrollToSection(item.id)">
             <UIcon :name="item.icon" class="size-4 shrink-0" aria-hidden="true" />
             <span class="min-w-0 flex-1 truncate">{{ item.label }}</span>
-            <span class="settings-nav-dot" :class="item.done ? 'settings-nav-dot--on' : ''" :title="item.done ? 'Configured' : 'Not configured'" />
+            <span class="settings-nav-dot" :class="item.done ? 'settings-nav-dot--on' : ''" :title="item.done ? t('ws.settings.configured') : t('ws.settings.notConfigured')" />
           </a>
         </nav>
         <div class="min-w-0 space-y-4">
         <AppCard id="settings-password" class="settings-panel min-w-0">
-          <template #header><div class="flex items-start gap-3"><span class="settings-icon flex size-9 shrink-0 items-center justify-center rounded-xl"><UIcon name="i-tabler-lock" class="size-5" aria-hidden="true" /></span><div><h2 class="text-sm font-semibold">Password</h2><p class="mt-1 text-xs leading-relaxed text-[var(--ui-text-muted)]">Changing your password refreshes the active session.</p></div></div></template>
+          <template #header><div class="flex items-start gap-3"><span class="settings-icon flex size-9 shrink-0 items-center justify-center rounded-xl"><UIcon name="i-tabler-lock" class="size-5" aria-hidden="true" /></span><div><h2 class="text-sm font-semibold">{{ t('ws.settings.password') }}</h2><p class="mt-1 text-xs leading-relaxed text-[var(--ui-text-muted)]">{{ t('ws.settings.passwordDetail') }}</p></div></div></template>
           <form class="space-y-4" @submit.prevent="changePassword">
             <UAlert v-if="passwordError" color="error" variant="subtle" :description="passwordError" />
-            <UFormField label="New password" required><UInput v-model="passwordForm.password" type="password" autocomplete="new-password" class="w-full" /></UFormField>
-            <UFormField label="Confirm password" required><UInput v-model="passwordForm.confirm" type="password" autocomplete="new-password" class="w-full" /></UFormField>
-            <div class="flex justify-end"><AppButton type="submit" :loading="passwordSaving">Change password</AppButton></div>
+            <UFormField :label="t('ws.settings.newPassword')" required><UInput v-model="passwordForm.password" type="password" autocomplete="new-password" class="w-full" /></UFormField>
+            <UFormField :label="t('ws.settings.confirmPassword')" required><UInput v-model="passwordForm.confirm" type="password" autocomplete="new-password" class="w-full" /></UFormField>
+            <div class="flex justify-end"><AppButton type="submit" :loading="passwordSaving">{{ t('ws.settings.changePassword') }}</AppButton></div>
           </form>
         </AppCard>
 
         <AppCard id="settings-email" class="settings-panel min-w-0">
-          <template #header><div class="flex items-start gap-3"><span class="settings-icon flex size-9 shrink-0 items-center justify-center rounded-xl"><UIcon name="i-tabler-mail" class="size-5" aria-hidden="true" /></span><div><h2 class="text-sm font-semibold">Recovery email</h2><p class="mt-1 text-xs leading-relaxed text-[var(--ui-text-muted)]">{{ emailDetail }}</p></div></div></template>
+          <template #header><div class="flex items-start gap-3"><span class="settings-icon flex size-9 shrink-0 items-center justify-center rounded-xl"><UIcon name="i-tabler-mail" class="size-5" aria-hidden="true" /></span><div><h2 class="text-sm font-semibold">{{ t('ws.settings.recoveryEmail') }}</h2><p class="mt-1 text-xs leading-relaxed text-[var(--ui-text-muted)]">{{ emailDetail }}</p></div></div></template>
           <form v-if="capabilities.email_verification !== false" class="space-y-4" @submit.prevent="updateEmail">
             <UAlert v-if="emailError" color="error" variant="subtle" :description="emailError" />
-            <UFormField label="Email address" required><UInput v-model="email" type="email" autocomplete="email" class="w-full" :disabled="capabilities.email_verification === false" /></UFormField>
+            <UFormField :label="t('ws.settings.emailAddress')" required><UInput v-model="email" type="email" autocomplete="email" class="w-full" :disabled="capabilities.email_verification === false" /></UFormField>
             <div class="flex flex-wrap justify-end gap-2">
-              <AppButton v-if="user?.email_status.configured" type="button" color="error" variant="soft" :loading="emailSaving" @click="clearEmail">Remove email</AppButton>
-              <AppButton v-if="user?.email_status.configured && !user?.email_status.verified" type="button" color="neutral" variant="outline" :loading="emailSaving" @click="requestVerification">Resend verification</AppButton>
-              <AppButton type="submit" :loading="emailSaving" :disabled="capabilities.email_verification === false">Save and verify</AppButton>
+              <AppButton v-if="user?.email_status.configured" type="button" color="error" variant="soft" :loading="emailSaving" @click="clearEmail">{{ t('ws.settings.removeEmail') }}</AppButton>
+              <AppButton v-if="user?.email_status.configured && !user?.email_status.verified" type="button" color="neutral" variant="outline" :loading="emailSaving" @click="requestVerification">{{ t('ws.settings.resendVerification') }}</AppButton>
+              <AppButton type="submit" :loading="emailSaving" :disabled="capabilities.email_verification === false">{{ t('ws.settings.saveVerify') }}</AppButton>
             </div>
           </form>
         </AppCard>
@@ -285,85 +285,85 @@
         <AppCard id="settings-totp" class="settings-panel min-w-0">
           <template #header>
             <div class="flex flex-wrap items-start justify-between gap-3">
-              <div class="flex min-w-0 flex-1 items-start gap-3"><span class="settings-icon flex size-9 shrink-0 items-center justify-center rounded-xl"><UIcon name="i-tabler-device-mobile" class="size-5" aria-hidden="true" /></span><div class="min-w-0"><h2 class="text-sm font-semibold">Authenticator app</h2><p class="mt-1 text-xs leading-relaxed text-[var(--ui-text-muted)]">{{ user?.totp_enabled ? 'TOTP is enabled for this account.' : 'Add a time-based one-time password.' }}</p></div></div>
-              <UBadge :color="user?.totp_enabled ? 'success' : 'neutral'" variant="subtle">{{ user?.totp_enabled ? 'Enabled' : 'Not enabled' }}</UBadge>
+              <div class="flex min-w-0 flex-1 items-start gap-3"><span class="settings-icon flex size-9 shrink-0 items-center justify-center rounded-xl"><UIcon name="i-tabler-device-mobile" class="size-5" aria-hidden="true" /></span><div class="min-w-0"><h2 class="text-sm font-semibold">{{ t('ws.settings.authenticator') }}</h2><p class="mt-1 text-xs leading-relaxed text-[var(--ui-text-muted)]">{{ user?.totp_enabled ? t('ws.settings.totpOn') : t('ws.settings.totpOff') }}</p></div></div>
+              <UBadge :color="user?.totp_enabled ? 'success' : 'neutral'" variant="subtle">{{ user?.totp_enabled ? t('ws.settings.enabled') : t('ws.settings.notEnabled') }}</UBadge>
             </div>
           </template>
           <div class="space-y-4">
             <UAlert v-if="totpError" color="error" variant="subtle" :description="totpError" />
             <div class="flex flex-wrap gap-2">
-              <AppButton color="primary" variant="soft" :loading="totpLoading" @click="showTOTP(false)">{{ user?.totp_enabled ? 'View setup' : 'Set up authenticator' }}</AppButton>
-              <AppButton v-if="user?.totp_enabled || totpSetup" color="neutral" variant="ghost" :loading="totpLoading" @click="showTOTP(true)">Regenerate setup</AppButton>
-              <AppButton v-if="user?.totp_enabled" color="error" variant="soft" @click="openTOTPDelete">Disable TOTP</AppButton>
+              <AppButton color="primary" variant="soft" :loading="totpLoading" @click="showTOTP(false)">{{ user?.totp_enabled ? t('ws.settings.viewSetup') : t('ws.settings.setupAuthenticator') }}</AppButton>
+              <AppButton v-if="user?.totp_enabled || totpSetup" color="neutral" variant="ghost" :loading="totpLoading" @click="showTOTP(true)">{{ t('ws.settings.regenerate') }}</AppButton>
+              <AppButton v-if="user?.totp_enabled" color="error" variant="soft" @click="openTOTPDelete">{{ t('ws.settings.disableTotp') }}</AppButton>
             </div>
             <form v-if="totpSetup" class="settings-setup min-w-0 space-y-4 rounded-xl border p-4" @submit.prevent="bindTOTP">
-              <p class="text-sm text-[var(--ui-text-muted)]">Open the setup link in a compatible authenticator or enter the raw secret manually, then confirm a current code.</p>
+              <p class="text-sm text-[var(--ui-text-muted)]">{{ t('ws.settings.setupHelp') }}</p>
               <div>
-                <p class="text-xs font-medium text-[var(--ui-text-dimmed)]">Raw secret</p>
-                <div class="mt-1 flex items-start gap-2"><code class="min-w-0 flex-1 break-all text-sm font-semibold">{{ totpSetup.secret }}</code><AppButton type="button" icon="i-tabler-clipboard" color="neutral" variant="ghost" size="xs" aria-label="Copy TOTP secret" @click="copyText(totpSetup.secret, 'TOTP secret copied')" /></div>
+                <p class="text-xs font-medium text-[var(--ui-text-dimmed)]">{{ t('ws.settings.rawSecret') }}</p>
+                <div class="mt-1 flex items-start gap-2"><code class="min-w-0 flex-1 break-all text-sm font-semibold">{{ totpSetup.secret }}</code><AppButton type="button" icon="i-tabler-clipboard" color="neutral" variant="ghost" size="xs" :aria-label="t('ws.settings.copySecret')" @click="copyText(totpSetup.secret, t('ws.settings.secretCopied'))" /></div>
               </div>
               <div v-if="totpSetup.otp_auth_url">
-                <p class="text-xs font-medium text-[var(--ui-text-dimmed)]">Authenticator setup link</p>
+                <p class="text-xs font-medium text-[var(--ui-text-dimmed)]">{{ t('ws.settings.setupLink') }}</p>
                 <a :href="totpSetup.otp_auth_url" class="mt-1 block break-all text-sm text-primary-500 underline underline-offset-2">{{ totpSetup.otp_auth_url }}</a>
-                <p class="mt-1 text-xs text-[var(--ui-text-dimmed)]">No QR encoder is bundled, so the standard otpauth link is provided directly.</p>
+                <p class="mt-1 text-xs text-[var(--ui-text-dimmed)]">{{ t('ws.settings.noQr') }}</p>
               </div>
-              <UFormField label="Verification code" required><UInput v-model="totpCode" class="w-full font-mono tracking-[0.3em]" inputmode="numeric" autocomplete="one-time-code" /></UFormField>
-              <div class="flex justify-end"><AppButton type="submit" :loading="totpSaving">{{ user?.totp_enabled ? 'Confirm regenerated setup' : 'Enable TOTP' }}</AppButton></div>
+              <UFormField :label="t('ws.settings.verificationCode')" required><UInput v-model="totpCode" class="w-full font-mono tracking-[0.3em]" inputmode="numeric" autocomplete="one-time-code" /></UFormField>
+              <div class="flex justify-end"><AppButton type="submit" :loading="totpSaving">{{ user?.totp_enabled ? t('ws.settings.confirmRegenerated') : t('ws.settings.enableTotp') }}</AppButton></div>
             </form>
           </div>
         </AppCard>
 
         <AppCard id="settings-passkeys" class="settings-panel settings-passkeys min-w-0 overflow-hidden" :ui="{ body: 'p-0' }">
-          <template #header><div class="flex items-start gap-3"><span class="settings-icon flex size-9 shrink-0 items-center justify-center rounded-xl"><UIcon name="i-tabler-fingerprint" class="size-5" aria-hidden="true" /></span><div><h2 class="text-sm font-semibold">Passkeys</h2><p class="mt-1 text-xs leading-relaxed text-[var(--ui-text-muted)]">Use a device authenticator or hardware security key.</p></div></div></template>
+          <template #header><div class="flex items-start gap-3"><span class="settings-icon flex size-9 shrink-0 items-center justify-center rounded-xl"><UIcon name="i-tabler-fingerprint" class="size-5" aria-hidden="true" /></span><div><h2 class="text-sm font-semibold">{{ t('ws.settings.passkeys') }}</h2><p class="mt-1 text-xs leading-relaxed text-[var(--ui-text-muted)]">{{ t('ws.settings.passkeysDetail') }}</p></div></div></template>
           <div class="settings-passkey-form">
             <form class="flex flex-col gap-3 sm:flex-row sm:items-end" @submit.prevent="addPasskey">
-              <UFormField label="Passkey name" hint="Optional" class="min-w-0 flex-1"><UInput v-model="passkeyName" class="w-full" placeholder="MacBook Touch ID" /></UFormField>
-              <AppButton type="submit" icon="i-tabler-fingerprint" :loading="passkeySaving">Add passkey</AppButton>
+              <UFormField :label="t('ws.settings.passkeyName')" :hint="t('ws.settings.optional')" class="min-w-0 flex-1"><UInput v-model="passkeyName" class="w-full" placeholder="MacBook Touch ID" /></UFormField>
+              <AppButton type="submit" icon="i-tabler-fingerprint" :loading="passkeySaving">{{ t('ws.settings.addPasskey') }}</AppButton>
             </form>
             <UAlert v-if="passkeyError" class="mt-4" color="error" variant="subtle" :description="passkeyError" />
           </div>
           <div v-if="user?.passkeys?.length" class="overflow-x-auto">
-            <AppTable :data="user?.passkeys || []" :columns="passkeyColumns" empty="No passkeys registered." class="min-w-[560px]">
-              <template #empty><div class="flex flex-col items-center gap-2 py-6 text-center"><span class="settings-icon mb-1 flex size-10 items-center justify-center rounded-xl"><UIcon name="i-tabler-fingerprint" class="size-5" aria-hidden="true" /></span><p class="text-sm font-medium text-[var(--ui-text-highlighted)]">No passkeys yet</p><p class="max-w-xs text-xs leading-relaxed text-[var(--ui-text-muted)]">Add a passkey above to sign in with your device or a hardware security key.</p></div></template>
-              <template #name-cell="{ row }"><span class="font-medium">{{ row.original.name || 'Unnamed passkey' }}</span></template>
+            <AppTable :data="user?.passkeys || []" :columns="passkeyColumns" :empty="t('ws.settings.noPasskeysRegistered')" class="min-w-[560px]">
+              <template #empty><div class="flex flex-col items-center gap-2 py-6 text-center"><span class="settings-icon mb-1 flex size-10 items-center justify-center rounded-xl"><UIcon name="i-tabler-fingerprint" class="size-5" aria-hidden="true" /></span><p class="text-sm font-medium text-[var(--ui-text-highlighted)]">{{ t('ws.settings.noPasskeysTitle') }}</p><p class="max-w-xs text-xs leading-relaxed text-[var(--ui-text-muted)]">{{ t('ws.settings.noPasskeysHint') }}</p></div></template>
+              <template #name-cell="{ row }"><span class="font-medium">{{ row.original.name || t('ws.settings.unnamedPasskey') }}</span></template>
               <template #created_at-cell="{ row }">{{ formatDate(row.original.created_at) }}</template>
               <template #updated_at-cell="{ row }">{{ formatDate(row.original.updated_at) }}</template>
               <template #actions-cell="{ row }">
-                <div class="flex justify-end"><AppButton icon="i-tabler-trash" color="error" variant="ghost" size="sm" :aria-label="`Delete ${row.original.name || 'passkey'}`" @click="confirmPasskeyDelete(row.original)" /></div>
+                <div class="flex justify-end"><AppButton icon="i-tabler-trash" color="error" variant="ghost" size="sm" :aria-label="t('ws.settings.deleteAria', { name: row.original.name || t('ws.settings.passkeyFallback') })" @click="confirmPasskeyDelete(row.original)" /></div>
               </template>
             </AppTable>
           </div>
-          <p v-else class="settings-passkey-empty text-xs text-[var(--ui-text-muted)]">No passkeys yet. Add one to sign in with your device.</p>
+          <p v-else class="settings-passkey-empty text-xs text-[var(--ui-text-muted)]">{{ t('ws.settings.noPasskeysShort') }}</p>
         </AppCard>
         </div>
       </div>
     </section>
 
-    <AppModal v-model:open="keyFormOpen" :title="editingKey ? 'Edit client access key' : 'Create client access key'" :description="editingKey ? 'Rename the key or change its value. Existing scopes remain unchanged.' : 'Give the key a name; leave its value blank to generate a secure one.'">
+    <AppModal v-model:open="keyFormOpen" :title="editingKey ? t('ws.keys.formEditTitle') : t('ws.keys.formCreateTitle')" :description="editingKey ? t('ws.keys.formEditDesc') : t('ws.keys.formCreateDesc')">
       <template #body>
         <form class="space-y-5" @submit.prevent="saveKey">
-          <div class="flex items-start gap-3 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] p-4"><UIcon name="i-tabler-shield-lock" class="mt-0.5 size-5 shrink-0 text-[var(--ui-primary)]" aria-hidden="true" /><p class="text-xs leading-relaxed text-[var(--ui-text-muted)]">Use a descriptive name to identify this client. Keep the key private; anyone with its value can use it to authenticate requests.</p></div>
+          <div class="flex items-start gap-3 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] p-4"><UIcon name="i-tabler-shield-lock" class="mt-0.5 size-5 shrink-0 text-[var(--ui-primary)]" aria-hidden="true" /><p class="text-xs leading-relaxed text-[var(--ui-text-muted)]">{{ t('ws.keys.formNotice') }}</p></div>
           <UAlert v-if="keyFormError" color="error" variant="subtle" :description="keyFormError" />
-          <UFormField label="Name" hint="Optional; up to 128 characters"><UInput v-model="keyName" icon="i-tabler-tag" class="w-full" maxlength="128" placeholder="e.g. My laptop" /></UFormField>
-          <UFormField label="Key" :hint="editingKey ? 'Leave unchanged to keep this key' : 'Optional; blank is generated by the server'">
+          <UFormField :label="t('ws.keys.name')" :hint="t('ws.keys.nameHint')"><UInput v-model="keyName" icon="i-tabler-tag" class="w-full" maxlength="128" :placeholder="t('ws.keys.namePlaceholder')" /></UFormField>
+          <UFormField :label="t('ws.keys.key')" :hint="editingKey ? t('ws.keys.keyHintEdit') : t('ws.keys.keyHintCreate')">
             <UInput v-model="keyValue" icon="i-tabler-key" class="w-full font-mono" autocomplete="off" />
           </UFormField>
 
-          <div class="flex justify-end gap-2"><AppButton type="button" color="neutral" variant="ghost" @click="closeKeyForm">Cancel</AppButton><AppButton type="submit" :loading="keySaving">{{ editingKey ? 'Save key' : 'Create key' }}</AppButton></div>
+          <div class="flex justify-end gap-2"><AppButton type="button" color="neutral" variant="ghost" @click="closeKeyForm">{{ t('common.cancel') }}</AppButton><AppButton type="submit" :loading="keySaving">{{ editingKey ? t('ws.keys.save') : t('ws.keys.create') }}</AppButton></div>
         </form>
       </template>
     </AppModal>
 
-    <AppModal v-model:open="keyDeleteOpen" title="Delete client access key?" description="Clients using this key will immediately lose access.">
-      <template #body><div class="space-y-5"><p class="break-all text-sm">Delete <code>{{ keyDeleteTarget ? maskKey(keyDeleteTarget.api_key) : '' }}</code>?</p><div class="flex justify-end gap-2"><AppButton color="neutral" variant="ghost" :disabled="keyDeleting" @click="closeKeyDelete">Cancel</AppButton><AppButton color="error" icon="i-tabler-trash" :loading="keyDeleting" @click="deleteKey">Delete key</AppButton></div></div></template>
+    <AppModal v-model:open="keyDeleteOpen" :title="t('ws.keys.deleteTitle')" :description="t('ws.keys.deleteDesc')">
+      <template #body><div class="space-y-5"><p class="break-all text-sm">{{ t('ws.keys.deletePrompt') }} <code>{{ keyDeleteTarget ? maskKey(keyDeleteTarget.api_key) : '' }}</code>?</p><div class="flex justify-end gap-2"><AppButton color="neutral" variant="ghost" :disabled="keyDeleting" @click="closeKeyDelete">{{ t('common.cancel') }}</AppButton><AppButton color="error" icon="i-tabler-trash" :loading="keyDeleting" @click="deleteKey">{{ t('ws.keys.deleteKey') }}</AppButton></div></div></template>
     </AppModal>
 
-    <AppModal v-model:open="totpDeleteOpen" title="Disable authenticator app?" description="Your account will no longer require authenticator codes after this change.">
-      <template #body><div class="flex justify-end gap-2"><AppButton color="neutral" variant="ghost" :disabled="totpDeleting" @click="closeTOTPDelete">Cancel</AppButton><AppButton color="error" :loading="totpDeleting" @click="deleteTOTP">Disable TOTP</AppButton></div></template>
+    <AppModal v-model:open="totpDeleteOpen" :title="t('ws.settings.totpDeleteTitle')" :description="t('ws.settings.totpDeleteDesc')">
+      <template #body><div class="flex justify-end gap-2"><AppButton color="neutral" variant="ghost" :disabled="totpDeleting" @click="closeTOTPDelete">{{ t('common.cancel') }}</AppButton><AppButton color="error" :loading="totpDeleting" @click="deleteTOTP">{{ t('ws.settings.disableTotp') }}</AppButton></div></template>
     </AppModal>
 
-    <AppModal v-model:open="passkeyDeleteOpen" title="Delete passkey?" description="The selected authenticator will no longer be accepted for this account.">
-      <template #body><div class="space-y-5"><p class="text-sm">Delete {{ passkeyDeleteTarget?.name || 'this passkey' }}?</p><div class="flex justify-end gap-2"><AppButton color="neutral" variant="ghost" :disabled="passkeyDeleting" @click="closePasskeyDelete">Cancel</AppButton><AppButton color="error" :loading="passkeyDeleting" @click="deletePasskey">Delete passkey</AppButton></div></div></template>
+    <AppModal v-model:open="passkeyDeleteOpen" :title="t('ws.settings.passkeyDeleteTitle')" :description="t('ws.settings.passkeyDeleteDesc')">
+      <template #body><div class="space-y-5"><p class="text-sm">{{ t('ws.settings.passkeyDeletePrompt', { name: passkeyDeleteTarget?.name || t('ws.settings.thisPasskey') }) }}</p><div class="flex justify-end gap-2"><AppButton color="neutral" variant="ghost" :disabled="passkeyDeleting" @click="closePasskeyDelete">{{ t('common.cancel') }}</AppButton><AppButton color="error" :loading="passkeyDeleting" @click="deletePasskey">{{ t('ws.settings.deletePasskey') }}</AppButton></div></div></template>
     </AppModal>
   </div>
 </template>
@@ -390,6 +390,7 @@ type PeriodLimitsStatus = { windows?: PeriodWindowStatus[] }
 const dashboardMetricIcons = ['i-tabler-calendar-stats', 'i-tabler-sun', 'i-tabler-calendar-month', 'i-tabler-activity']
 
 const toast = useToast()
+const { t, intlLocale } = usePortalI18n()
 const { currentUser: user, fetchAPI, loadCurrentUser, saveSession, capabilities, serverInfo, loadCapabilities, registerPasskey } = useUserApi()
 
 const curlExample = computed(() => {
@@ -417,7 +418,7 @@ const filteredKeys = computed(() => {
   const query = keySearch.value.trim().toLowerCase()
   if (!query) return keys.value
   return keys.value.filter(key =>
-    (key.display_name || 'Unnamed key').toLowerCase().includes(query) ||
+    (key.display_name || t('ws.keys.unnamed')).toLowerCase().includes(query) ||
     key.api_key.toLowerCase().includes(query)
   )
 })
@@ -433,12 +434,12 @@ const periodLimits = useWorkspaceState<PeriodLimitsStatus | null>('user:workspac
 
 let billingRequest = 0
 
-const rangeOptions = [
-  { label: 'Today', value: 'today' },
-  { label: 'Last 7 days', value: '7d' },
-  { label: 'Last 30 days', value: '30d' },
-  { label: 'Custom', value: 'custom' }
-]
+const rangeOptions = computed(() => [
+  { label: t('ws.range.today'), value: 'today' },
+  { label: t('ws.range.7d'), value: '7d' },
+  { label: t('ws.range.30d'), value: '30d' },
+  { label: t('ws.range.custom'), value: 'custom' }
+])
 const pageSizeOptions = [5, 20, 50, 100].map(value => ({ label: String(value), value }))
 const rangePreset = ref('today')
 const rangeFrom = ref('')
@@ -483,37 +484,37 @@ const passkeyDeleteTarget = ref<UserPasskey | null>(null)
 const passkeyDeleting = useWorkspaceState('user:workspace:passkey-deleting', () => false)
 
 
-const passkeyColumns = [
-  { accessorKey: 'name', header: 'Name' },
-  { accessorKey: 'created_at', header: 'Created' },
-  { accessorKey: 'updated_at', header: 'Updated' },
-  { id: 'actions', header: 'Actions', meta: { class: { th: 'text-right', td: 'text-right' } } }
-]
+const passkeyColumns = computed(() => [
+  { accessorKey: 'name', header: t('ws.settings.col.name') },
+  { accessorKey: 'created_at', header: t('ws.settings.col.created') },
+  { accessorKey: 'updated_at', header: t('ws.settings.col.updated') },
+  { id: 'actions', header: t('ws.settings.col.actions'), meta: { class: { th: 'text-right', td: 'text-right' } } }
+])
 
-const chargeColumns = [
-  { accessorKey: 'created_at', header: 'Time' },
-  { accessorKey: 'provider', header: 'Provider' },
-  { accessorKey: 'model', header: 'Model' },
-  { accessorKey: 'input_tokens', header: 'Input tokens' },
-  { accessorKey: 'output_tokens', header: 'Output tokens' },
-  { accessorKey: 'amount', header: 'Charge' },
-  { accessorKey: 'balance_after', header: 'Balance after' }
-]
+const chargeColumns = computed(() => [
+  { accessorKey: 'created_at', header: t('ws.billing.col.time') },
+  { accessorKey: 'provider', header: t('ws.billing.col.provider') },
+  { accessorKey: 'model', header: t('ws.billing.col.model') },
+  { accessorKey: 'input_tokens', header: t('ws.billing.col.inputTokens') },
+  { accessorKey: 'output_tokens', header: t('ws.billing.col.outputTokens') },
+  { accessorKey: 'amount', header: t('ws.billing.col.charge') },
+  { accessorKey: 'balance_after', header: t('ws.billing.col.balanceAfter') }
+])
 
 
 
 const billingMetrics = computed(() => [
-  { label: 'Selected range', value: formatCredits(selectedOverview.value?.total_charge_amount ?? selectedOverview.value?.today_spend), detail: `${appliedRange.value.from} – ${appliedRange.value.to}` },
-  { label: 'Today', value: formatCredits(todayOverview.value?.total_charge_amount ?? todayOverview.value?.today_spend), detail: 'Credits charged today' },
-  { label: 'This month', value: formatCredits(monthOverview.value?.total_charge_amount ?? monthOverview.value?.month_spend), detail: 'Credits charged this calendar month' },
-  { label: 'Requests', value: formatNumber(selectedOverview.value?.request_count), detail: `${formatNumber(selectedOverview.value?.input_tokens)} input · ${formatNumber(selectedOverview.value?.output_tokens)} output tokens` }
+  { label: t('ws.billing.selectedRange'), value: formatCredits(selectedOverview.value?.total_charge_amount ?? selectedOverview.value?.today_spend), detail: `${appliedRange.value.from} – ${appliedRange.value.to}` },
+  { label: t('ws.billing.today'), value: formatCredits(todayOverview.value?.total_charge_amount ?? todayOverview.value?.today_spend), detail: t('ws.billing.todayDetail') },
+  { label: t('ws.billing.thisMonth'), value: formatCredits(monthOverview.value?.total_charge_amount ?? monthOverview.value?.month_spend), detail: t('ws.billing.monthDetail') },
+  { label: t('ws.dashboard.requests'), value: formatNumber(selectedOverview.value?.request_count), detail: t('ws.billing.tokensDetail', { input: formatNumber(selectedOverview.value?.input_tokens), output: formatNumber(selectedOverview.value?.output_tokens) }) }
 ])
 
 const settingsSections = computed(() => [
-  { id: 'settings-password', label: 'Password', icon: 'i-tabler-lock', done: true },
-  { id: 'settings-email', label: 'Recovery email', icon: 'i-tabler-mail', done: Boolean(user.value?.email_status?.verified) },
-  { id: 'settings-totp', label: 'Authenticator app', icon: 'i-tabler-device-mobile', done: Boolean(user.value?.totp_enabled) },
-  { id: 'settings-passkeys', label: 'Passkeys', icon: 'i-tabler-fingerprint', done: Boolean(user.value?.passkey_count) }
+  { id: 'settings-password', label: t('ws.settings.password'), icon: 'i-tabler-lock', done: true },
+  { id: 'settings-email', label: t('ws.settings.recoveryEmail'), icon: 'i-tabler-mail', done: Boolean(user.value?.email_status?.verified) },
+  { id: 'settings-totp', label: t('ws.settings.authenticator'), icon: 'i-tabler-device-mobile', done: Boolean(user.value?.totp_enabled) },
+  { id: 'settings-passkeys', label: t('ws.settings.passkeys'), icon: 'i-tabler-fingerprint', done: Boolean(user.value?.passkey_count) }
 ])
 function scrollToSection(id: string) {
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -521,29 +522,29 @@ function scrollToSection(id: string) {
 }
 
 const dashboardUsageMetrics = computed(() => [
-  { label: 'Credits spent', value: formatCredits(selectedOverview.value?.total_charge_amount ?? selectedOverview.value?.today_spend), icon: 'i-tabler-coins' },
-  { label: 'Requests', value: formatNumber(selectedOverview.value?.request_count), icon: 'i-tabler-arrows-exchange' },
-  { label: 'Input tokens', value: formatCompactNumber(selectedOverview.value?.input_tokens), icon: 'i-tabler-arrow-bar-to-right' },
-  { label: 'Output tokens', value: formatCompactNumber(selectedOverview.value?.output_tokens), icon: 'i-tabler-arrow-bar-to-left' }
+  { label: t('ws.dashboard.creditsSpent'), value: formatCredits(selectedOverview.value?.total_charge_amount ?? selectedOverview.value?.today_spend), icon: 'i-tabler-coins' },
+  { label: t('ws.dashboard.requests'), value: formatNumber(selectedOverview.value?.request_count), icon: 'i-tabler-arrows-exchange' },
+  { label: t('ws.dashboard.inputTokens'), value: formatCompactNumber(selectedOverview.value?.input_tokens), icon: 'i-tabler-arrow-bar-to-right' },
+  { label: t('ws.dashboard.outputTokens'), value: formatCompactNumber(selectedOverview.value?.output_tokens), icon: 'i-tabler-arrow-bar-to-left' }
 ])
 const limitAlert = computed(() => {
   const highest = Math.max(0, ...activePeriodWindows.value.map(periodWindowRatio))
   if (!activePeriodWindows.value.length) return null
-  if (highest >= 1) return { label: 'Limit reached', color: 'error' as const }
-  if (highest >= 0.8) return { label: 'Near limit', color: 'warning' as const }
+  if (highest >= 1) return { label: t('ws.dashboard.limitReached'), color: 'error' as const }
+  if (highest >= 0.8) return { label: t('ws.dashboard.nearLimit'), color: 'warning' as const }
   return null
 })
 const dashboardStatusLine = computed(() => {
-  if (limitAlert.value?.color === 'error') return 'A spending limit has been reached. Requests may be blocked until it resets.'
-  if (limitAlert.value) return 'You are close to a spending limit. Keep an eye on the reset time below.'
-  if (user.value && Number(user.value.credits) <= 0) return 'Your balance is empty. Top up to keep sending requests.'
-  return 'Everything you need to start sending requests is right here.'
+  if (limitAlert.value?.color === 'error') return t('ws.dashboard.statusReached')
+  if (limitAlert.value) return t('ws.dashboard.statusNear')
+  if (user.value && Number(user.value.credits) <= 0) return t('ws.dashboard.statusEmpty')
+  return t('ws.dashboard.statusReady')
 })
 
 const emailDetail = computed(() => {
-  if (capabilities.value.email_verification === false) return 'Email recovery is not enabled on this Home server.'
-  if (!user.value?.email_status.configured) return 'No recovery email configured.'
-  return `${user.value.email_status.masked} · ${user.value.email_status.verified ? 'verified' : 'verification pending'}`
+  if (capabilities.value.email_verification === false) return t('ws.settings.emailDisabled')
+  if (!user.value?.email_status.configured) return t('ws.settings.noEmail')
+  return user.value.email_status.verified ? t('ws.settings.emailVerified', { email: user.value.email_status.masked }) : t('ws.settings.emailPending', { email: user.value.email_status.masked })
 })
 
 function presetRange(preset: string): BillingRange {
@@ -594,7 +595,7 @@ function normalizeKey(entry: unknown, index: number): WorkspaceKey | null {
   }
 }
 function errorMessage(error: any, fallback: string) { return error?.data?.message || error?.data?.error || error?.message || fallback }
-function periodWindowLabel(id: string) { return id === '5h' ? '5 hours' : id === '1d' ? '1 day' : id === '7d' ? '7 days' : id === '30d' ? '1 month' : id }
+function periodWindowLabel(id: string) { return id === '5h' ? t('ws.window.5h') : id === '1d' ? t('ws.window.1d') : id === '7d' ? t('ws.window.7d') : id === '30d' ? t('ws.window.30d') : id }
 function periodWindowRatio(window: PeriodWindowStatus) { const limit = Number(window.limit); return limit > 0 ? Math.max(0, Math.min(1, Number(window.used || 0) / limit)) : 1 }
 function periodWindowColor(window: PeriodWindowStatus) { const ratio = periodWindowRatio(window); return ratio >= 1 ? 'bg-red-500/10 text-red-600 dark:text-red-400' : ratio >= 0.8 ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' : 'bg-violet-500/10 text-violet-600 dark:text-violet-400' }
 function periodWindowBarColor(window: PeriodWindowStatus) { const ratio = periodWindowRatio(window); return ratio >= 1 ? 'bg-red-600 dark:bg-red-400' : ratio >= 0.8 ? 'bg-amber-600 dark:bg-amber-400' : 'bg-violet-600 dark:bg-violet-400' }
@@ -630,7 +631,7 @@ async function loadDashboardBilling() {
     selectedOverview.value = overviewValue(selectedResponse)
     monthOverview.value = overviewValue(monthResponse)
   } catch (error: any) {
-    billingError.value = errorMessage(error, 'Unable to load usage summary.')
+    billingError.value = errorMessage(error, t('ws.billing.loadSummaryFailed'))
   } finally {
     billingLoading.value = false
   }
@@ -659,7 +660,7 @@ async function loadBilling() {
     charges.value = Array.isArray(chargesResponse?.items) ? chargesResponse.items : Array.isArray(chargesResponse?.data) ? chargesResponse.data : []
     chargesTotal.value = Number(chargesResponse?.total) || 0
   } catch (error: any) {
-    if (request === billingRequest) billingError.value = errorMessage(error, 'Unable to load billing activity.')
+    if (request === billingRequest) billingError.value = errorMessage(error, t('ws.billing.loadFailed'))
   } finally {
     if (request === billingRequest) billingLoading.value = false
   }
@@ -675,7 +676,7 @@ async function loadWorkspace() {
   }
   const results = await Promise.allSettled(tasks)
   const failures = results.filter(result => result.status === 'rejected') as PromiseRejectedResult[]
-  if (failures.length) pageError.value = failures.map(result => errorMessage(result.reason, 'Unable to load workspace data.')).join(' · ')
+  if (failures.length) pageError.value = failures.map(result => errorMessage(result.reason, t('ws.loadFailed'))).join(' · ')
   email.value = ''
 }
 function selectRange(preset: string) {
@@ -690,7 +691,7 @@ function selectRange(preset: string) {
 }
 function applyBillingRange() {
   if (!rangeFrom.value || !rangeTo.value || rangeFrom.value > rangeTo.value) {
-    billingError.value = 'Choose valid From and To dates, with From on or before To.'
+    billingError.value = t('ws.billing.invalidRange')
     return
   }
   appliedRange.value = { from: rangeFrom.value, to: rangeTo.value }
@@ -726,11 +727,11 @@ async function saveKey() {
   const nextValue = keyValue.value.trim()
   const nextName = keyName.value.trim()
   if ([...nextName].length > 128) {
-    keyFormError.value = 'Name must be 128 characters or fewer.'
+    keyFormError.value = t('ws.keys.nameTooLong')
     return
   }
   if (editingKey.value && !nextValue) {
-    keyFormError.value = 'A non-empty key is required when editing.'
+    keyFormError.value = t('ws.keys.keyRequired')
     return
   }
   keySaving.value = true
@@ -746,9 +747,9 @@ async function saveKey() {
     }
     keyFormOpen.value = false
     await loadKeys()
-    toast.add({ title: editingKey.value ? 'Client key updated' : 'Client key created', color: 'success' })
+    toast.add({ title: editingKey.value ? t('ws.keys.updatedToast') : t('ws.keys.createdToast'), color: 'success' })
   } catch (error: any) {
-    keyFormError.value = errorMessage(error, 'Unable to save the client key.')
+    keyFormError.value = errorMessage(error, t('ws.keys.saveFailed'))
   } finally {
     keySaving.value = false
   }
@@ -767,9 +768,9 @@ async function deleteKey() {
     keyDeleteOpen.value = false
     keyDeleteTarget.value = null
     await loadKeys()
-    toast.add({ title: 'Client key deleted', color: 'success' })
+    toast.add({ title: t('ws.keys.deletedToast'), color: 'success' })
   } catch (error: any) {
-    toast.add({ title: 'Delete failed', description: errorMessage(error, 'Unable to delete the client key.'), color: 'error' })
+    toast.add({ title: t('ws.keys.deleteFailed'), description: errorMessage(error, t('ws.keys.deleteFailedDetail')), color: 'error' })
   } finally {
     keyDeleting.value = false
   }
@@ -777,17 +778,17 @@ async function deleteKey() {
 
 async function changePassword() {
   passwordError.value = ''
-  if (!passwordForm.password) return void (passwordError.value = 'Enter a new password.')
-  if (passwordForm.password !== passwordForm.confirm) return void (passwordError.value = 'Passwords do not match.')
+  if (!passwordForm.password) return void (passwordError.value = t('ws.settings.enterPassword'))
+  if (passwordForm.password !== passwordForm.confirm) return void (passwordError.value = t('ws.settings.passwordMismatch'))
   passwordSaving.value = true
   try {
     const session = await fetchAPI<UserSessionResponse>('/password', { method: 'POST', body: { new_password: passwordForm.password } })
     saveSession(session)
     passwordForm.password = ''
     passwordForm.confirm = ''
-    toast.add({ title: 'Password changed', color: 'success' })
+    toast.add({ title: t('ws.settings.passwordChanged'), color: 'success' })
   } catch (error: any) {
-    passwordError.value = errorMessage(error, 'Unable to change the password.')
+    passwordError.value = errorMessage(error, t('ws.settings.passwordFailed'))
   } finally {
     passwordSaving.value = false
   }
@@ -795,16 +796,16 @@ async function changePassword() {
 async function updateEmail() {
   emailError.value = ''
   const value = email.value.trim()
-  if (!value) return void (emailError.value = 'Enter a recovery email address.')
+  if (!value) return void (emailError.value = t('ws.settings.enterEmail'))
   emailSaving.value = true
   try {
     await fetchAPI('/email', { method: 'PUT', body: { email: value } })
     await fetchAPI('/email/verification', { method: 'POST', body: {} })
     await loadCurrentUser()
     email.value = ''
-    toast.add({ title: 'Recovery email saved', description: 'A verification email has been queued.', color: 'success' })
+    toast.add({ title: t('ws.settings.emailSaved'), description: t('ws.settings.emailQueued'), color: 'success' })
   } catch (error: any) {
-    emailError.value = errorMessage(error, 'Unable to update the recovery email.')
+    emailError.value = errorMessage(error, t('ws.settings.emailUpdateFailed'))
   } finally {
     emailSaving.value = false
   }
@@ -816,9 +817,9 @@ async function clearEmail() {
     await fetchAPI('/email', { method: 'DELETE', body: {} })
     await loadCurrentUser()
     email.value = ''
-    toast.add({ title: 'Recovery email removed', color: 'success' })
+    toast.add({ title: t('ws.settings.emailRemoved'), color: 'success' })
   } catch (error: any) {
-    emailError.value = errorMessage(error, 'Unable to remove the recovery email.')
+    emailError.value = errorMessage(error, t('ws.settings.emailRemoveFailed'))
   } finally {
     emailSaving.value = false
   }
@@ -828,9 +829,9 @@ async function requestVerification() {
   emailSaving.value = true
   try {
     await fetchAPI('/email/verification', { method: 'POST', body: {} })
-    toast.add({ title: 'Verification email queued', color: 'success' })
+    toast.add({ title: t('ws.settings.verificationQueued'), color: 'success' })
   } catch (error: any) {
-    emailError.value = errorMessage(error, 'Unable to request verification.')
+    emailError.value = errorMessage(error, t('ws.settings.verificationFailed'))
   } finally {
     emailSaving.value = false
   }
@@ -842,7 +843,7 @@ async function showTOTP(regenerate: boolean) {
     totpSetup.value = await fetchAPI<TOTPSetup>('/totp', { query: { issuer: 'AI48Hub', ...(regenerate ? { regenerate: true } : {}) } })
     totpCode.value = ''
   } catch (error: any) {
-    totpError.value = errorMessage(error, 'Unable to load TOTP setup.')
+    totpError.value = errorMessage(error, t('ws.settings.totpLoadFailed'))
   } finally {
     totpLoading.value = false
   }
@@ -850,16 +851,16 @@ async function showTOTP(regenerate: boolean) {
 async function bindTOTP() {
   if (!totpSetup.value) return
   totpError.value = ''
-  if (!totpCode.value.trim()) return void (totpError.value = 'Enter the current authenticator code.')
+  if (!totpCode.value.trim()) return void (totpError.value = t('ws.settings.enterCode'))
   totpSaving.value = true
   try {
     await fetchAPI('/totp', { method: 'POST', body: { secret: totpSetup.value.secret, issuer: totpSetup.value.issuer || 'AI48Hub', code: totpCode.value.trim() } })
     await loadCurrentUser()
     totpSetup.value = null
     totpCode.value = ''
-    toast.add({ title: 'Authenticator setup saved', color: 'success' })
+    toast.add({ title: t('ws.settings.totpSaved'), color: 'success' })
   } catch (error: any) {
-    totpError.value = errorMessage(error, 'Unable to save TOTP setup.')
+    totpError.value = errorMessage(error, t('ws.settings.totpSaveFailed'))
   } finally {
     totpSaving.value = false
   }
@@ -871,9 +872,9 @@ async function deleteTOTP() {
     await loadCurrentUser()
     totpSetup.value = null
     totpDeleteOpen.value = false
-    toast.add({ title: 'Authenticator disabled', color: 'success' })
+    toast.add({ title: t('ws.settings.totpDisabled'), color: 'success' })
   } catch (error: any) {
-    toast.add({ title: 'Unable to disable TOTP', description: errorMessage(error, 'Request failed.'), color: 'error' })
+    toast.add({ title: t('ws.settings.totpDisableFailed'), description: errorMessage(error, t('ws.requestFailed')), color: 'error' })
   } finally {
     totpDeleting.value = false
   }
@@ -884,9 +885,9 @@ async function addPasskey() {
   try {
     await registerPasskey(passkeyName.value.trim())
     passkeyName.value = ''
-    toast.add({ title: 'Passkey added', color: 'success' })
+    toast.add({ title: t('ws.settings.passkeyAdded'), color: 'success' })
   } catch (error: any) {
-    passkeyError.value = error?.name === 'NotAllowedError' ? 'Passkey registration was cancelled.' : errorMessage(error, 'Unable to add the passkey.')
+    passkeyError.value = error?.name === 'NotAllowedError' ? t('ws.settings.passkeyCancelled') : errorMessage(error, t('ws.settings.passkeyAddFailed'))
   } finally {
     passkeySaving.value = false
   }
@@ -904,21 +905,21 @@ async function deletePasskey() {
     await loadCurrentUser()
     passkeyDeleteOpen.value = false
     passkeyDeleteTarget.value = null
-    toast.add({ title: 'Passkey deleted', color: 'success' })
+    toast.add({ title: t('ws.settings.passkeyDeleted'), color: 'success' })
   } catch (error: any) {
-    toast.add({ title: 'Unable to delete passkey', description: errorMessage(error, 'Request failed.'), color: 'error' })
+    toast.add({ title: t('ws.settings.passkeyDeleteFailed'), description: errorMessage(error, t('ws.requestFailed')), color: 'error' })
   } finally {
     passkeyDeleting.value = false
   }
 }
 
-async function copyKey(value: string) { await copyText(value, 'Client key copied') }
+async function copyKey(value: string) { await copyText(value, t('ws.keys.copiedToast')) }
 async function copyText(value: string, title: string) {
   try {
     await navigator.clipboard.writeText(value)
     toast.add({ title, color: 'success' })
   } catch {
-    toast.add({ title: 'Copy failed', color: 'error' })
+    toast.add({ title: t('common.copyFailed'), color: 'error' })
   }
 }
 function maskKey(value: string) {
@@ -928,20 +929,20 @@ function maskKey(value: string) {
 
 function formatCredits(value: unknown) {
   const number = Number(value)
-  return new Intl.NumberFormat(undefined, { maximumFractionDigits: 2, roundingMode: 'ceil' } as Intl.NumberFormatOptions).format(Number.isFinite(number) ? number : 0)
+  return new Intl.NumberFormat(intlLocale.value, { maximumFractionDigits: 2, roundingMode: 'ceil' } as Intl.NumberFormatOptions).format(Number.isFinite(number) ? number : 0)
 }
 function formatCompactNumber(value: unknown) {
   const number = Number(value)
-  return new Intl.NumberFormat(undefined, { notation: 'compact', maximumFractionDigits: 1 }).format(Number.isFinite(number) ? number : 0)
+  return new Intl.NumberFormat(intlLocale.value, { notation: 'compact', maximumFractionDigits: 1 }).format(Number.isFinite(number) ? number : 0)
 }
 function formatNumber(value: unknown) {
   const number = Number(value)
-  return new Intl.NumberFormat().format(Number.isFinite(number) ? number : 0)
+  return new Intl.NumberFormat(intlLocale.value).format(Number.isFinite(number) ? number : 0)
 }
 function formatDate(value?: string) {
   if (!value) return '—'
   const date = new Date(value)
-  return Number.isFinite(date.getTime()) ? new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(date) : '—'
+  return Number.isFinite(date.getTime()) ? new Intl.DateTimeFormat(intlLocale.value, { dateStyle: 'medium', timeStyle: 'short' }).format(date) : '—'
 }
 
 onMounted(() => {

@@ -134,17 +134,30 @@ export function rungPriceComponents(rung: PriceRung) {
   return [...components, ...extractRungToolPrices(rung)]
 }
 
-export function pricingMessage(model: CatalogModel, authenticated: boolean) {
+export type PricingMessageKind = 'signIn' | 'outsideAccess' | 'unavailable' | 'notPublished'
+
+export function pricingMessageKind(model: CatalogModel, authenticated: boolean): PricingMessageKind {
   if (!model.pricing) {
-    if (!authenticated) return 'Sign in to see pricing for models covered by your keys.'
-    if (model.accessible === false) return 'Pricing is not available for models outside your key access.'
-    if (model.accessible == null) return 'Your key pricing is currently unavailable.'
+    if (!authenticated) return 'signIn'
+    if (model.accessible === false) return 'outsideAccess'
+    if (model.accessible == null) return 'unavailable'
   }
-  return 'No price published. This does not mean free.'
+  return 'notPublished'
 }
 
-export function formatCatalogPrice(value: number | null | undefined) {
-  if (finitePrice(value) === null) return 'Not published'
+const pricingMessages: Record<PricingMessageKind, string> = {
+  signIn: 'Sign in to see pricing for models covered by your keys.',
+  outsideAccess: 'Pricing is not available for models outside your key access.',
+  unavailable: 'Your key pricing is currently unavailable.',
+  notPublished: 'No price published. This does not mean free.'
+}
+
+export function pricingMessage(model: CatalogModel, authenticated: boolean) {
+  return pricingMessages[pricingMessageKind(model, authenticated)]
+}
+
+export function formatCatalogPrice(value: number | null | undefined, options: { locale?: string; notPublished?: string } = {}) {
+  if (finitePrice(value) === null) return options.notPublished ?? 'Not published'
   if (value! > 0 && value! < 0.000001) return '< $0.000001'
-  return new Intl.NumberFormat('en', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 6 }).format(value!)
+  return new Intl.NumberFormat(options.locale ?? 'en', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 6 }).format(value!)
 }

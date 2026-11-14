@@ -11,16 +11,16 @@
       <p class="mt-2 text-sm text-[var(--ui-text-muted)]">{{ message }}</p>
 
       <div v-if="ready" class="mt-6 space-y-3">
-        <UAlert color="info" variant="subtle" title="Confirmation required" description="This action verifies the email address associated with this one-time link. The link is not consumed until you confirm." />
-        <UCheckbox v-model="confirmed" label="I want to verify the email address associated with this link" />
-        <AppButton color="primary" block :disabled="!confirmed" :loading="verifying" @click="verifyEmail">Confirm email address</AppButton>
-        <AppButton :to="returnRoute" color="neutral" variant="ghost" block>Cancel</AppButton>
+        <UAlert color="info" variant="subtle" :title="t('verify.confirmTitle')" :description="t('verify.confirmDesc')" />
+        <UCheckbox v-model="confirmed" :label="t('verify.checkbox')" />
+        <AppButton color="primary" block :disabled="!confirmed" :loading="verifying" @click="verifyEmail">{{ t('verify.confirmButton') }}</AppButton>
+        <AppButton :to="returnRoute" color="neutral" variant="ghost" block>{{ t('common.cancel') }}</AppButton>
       </div>
       <div v-else-if="invalidToken" class="mt-6 space-y-3">
-        <UAlert color="warning" variant="subtle" title="Verification link is invalid or expired" description="Request a new verification email from your account settings, then open the latest link." />
-        <AppButton :to="returnRoute" color="primary" block>{{ authenticated ? 'Open workspace' : 'Go to sign in' }}</AppButton>
+        <UAlert color="warning" variant="subtle" :title="t('verify.invalidTitle')" :description="t('verify.invalidDesc')" />
+        <AppButton :to="returnRoute" color="primary" block>{{ authenticated ? t('verify.openWorkspace') : t('verify.goToSignIn') }}</AppButton>
       </div>
-      <AppButton v-else-if="!verifying" :to="returnRoute" color="primary" block class="mt-6">{{ authenticated ? 'Open workspace' : 'Go to sign in' }}</AppButton>
+      <AppButton v-else-if="!verifying" :to="returnRoute" color="primary" block class="mt-6">{{ authenticated ? t('verify.openWorkspace') : t('verify.goToSignIn') }}</AppButton>
     </AppCard>
   </div>
 </template>
@@ -28,6 +28,7 @@
 <script setup lang="ts">
 import { useWorkspaceState } from '~/composables/useWorkspaceState'
 definePageMeta({ layout: 'app' })
+const { t } = usePortalI18n()
 const route = useRoute()
 const router = useRouter()
 const { token: sessionToken, fetchAPI, loadCurrentUser } = useUserApi()
@@ -37,16 +38,24 @@ const verified = ref(false)
 const failed = useWorkspaceState('user:verify-email:failed', () => false)
 const invalidToken = ref(false)
 const confirmed = ref(false)
-const message = useWorkspaceState('user:verify-email:message', () => 'Confirm that you want to verify the email address associated with this link.')
+const messageKind = useWorkspaceState<'confirm' | 'verified' | 'expired' | 'failed' | 'missing'>('user:verify-email:message-kind', () => 'confirm')
+const serverMessage = useWorkspaceState('user:verify-email:message', () => '')
+const message = computed(() => {
+  if (messageKind.value === 'verified') return t('verify.msgVerified')
+  if (messageKind.value === 'expired') return t('verify.msgExpired')
+  if (messageKind.value === 'failed') return serverMessage.value || t('verify.msgUnable')
+  if (messageKind.value === 'missing') return t('verify.msgMissing')
+  return t('verify.msgConfirm')
+})
 const authenticated = computed(() => Boolean(sessionToken.value))
 const returnRoute = computed(() => authenticated.value ? '/app' : '/app/login')
 const ready = computed(() => Boolean(verificationToken.value) && !verified.value && !failed.value && !invalidToken.value && !verifying.value)
 const title = computed(() => {
-  if (verifying.value) return 'Verifying your email'
-  if (verified.value) return 'Email verified'
-  if (invalidToken.value) return 'Verification link expired'
-  if (failed.value || !verificationToken.value) return 'Verification failed'
-  return 'Verify your email'
+  if (verifying.value) return t('verify.titleVerifying')
+  if (verified.value) return t('verify.titleVerified')
+  if (invalidToken.value) return t('verify.titleExpired')
+  if (failed.value || !verificationToken.value) return t('verify.titleFailed')
+  return t('verify.title')
 })
 
 async function scrubToken() {
@@ -63,16 +72,17 @@ async function verifyEmail() {
   try {
     await fetchAPI('/email/verify', { method: 'POST', auth: false, body: { token: verificationToken.value } })
     verified.value = true
-    message.value = 'Your email address is now verified.'
+    messageKind.value = 'verified'
     if (authenticated.value) await loadCurrentUser()
   } catch (cause: any) {
     if (cause?.code === 'invalid_or_expired_token') {
       invalidToken.value = true
       verificationToken.value = ''
-      message.value = 'This verification link can no longer be used.'
+      messageKind.value = 'expired'
     } else {
       failed.value = true
-      message.value = cause?.message || 'Unable to verify your email address.'
+      serverMessage.value = cause?.message || ''
+            messageKind.value = 'failed'
     }
   } finally {
     verifying.value = false
@@ -82,7 +92,7 @@ async function verifyEmail() {
 onMounted(() => {
   const fragmentToken = new URLSearchParams(route.hash.slice(1)).get('token')
     verificationToken.value = (fragmentToken || (typeof route.query.token === 'string' ? route.query.token : '')).trim()
-  if (!verificationToken.value) message.value = 'Open the complete verification link from your email.'
+  if (!verificationToken.value) messageKind.value = 'missing'
   void scrubToken()
 })
 </script>

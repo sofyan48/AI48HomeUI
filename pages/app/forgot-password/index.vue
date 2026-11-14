@@ -2,43 +2,43 @@
   <div class="mx-auto max-w-md py-12">
     <AppCard>
       <template #header>
-        <h1 class="text-2xl font-bold">Reset your password</h1>
-        <p class="mt-1 text-sm text-[var(--ui-text-muted)]">Enter your verified email address to receive recovery instructions.</p>
+        <h1 class="text-2xl font-bold">{{ t('forgot.title') }}</h1>
+        <p class="mt-1 text-sm text-[var(--ui-text-muted)]">{{ t('forgot.desc') }}</p>
       </template>
 
       <div v-if="capabilityState === 'loading'" class="space-y-4 py-4 text-center">
         <UIcon name="i-tabler-refresh" class="mx-auto size-10 animate-spin text-primary-500" />
-        <p class="text-sm text-[var(--ui-text-muted)]">Checking whether password recovery is available…</p>
+        <p class="text-sm text-[var(--ui-text-muted)]">{{ t('forgot.checking') }}</p>
       </div>
 
       <div v-else-if="capabilityState === 'failure'" class="space-y-5">
-        <UAlert color="error" variant="subtle" title="Unable to check password recovery" :description="capabilityError" />
-        <AppButton color="primary" block :loading="capabilityLoading" @click="checkCapabilities">Try again</AppButton>
-        <AppButton to="/app/login" color="neutral" variant="ghost" block>Back to sign in</AppButton>
+        <UAlert color="error" variant="subtle" :title="t('forgot.checkFailed')" :description="capabilityError || t('forgot.contactError')" />
+        <AppButton color="primary" block :loading="capabilityLoading" @click="checkCapabilities">{{ t('forgot.tryAgain') }}</AppButton>
+        <AppButton to="/app/login" color="neutral" variant="ghost" block>{{ t('auth.backToSignIn') }}</AppButton>
       </div>
 
       <div v-else-if="capabilityState === 'unsupported'" class="space-y-5">
-        <UAlert color="warning" variant="subtle" title="Password recovery is not supported" description="This Home server does not advertise password recovery. Ask an administrator for help accessing your account." />
-        <AppButton to="/app/login" color="primary" block>Back to sign in</AppButton>
+        <UAlert color="warning" variant="subtle" :title="t('forgot.unsupportedTitle')" :description="t('forgot.unsupportedDesc')" />
+        <AppButton to="/app/login" color="primary" block>{{ t('auth.backToSignIn') }}</AppButton>
       </div>
 
       <div v-else-if="capabilityState === 'disabled'" class="space-y-5">
-        <UAlert color="warning" variant="subtle" title="Password recovery is disabled" description="Email password recovery is not enabled on this Home server. Ask an administrator for help accessing your account." />
-        <AppButton to="/app/login" color="primary" block>Back to sign in</AppButton>
+        <UAlert color="warning" variant="subtle" :title="t('forgot.disabledTitle')" :description="t('forgot.disabledDesc')" />
+        <AppButton to="/app/login" color="primary" block>{{ t('auth.backToSignIn') }}</AppButton>
       </div>
 
       <div v-else-if="sent" class="space-y-5 text-center">
         <div class="mx-auto flex size-14 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-500"><UIcon name="i-tabler-mail" class="size-7" /></div>
         <p class="text-sm text-[var(--ui-text-muted)]">{{ acceptedMessage }}</p>
-        <AppButton color="neutral" variant="outline" block @click="requestAnother">Submit another request</AppButton>
-        <AppButton to="/app/login" color="primary" block>Return to sign in</AppButton>
+        <AppButton color="neutral" variant="outline" block @click="requestAnother">{{ t('forgot.anotherRequest') }}</AppButton>
+        <AppButton to="/app/login" color="primary" block>{{ t('forgot.returnToSignIn') }}</AppButton>
       </div>
 
       <form v-else class="space-y-5" @submit.prevent="submit">
-        <UAlert v-if="error" color="error" variant="subtle" title="Request failed" :description="error" />
-        <UFormField label="Email" required><UInput v-model="email" class="w-full" type="email" autocomplete="email" icon="i-tabler-mail" /></UFormField>
-        <AppButton type="submit" color="primary" block :loading="loading">Send reset instructions</AppButton>
-        <AppButton to="/app/login" color="neutral" variant="ghost" block>Back to sign in</AppButton>
+        <UAlert v-if="error" color="error" variant="subtle" :title="t('forgot.requestFailed')" :description="error" />
+        <UFormField :label="t('auth.email')" required><UInput v-model="email" class="w-full" type="email" autocomplete="email" icon="i-tabler-mail" /></UFormField>
+        <AppButton type="submit" color="primary" block :loading="loading">{{ t('forgot.send') }}</AppButton>
+        <AppButton to="/app/login" color="neutral" variant="ghost" block>{{ t('auth.backToSignIn') }}</AppButton>
       </form>
     </AppCard>
   </div>
@@ -47,20 +47,22 @@
 <script setup lang="ts">
 import { useWorkspaceState } from '~/composables/useWorkspaceState'
 definePageMeta({ layout: 'app' })
+const { t } = usePortalI18n()
 const { fetchAPI, capabilities, loadCapabilities } = useUserApi()
 const email = ref('')
 const loading = useWorkspaceState('user:forgot-password:loading', () => false)
 const capabilityLoading = useWorkspaceState('user:forgot-password:capability-loading', () => false)
 const capabilityState = useWorkspaceState<'loading' | 'failure' | 'unsupported' | 'disabled' | 'enabled'>('user:forgot-password:capability-state', () => 'loading')
-const capabilityError = useWorkspaceState('user:forgot-password:capability-error', () => 'Unable to contact the Home server.')
+// Empty means the localized default contact error is shown.
+const capabilityError = useWorkspaceState('user:forgot-password:capability-error', () => '')
 const error = useWorkspaceState('user:forgot-password:error', () => '')
 const sent = ref(false)
-const acceptedMessage = 'If an eligible account matches, password reset instructions will be sent.'
+const acceptedMessage = computed(() => t('forgot.accepted'))
 
 async function checkCapabilities() {
   capabilityState.value = 'loading'
   capabilityLoading.value = true
-  capabilityError.value = 'Unable to contact the Home server.'
+  capabilityError.value = ''
   try {
     const response = await loadCapabilities()
     const advertised = response?.capabilities
@@ -83,7 +85,7 @@ async function checkCapabilities() {
 
 async function submit() {
   error.value = ''
-  if (!email.value.trim()) return void (error.value = 'Email is required.')
+  if (!email.value.trim()) return void (error.value = t('forgot.emailRequired'))
   loading.value = true
   try {
     await fetchAPI('/password/forgot', { method: 'POST', auth: false, body: { email: email.value.trim() } })
@@ -92,11 +94,11 @@ async function submit() {
     if (cause?.statusCode === 404 || cause?.code === 'email_feature_unavailable') {
       capabilityState.value = 'unsupported'
     } else if (cause?.code === 'invalid_email') {
-      error.value = 'Enter a valid email address.'
+      error.value = t('forgot.invalidEmail')
     } else if (cause?.code === 'request_too_large') {
-      error.value = 'The request is too large. Check the email address and try again.'
+      error.value = t('forgot.tooLarge')
     } else {
-      error.value = 'Unable to request a password reset. Please try again.'
+      error.value = t('forgot.unable')
     }
   } finally {
     loading.value = false

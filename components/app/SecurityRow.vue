@@ -7,13 +7,14 @@
       <p class="text-sm font-medium text-[var(--ui-text-highlighted)]">{{ title }}</p>
       <p class="mt-0.5 break-words text-xs leading-relaxed text-[var(--ui-text-muted)]">{{ detail }}</p>
     </div>
-    <AppButton class="shrink-0 rounded-lg" color="neutral" variant="soft" size="sm" :aria-label="`${action}: ${title}`" @click="$emit('action')">{{ action }}</AppButton>
+    <AppButton class="shrink-0 rounded-lg" color="neutral" variant="soft" size="sm" :aria-label="t('ws.security.actionAria', { action, title })" @click="$emit('action')">{{ action }}</AppButton>
   </div>
 </template>
 
 <script setup lang="ts">
 defineProps<{ icon: string; title: string; detail: string; action: string }>()
 defineEmits<{ action: [] }>()
+const { t } = usePortalI18n()
 </script>
 
 <style scoped>
