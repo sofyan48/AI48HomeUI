@@ -1,28 +1,11 @@
 <template>
   <section class="grid w-full gap-4">
-    <section v-if="hasLoaded && !primaryError" class="keyring" aria-label="Access key summary">
-      <div class="keyring__card">
-        <span class="keyring__icon" aria-hidden="true"><UIcon name="i-tabler-key" class="size-4" /></span>
-        <div class="min-w-0 flex-1">
-          <div class="flex items-baseline justify-between gap-2">
-            <span class="truncate text-xs font-medium text-[var(--ui-text-muted)]">Access keys</span>
-            <span class="shrink-0 text-[11px] tabular-nums text-[var(--ui-text-muted)]">{{ keyCoverage.restricted }}% scoped</span>
-          </div>
-          <div class="flex min-w-0 items-baseline gap-3">
-            <span class="keyring__count">{{ keySummary[0].value }}</span>
-            <span class="flex min-w-0 flex-wrap gap-x-2.5 text-[11px] text-[var(--ui-text-muted)]">
-              <span class="inline-flex items-center gap-1"><span class="size-1.5 rounded-full bg-emerald-500" />{{ keyCoverage.scoped }} scoped</span>
-              <span class="inline-flex items-center gap-1"><span class="size-1.5 rounded-full bg-amber-500" />{{ keyCoverage.open }} unrestricted</span>
-            </span>
-          </div>
-          <div class="keyring__bar" role="img" :aria-label="`${keyCoverage.scoped} scoped, ${keyCoverage.open} unrestricted`">
-            <span class="bg-emerald-500" :style="{ flexGrow: keyCoverage.scoped }" />
-            <span class="bg-amber-500" :style="{ flexGrow: keyCoverage.open }" />
-          </div>
-        </div>
-      </div>
-      <AdminStatGrid label="Access key coverage" :items="keySummary.slice(1)" :columns="3" />
-    </section>
+    <AdminStatGrid
+      v-if="hasLoaded && !primaryError"
+      label="Access key summary"
+      :items="keySummary"
+      :columns="4"
+    />
 
     <AppCard v-if="primaryError">
       <div
@@ -626,11 +609,13 @@ const keySummary = computed(() => {
   const owned = resources.value.filter((resource) => resource.userId != null).length;
   const credentialScoped = resources.value.filter((resource) => resource.channelGroupIds.length).length;
   const modelScoped = resources.value.filter((resource) => resource.modelGroupIds.length).length;
+  const ratio = (value) => (total ? value / total : 0);
+  // Every card carries the same parts (value, one-line detail, ratio bar) so the row stays even.
   return [
-    { label: "Access keys", value: total, detail: `${filteredResources.value.length} shown with current search`, icon: "i-tabler-key", tone: "violet" },
-    { label: "Assigned to users", value: owned, detail: `${total - owned} unassigned`, icon: "i-tabler-user-check", tone: "blue", ratio: total ? owned / total : null, warning: total - owned > 0 && owned === 0 },
-    { label: "Credential scoped", value: credentialScoped, detail: `${channelGroups.value.length} credential groups available`, icon: "i-tabler-route", tone: "emerald", ratio: total ? credentialScoped / total : null },
-    { label: "Model scoped", value: modelScoped, detail: `${modelGroups.value.length} model groups available`, icon: "i-tabler-box-multiple", tone: "amber", ratio: total ? modelScoped / total : null },
+    { label: "Access keys", value: total, detail: `${keyCoverage.value.open} unrestricted`, icon: "i-tabler-key", tone: "violet", ratio: ratio(keyCoverage.value.scoped), warning: keyCoverage.value.open > 0 && keyCoverage.value.scoped === 0 },
+    { label: "Assigned to users", value: owned, detail: `${total - owned} unassigned`, icon: "i-tabler-user-check", tone: "blue", ratio: ratio(owned) },
+    { label: "Credential scoped", value: credentialScoped, detail: `${channelGroups.value.length} groups available`, icon: "i-tabler-route", tone: "emerald", ratio: ratio(credentialScoped) },
+    { label: "Model scoped", value: modelScoped, detail: `${modelGroups.value.length} groups available`, icon: "i-tabler-box-multiple", tone: "amber", ratio: ratio(modelScoped) },
   ];
 });
 
@@ -1363,25 +1348,3 @@ await syncData();
 }
 </style>
 
-<style scoped>
-/* Access keys signature: scope coverage card next to separate KPI cards; matches Upstream. */
-.keyring { display: grid; gap: 0.75rem; align-items: start; }
-@media (min-width: 64rem) { .keyring { grid-template-columns: minmax(0, 1.15fr) minmax(0, 2fr); } }
-.keyring__card {
-  display: flex;
-  min-width: 0;
-  align-items: flex-start;
-  gap: 0.75rem;
-  padding: 0.75rem 0.875rem;
-  border: 1px solid var(--admin-panel-border);
-  border-radius: 0.875rem;
-  background:
-    linear-gradient(135deg, color-mix(in oklch, var(--page-accent) 6%, transparent), transparent 55%),
-    var(--admin-panel-bg);
-  box-shadow: 0 1px 2px rgb(24 24 27 / 4%);
-}
-.keyring__icon { display: flex; width: 2rem; height: 2rem; flex-shrink: 0; align-items: center; justify-content: center; border-radius: 0.625rem; background: color-mix(in oklch, var(--page-accent) 12%, transparent); color: var(--page-accent); }
-.keyring__count { flex-shrink: 0; font-size: 1.1875rem; line-height: 1.5rem; font-weight: 650; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; color: var(--ui-text-highlighted); }
-.keyring__bar { display: flex; height: 0.25rem; gap: 2px; margin-top: 0.375rem; overflow: hidden; border-radius: 9999px; background: var(--ui-bg-muted); }
-.keyring__bar > span { flex-basis: 0; border-radius: 9999px; }
-</style>

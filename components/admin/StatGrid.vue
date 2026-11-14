@@ -1,5 +1,5 @@
 <template>
-  <section :aria-label="label" :aria-busy="loading || undefined" class="grid grid-cols-1 gap-3" :class="columnClass">
+  <section :aria-label="label" :aria-busy="loading || undefined" class="grid grid-cols-1 items-stretch gap-3" :class="columnClass">
     <component
       :is="item.to ? NuxtLink : item.action ? 'button' : 'div'"
       v-for="item in items"
@@ -91,6 +91,7 @@ const columnClass = computed(() => {
   position: relative;
   display: flex;
   min-width: 0;
+  height: 100%;
   align-items: flex-start;
   gap: 0.75rem;
   overflow: hidden;
