@@ -2,7 +2,7 @@ import { computed, onScopeDispose, ref, watch } from 'vue'
 import { useNuxtApp } from '#imports'
 import { useApi } from '~/composables/useApi'
 import { useCapabilities } from '~/composables/useCapabilities'
-import { normalizeQuotaEntries, normalizeQuotaEntry, quotaCollectionMessage, quotaCollectionSettled, type QuotaCollectionEntry } from '~/composables/upstreamQuota'
+import { normalizeQuotaEntries, normalizeQuotaDetail, quotaCollectionMessage, quotaCollectionSettled, type QuotaCollectionEntry } from '~/composables/upstreamQuota'
 
 const scopes = new WeakMap<object, ReturnType<typeof createState>>()
 function createState() {
@@ -60,9 +60,10 @@ export function useQuotaCollection() {
     const readDetail = async () => {
       const detail = await fetchAPI<any>(`/quota/credentials/${encodeURIComponent(id!)}`, { signal })
       check()
-      state.details.value = { ...state.details.value, [id!]: { ...detail, credential: normalizeQuotaEntry(detail.credential) } }
+      const normalized = normalizeQuotaDetail(detail)
+      state.details.value = { ...state.details.value, [id!]: normalized }
       state.revision.value++
-      return [detail.credential as QuotaCollectionEntry]
+      return [normalized.credential as QuotaCollectionEntry]
     }
     const readList = async (ids?: string[]) => {
       if (ids && !ids.length) return []

@@ -1,5 +1,5 @@
 <template>
-  <USlideover v-model:open="open" side="right" title="Import model prices" description="Preview models.dev matches, review write fields, and manually confirm the import." :dismissible="!applying" :close="!applying" :ui="{ content: 'w-full sm:max-w-4xl', body: 'min-h-0 overflow-y-auto', footer: 'shrink-0 bg-[var(--ui-bg)]' }">
+  <USlideover v-model:open="open" side="right" title="Import model prices" description="Preview catalog matches, review write fields, and manually confirm the import." :dismissible="!applying" :close="!applying" :ui="{ content: 'w-full sm:max-w-4xl', body: 'min-h-0 overflow-y-auto', footer: 'shrink-0 bg-[var(--ui-bg)]' }">
     <template #body>
     <div class="space-y-5">
       <UAlert v-if="error" color="error" variant="subtle" :description="error" />
@@ -15,7 +15,7 @@
           <AppButton color="error" variant="outline" :disabled="busy" @click="discardPendingOpen = true">Discard recovery request…</AppButton>
         </div>
       </section>
-      <UAlert v-if="importUnavailable" color="warning" variant="subtle" title="Catalog import unavailable" description="This Home instance does not expose the models.dev preview endpoint. Manual model-price editing remains available." />
+      <UAlert v-if="importUnavailable" color="warning" variant="subtle" title="Catalog import unavailable" description="This Home instance does not expose the catalog import preview endpoint. Manual model-price editing remains available." />
       <section class="rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] p-4" aria-labelledby="import-context-title">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <h3 id="import-context-title" class="text-sm font-semibold">Runtime matching context</h3>
@@ -25,12 +25,14 @@
       </section>
       <fieldset class="space-y-3 rounded-lg border border-[var(--ui-border)] p-4" :disabled="applying">
         <legend class="px-1 text-sm font-semibold">Import targets</legend>
+        <UFormField label="Catalog source"><USelect v-model="source" :items="billingCatalogSources" value-key="value" label-key="label" class="w-full" :disabled="busy || !!pendingApply" /></UFormField>
+        <p class="text-xs text-[var(--ui-text-muted)]">{{ sourceDescription }}</p>
         <div class="grid gap-3 sm:grid-cols-2">
           <UFormField label="Provider"><USelect v-model="providerFilter" :items="providerOptions" value-key="value" label-key="label" class="w-full" /></UFormField>
           <UFormField label="Target set"><USelect v-model="targetSet" :items="targetSetOptions" value-key="value" label-key="label" class="w-full" /></UFormField>
         </div>
-        <p class="text-xs text-[var(--ui-text-muted)]">{{ targets.length }} target(s) · {{ targetSet === 'manual' ? 'Edit provider/model pairs in Advanced options below.' : 'Provider/model pairs from loaded candidates or existing synced rules, not the entire models.dev catalog.' }}</p>
-        <p class="text-xs text-[var(--ui-text-muted)]">Home fetches models.dev/api.json; no browser credentials are sent to models.dev. Preview and update checks never apply automatically.</p>
+        <p class="text-xs text-[var(--ui-text-muted)]">{{ targets.length }} target(s) · {{ targetSet === 'manual' ? 'Edit provider/model pairs in Advanced options below.' : 'Provider/model pairs from loaded candidates or existing synced rules, not the entire selected catalog.' }}</p>
+        <p class="text-xs text-[var(--ui-text-muted)]">Home fetches the selected catalogs server-side; the browser sends management credentials only to Home, not to catalog providers. Preview and update checks never apply automatically.</p>
       </fieldset>
       <fieldset class="space-y-3 rounded-lg border border-[var(--ui-border)] p-4" :disabled="applying">
         <legend class="px-1 text-sm font-semibold">Import policy</legend>
@@ -84,7 +86,7 @@
       </fieldset>
       <fieldset class="space-y-3 rounded-lg border border-[var(--ui-border)] p-4">
         <div class="flex items-center justify-between gap-3"><legend class="font-medium">Source match overrides</legend><AppButton size="sm" color="neutral" variant="outline" @click="() => { matchOverrides.push({ target_provider: '', target_model: '', source_provider: '', source_model: '' }) }">Add override</AppButton></div>
-        <p class="text-xs text-[var(--ui-text-muted)]">Force one requested target to an exact models.dev provider and model. A missing catalog match stays unmatched.</p>
+        <p class="text-xs text-[var(--ui-text-muted)]">Force one requested target to an exact catalog provider and model. A missing catalog match stays unmatched.</p>
         <div v-for="(override, index) in matchOverrides" :key="index" class="grid gap-3 sm:grid-cols-[1fr_1fr_1fr_1fr_auto]">
           <UFormField label="Target provider"><UInput v-model="override.target_provider" class="w-full" /></UFormField>
           <UFormField label="Target model"><UInput v-model="override.target_model" class="w-full" /></UFormField>
@@ -178,6 +180,7 @@
 
 <script setup lang="ts">
 import { billingImportApplySupportError, createBillingImportIdempotencyKey, billingImportStorageKey, isDefinitiveBillingImportFailure, readBillingImportPending, validateBillingImportResult, writeBillingImportPending, type BillingImportPendingApply } from '~/composables/billingImport'
+import { billingCatalogSources, defaultBillingImportPreferences, readBillingImportPreferences, writeBillingImportPreferences, type BillingCatalogSource, type BillingImportPreferences } from '~/composables/billingPreferences'
 type ImportTarget = { provider: string; model: string }
 const props = defineProps<{ providers: string[]; models: string[]; candidates: ImportTarget[]; availableTargets: ImportTarget[]; priceRules: { provider: string; model: string; source: string }[]; serviceTierSource: string }>()
 const open = ref(false)
@@ -205,7 +208,9 @@ const writeFields: { key: string; cost?: string; label: string }[] = [
   { key: 'cache_read_price_per_million', cost: 'cache_read', label: 'Cache read / 1M' }, { key: 'cache_write_price_per_million', cost: 'cache_write', label: 'Cache write / 1M' },
   { key: 'request_price', cost: 'request', label: 'Per request' }
 ]
-const source = ref('models.dev')
+const source = ref<BillingCatalogSource>('auto')
+const sourceDescription = computed(() => billingCatalogSources.find(option => option.value === source.value)?.description)
+let preferenceKey = ''
 const importUnavailable = ref(false)
 const checkingUpdates = ref(false)
 const syncTargets = computed(() => [...new Map(props.priceRules.filter(rule => rule.source === 'sync').map(rule => [`${rule.provider.toLowerCase()}::${rule.model}`, { provider: rule.provider, model: rule.model }])).values()])
@@ -335,6 +340,27 @@ function invalidatePreview() {
   confirmOverwrite.value = false
 }
 watch([source, targets, overwriteMode, defaultMultiplier, includeZeroCost, aliases, multiplierRules, rowMultipliers, matchOverrides], invalidatePreview, { deep: true, flush: 'sync' })
+function restorePreferences(preferences: BillingImportPreferences) {
+  source.value = preferences.source
+  overwriteMode.value = preferences.overwriteMode
+  targetSet.value = preferences.targetSet
+  defaultMultiplier.value = preferences.defaultMultiplier
+  includeZeroCost.value = preferences.includeZeroCost
+  aliases.splice(0, aliases.length, ...preferences.aliases)
+  multiplierRules.splice(0, multiplierRules.length, ...preferences.multiplierRules)
+  rowMultipliers.splice(0)
+  matchOverrides.splice(0)
+}
+watch([source, overwriteMode, targetSet, defaultMultiplier, includeZeroCost, aliases, multiplierRules], () => {
+  if (!preferenceKey || !import.meta.client) return
+  try {
+    writeBillingImportPreferences(window.localStorage, preferenceKey, {
+      source: source.value, overwriteMode: overwriteMode.value, targetSet: targetSet.value,
+      defaultMultiplier: defaultMultiplier.value, includeZeroCost: includeZeroCost.value,
+      aliases: [...aliases], multiplierRules: [...multiplierRules]
+    })
+  } catch { /* Preference storage must not block imports. */ }
+}, { deep: true })
 watch(effectiveToken, async () => {
   const session = ++sessionVersion
   operationController?.abort()
@@ -352,11 +378,15 @@ watch(effectiveToken, async () => {
   recoveryReady.value = false
   recoveryError.value = ''
   storageKey = ''
+  preferenceKey = ''
+  restorePreferences(defaultBillingImportPreferences())
   if (!effectiveToken.value || !import.meta.client) return
   try {
     const key = await billingImportStorageKey(new URL(apiBase, window.location.origin).href, effectiveToken.value)
     if (disposed || session !== sessionVersion) return
     storageKey = key
+    preferenceKey = key.replace(':pending:', ':preferences:')
+    try { restorePreferences(readBillingImportPreferences(window.localStorage, preferenceKey)) } catch { /* Import defaults still work when local storage is blocked. */ }
     pendingApply.value = readBillingImportPending(window.sessionStorage, key)
     recoveryReady.value = true
   } catch (cause: any) {

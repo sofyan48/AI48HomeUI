@@ -21,7 +21,7 @@
       </div>
       <template v-if="isXai">
         <p class="text-xs text-[var(--ui-text-muted)]">On-demand: {{ xaiOnDemandState(entry) }}</p>
-        <p v-if="products.length" class="text-xs text-[var(--ui-text-muted)]" :title="productSummary">{{ products.length }} shared product usage breakdown(s)</p>
+        <p v-if="products.length" tabindex="0" class="text-xs text-[var(--ui-text-muted)]" :title="productSummary" :aria-label="productSummary">{{ products.length }} shared product usage breakdown(s)</p>
       </template>
       <p v-if="hiddenCount" class="text-xs text-[var(--ui-text-muted)]">+{{ hiddenCount }} window(s) in details</p>
       <p v-if="hiddenRisk" class="text-xs text-amber-500">{{ entry.quota_status }} quota exists outside this preview</p>
@@ -36,7 +36,7 @@
 import { computed, onMounted, onScopeDispose, ref, watch } from 'vue'
 import { useApi } from '~/composables/useApi'
 import { useCapabilities } from '~/composables/useCapabilities'
-import { normalizeQuotaEntry, needsQuotaPreviewDetail, resolveQuotaPreviewEntry, quotaDisplayWindows, quotaHistorical, quotaCollectionMessage, quotaProductUsed, quotaWindowLabel, quotaWindowRatio, isRetainedQuotaWindow, xaiOnDemandState, xaiProductWindows } from '~/composables/upstreamQuota'
+import { normalizeQuotaEntry, needsQuotaPreviewDetail, resolveQuotaPreviewEntry, quotaPreviewWindows, quotaHistorical, quotaCollectionMessage, quotaProductUsed, quotaWindowLabel, quotaWindowRatio, isRetainedQuotaWindow, xaiOnDemandState, xaiProductWindows } from '~/composables/upstreamQuota'
 import { withQuotaPreviewSlot } from '../../composables/quotaPreviewQueue'
 
 const props = defineProps<{ quota?: any; pending?: boolean; readError?: string }>()
@@ -48,7 +48,7 @@ const detail = ref<any>(null)
 const loading = ref(false)
 const failed = ref(false)
 const entry = computed(() => props.quota ? resolveQuotaPreviewEntry(normalizeQuotaEntry(props.quota), detail.value) : null)
-const windows = computed(() => entry.value ? quotaDisplayWindows(entry.value) : [])
+const windows = computed(() => entry.value ? quotaPreviewWindows(entry.value) : [])
 const isXai = computed(() => ['xai', 'grok'].includes(entry.value?.provider))
 const products = computed(() => isXai.value ? xaiProductWindows(entry.value) : [])
 const productSummary = computed(() => ['Products share one allowance, not separate quotas.', ...products.value.map(window => `${window.label || window.id}: ${quotaProductUsed(window)}${isRetainedQuotaWindow(entry.value, window) ? ` (retained, ${formatDate(window.observed_at)})` : ''}`)].join('\n'))

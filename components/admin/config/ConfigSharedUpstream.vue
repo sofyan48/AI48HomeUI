@@ -34,10 +34,10 @@
               :disabled="loading"
               :aria-label="`${field.label} source`"
               class="w-full sm:w-48"
-              @update:model-value="updateField(field.key, $event === 'default' ? null : field.type === 'number' ? 0 : field.type === 'json' ? '{}' : '')"
+              @update:model-value="updateField(field.key, $event === 'default' ? null : field.type === 'number' ? 0 : isConfigJsonField(field.type) ? (field.type === 'json' ? '{}' : '[]') : field.type === 'image-mode' ? false : '')"
             />
             <UTextarea
-              v-if="field.type === 'json' && draft[field.key] != null"
+              v-if="isConfigJsonField(field.type) && draft[field.key] != null"
               :model-value="String(draft[field.key])"
               :disabled="loading"
               :aria-label="field.label"
@@ -45,6 +45,15 @@
               class="min-w-0 flex-1 font-mono text-xs"
               spellcheck="false"
               @update:model-value="updateField(field.key, String($event ?? ''))"
+            />
+            <USelect
+              v-else-if="field.type === 'image-mode' && draft[field.key] != null"
+              :model-value="String(draft[field.key])"
+              :items="imageOptions"
+              :disabled="loading"
+              :aria-label="field.label"
+              class="min-w-0 flex-1"
+              @update:model-value="updateField(field.key, $event === 'true' ? true : $event === 'false' ? false : $event)"
             />
             <UInput
               v-else-if="draft[field.key] != null"
@@ -65,6 +74,14 @@
 </template>
 
 <script setup lang="ts">
+import { isConfigJsonField } from '~/composables/configParity'
+
+const imageOptions = [
+  { label: 'Enabled (false)', value: 'false' },
+  { label: 'Disabled globally (true)', value: 'true' },
+  { label: 'Disable on non-image routes (chat)', value: 'chat' },
+  { label: 'Client-controlled (passthrough)', value: 'passthrough' },
+]
 type DraftValue = string | number | boolean | null | undefined
 type SharedSection = {
   id: string

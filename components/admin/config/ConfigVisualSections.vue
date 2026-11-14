@@ -201,9 +201,7 @@ const sections: Section[] = [
     fields: [
       { key: 'remoteManagementAllowRemote', label: 'Allow remote access', type: 'switch', description: 'Accept Management API requests from non-loopback addresses.' },
       { key: 'remoteManagementSecretKey', label: 'Secret key', type: 'password', placeholder: 'Empty disables Management API routes', hint: 'Keep this value private.' },
-      { key: 'remoteManagementDisableControlPanel', label: 'Disable control panel', type: 'switch', description: 'Do not serve the bundled browser control panel.' },
-      { key: 'remoteManagementDisableAutoUpdatePanel', label: 'Disable panel auto-update', type: 'switch', description: 'Prevent automatic control-panel updates.' },
-      { key: 'remoteManagementPanelGithubRepository', label: 'Panel GitHub repository', type: 'text', placeholder: 'owner/repository' }
+      { key: 'remoteManagementDisableControlPanel', label: 'Disable control panel', type: 'switch', description: 'Do not serve the bundled browser control panel.' }
     ]
   },
   {

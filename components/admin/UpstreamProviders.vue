@@ -172,6 +172,8 @@
               </UFormField>
             </div>
             <div v-if="selectedProviderRoute === 'claude-api-key'" class="space-y-3">
+              <UCheckbox v-model="providerForm['experimental-cch-signing']" label="Experimental CCH signing (compatibility flag)" />
+              <p class="text-xs text-[var(--ui-text-muted)]">Retained for configuration compatibility only. Signing is automatic on supported direct upstreams; this flag does not enable or disable automatic signing.</p>
               <UCheckbox v-model="providerForm['native-tool-search']" label="Trust custom upstream with native tool search" />
               <p class="text-xs text-[var(--ui-text-muted)]">Requires upstream.claude.tool-search. Official api.anthropic.com keys support native tool search automatically.</p>
               <UCheckbox v-model="providerForm['rebuild-mid-system-message']" label="Move conversation system messages into the Claude system field" />
@@ -372,7 +374,7 @@ const testSuccess = useWorkspaceState('admin:upstream-providers:testSuccess', ()
 const testingConnection = useWorkspaceState('admin:upstream-providers:testingConnection', () => (false))
 const supportsModelMapping = computed(() => true)
 const requiresBaseURL = computed(() => ['codex-api-key', 'xai-api-key', 'openai-compatibility'].includes(selectedProviderRoute.value))
-const supportsDiscovery = computed(() => ['gemini-api-key', 'interactions-api-key', 'claude-api-key', 'codex-api-key', 'openai-compatibility'].includes(selectedProviderRoute.value))
+const supportsDiscovery = computed(() => ['gemini-api-key', 'interactions-api-key', 'claude-api-key', 'codex-api-key', 'meta-api-key', 'openai-compatibility'].includes(selectedProviderRoute.value))
 const discoveredModels = useWorkspaceState('admin:upstream-providers:discoveredModels', () => ([]))
 const discoverySearch = ref('')
 const discoveryVisible = ref(false)
@@ -408,6 +410,7 @@ const defaultDiscoveryURL = computed(() => {
   const route = selectedProviderRoute.value
   if (['gemini-api-key', 'interactions-api-key'].includes(route)) return `${(base || 'https://generativelanguage.googleapis.com').replace(/\/v1beta(?:\/.*)?$/i, '')}/v1beta/models`
   if (route === 'claude-api-key') return `${(base || 'https://api.anthropic.com').replace(/\/v1(?:\/.*)?$/i, '')}/v1/models`
+  if (route === 'meta-api-key') return /\/models$/i.test(base) ? base : `${base || 'https://api.meta.ai/v1'}/models`
   if (!base) return ''
   if (route === 'codex-api-key') return /\/v1\/models$/i.test(base) ? base : /\/v1$/i.test(base) ? `${base}/models` : `${base}/v1/models`
   return /\/models$/i.test(base) ? base : `${base}/models`

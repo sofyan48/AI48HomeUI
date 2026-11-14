@@ -54,7 +54,11 @@
       <template #header>
         <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div><h2 class="font-semibold">Events</h2><p class="text-xs text-[var(--ui-text-muted)]">Showing {{ pageStart }}–{{ pageEnd }} of {{ formatNumber(total) }}</p></div>
-          <div class="flex items-center gap-2">
+          <div class="flex flex-wrap items-center gap-2">
+            <UDropdownMenu :items="columnMenuItems" :content="{ align: 'end' }">
+              <AppButton size="sm" color="neutral" variant="outline" icon="i-tabler-columns">Columns</AppButton>
+            </UDropdownMenu>
+            <AppButton size="sm" color="neutral" variant="outline" icon="i-tabler-arrows-horizontal" @click="autoFitColumns">Auto-fit columns</AppButton>
             <AppButton v-if="pendingNewEvents" size="sm" color="primary" variant="soft" :loading="loading" @click="refreshEvents">
               Show {{ formatNumber(pendingNewEvents) }} new {{ pendingNewEvents === 1 ? 'event' : 'events' }}
             </AppButton>
@@ -62,7 +66,11 @@
           </div>
         </div>
       </template>
-      <AppTable :columns="columns" :data="events" :loading="loading" class="min-w-[1900px] [&_table]:table-fixed [&_th]:overflow-hidden [&_td]:overflow-hidden">
+      <AppTable :columns="columns" :data="events" :loading="loading" :style="tableStyle" class="[&_table]:table-fixed [&_td]:overflow-hidden">
+        <template v-for="column in columns.filter(column => column.accessorKey !== 'actions')" :key="column.accessorKey" #[`${column.accessorKey}-header`]>
+          <span class="block truncate pr-2">{{ column.header }}</span>
+          <span role="separator" tabindex="0" aria-orientation="vertical" :aria-label="`Resize ${column.header} column; double-click or press Enter to auto-fit`" :aria-valuenow="columnWidth(column.accessorKey)" :aria-valuemin="column.accessorKey === 'status' ? 96 : 120" :aria-valuemax="640" class="absolute inset-y-0 right-0 z-10 w-2 cursor-col-resize touch-none border-r border-[var(--ui-border)] focus-visible:outline-2 focus-visible:outline-[var(--ui-primary)]" @pointerdown.stop="resizeColumn($event, column.accessorKey)" @dblclick.stop.prevent="autoFitColumn(column.accessorKey)" @keydown="resizeColumnWithKeyboard($event, column.accessorKey)" />
+        </template>
         <template #timestamp-cell="{ row }"><div class="w-full min-w-0 overflow-hidden"><p class="text-sm font-medium">{{ formatDateTime(rowValue(row).timestamp) }}</p></div></template>
         <template #event-cell="{ row }"><div class="w-full min-w-0 space-y-1 overflow-hidden"><div class="flex min-w-0 items-center gap-1.5"><UBadge color="neutral" variant="subtle" size="sm" class="max-w-full truncate font-medium">{{ eventTypeLabel(rowValue(row)) }}</UBadge><span v-if="rowValue(row).stream != null" class="shrink-0 text-[10px] text-[var(--ui-text-muted)]">{{ rowValue(row).stream ? 'stream' : 'standard' }}</span></div><p class="truncate font-mono text-[11px] text-[var(--ui-text-muted)]" :title="eventEndpoint(rowValue(row))">{{ eventEndpoint(rowValue(row)) }}</p><p class="truncate text-[11px] text-[var(--ui-text-muted)]" :title="executorLabel(rowValue(row).executor_type)">{{ executorLabel(rowValue(row).executor_type) || 'default executor' }}</p></div></template>
         <template #status-cell="{ row }"><div class="w-full min-w-0 overflow-hidden"><UBadge :color="statusColor(rowValue(row))" variant="subtle" class="font-mono tabular-nums" :title="statusLabel(rowValue(row))">{{ statusCode(rowValue(row)) || statusLabel(rowValue(row)) }}</UBadge><p v-if="rowValue(row).upstream_status_code && rowValue(row).upstream_status_code !== rowValue(row).status_code" class="mt-1 truncate text-[11px] text-[var(--ui-text-muted)]">Upstream {{ rowValue(row).upstream_status_code }}</p></div></template>
@@ -70,15 +78,18 @@
         <template #runtime-cell="{ row }"><div class="w-full min-w-0 overflow-hidden"><p class="truncate text-sm">{{ rowValue(row).runtime?.home_id || rowValue(row).runtime?.home_ip || 'Unknown Home' }}</p><p class="truncate text-xs text-[var(--ui-text-muted)]">{{ rowValue(row).runtime?.cpa_label || rowValue(row).runtime?.cpa_node_id || rowValue(row).runtime?.cpa_ip || 'Unknown CPA' }}</p></div></template>
         <template #client-cell="{ row }"><div class="w-full min-w-0 overflow-hidden"><p class="truncate text-sm">{{ rowValue(row).client?.username || 'Unattributed' }}</p><p class="truncate text-xs text-[var(--ui-text-muted)]">{{ rowValue(row).client?.client_key_label || rowValue(row).client?.client_key_masked || 'No client key' }}</p></div></template>
         <template #credential-cell="{ row }"><div class="w-full min-w-0 overflow-hidden"><p class="truncate text-sm">{{ rowValue(row).credential?.label || rowValue(row).credential?.credential_id || 'Unknown' }}</p><p class="truncate text-xs text-[var(--ui-text-muted)]">{{ rowValue(row).credential?.auth_index || rowValue(row).credential?.credential_type || 'No auth index' }}</p></div></template>
-        <template #tokens-cell="{ row }"><div class="w-full min-w-0 overflow-hidden text-sm tabular-nums"><p class="font-semibold">{{ formatCompactNumber(rowValue(row).tokens?.total_tokens) }}</p><p class="truncate text-xs text-[var(--ui-text-muted)]">{{ formatCompactNumber(rowValue(row).tokens?.input_tokens) }} in · {{ formatCompactNumber(rowValue(row).tokens?.output_tokens) }} out<span v-if="cacheTokens(rowValue(row))"> · cache {{ cacheTokens(rowValue(row)) }}<span v-if="cacheRate(rowValue(row))"> ({{ cacheRate(rowValue(row)) }})</span></span></p><p v-if="toolCount(rowValue(row))" class="truncate text-[11px] text-[var(--ui-primary)]">⚒ {{ formatCompactNumber(toolCount(rowValue(row))) }} tool calls</p></div></template>
+        <template #tokens-cell="{ row }"><div class="w-full min-w-0 overflow-hidden text-sm tabular-nums"><p class="font-semibold">{{ formatCompactNumber(rowValue(row).tokens?.total_tokens) }}</p><p class="truncate text-xs text-[var(--ui-text-muted)]">{{ formatCompactNumber(rowValue(row).tokens?.input_tokens) }} in<span v-if="cacheRate(rowValue(row))"> ({{ cacheRate(rowValue(row)) }} cached)</span> · {{ formatCompactNumber(rowValue(row).tokens?.output_tokens) }} out<span v-if="cacheTokens(rowValue(row))"> · cache {{ cacheTokens(rowValue(row)) }}</span></p><p v-if="toolCount(rowValue(row))" class="truncate text-[11px] text-[var(--ui-primary)]">⚒ {{ formatCompactNumber(toolCount(rowValue(row))) }} tool calls</p></div></template>
         <template #latency-cell="{ row }"><div class="w-full min-w-0 overflow-hidden text-sm tabular-nums"><p>{{ formatMilliseconds(rowValue(row).performance?.latency_ms) }}</p><p class="truncate text-xs text-[var(--ui-text-muted)]">TTFT {{ formatMilliseconds(rowValue(row).performance?.ttft_ms) }}</p></div></template>
-        <template #cost-cell="{ row }"><div class="w-full min-w-0 overflow-hidden text-right text-sm tabular-nums"><p class="font-medium">{{ formatTableAmount(rowValue(row).billing?.amount, rowValue(row).billing?.currency) }}</p><p class="truncate text-xs text-[var(--ui-text-muted)]">{{ rowValue(row).billing?.currency || 'credits' }}</p></div></template>
+        <template #cost-cell="{ row }"><div class="w-full min-w-0 overflow-hidden text-right text-sm tabular-nums"><UTooltip :disabled="!requestCostRows(rowValue(row).billing).length" :content="{ side: 'left' }"><span tabindex="0" class="block truncate font-medium" aria-label="Request cost breakdown">{{ formatTableAmount(rowValue(row).billing?.amount, rowValue(row).billing?.currency) }}</span><template #content><dl class="min-w-56 space-y-2 p-2"><div v-for="item in requestCostRows(rowValue(row).billing)" :key="item.label" class="flex justify-between gap-6 text-xs"><dt>{{ item.label }}</dt><dd class="font-medium tabular-nums">{{ item.value }}</dd></div></dl></template></UTooltip><p class="truncate text-xs text-[var(--ui-text-muted)]">{{ rowValue(row).billing?.currency || 'credits' }}</p></div></template>
         <template #request-cell="{ row }"><div class="w-full min-w-0 overflow-hidden"><p class="truncate font-mono text-xs">{{ rowValue(row).request_id || rowValue(row).id }}</p><p class="truncate font-mono text-xs text-[var(--ui-text-muted)]">{{ rowValue(row).upstream_request_id || 'No upstream ID' }}</p></div></template>
         <template #actions-cell="{ row }"><div class="flex justify-end gap-1"><AdminTableAction v-if="rowValue(row).related?.request_log?.download_url" action="download" label="Download request log" :loading="downloadingId === rowValue(row).request_id" @click="downloadRequestLog(rowValue(row).related.request_log.download_url, rowValue(row).request_id)" /><AdminTableAction action="view" label="View request event" @click="openDetail(rowValue(row))" /></div></template>
         <template #empty><div class="flex flex-col items-center justify-center py-14 text-center"><UIcon name="i-tabler-list" class="mb-3 size-8 text-[var(--ui-text-muted)]" /><p class="font-medium">No request events found</p><p class="mt-1 text-sm text-[var(--ui-text-muted)]">Try a broader time range or fewer filters.</p></div></template>
       </AppTable>
       <div class="flex flex-col gap-3 border-t border-[var(--ui-border)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-        <p class="text-xs text-[var(--ui-text-muted)]">Page {{ page }} of {{ totalPages }}</p>
+        <div class="flex flex-wrap items-center gap-3">
+                  <p class="text-xs text-[var(--ui-text-muted)]">Page {{ page }} of {{ totalPages }}</p>
+                  <USelect :model-value="pageSize" :items="[...requestPageSizes]" size="sm" aria-label="Request rows per page" class="w-24" :disabled="loading" @update:model-value="changePageSize" />
+                </div>
         <div class="flex items-center gap-2"><AppButton size="sm" color="neutral" variant="outline" :disabled="page <= 1 || loading" @click="changePage(-1)">Previous</AppButton><AppButton size="sm" color="neutral" variant="outline" :disabled="page >= totalPages || loading" @click="changePage(1)">Next</AppButton></div>
       </div>
     </AppCard>
@@ -109,6 +120,7 @@
 
 <script setup>
 import { dateRangeError } from '~/composables/dateRange'
+import { readTelemetryChoice, saveTelemetryChoice, requestRanges, requestSorts, requestCostRows, toolUsageEntries, requestCacheRate, requestColumnDefaults, normalizeRequestColumnWidths, estimateRequestColumnWidths, clampRequestColumnWidth, requestPageSizes, normalizeRequestPageSize, readRequestPreference, saveRequestPreference, normalizeRequestColumnVisibility, visibleRequestColumns } from '~/composables/requestTelemetry'
 import { useWorkspaceState } from '~/composables/useWorkspaceState'
 import { useDataSync } from '~/composables/useDataSync'
 const { fetchAPI, token } = useApi()
@@ -118,7 +130,8 @@ const canExport = computed(() => supports('request_event_export') && !exportUnav
 let exportController = new AbortController()
 let exportVersion = 0
 const allOptionValue = '__all__'
-const pageSize = 50
+const pageSizeKey = 'cpahome:request-events:page-size'
+const pageSize = ref(readRequestPreference(pageSizeKey, normalizeRequestPageSize))
 const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
 const rowValue = row => row?.original ?? row
 const toInputDateTime = date => {
@@ -133,13 +146,8 @@ const filters = ref(defaultFilters())
 const appliedFilters = ref({ ...filters.value })
 const searchField = ref('all')
 const appliedSearchField = ref('all')
-const preference = (key, fallback, choices) => {
-  if (!import.meta.client) return fallback
-  try { const value = window.localStorage.getItem(key); return choices.includes(value) ? value : fallback } catch { return fallback }
-}
-const savePreference = (key, value) => { if (!import.meta.client) return; try { window.localStorage.setItem(key, value) } catch {} }
-const timeRange = ref(preference('cpahome:request-events:range', '24h', ['4h', '12h', '24h', 'today', 'yesterday', '7d', '30d', '90d']))
-const sort = ref(preference('cpahome:request-events:sort', 'timestamp_desc', ['timestamp_desc', 'timestamp_asc', 'tokens_desc', 'latency_desc', 'cost_desc', 'failed_first']))
+const timeRange = ref(readTelemetryChoice('cpahome:request-events:range', '24h', requestRanges))
+const sort = ref(readTelemetryChoice('cpahome:request-events:sort', 'timestamp_desc', requestSorts))
 const page = ref(1)
 const response = useWorkspaceState('admin:request-records:response', () => (null))
 const filterOptions = useWorkspaceState('admin:request-records:filterOptions', () => (null))
@@ -169,11 +177,11 @@ const statusOptions = [{ label: 'All statuses', value: allOptionValue }, { label
 const searchFieldOptions = [{ label: 'All fields', value: 'all' }, { label: 'Request ID', value: 'request_id' }, { label: 'User', value: 'user' }, { label: 'Client key', value: 'client_key' }, { label: 'Credential', value: 'credential' }]
 const timeRangeOptions = [{ label: 'Last 4 hours', value: '4h' }, { label: 'Last 12 hours', value: '12h' }, { label: 'Last 24 hours', value: '24h' }, { label: 'Today', value: 'today' }, { label: 'Yesterday', value: 'yesterday' }, { label: 'Last 7 days', value: '7d' }, { label: 'Last 30 days', value: '30d' }, { label: 'Last 90 days', value: '90d' }, { label: 'Custom range', value: 'custom' }]
 const sortOptions = [
-  { label: 'Newest first', value: 'timestamp_desc' }, { label: 'Oldest first', value: 'timestamp_asc' }, { label: 'Most tokens', value: 'tokens_desc' }, { label: 'Highest latency', value: 'latency_desc' }, { label: 'Highest cost', value: 'cost_desc' }, { label: 'Failures first', value: 'failed_first' }
+  { label: 'Newest first', value: 'timestamp_desc' }, { label: 'Oldest first', value: 'timestamp_asc' }, { label: 'Most tokens', value: 'tokens_desc' }, { label: 'Fewest tokens', value: 'tokens_asc' }, { label: 'Highest latency', value: 'latency_desc' }, { label: 'Lowest latency', value: 'latency_asc' }, { label: 'Highest cost', value: 'cost_desc' }, { label: 'Lowest cost', value: 'cost_asc' }, { label: 'Failures first', value: 'failed_first' }
 ]
 const refreshOptions = [{ label: '5s', value: '5' }, { label: '15s', value: '15' }, { label: '30s', value: '30' }, { label: '60s', value: '60' }]
 const exportOptions = [{ label: 'CSV spreadsheet', value: 'csv' }, { label: 'JSON Lines', value: 'jsonl' }]
-const columns = [
+const columnDefinitions = [
   { accessorKey: 'timestamp', header: 'Time', meta: { class: { th: 'w-36', td: 'w-36 max-w-36' } } },
   { accessorKey: 'event', header: 'Event', meta: { class: { th: 'w-56', td: 'w-56 max-w-56' } } },
   { accessorKey: 'status', header: 'Status', meta: { class: { th: 'w-24', td: 'w-24 max-w-24' } } },
@@ -188,10 +196,69 @@ const columns = [
   { accessorKey: 'actions', header: '', meta: { class: { th: 'table-action-head w-24', td: 'table-action-cell w-24' } } }
 ]
 const events = computed(() => Array.isArray(response.value?.items) ? response.value.items : [])
+const columnWidthsKey = 'cpahome:request-events:column-widths'
+const columnWidths = ref(readRequestPreference(columnWidthsKey, normalizeRequestColumnWidths))
+const columnVisibilityKey = 'cpahome:request-events:columns'
+const columnVisibility = ref(readRequestPreference(columnVisibilityKey, normalizeRequestColumnVisibility))
+const visibleColumnKeys = computed(() => visibleRequestColumns(columnVisibility.value))
+function setColumnVisible(key, visible) {
+  if (key === 'timestamp' || key === 'actions' || typeof visible !== 'boolean') return
+  const next = { ...columnVisibility.value }
+  if (visible) delete next[key]
+  else next[key] = false
+  columnVisibility.value = normalizeRequestColumnVisibility(next)
+  saveRequestPreference(columnVisibilityKey, columnVisibility.value, normalizeRequestColumnVisibility)
+}
+const columnMenuItems = computed(() => columnDefinitions.filter(column => column.accessorKey !== 'actions').map(column => ({
+  label: column.header, type: 'checkbox', checked: visibleColumnKeys.value.includes(column.accessorKey), disabled: column.accessorKey === 'timestamp',
+  onUpdateChecked: checked => setColumnVisible(column.accessorKey, checked),
+  onSelect: event => event.preventDefault()
+})))
+const autoWidths = computed(() => estimateRequestColumnWidths(events.value))
+const columnWidth = key => columnWidths.value[key] ?? autoWidths.value[key] ?? requestColumnDefaults[key]
+const columns = computed(() => columnDefinitions.filter(column => visibleColumnKeys.value.includes(column.accessorKey)).map(column => ({ ...column, meta: { class: { th: column.accessorKey === 'actions' ? 'table-action-head' : 'relative', td: column.accessorKey === 'actions' ? 'table-action-cell' : '' }, style: { th: { width: `${columnWidth(column.accessorKey)}px` }, td: { maxWidth: `${columnWidth(column.accessorKey)}px` } } } })))
+const tableStyle = computed(() => ({ width: `${visibleColumnKeys.value.reduce((sum, key) => sum + columnWidth(key), 0)}px` }))
+function persistColumnWidths() { saveRequestPreference(columnWidthsKey, columnWidths.value, normalizeRequestColumnWidths) }
+function autoFitColumn(key) { const next = { ...columnWidths.value }; delete next[key]; columnWidths.value = next; persistColumnWidths() }
+function autoFitColumns() { columnWidths.value = {}; persistColumnWidths() }
+let stopColumnResize = () => {}
+function resizeColumn(event, key) {
+  if (event.button !== 0) return
+  stopColumnResize()
+  event.preventDefault()
+  const startX = event.clientX
+  const startWidth = event.currentTarget.closest('th')?.getBoundingClientRect().width || columnWidth(key)
+  const cursor = document.body.style.cursor, userSelect = document.body.style.userSelect
+  const move = next => { columnWidths.value = { ...columnWidths.value, [key]: clampRequestColumnWidth(key, startWidth + next.clientX - startX) } }
+  const stop = () => {
+    window.removeEventListener('pointermove', move)
+    window.removeEventListener('pointerup', stop)
+    window.removeEventListener('pointercancel', stop)
+    window.removeEventListener('blur', stop)
+    document.body.style.cursor = cursor
+    document.body.style.userSelect = userSelect
+    persistColumnWidths()
+    stopColumnResize = () => {}
+  }
+  document.body.style.cursor = 'col-resize'
+  document.body.style.userSelect = 'none'
+  window.addEventListener('pointermove', move)
+  window.addEventListener('pointerup', stop)
+  window.addEventListener('pointercancel', stop)
+  window.addEventListener('blur', stop)
+  stopColumnResize = stop
+}
+function resizeColumnWithKeyboard(event, key) {
+  if (event.key === 'Home' || event.key === 'Enter') { event.preventDefault(); autoFitColumn(key); return }
+  if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return
+  event.preventDefault()
+  columnWidths.value = { ...columnWidths.value, [key]: clampRequestColumnWidth(key, columnWidth(key) + (event.key === 'ArrowRight' ? 16 : -16)) }
+  persistColumnWidths()
+}
 const total = computed(() => Number(response.value?.total) || 0)
-const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize)))
-const pageStart = computed(() => total.value ? ((page.value - 1) * pageSize) + 1 : 0)
-const pageEnd = computed(() => Math.min(page.value * pageSize, total.value))
+const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize.value)))
+const pageStart = computed(() => total.value ? ((page.value - 1) * pageSize.value) + 1 : 0)
+const pageEnd = computed(() => Math.min(page.value * pageSize.value, total.value))
 const visibleFailures = computed(() => events.value.filter(event => event.failed).length)
 const visibleTokens = computed(() => events.value.reduce((sum, event) => sum + (Number(event.tokens?.total_tokens) || 0), 0))
 const optionList = (key, label) => [{ label, value: allOptionValue }, ...(Array.isArray(filterOptions.value?.[key]) ? filterOptions.value[key] : []).filter(value => value !== '' && value != null).map(value => ({ label: value, value }))]
@@ -211,7 +278,7 @@ function buildQuery(source = appliedFilters.value, includePagination = true) {
     else if (key === 'search' && appliedSearchField.value !== 'all') query[appliedSearchField.value] = value
     else query[key] = value
   }
-  if (includePagination) { query.limit = pageSize; query.offset = (page.value - 1) * pageSize }
+  if (includePagination) { query.limit = pageSize.value; query.offset = (page.value - 1) * pageSize.value }
   return query
 }
 async function loadEvents(version) {
@@ -251,6 +318,14 @@ function applyTimeRange(value) {
 }
 async function applyFilters() { const error = dateRangeError(filters.value.from, filters.value.to, 'datetime-local'); if (error) { pageError.value = error; return }; appliedSearchField.value = searchField.value; appliedFilters.value = { ...filters.value }; page.value = 1; pendingNewEvents.value = 0; await refreshEvents() }
 async function resetFilters() { filters.value = defaultFilters(); appliedFilters.value = { ...filters.value }; searchField.value = 'all'; appliedSearchField.value = 'all'; timeRange.value = '24h'; advancedOpen.value = false; sort.value = 'timestamp_desc'; page.value = 1; pendingNewEvents.value = 0; await refreshEvents() }
+async function changePageSize(value) {
+  if (!requestPageSizes.includes(value) || value === pageSize.value) return
+  pageSize.value = value
+  saveRequestPreference(pageSizeKey, value, normalizeRequestPageSize)
+  page.value = 1
+  pendingNewEvents.value = 0
+  await refreshEvents()
+}
 async function changePage(delta) {
   const next = page.value + delta
   if (next < 1 || next > totalPages.value) return
@@ -329,13 +404,13 @@ function executorLabel(value) { return value ? String(value).trim().replace(/Exe
 function eventTypeLabel(event) { return String(event?.event_type || 'completion').replaceAll('_', ' ').replace(/\b\w/g, value => value.toUpperCase()) }
 function eventEndpoint(event) { return event?.endpoint || event?.payload_summary?.method || 'Model request' }
 function cacheTokens(event) { const value = Number(event?.tokens?.cache_read_tokens ?? event?.tokens?.cached_tokens); return value > 0 ? formatCompactNumber(value) : '' }
-function cacheRate(event) { const input = Number(event?.tokens?.input_tokens) || 0; const cached = Number(event?.tokens?.cache_read_tokens ?? event?.tokens?.cached_tokens) || 0; return input > 0 && cached > 0 ? `${Math.round((cached / input) * 100)}%` : '' }
-function toolCount(event) { return Object.entries(event?.tool_usage || {}).filter(([key]) => key !== 'num_sources_used').reduce((sum, [, value]) => sum + (Number(value) || 0), 0) }
+const cacheRate = requestCacheRate
+function toolCount(event) { return toolUsageEntries(event?.tool_usage).reduce((sum, [, value]) => sum + Number(value), 0) }
 function errorMessage(error, fallback = 'Unexpected request error.') { return error?.data?.message || error?.data?.error || error?.message || fallback }
 
 watch([liveRefresh, refreshSeconds], scheduleRefresh)
-watch(timeRange, value => savePreference('cpahome:request-events:range', value))
-watch(sort, async value => { savePreference('cpahome:request-events:sort', value); page.value = 1; pendingNewEvents.value = 0; await refreshEvents() })
+watch(timeRange, value => saveTelemetryChoice('cpahome:request-events:range', value, requestRanges))
+watch(sort, async value => { saveTelemetryChoice('cpahome:request-events:sort', value, requestSorts); page.value = 1; pendingNewEvents.value = 0; await refreshEvents() })
 useDataSync('admin:request-records:sync', refreshEvents)
 watch(token, () => {
   exportVersion++
@@ -353,5 +428,5 @@ onMounted(() => {
   void refreshCapabilities().catch(() => {})
   void refreshEvents()
 })
-onBeforeUnmount(() => { disposed = true; exportVersion++; exportController.abort(); requestVersion++; loading.value = false; if (refreshTimer) clearInterval(refreshTimer) })
+onBeforeUnmount(() => { stopColumnResize(); disposed = true; exportVersion++; exportController.abort(); requestVersion++; loading.value = false; if (refreshTimer) clearInterval(refreshTimer) })
 </script>

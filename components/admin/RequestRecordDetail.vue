@@ -89,6 +89,7 @@
 </template>
 
 <script setup lang="ts">
+import { requestCostRows, toolUsageEntries } from '~/composables/requestTelemetry'
 type Fields = Record<string, any>
 type Detail = { event?: Fields; payload_summary?: Fields | null; log_excerpt?: string[] }
 type Row = { label: string; value: string; hint?: string; mono?: boolean; copy?: boolean }
@@ -143,19 +144,14 @@ function details(object: Fields | undefined, pairs: string[][]) { return pairs.m
 const errorDetails = computed(() => details(event.value.error, [['HTTP status', 'status_code'], ['Upstream status', 'upstream_status_code'], ['Reason', 'reason'], ['Message', 'message']]))
 const primaryTokens = computed(() => details(event.value.tokens, [['Input', 'input_tokens'], ['Output', 'output_tokens'], ['Reasoning', 'reasoning_tokens']]).map(item => ({ ...item, value: item.value === '—' ? '—' : number(item.value) })))
 const cacheTokens = computed(() => details(event.value.tokens, [['Cached', 'cached_tokens'], ['Cache read', 'cache_read_tokens'], ['Cache creation', 'cache_creation_tokens']]).map(item => ({ ...item, value: item.value === '—' ? '—' : number(item.value) })))
-const toolUsage = computed(() => Object.entries(event.value.tool_usage || {}).filter(([, value]) => Number(value) > 0).map(([key, value]) => ({ label: key.replaceAll('_', ' '), value: number(value) })))
+const toolUsage = computed(() => toolUsageEntries(event.value.tool_usage).map(([key, value]) => ({ label: key.replaceAll('_', ' '), value: number(value) })))
 const requestDetails = computed(() => details(event.value, [['Event ID', 'id'], ['Original model', 'original_model'], ['Model alias', 'model_alias'], ['Executor', 'executor_type'], ['Source', 'source'], ['Service tier', 'service_tier'], ['Reasoning effort', 'reasoning_effort'], ['Session ID', 'session_id'], ['Parent session ID', 'parent_session_id'], ['Root session ID', 'root_session_id']]))
 const runtimeDetails = computed(() => details(event.value.runtime, [['Home', 'home_id'], ['Home IP', 'home_ip'], ['Home port', 'home_port'], ['CPA label', 'cpa_label'], ['CPA node ID', 'cpa_node_id'], ['CPA address', 'cpa_ip'], ['CPA port', 'cpa_port']]))
 const credentialDetails = computed(() => details(event.value.credential, [['Type', 'credential_type'], ['Label', 'label'], ['Credential ID', 'credential_id'], ['Auth index', 'auth_index'], ['Provider', 'provider'], ['Source', 'source'], ['Key preview', 'api_key_preview']]))
 const clientDetails = computed(() => details(event.value.client, [['Username', 'username'], ['User ID', 'user_id'], ['Key label', 'client_key_label'], ['Key ID', 'client_key_id'], ['Masked key', 'client_key_masked'], ['Client IP', 'client_ip']]))
 const performanceDetails = computed(() => [{ label: 'Latency', value: milliseconds(event.value.performance?.latency_ms) }, { label: 'TTFT', value: milliseconds(event.value.performance?.ttft_ms) }, { label: 'TPS', value: event.value.performance?.tps == null ? '—' : decimal(event.value.performance.tps) }])
 const billingDetails = computed(() => [{ label: 'Amount', value: amount.value }, ...details(event.value.billing, [['Charge ID', 'charge_id'], ['Price rule', 'matched_price_rule']])])
-const costBreakdown = computed(() => {
-  const billing = event.value.billing
-  const items = billing?.cost_breakdown?.items
-  if (!items || typeof items !== 'object') return []
-  return Object.entries(items as Record<string, { cost?: unknown; tokens?: unknown }>).filter(([, item]) => Number(item?.cost) > 0 || Number(item?.tokens) > 0).map(([key, item]) => ({ label: key.replace(/^expr:/, '').replaceAll('_', ' '), value: Number(item?.cost) > 0 ? `${decimal(item.cost)} ${billing.currency || 'credits'}` : number(item?.tokens) }))
-})
+const costBreakdown = computed(() => requestCostRows(event.value.billing))
 const formatBoolean = (value: unknown) => value == null ? '—' : value ? 'Yes' : 'No'
 const hasError = computed(() => Boolean(event.value.error?.message || event.value.error?.reason || event.value.error?.body_preview))
 

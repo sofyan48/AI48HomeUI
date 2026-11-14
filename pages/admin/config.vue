@@ -4,7 +4,7 @@
       v-if="pageError"
       color="error"
       variant="subtle"
-      title="System config could not be loaded"
+      title="Configuration needs attention"
       :description="pageError"
     />
 
@@ -332,6 +332,7 @@
         >
       </div>
       <div class="flex flex-wrap gap-2">
+        <AdminConfigYamlReplacement :disabled="loading || saving || dirtyCount > 0" @saved="loadWorkspace()" />
         <AppButton
           color="neutral"
           variant="outline"
@@ -351,7 +352,7 @@
         <AppButton
           icon="i-tabler-check"
           :loading="saving"
-          :disabled="!dirtyCount || validationCount > 0 || loading"
+          :disabled="!dirtyCount || validationCount > 0 || loading || saveNeedsReload"
           @click="saveWorkspace"
           >Save</AppButton
         >
@@ -457,6 +458,8 @@
 import { useWorkspaceState } from '~/composables/useWorkspaceState'
 import { useDataSync } from '~/composables/useDataSync'
 import { parseDocument } from "yaml";
+import { configParitySections, isConfigJsonField, validateConfigParityField } from '~/composables/configParity'
+import { planConfigWrites, applyConfigWrites, reconcileConfigDraft } from '~/composables/configWrites'
 
 const { fetchAPI } = useApi();
 const toast = useToast();
@@ -503,6 +506,7 @@ const payloadEditMode = ref("default");
 const payloadEditIndex = ref(-1);
 const payloadEditor = reactive({ models: "[]", params: "{}" });
 const payloadEditorError = ref("");
+const saveNeedsReload = ref(false);
 
 const channelOptions = [
   ["claude", "Claude"],
@@ -523,6 +527,7 @@ const channelOptions = [
   ["meta", "Meta"],
 ].map(([value, label]) => ({ value, label }));
 const sharedConfigSections = [
+  ...configParitySections,
   {
     id: "session-streaming", title: "Session routing and streaming", description: "Session-sticky routing and downstream response keepalives. Unset settings retain backend defaults.",
     fields: [
@@ -595,8 +600,7 @@ const outline = [
       "remoteManagementAllowRemote",
       "remoteManagementSecretKey",
       "remoteManagementDisableControlPanel",
-      "remoteManagementDisableAutoUpdatePanel",
-      "remoteManagementPanelGithubRepository",
+
     ],
   },
   {
@@ -746,6 +750,11 @@ const validationErrors = computed(() => {
   for (const field of sharedConfigFields) {
     const value = draft.value[field.key];
     if (value === null || value === undefined) continue;
+    if (configParitySections.some(section => section.fields.some(item => item.key === field.key))) {
+      const error = validateConfigParityField(field, value);
+      if (error) errors[field.key] = error;
+      continue;
+    }
     if (field.type === "boolean") {
       if (typeof value !== "boolean") errors[field.key] = "Select the backend default, enabled or disabled.";
     } else if (field.type === "number") {
@@ -774,6 +783,9 @@ const validationErrors = computed(() => {
     } else if (/[\r\n\u0000]/.test(value)) {
       errors[field.key] = "Header defaults must not contain line breaks or NUL characters.";
     }
+  }
+  if (draft.value.liveMediaRelayUdpPortMin != null && draft.value.liveMediaRelayUdpPortMax != null && Number(draft.value.liveMediaRelayUdpPortMin) > Number(draft.value.liveMediaRelayUdpPortMax)) {
+    errors.liveMediaRelayUdpPortMax = "Maximum UDP port must not be less than the minimum.";
   }
   return errors;
 });
@@ -842,6 +854,7 @@ function fieldChanged(key) {
   return String(draft.value[key]) !== String(baseline.value[key]);
 }
 function formatChangeValue(key, value) {
+  if (key === "remoteManagementSecretKey" || key === "liveMediaRelayIceServersJson") return "[sensitive value]";
   if (sharedConfigFields.some(field => field.key === key)) {
     if (value === null || value === undefined) return "Backend default (unset)";
     if (value === "") return '"" (explicit empty string)';
@@ -882,7 +895,7 @@ function buildDraft(config, yamlRoot) {
     // Read shared settings from YAML so omitted/null, false and empty strings stay distinct.
     ...Object.fromEntries(sharedConfigFields.map(field => {
       const value = field.path.reduce((node, part) => node?.[part], yamlRoot) ?? null;
-      return [field.key, field.type === "json" && value !== null ? JSON.stringify(value, null, 2) : value];
+      return [field.key, isConfigJsonField(field.type) && value !== null ? JSON.stringify(value, null, 2) : value];
     })),
     debug: Boolean(logs.debug),
     port: Number(server.port || 8317),
@@ -895,11 +908,7 @@ function buildDraft(config, yamlRoot) {
     remoteManagementDisableControlPanel: Boolean(
       remote["disable-control-panel"],
     ),
-    remoteManagementDisableAutoUpdatePanel: Boolean(
-      remote["disable-auto-update-panel"],
-    ),
-    remoteManagementPanelGithubRepository:
-      remote["panel-github-repository"] || remote["panel-repo"] || "",
+
     userEmailEnabled: Boolean(email.enabled),
     userEmailPublicUrl: email["public-user-url"] || "",
     userEmailFromAddress: email["from-address"] || "",
@@ -956,7 +965,7 @@ function syncEditors() {
     (entries || []).map((entry) => ({
       key: ++aliasKey,
       channel,
-      original: structuredClone(entry),
+      original: structuredClone(toRaw(entry)),
       displayName: entry["display-name"] || "",
       name: entry.name || "",
       alias: entry.alias || "",
@@ -969,7 +978,7 @@ function syncEditors() {
   const payload = parseJSON(draft.value.payloadJson, {});
   for (const mode of payloadModes)
     payloadDraft[mode.value] = structuredClone(
-      Array.isArray(payload[mode.value]) ? payload[mode.value] : [],
+      Array.isArray(payload[mode.value]) ? toRaw(payload[mode.value]) : [],
     );
   payloadEditorBaseline = JSON.stringify(payloadDraft);
   payloadEditorSource = draft.value.payloadJson;
@@ -1011,13 +1020,17 @@ async function loadWorkspace(preserveDraft = false) {
     ]);
     configSnapshot.value = config;
     yamlText.value = String(yaml || "");
-    const root = parseDocument(yamlText.value).toJS() || {};
+    const document = parseDocument(yamlText.value);
+    if (document.errors.length) throw new Error("The backend returned invalid configuration YAML.");
+    const root = document.toJS() || {};
     const next = buildDraft(config, root);
+    const reconciled = preserveDraft === true
+      ? reconcileConfigDraft(baseline.value, draft.value, next)
+      : structuredClone(next);
     baseline.value = structuredClone(next);
-    if (preserveDraft !== true) {
-      draft.value = structuredClone(next);
-      syncEditors();
-    }
+    draft.value = reconciled;
+    syncEditors();
+    saveNeedsReload.value = false;
     runtimeMode.value =
       String(config.mode || config["runtime-mode"] || "home").toLowerCase() ===
       "cpa"
@@ -1117,7 +1130,7 @@ function editPayload(mode, index) {
   payloadEditorOpen.value = true;
 }
 function duplicatePayload(mode, index) {
-  payloadDraft[mode].push(structuredClone(payloadDraft[mode][index]));
+  payloadDraft[mode].push(structuredClone(toRaw(payloadDraft[mode][index])));
   syncSpecialDrafts();
 }
 function removePayload(mode, index) {
@@ -1162,14 +1175,7 @@ const v8YamlPaths = {
   remoteManagementAllowRemote: ["management", "allow-remote"],
   remoteManagementSecretKey: ["management", "secret-key"],
   remoteManagementDisableControlPanel: ["management", "disable-control-panel"],
-  remoteManagementDisableAutoUpdatePanel: [
-    "management",
-    "disable-auto-update-panel",
-  ],
-  remoteManagementPanelGithubRepository: [
-    "management",
-    "panel-github-repository",
-  ],
+
   userEmailEnabled: ["user-email", "enabled"],
   userEmailPublicUrl: ["user-email", "public-user-url"],
   userEmailFromAddress: ["user-email", "from-address"],
@@ -1214,73 +1220,53 @@ const v8YamlPaths = {
     "sensitive-words",
   ],
 };
+function configWriteValue(key) {
+  const value = draft.value[key];
+  if (value === null) return null;
+  const field = sharedConfigFields.find(field => field.key === key);
+  if (field && isConfigJsonField(field.type)) return JSON.parse(value);
+  if (["pluginStoreSourcesJson", "antigravitySensitiveWordsJson", "devinSensitiveWordsJson"].includes(key)) return lines(value);
+  if (["oauthExcludedModelsJson", "oauthModelAliasJson", "payloadJson"].includes(key)) return JSON.parse(value);
+  if (["port", "userEmailSmtpPort", "logsMaxTotalSizeMb", "errorLogsMaxFiles", "requestRetry", "maxRetryCredentials", "maxRetryInterval", "tlsHandshakeTimeoutSeconds"].includes(key)) return Number(value);
+  if (["proxyUrl", "cpaPublicUrl", "modelsCatalog", "modelsCodexCatalog", "modelsDevinCatalog"].includes(key)) return String(value).trim();
+  return value;
+}
+
 async function saveWorkspace() {
+  if (saving.value || loading.value || !loaded.value || saveNeedsReload.value) return;
   syncSpecialDrafts();
   if (!dirtyCount.value || validationCount.value) return;
   saving.value = true;
   pageError.value = "";
   try {
-    const changed = changes.value.map((change) => change.key);
-    const document = parseDocument(yamlText.value);
-    document.set("config-version", 8);
-    for (const key of changed) {
-      const path = v8YamlPaths[key];
-      if (!path) continue;
-      let value = draft.value[key];
-      if (sharedConfigFields.some(field => field.key === key) && value === null) {
-        document.deleteIn(path);
-        continue;
+    const previous = structuredClone(toRaw(baseline.value));
+    const intended = structuredClone(toRaw(draft.value));
+    const writes = planConfigWrites(changes.value.map(change => change.key), v8YamlPaths, configWriteValue);
+    const result = await applyConfigWrites(writes, fetchAPI);
+    // Even a failed write may have committed before runtime reload failed.
+    // Always reread before offering a retry, without discarding remaining edits.
+    await loadWorkspace(true);
+    if (!pageError.value) {
+      draft.value = reconcileConfigDraft(previous, intended, baseline.value);
+      // Acknowledged writes may be normalized (including omitted defaults).
+      for (const write of result.completed) {
+        for (const key of write.keys) draft.value[key] = baseline.value[key];
       }
-      if (
-        [
-          "port",
-          "userEmailSmtpPort",
-          "logsMaxTotalSizeMb",
-          "errorLogsMaxFiles",
-          "requestRetry",
-          "maxRetryCredentials",
-          "maxRetryInterval",
-          "tlsHandshakeTimeoutSeconds",
-        ].includes(key)
-      )
-        value = Number(value);
-      else if (
-        ["pluginStoreSourcesJson", "antigravitySensitiveWordsJson", "devinSensitiveWordsJson"].includes(
-          key,
-        )
-      )
-        value = lines(value);
-      else if (
-        [
-          "oauthExcludedModelsJson",
-          "oauthRequestScopedErrorsJson",
-          "oauthModelAliasJson",
-          "payloadJson",
-        ].includes(key)
-      )
-        value = parseJSON(value, {});
-      else if (["proxyUrl", "cpaPublicUrl", "modelsCatalog", "modelsCodexCatalog", "modelsDevinCatalog"].includes(key)) value = String(value).trim();
-      document.setIn(path, value);
+      syncEditors();
     }
-    if (changed.some(key => key.startsWith("userEmail"))) {
-      for (const key of outline.find(section => section.id === "user-email").keys) {
-        const value = key === "userEmailSmtpPort" ? Number(draft.value[key]) : draft.value[key];
-        document.setIn(v8YamlPaths[key], value);
-      }
+    saveNeedsReload.value = Boolean(pageError.value);
+    if (result.failed) {
+      const error = result.error;
+      const detail = error?.data?.message || error?.data?.error || error?.message || "Request failed.";
+      const refreshError = pageError.value;
+      pageError.value = `${result.completed.length} of ${writes.length} targeted writes acknowledged. Stopped at ${result.failed.path}: ${detail} ${refreshError ? `Readback failed: ${refreshError} Reload before retrying; the failed request may already have committed.` : 'State reread; remaining edits are retained. Review before retrying.'}`;
+    } else if (pageError.value) {
+      pageError.value = `Writes acknowledged, but readback failed: ${pageError.value} Reload before retrying.`;
+    } else {
+      toast.add({ title: "Config saved", color: "success" });
     }
-    await fetchAPI("/config.yaml", {
-      method: "PUT",
-      body: document.toString(),
-      headers: { "Content-Type": "application/yaml; charset=utf-8" },
-    });
-    toast.add({ title: "Config saved", color: "success" });
-    await loadWorkspace();
   } catch (error) {
-    pageError.value =
-      error?.data?.message ||
-      error?.data?.error ||
-      error?.message ||
-      "Unable to save configuration.";
+    pageError.value = error?.message || "Unable to prepare targeted configuration writes.";
   } finally {
     saving.value = false;
   }
@@ -1288,6 +1274,10 @@ async function saveWorkspace() {
 
 watch(aliasRows, syncSpecialDrafts, { deep: true });
 
-useDataSync('admin:config:sync', () => loadWorkspace(true));
+useDataSync('admin:config:sync', () => {
+  if (saving.value) return;
+  syncSpecialDrafts();
+  return loadWorkspace(true);
+});
 onMounted(loadWorkspace);
 </script>

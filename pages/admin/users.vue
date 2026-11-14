@@ -795,7 +795,7 @@
               v-model="keyForm.api_key"
               class="w-full font-mono text-xs"
               :disabled="saving || !!editingKey" /></UFormField
-          ><UFormField label="Owner"
+          ><UFormField label="Owner" :hint="keyOwnerUnavailable ? 'The current owner is unavailable. Leave it unchanged to preserve the binding, or explicitly reassign or unassign it.' : undefined"
             ><USelectMenu
               v-model="keyForm.user_id"
               :items="userOptions"
@@ -1316,6 +1316,7 @@
 <script setup>
 import { useWorkspaceState } from '~/composables/useWorkspaceState'
 import { useDataSync } from '~/composables/useDataSync'
+import { changedUsersKeyBindings, usersKeyOwnerOptions } from '~/composables/usersKeyBindings'
 import EmptyState from "@/components/admin/users/UsersEmptyState.vue";
 
 import UnsupportedScopes from "@/components/admin/users/UsersUnsupportedScopes.vue";
@@ -2328,12 +2329,9 @@ const normalizedDetailWindows = computed(() => {
 const keyFormOpen = ref(false),
   editingKey = ref(null),
   keyForm = ref({});
-const userOptions = computed(() => [
-  { label: "Unassigned", value: 0 },
-  ...users.value
-    .filter((user) => !user.deleted_at)
-    .map((user) => ({ label: user.username, value: Number(user.id) })),
-]);
+const userOptions = computed(() => usersKeyOwnerOptions(users.value, Number(keyForm.value.user_id) || 0));
+const keyOwnerUnavailable = computed(() => Number(keyForm.value.user_id) > 0 &&
+  !users.value.some((user) => Number(user.id) === Number(keyForm.value.user_id) && !user.deleted_at));
 const channelOptions = computed(() =>
     channelGroups.value.map((group) => ({
       label: group.channel_name,
@@ -2374,6 +2372,7 @@ function openKeyEdit(key) {
   keyFormOpen.value = true;
 }
 async function submitKey() {
+  if (saving.value) return;
   if (!keyForm.value.api_key.trim())
     return void (formError.value = "Key value is required.");
   const channels = [
@@ -2399,13 +2398,18 @@ async function submitKey() {
       model_groups: modelGroups,
     };
     if (editingKey.value) {
+      const changed = changedUsersKeyBindings(editingKey.value, bindings);
+      if (!Object.keys(changed).length) {
+        keyFormOpen.value = false;
+        return;
+      }
       await fetchAPI("/access/api-keys", {
         method: "PATCH",
         body: {
           ...(editingKey.value.numeric_id != null
             ? { id: editingKey.value.numeric_id }
             : { api_key: editingKey.value.api_key }),
-          ...bindings,
+          ...changed,
         },
       });
     } else {

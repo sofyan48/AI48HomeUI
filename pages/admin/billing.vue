@@ -171,8 +171,8 @@
 
 
 
-    <AppModal v-model:open="matchingSettingsOpen" title="Billing settings" description="Set the saved reporting timezone and tier matching for future charges.">
-      <template #body><form class="space-y-5" @submit.prevent="saveSettings"><UAlert v-if="settingsError" color="error" variant="subtle" :description="settingsError" /><UFormField label="Reporting timezone" required :error="timezoneError"><UInputMenu v-model="settingsForm.report_timezone" :items="timezoneOptions" create-item :search-input="{ placeholder: 'Search IANA timezones…' }" class="w-full" @create="settingsForm.report_timezone = $event.trim()" /><p class="mt-1 text-xs text-[var(--ui-text-muted)]">Saved default for billing overview, charge records, and balance records. Changes regroup reports and reinterpret date filters, but do not change historical charges.</p></UFormField><UFormField v-if="priceSchemaVersion >= 2" label="Tier matching source"><div class="grid gap-2"><button v-for="option in tierSourceOptions" :key="option.value" type="button" class="rounded-lg border border-[var(--ui-border)] p-3 text-left" :class="settingsForm.service_tier_source === option.value ? 'border-[var(--ui-primary)] bg-[var(--ui-primary)]/10' : ''" @click="settingsForm.service_tier_source = option.value"><span class="font-medium">{{ option.label }}</span><UBadge v-if="option.value === 'request'" class="ml-2" color="neutral" variant="subtle">Default</UBadge><p class="mt-1 text-xs text-[var(--ui-text-muted)]">{{ option.value === 'request' ? 'Match the tier requested by the client.' : 'Match the provider response tier and fall back to the requested tier when absent.' }}</p></button></div></UFormField><UAlert v-if="diagnosticsError" color="warning" variant="subtle" title="Tier diagnostics unavailable" :description="diagnosticsError" /><div v-else-if="settingsForm.service_tier_source === 'response' && tierDiagnostics" class="rounded-lg border border-[var(--ui-border)] p-4 text-sm"><p>{{ formatNumber(tierDiagnostics.fallback_requests) }} of {{ formatNumber(tierDiagnostics.eligible_requests) }} recent eligible requests would fall back to the requested tier.</p></div><div class="flex justify-end gap-2 border-t border-[var(--ui-border)] pt-4"><AppButton type="button" color="neutral" variant="ghost" @click="matchingSettingsOpen = false">Cancel</AppButton><AppButton type="submit" :loading="settingsSaving || diagnosticsLoading" :disabled="settingsSaving || diagnosticsLoading || !!timezoneError">Save settings</AppButton></div></form></template>
+    <AppModal v-model:open="matchingSettingsOpen" title="Billing settings" description="Set reporting timezone, model and tier matching, and public catalog pricing. Matching changes affect future charges only.">
+      <template #body><form class="space-y-5" @submit.prevent="saveSettings"><UAlert v-if="settingsError" color="error" variant="subtle" :description="settingsError" /><UFormField label="Reporting timezone" required :error="timezoneError"><UInputMenu v-model="settingsForm.report_timezone" :items="timezoneOptions" create-item :search-input="{ placeholder: 'Search IANA timezones…' }" class="w-full" @create="settingsForm.report_timezone = $event.trim()" /><p class="mt-1 text-xs text-[var(--ui-text-muted)]">Saved default for billing overview, charge records, and balance records. Changes regroup reports and reinterpret date filters, but do not change historical charges.</p></UFormField><UFormField label="Billing model ID source"><USelect v-model="settingsForm.model_source" :items="[{ label: 'Request model ID first (default)', value: 'request' }, { label: 'Response model ID first', value: 'response' }]" value-key="value" label-key="label" class="w-full" /><p class="mt-1 text-xs text-[var(--ui-text-muted)]">{{ settingsForm.model_source === 'response' ? 'Match the upstream response_model first, falling back to the requested/routed model ID when absent.' : 'Match the requested/routed model ID first, falling back to upstream response_model.' }}</p></UFormField><UFormField label="Public model catalog pricing"><USwitch v-model="settingsForm.public_model_pricing" aria-label="Show model catalog pricing when signed out" /><p class="mt-1 text-xs text-[var(--ui-text-muted)]">When enabled, anonymous visitors can view model price ladders, tool pricing, and availability metrics on the public model catalog without signing in.</p></UFormField><UFormField v-if="priceSchemaVersion >= 2" label="Tier matching source"><div class="grid gap-2"><button v-for="option in tierSourceOptions" :key="option.value" type="button" class="rounded-lg border border-[var(--ui-border)] p-3 text-left" :class="settingsForm.service_tier_source === option.value ? 'border-[var(--ui-primary)] bg-[var(--ui-primary)]/10' : ''" @click="settingsForm.service_tier_source = option.value"><span class="font-medium">{{ option.label }}</span><UBadge v-if="option.value === 'request'" class="ml-2" color="neutral" variant="subtle">Default</UBadge><p class="mt-1 text-xs text-[var(--ui-text-muted)]">{{ option.value === 'request' ? 'Match the tier requested by the client.' : 'Match the provider response tier and fall back to the requested tier when absent.' }}</p></button></div></UFormField><UAlert v-if="diagnosticsError" color="warning" variant="subtle" title="Tier diagnostics unavailable" :description="diagnosticsError" /><div v-else-if="settingsForm.service_tier_source === 'response' && tierDiagnostics" class="rounded-lg border border-[var(--ui-border)] p-4 text-sm"><p>{{ formatNumber(tierDiagnostics.fallback_requests) }} of {{ formatNumber(tierDiagnostics.eligible_requests) }} recent eligible requests would fall back to the requested tier.</p></div><div class="flex justify-end gap-2 border-t border-[var(--ui-border)] pt-4"><AppButton type="button" color="neutral" variant="ghost" @click="matchingSettingsOpen = false">Cancel</AppButton><AppButton type="submit" :loading="settingsSaving || diagnosticsLoading" :disabled="settingsSaving || diagnosticsLoading || !!timezoneError">Save settings</AppButton></div></form></template>
     </AppModal>
 
     <AppModal v-model:open="adjustmentOpen" :title="adjustmentForm.type === 'recharge' ? 'Recharge user balance' : 'Deduct user balance'" description="Creates an immutable billing balance record.">
@@ -259,6 +259,7 @@ import { dateRangeError } from '~/composables/dateRange'
 import { useWorkspaceState } from '~/composables/useWorkspaceState'
 import { useDataSync } from '~/composables/useDataSync'
 import { billingModelCandidates } from '~/composables/billingModelCandidates'
+import { normalizeBillingSettings, billingSettingsPayload } from '~/composables/billingPreferences'
 const { fetchAPI } = useApi()
 const allOptionValue = '__all__'
 const toast = useToast()
@@ -314,7 +315,7 @@ const settingsLoading = useWorkspaceState('admin:billing:settingsLoading', () =>
 const settingsSaving = useWorkspaceState('admin:billing:settingsSaving', () => (false))
 
 const deviceTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
-const settingsForm = ref({ service_tier_source: 'request', report_timezone: 'UTC' })
+const settingsForm = ref(normalizeBillingSettings(null))
 const settingsError = ref('')
 const timezoneOptions = computed(() => {
   let supported = []
@@ -559,7 +560,7 @@ function updateReportTimezone(timezone) {
     Object.assign(applied.value, range)
   }
 }
-async function loadSettings(preserveDraft = false) { settingsLoading.value = true; try { const settings = await fetchAPI('/billing/settings'); updateReportTimezone(settings?.report_timezone || 'UTC'); if (preserveDraft !== true) settingsForm.value = { service_tier_source: settings?.service_tier_source || 'request', report_timezone: savedReportTimezone.value }; savedTierSource.value = settings?.service_tier_source || 'request' } finally { settingsLoading.value = false } }
+async function loadSettings(preserveDraft = false) { settingsLoading.value = true; try { const settings = await fetchAPI('/billing/settings'); updateReportTimezone(settings?.report_timezone || 'UTC'); if (preserveDraft !== true) settingsForm.value = normalizeBillingSettings(settings); savedTierSource.value = settings?.service_tier_source || 'request' } finally { settingsLoading.value = false } }
 async function loadDiagnostics() {
   diagnosticsLoading.value = true
   diagnosticsError.value = ''
@@ -695,8 +696,8 @@ async function persistSettings() {
   if (settingsError.value) return
   settingsSaving.value = true
   try {
-    const saved = await fetchAPI('/billing/settings', { method: 'PATCH', body: { service_tier_source: settingsForm.value.service_tier_source, report_timezone: settingsForm.value.report_timezone.trim() } })
-    settingsForm.value = saved
+    const saved = await fetchAPI('/billing/settings', { method: 'PATCH', body: billingSettingsPayload(settingsForm.value) })
+    settingsForm.value = normalizeBillingSettings(saved)
     savedTierSource.value = saved.service_tier_source
     updateReportTimezone(saved.report_timezone || 'UTC')
     tierConfirmOpen.value = false

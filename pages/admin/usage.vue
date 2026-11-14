@@ -214,6 +214,7 @@
 
 <script setup>
 import { dateRangeError } from '~/composables/dateRange'
+import { readTelemetryChoice, saveTelemetryChoice, usageRanges } from '~/composables/requestTelemetry'
 import { useWorkspaceState } from '~/composables/useWorkspaceState'
 import { useDataSync } from '~/composables/useDataSync'
 const { fetchAPI, token } = useApi()
@@ -269,7 +270,8 @@ const rangeOptions = [
   { label: 'All time', value: 'all' },
   { label: 'Custom', value: 'custom' },
 ]
-const rangePreset = ref('7d')
+const rangePreset = ref(readTelemetryChoice('cpahome:usage:range', '7d', usageRanges))
+watch(rangePreset, value => saveTelemetryChoice('cpahome:usage:range', value, usageRanges))
 const showAdvancedFilters = ref(false)
 const credentialTypeOptions = [{ label: 'All credential types', value: allOptionValue }, { label: 'OAuth', value: 'oauth' }, { label: 'Provider API key', value: 'provider_api_key' }, { label: 'File auth', value: 'file_auth' }, { label: 'Vertex', value: 'vertex' }, { label: 'Unknown', value: 'unknown' }]
 const defaultFilters = () => ({
@@ -289,8 +291,8 @@ const defaultFilters = () => ({
   search: '',
 })
 
-const filters = ref(defaultFilters())
-const appliedFilters = ref(defaultFilters())
+const filters = ref({ ...defaultFilters(), ...datesForRange(rangePreset.value) })
+const appliedFilters = ref({ ...filters.value })
 const sort = ref('timestamp_desc')
 const page = ref(1)
 const overview = useWorkspaceState('admin:usage:overview', () => (null))
@@ -501,7 +503,7 @@ const refreshAll = async (automatic = false) => {
     if (!disposed && version === overviewVersion) errorMessage.value = apiErrorMessage(error, 'Failed to load usage observability data.')
   }
 }
-const appliedPreset = ref('7d')
+const appliedPreset = ref(rangePreset.value)
 const refreshEligible = computed(() => capabilitiesReady.value && activeView.value === 'overview' && !detailOpen.value && !rankingOpen.value && !['yesterday', 'custom'].includes(appliedPreset.value) && !loading.value && !credentialsLoading.value)
 const { enabled: autoRefresh, status: refreshStatus } = useUsageRefresh(refreshEligible, () => refreshAll(true))
 

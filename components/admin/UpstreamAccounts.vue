@@ -120,9 +120,23 @@
             <p v-if="accountQuotaLoading" class="py-8 text-center text-[var(--ui-text-muted)]">Loading quota windows…</p>
             <template v-else-if="accountQuotaDetail">
               <div class="flex flex-wrap items-center gap-2"><UBadge color="neutral" variant="subtle">{{ accountQuotaDetail.credential?.provider || detailsTarget?.provider || 'Unknown provider' }}</UBadge><UBadge :color="quotaColor(accountQuotaDetail.credential?.quota_status)" variant="subtle">{{ accountQuotaDetail.credential?.quota_status || 'unknown' }}</UBadge><UBadge color="neutral" variant="subtle">{{ accountQuotaDetail.collection?.freshness || 'never' }}</UBadge><UBadge v-if="accountQuotaDetail.collection?.status" color="neutral" variant="subtle">{{ accountQuotaDetail.collection.status }}</UBadge></div>
+              <p v-if="quotaHistorical(accountQuotaDetail.credential)" class="text-xs text-amber-500">Historical observation, not current availability</p>
+              <p v-if="accountQuotaDetail.credential?.source === 'response_header' && accountQuotaDetail.collection?.status === 'success'" class="text-xs text-[var(--ui-text-muted)]">Passive header snapshot</p>
               <p v-if="accountQuotaDetail.credential?.plan?.name" class="font-medium">{{ accountQuotaDetail.credential.plan.name }}</p>
-              <div v-for="window in accountQuotaDetail.windows || []" :key="window.id" class="rounded-md border border-[var(--ui-border)] p-3"><div class="flex items-start justify-between gap-3"><p class="font-medium">{{ window.label || window.id }}</p><UBadge :color="quotaColor(window.status)" variant="subtle">{{ window.status }}</UBadge></div><p class="mt-1 text-xs text-[var(--ui-text-muted)]">{{ quotaWindowRemaining(window) }} · Used: {{ quotaWindowAmount(window.used, window) }} · Reset: {{ window.reset_at ? new Date(window.reset_at).toLocaleString() : '—' }}</p><div v-if="quotaWindowRatio(window) !== null" class="mt-2 h-1.5 overflow-hidden rounded-full bg-[var(--ui-bg-muted)]"><div class="h-full bg-[var(--ui-primary)]" :style="{ width: `${Math.round(quotaWindowRatio(window) * 100)}%` }" /></div></div>
-              <p v-if="accountQuotaDetail.collection?.error?.message" class="text-xs text-red-500">{{ quotaCollectionMessage(accountQuotaDetail.collection.error) }}</p><p v-if="!accountQuotaDetail.windows?.length" class="text-[var(--ui-text-muted)]">No quota windows recorded.</p>
+              <p v-if="accountQuotaDetail.credential?.plan?.expires_at" class="text-xs text-[var(--ui-text-muted)]">Subscription ends {{ new Date(accountQuotaDetail.credential.plan.expires_at).toLocaleString() }}</p>
+              <div v-if="['xai', 'grok'].includes(accountQuotaDetail.credential?.provider)" class="space-y-2">
+                <p>On-demand: {{ xaiOnDemandState(accountQuotaDetail.credential) }}</p>
+                <div v-if="xaiProductWindows(accountQuotaDetail.credential).length" class="space-y-2 rounded-md border border-[var(--ui-border)] p-3">
+                  <p class="font-medium">Shared product usage</p>
+                  <p class="text-xs text-[var(--ui-text-muted)]">Products share one allowance, not separate quotas.</p>
+                  <div v-for="window in xaiProductWindows(accountQuotaDetail.credential)" :key="window.id">
+                    <p>{{ window.label || window.id }}: {{ quotaProductUsed(window) }}</p>
+                    <p v-if="isRetainedQuotaWindow(accountQuotaDetail.credential, window)" class="text-xs text-amber-500">Retained · observed {{ new Date(window.observed_at).toLocaleString() }}</p>
+                  </div>
+                </div>
+              </div>
+              <div v-for="window in accountQuotaWindows" :key="window.id" class="rounded-md border border-[var(--ui-border)] p-3"><div class="flex items-start justify-between gap-3"><p class="font-medium">{{ quotaWindowLabel(window, accountQuotaDetail.credential?.provider) }}</p><UBadge :color="quotaColor(window.status)" variant="subtle">{{ window.status }}</UBadge></div><p v-if="isRetainedQuotaWindow(accountQuotaDetail.credential, window)" class="text-xs text-amber-500">Retained · observed {{ new Date(window.observed_at).toLocaleString() }}</p><p class="mt-1 text-xs text-[var(--ui-text-muted)]">{{ quotaWindowRemaining(window) }} · Used: {{ quotaWindowAmount(window.used, window) }} · Reset: {{ window.reset_at ? new Date(window.reset_at).toLocaleString() : '—' }}</p><div v-if="quotaWindowRatio(window) !== null" class="mt-2 h-1.5 overflow-hidden rounded-full bg-[var(--ui-bg-muted)]"><div class="h-full bg-[var(--ui-primary)]" :style="{ width: `${Math.round(quotaWindowRatio(window) * 100)}%` }" /></div></div>
+              <p v-if="accountQuotaDetail.collection?.error" class="text-xs text-red-500">{{ quotaCollectionMessage(accountQuotaDetail.collection.error) }}</p><p v-if="!accountQuotaDetail.windows?.length" class="text-[var(--ui-text-muted)]">No quota windows recorded.</p>
               <div v-if="accountQuotaDetail.reset_credits || resetCreditSupported" class="rounded-md border border-[var(--ui-border)] p-3"><p class="font-medium">Reset credits: {{ accountQuotaDetail.reset_credits?.available_count ?? '—' }} available</p><p v-if="String(accountQuotaDetail.credential?.provider).toLowerCase() === 'claude'" class="mt-1 text-xs text-[var(--ui-text-muted)]">Remaining resets in active grants, not guaranteed redemption eligibility. Home observes Claude grants only; it cannot consume them. Individual credit expiry details are not provided.</p><p v-if="accountQuotaDetail.reset_credits?.observed_at" class="text-xs text-[var(--ui-text-muted)]">Observed {{ new Date(accountQuotaDetail.reset_credits.observed_at).toLocaleString() }}</p><p v-for="(credit, index) in accountQuotaDetail.reset_credits?.credits || []" :key="index" class="mt-1 text-xs">{{ credit.status }} · Expires {{ credit.expires_at ? new Date(credit.expires_at).toLocaleString() : '—' }}</p><AppButton v-if="resetCreditSupported" size="sm" color="neutral" variant="outline" class="mt-3" :disabled="!canResetCredit || resetCreditSubmitting || Boolean(resetCreditAttempts[detailsTarget?.id])" @click="openResetCredit">Reset Codex quota with one credit</AppButton><p v-if="resetCreditDisabledReason" class="mt-2 text-xs text-[var(--ui-text-muted)]">{{ resetCreditDisabledReason }}</p></div>
             </template>
             <UAlert v-if="resetCreditNotice && resetCreditNoticeCredential === detailsTarget?.id" :color="resetCreditNoticeColor" variant="subtle" :description="resetCreditNotice" />
@@ -200,7 +214,7 @@
 import { useWorkspaceState } from '~/composables/useWorkspaceState'
 import { useStoreData } from '~/composables/useStoreData'
 import { credentialModelCards, normalizeCredentialModels } from '~/composables/credentialModelCards'
-import { normalizeQuotaEntry, isQuotaAttention, quotaWindowAmount, quotaCollectionMessage, credentialWeightPatch, quotaHistorical, isRetainedQuotaWindow, quotaWindowLabel, xaiOnDemandState, xaiProductWindows, quotaProductUsed } from '~/composables/upstreamQuota'
+import { normalizeQuotaEntry, normalizeQuotaDetail, isQuotaAttention, quotaWindowAmount, quotaCollectionMessage, credentialWeightPatch, quotaHistorical, isRetainedQuotaWindow, quotaWindowLabel, xaiOnDemandState, xaiProductWindows, quotaProductUsed } from '~/composables/upstreamQuota'
 import { credentialWebsocketState, supportsCredentialWebsockets, supportsCredentialUsingAPI, credentialUsingAPI, credentialInFlight } from '~/composables/credentialTransport'
 import { useQuotaCollection } from '~/composables/useQuotaCollection'
 const quotaCollection = useQuotaCollection()
@@ -264,6 +278,11 @@ function overviewFields(item) {
 }
 const accountQuotaTarget = computed(() => detailsTarget.value)
 const accountQuotaDetail = useWorkspaceState('admin:upstream-accounts:accountQuotaDetail', () => (null))
+const accountQuotaWindows = computed(() => {
+  const quota = accountQuotaDetail.value?.credential
+  const products = new Set(['xai', 'grok'].includes(quota?.provider) ? xaiProductWindows(quota).map(window => window.id) : [])
+  return (accountQuotaDetail.value?.windows || []).filter(window => !products.has(window.id))
+})
 const accountQuotaError = useWorkspaceState('admin:upstream-accounts:accountQuotaError', () => (''))
 const accountQuotaLoading = useWorkspaceState('admin:upstream-accounts:accountQuotaLoading', () => (false))
 const accountQuotaCollecting = computed(() => quotaCollection.collectingAll.value || quotaCollection.collectingIDs.value.has(detailsTarget.value?.id))
@@ -490,7 +509,7 @@ async function refreshAccountQuota() {
   accountQuotaError.value = ''
   try {
     const detail = await fetchAPI(`/quota/credentials/${encodeURIComponent(id)}`)
-    if (current()) accountQuotaDetail.value = detail
+    if (current()) accountQuotaDetail.value = normalizeQuotaDetail(detail)
     await refreshQuotaSummary()
   } catch (error) { if (current()) accountQuotaError.value = message(error) }
   finally { if (current()) accountQuotaLoading.value = false }

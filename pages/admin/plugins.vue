@@ -746,6 +746,27 @@
             >
         </section>
 
+        <AppModal v-model:open="confirmationOpen" :title="confirmationTitle" :dismissible="!confirmationBusy" :close="!confirmationBusy">
+          <template #body>
+            <form class="space-y-4" @submit.prevent="performConfirmedAction">
+              <p class="text-sm">{{ confirmationDescription }}</p>
+              <template v-if="confirmation?.kind === 'install'">
+                <p class="break-all text-sm">Source: {{ confirmation.plugin.source_name || confirmation.plugin.source_id }} · {{ confirmation.plugin.source_url }}</p>
+                <UFormField label="Version" hint="Leave blank for the latest release. Direct installs accept only versions published by the registry.">
+                  <UInput v-model="installVersion" :placeholder="confirmation.plugin.version || 'Latest release'" :disabled="confirmationBusy" class="w-full" />
+                </UFormField>
+                <UAlert color="warning" variant="subtle" title="Plugin code trust acknowledgement" description="Plugins execute code on your nodes, or inside Home when explicitly enabled there. Registry and repository labels do not verify the provenance of the installed code. Only proceed if you trust the source and install artifacts." />
+                <UFormField :label="`Type plugin ID ${installTrust.confirmation} to acknowledge that you trust this install`">
+                  <UInput v-model="typedConfirmation" :disabled="confirmationBusy" :spellcheck="false" autocomplete="off" class="w-full" />
+                </UFormField>
+              </template>
+              <div class="flex justify-end gap-3">
+                <AppButton type="button" color="neutral" variant="outline" :disabled="confirmationBusy" @click="confirmationOpen = false">Cancel</AppButton>
+                <AppButton type="submit" :color="confirmation?.kind === 'install' ? 'primary' : 'error'" :loading="confirmationBusy" :disabled="!canConfirmAction">{{ confirmation?.kind === 'install' ? 'Install' : confirmation?.kind === 'uninstall' ? 'Uninstall' : 'Delete rule' }}</AppButton>
+              </div>
+            </form>
+          </template>
+        </AppModal>
         <AdminPluginConfigEditor
             v-model:open="configOpen"
             :plugin="configPlugin"
@@ -884,6 +905,7 @@
 import { useWorkspaceState } from '~/composables/useWorkspaceState'
 import { useDataSync } from '~/composables/useDataSync'
 import { useStoreData } from '~/composables/useStoreData'
+import { pluginInstallTrust } from '~/composables/pluginInstallTrust'
 const { fetchAPI, token } = useApi();
 const toast = useToast();
 const value = (row) => row?.original ?? row;
@@ -903,7 +925,47 @@ const selectedStore = ref("");
 const configOpen = ref(false);
 const configPlugin = ref(null);
 const pluginMutationError = ref(null);
+const confirmationOpen = ref(false);
+const confirmation = ref(null);
+const confirmationBusy = ref(false);
+const installVersion = ref('');
+const typedConfirmation = ref('');
+const installTrust = computed(() => pluginInstallTrust(confirmation.value?.plugin || { id: '' }));
+const canConfirmAction = computed(() => Boolean(confirmation.value) && (confirmation.value.kind !== 'install' || Boolean(installTrust.value.confirmation) && typedConfirmation.value.trim() === installTrust.value.confirmation));
+const confirmationTitle = computed(() => confirmation.value?.kind === 'install' ? 'Install plugin' : confirmation.value?.kind === 'uninstall' ? 'Uninstall plugin' : 'Delete store authentication rule');
+const confirmationDescription = computed(() => {
+    const action = confirmation.value;
+    if (!action) return '';
+    if (action.kind === 'install') return `Install ${action.plugin.name || action.plugin.id}? This updates shared configuration; node rollout is not confirmed by this operation.`;
+    if (action.kind === 'uninstall') return `Uninstall ${action.id} from the entire Home/CPA cluster? This removes shared configuration and creates a delete task for all nodes.`;
+    return `Delete auth rule ${action.rule.name}? Future plugin downloads may require this authentication.`;
+});
+function requestConfirmation(action) {
+    if (busyPlugin.value || confirmationBusy.value) return;
+    confirmation.value = action;
+    installVersion.value = '';
+    typedConfirmation.value = '';
+    confirmationOpen.value = true;
+}
+const install = plugin => requestConfirmation({ kind: 'install', plugin });
+const uninstall = id => requestConfirmation({ kind: 'uninstall', id });
+const deleteAuth = rule => requestConfirmation({ kind: 'auth', rule });
+async function performConfirmedAction() {
+    if (confirmationBusy.value || !canConfirmAction.value) return;
+    const action = confirmation.value;
+    confirmationBusy.value = true;
+    try {
+        if (action.kind === 'install') await performInstall(action.plugin, installVersion.value.trim());
+        else if (action.kind === 'uninstall') await performUninstall(action.id);
+        else await performDeleteAuth(action.rule);
+        confirmationOpen.value = false;
+    } finally {
+        confirmationBusy.value = false;
+    }
+}
 watch(token, () => {
+    confirmationOpen.value = false;
+    confirmation.value = null;
     configOpen.value = false;
     configPlugin.value = null;
     pluginMutationError.value = null;
@@ -1181,14 +1243,8 @@ function safeURL(raw) {
         return "";
     }
 }
-async function install(plugin) {
-    if (
-        busyPlugin.value ||
-        !confirm(
-            `${plugin.update_available ? "Update" : "Install"} ${plugin.name || plugin.id} from ${plugin.source_name || plugin.source_id}${plugin.version ? ` (version ${plugin.version})` : " (latest release)"}? This updates the shared plugin configuration; node rollout is not reported by this operation.`,
-        )
-    )
-        return;
+async function performInstall(plugin, version) {
+    if (busyPlugin.value) return;
     busyPlugin.value = plugin.id;
     operation.value = {
         title: `Installing ${plugin.name || plugin.id}`,
@@ -1200,7 +1256,7 @@ async function install(plugin) {
             {
                 method: "POST",
                 query: { source: plugin.source_id || undefined },
-                body: plugin.version ? { version: plugin.version } : {},
+                body: version ? { version } : {},
             },
         );
         operation.value = {
@@ -1225,14 +1281,8 @@ async function install(plugin) {
         busyPlugin.value = "";
     }
 }
-async function uninstall(id) {
-    if (
-        busyPlugin.value ||
-        !confirm(
-            `Uninstall ${id} from the entire Home/CPA cluster? This removes its shared configuration and creates a delete task for all nodes.`,
-        )
-    )
-        return;
+async function performUninstall(id) {
+    if (busyPlugin.value) return;
     busyPlugin.value = id;
     operation.value = {
         title: `Uninstalling ${id}`,
@@ -1396,8 +1446,7 @@ async function saveAuth() {
         savingAuth.value = false;
     }
 }
-async function deleteAuth(rule) {
-    if (!confirm(`Delete auth rule ${rule.name}?`)) return;
+async function performDeleteAuth(rule) {
     try {
         await fetchAPI(`/plugin-store-auth/${rule.id}`, { method: "DELETE" });
         await refreshAll();

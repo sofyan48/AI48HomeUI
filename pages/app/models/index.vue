@@ -8,11 +8,17 @@
       <UAlert v-if="error" color="error" variant="subtle" title="Unable to load models" :description="error" />
       <UAlert v-if="accessibleWarning" color="warning" variant="subtle" title="Your key access could not be loaded" :description="accessibleWarning" />
 
+      <UAlert v-if="token && accessLoaded && access?.reason === 'no_api_keys'" color="warning" variant="subtle" title="No API keys" description="The full catalog is shown, but you need an API key before you can call a model." />
+      <UAlert v-else-if="token && accessLoaded && access?.restricted" color="info" variant="subtle" title="Your keys have restricted model access" :description="`Access is the union of your ${access.api_key_count} API keys. Models outside their model groups remain visible in the catalog.`" />
+
       <AppCard class="catalog-panel catalog-filters" :ui="{ body: 'space-y-4' }">
 
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]">
           <UFormField label="Search" class="sm:col-span-2 lg:col-span-1">
-            <UInput v-model="search" aria-label="Search models" icon="i-tabler-search" placeholder="Find a model by name or capability…" size="lg" class="w-full" />
+            <UInput v-model="search" aria-label="Search models" icon="i-tabler-search" placeholder="Find a model, serving provider or capability…" size="lg" class="w-full" />
+          </UFormField>
+          <UFormField label="Serving provider">
+            <USelect :model-value="provider || noFilterValue" @update:model-value="provider = $event === noFilterValue ? '' : String($event)" aria-label="Serving provider" :items="providerOptions" value-key="value" label-key="label" size="lg" class="w-full" />
           </UFormField>
           <UFormField label="Input modality">
             <USelect :model-value="inputModality || noFilterValue" @update:model-value="inputModality = $event === noFilterValue ? '' : String($event)" aria-label="Input modality" :items="modalityOptions" value-key="value" label-key="label" size="lg" class="w-full" />
@@ -24,6 +30,7 @@
         <legend class="mb-2 text-xs font-medium text-[var(--ui-text-muted)]">Features</legend>
         <AppButton v-for="option in capabilityOptions" :key="option.value" type="button" size="sm" class="rounded-full" :color="selectedCapabilities.includes(option.value) ? 'primary' : 'neutral'" :variant="selectedCapabilities.includes(option.value) ? 'soft' : 'ghost'" :icon="selectedCapabilities.includes(option.value) ? 'i-tabler-check' : undefined" :aria-pressed="selectedCapabilities.includes(option.value)" @click="setCapability(option.value, !selectedCapabilities.includes(option.value))">{{ option.label }}</AppButton>
       </fieldset>
+      <UCheckbox v-if="token" v-model="mineOnly" label="Accessible with my keys only" :disabled="!accessLoaded" />
 
       <p class="text-xs leading-relaxed text-[var(--ui-text-muted)]">Unknown modalities and capabilities do not match support filters. Availability is observed cluster-wide, not a guarantee.</p>
       </AppCard>
@@ -42,10 +49,12 @@
             <div class="catalog-icon flex size-10 shrink-0 items-center justify-center rounded-xl">
               <UIcon :name="modelLogoIcon(model)" class="size-6" aria-hidden="true" />
             </div>
-            <UBadge v-if="token" color="success" variant="subtle" size="sm">Available</UBadge>
+            <UBadge v-if="model.accessible === true" color="success" variant="subtle" size="sm">Included in your keys</UBadge>
+            <UBadge v-else-if="model.accessible === false" color="neutral" variant="subtle" size="sm">Not in your keys</UBadge>
           </div>
           <div class="mt-3 min-w-0">
-            <p class="break-words text-base font-semibold tracking-tight text-[var(--ui-text-highlighted)]" :title="model.display_name || model.id">{{ model.display_name || model.id }}</p>
+            <AppButton color="neutral" variant="link" class="max-w-full justify-start whitespace-normal text-left" aria-haspopup="dialog" @click="openDetails(model, $event)">{{ model.display_name || model.id }}</AppButton>
+            <p v-if="model.providers?.length" class="mt-1 break-words text-xs text-[var(--ui-text-muted)]">Serving providers: <span class="font-mono">{{ model.providers.join(' · ') }}</span></p>
             <div class="mt-0.5 flex min-w-0 items-center gap-0.5">
               <code class="truncate text-xs text-[var(--ui-text-muted)]" :title="model.id">{{ model.id }}</code>
               <AppButton color="neutral" variant="ghost" size="xs" icon="i-tabler-copy" :aria-label="`Copy model ID ${model.id}`" @click.stop="copyModelId(model.id)" />
@@ -55,8 +64,16 @@
             <UBadge v-for="label in capabilityLabels(model)" :key="label" color="neutral" variant="soft" size="sm" class="rounded-full">{{ label }}</UBadge>
           </div>
           <div class="catalog-price mt-auto flex items-center justify-between gap-3 pt-4">
-            <p v-if="model.pricing?.status === 'published'" class="min-w-0 text-sm font-medium leading-6">From {{ credits(lowestPrice(model, 'input')) }} in / {{ credits(lowestPrice(model, 'output')) }} out / 1M tokens</p>
-            <p v-else class="min-w-0 text-sm leading-6 text-[var(--ui-text-muted)]">Price not published</p>
+            <div class="min-w-0 space-y-1">
+              <template v-if="pricingEntryPoint(model.pricing)">
+                <p class="text-sm font-medium leading-6">From {{ formatCatalogPrice(pricingEntryPoint(model.pricing)?.input) }} in / {{ formatCatalogPrice(pricingEntryPoint(model.pricing)?.output) }} out / 1M tokens</p>
+                <UBadge v-if="(pricingEntryPoint(model.pricing)?.maxRungCount || 0) > 1" color="info" variant="subtle" size="sm">Tiered · up to {{ pricingEntryPoint(model.pricing)?.maxRungCount }} context rungs</UBadge>
+                <p v-if="pricingEntryPoint(model.pricing)?.hasFormula" class="text-xs text-[var(--ui-text-muted)]">Formula-based billing; see complete prices.</p>
+                <p class="text-xs text-[var(--ui-text-muted)]">Opening rates from each provider’s default or first listed tier, not a full request quote.</p>
+                <AppButton color="primary" variant="link" size="sm" icon="i-tabler-receipt" @click="openDetails(model, $event, 'pricing')">Complete prices<span v-if="pricingEntryPoint(model.pricing)?.toolPrices.length"> · {{ pricingEntryPoint(model.pricing)?.toolPrices.length }} tool rates</span></AppButton>
+              </template>
+              <p v-else class="text-sm leading-6 text-[var(--ui-text-muted)]">{{ pricingMessage(model, Boolean(token)) }}</p>
+            </div>
             <AppButton color="primary" variant="ghost" size="sm" class="shrink-0 rounded-full" trailing-icon="i-tabler-arrow-right" :aria-label="`View details for ${model.display_name || model.id}`" @click="openDetails(model, $event)">Details</AppButton>
           </div>
         </AppCard>
@@ -68,7 +85,7 @@
       <div v-if="catalogReady && !loading && !error && !filteredModels.length" class="rounded-2xl border border-dashed border-[var(--ui-border)] py-16 text-center text-sm text-[var(--ui-text-muted)]">{{ models.length ? 'No models match your filters.' : 'No models are currently served.' }}</div>
     </template>
 
-    <USlideover v-model:open="detailOpen" :title="selectedModel?.display_name || selectedModel?.id || 'Model details'" :description="selectedModel?.id" :ui="{ content: 'sm:max-w-xl' }">
+    <USlideover v-model:open="detailOpen" @after:enter="focusPricing" :title="selectedModel?.display_name || selectedModel?.id || 'Model details'" :description="selectedModel?.id" :ui="{ content: 'sm:max-w-xl' }">
       <template #body>
         <div v-if="selectedModel" class="catalog-details space-y-5 text-sm">
           <div class="flex items-center gap-3">
@@ -117,11 +134,34 @@
             <p v-if="selectedModel.availability.window">Window: {{ dateText(selectedModel.availability.window.from) }} – {{ dateText(selectedModel.availability.window.to) }}</p>
             <p>Last observed: {{ dateText(selectedModel.availability.last_observed_at) }}</p>
           </section>
-          <section v-if="selectedModel.pricing" class="space-y-1"><h3 class="font-semibold">Pricing</h3>
-            <p v-if="selectedModel.pricing.status === 'published'">From {{ credits(lowestPrice(selectedModel, 'input')) }} in / {{ credits(lowestPrice(selectedModel, 'output')) }} out / 1M tokens</p>
-            <p v-else>No price published. This does not mean free.</p>
+          <section class="space-y-3" aria-labelledby="model-pricing-heading">
+            <h3 id="model-pricing-heading" ref="pricingHeading" tabindex="-1" class="font-semibold">Complete pricing</h3>
+            <template v-if="selectedModel.pricing?.status === 'published' && selectedModel.pricing.providers?.length">
+              <p class="text-xs text-[var(--ui-text-muted)]">Prices are in USD. Requests use the last context rung whose input-token threshold they reach, within the selected service tier. The default (*) tier covers requests without a priced tier.</p>
+              <p class="text-xs text-[var(--ui-text-muted)]">A formula replaces the column prices for its rung. Extracted tool rates are readable literal terms, not a complete evaluation of the formula. Optional token dimensions not listed fall back to their parent rate.</p>
+              <div v-for="offer in selectedModel.pricing.providers" :key="offer.provider" class="min-w-0 space-y-3">
+                <h4 class="break-all font-mono font-semibold">{{ offer.provider }}</h4>
+                <div v-for="tier in offer.tiers" :key="tier.service_tier" class="min-w-0 space-y-2">
+                  <p class="flex flex-wrap items-center gap-2">Service tier: <code>{{ tier.service_tier }}</code><UBadge v-if="tier.is_default" color="neutral" variant="subtle" size="sm">Default</UBadge></p>
+                  <p v-if="!tier.rungs.length" class="text-[var(--ui-text-muted)]">No context rungs published.</p>
+                  <div v-for="(rung, rungIndex) in tier.rungs" :key="`${rung.min_input_tokens}:${rungIndex}`" class="min-w-0 rounded-lg border border-[var(--ui-border)] p-3">
+                    <p class="mb-3 text-xs font-medium">{{ rung.min_input_tokens > 0 ? `From ${rung.min_input_tokens.toLocaleString()} input tokens` : 'Base context rung' }}</p>
+                    <dl class="grid grid-cols-2 gap-3">
+                      <div v-for="component in rungPriceComponents(rung)" :key="component.label" class="min-w-0">
+                        <dt class="text-xs text-[var(--ui-text-muted)]">{{ component.label }}</dt>
+                        <dd class="break-words tabular-nums">{{ formatCatalogPrice(component.value) }} <span class="text-xs text-[var(--ui-text-muted)]">{{ component.unit }}</span></dd>
+                      </div>
+                    </dl>
+                    <div v-if="rung.pricing_expr" class="mt-3 min-w-0 border-t border-[var(--ui-border)] pt-2">
+                      <p class="text-xs text-[var(--ui-text-muted)]">Billing formula (overrides column prices)</p>
+                      <div role="region" aria-label="Billing formula" tabindex="0" class="mt-1 max-w-full overflow-x-auto"><code class="block w-max whitespace-pre text-xs">{{ rung.pricing_expr }}</code></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </template>
+            <p v-else>{{ pricingMessage(selectedModel, Boolean(token)) }}</p>
           </section>
-          <p v-if="!selectedModel.pricing && !selectedModel.availability" class="text-xs text-[var(--ui-text-muted)]">Sign in to see pricing and observed availability for models covered by your keys.</p>
         </div>
       </template>
     </USlideover>
@@ -130,23 +170,14 @@
 
 <script setup lang="ts">
 import { useWorkspaceState } from '~/composables/useWorkspaceState'
+import { mergeCatalogs, matchesCatalogFilter, normalizedModelId, pricingEntryPoint, pricingMessage, rungPriceComponents, formatCatalogPrice } from '~/composables/userModelCatalog'
+import type { CatalogModel, AccessSummary } from '~/composables/userModelCatalog'
 definePageMeta({ layout: 'app' })
 const route = useRoute()
 const router = useRouter()
 const toast = useToast()
-const { token, fetchAPI, loadCapabilities } = useUserApi()
+const { token, fetchAPI, loadCapabilities, capabilities } = useUserApi()
 type CapabilityFilter = 'tools' | 'structuredOutput' | 'reasoning'
-type CatalogModel = Omit<UserModel, 'availability'> & {
-  accessible?: boolean
-  availability?: NonNullable<UserModel['availability']> & {
-    window?: { from: string; to: string; hours: number; min_samples: number }
-    success_count?: number
-    failed_count?: number
-    output_tokens_per_second?: number
-    first_observed_at?: string
-  }
-}
-type AccessSummary = { restricted: boolean; api_key_count: number; reason: string }
 
 const capabilityOrder: CapabilityFilter[] = ['tools', 'structuredOutput', 'reasoning']
 const validSorts = new Set(['name', 'price-asc', 'price-desc'])
@@ -164,6 +195,7 @@ const accessibleWarning = useWorkspaceState('user:models:accessible-warning', ()
 const access = useWorkspaceState<AccessSummary | null>('user:models:access', () => null)
 const accessLoaded = useWorkspaceState('user:models:access-loaded', () => false)
 const search = ref(validQueryString(route.query.q))
+const provider = ref(validQueryString(route.query.provider))
 
 const inputModality = ref(validQueryString(route.query.modality))
 const selectedCapabilities = ref<CapabilityFilter[]>(parseCapabilities(route.query.caps))
@@ -172,17 +204,22 @@ const sortBy = ref(validSorts.has(validQueryString(route.query.sort)) ? validQue
 const selectedModel = ref<CatalogModel | null>(null)
 const detailOpen = ref(false)
 const detailTrigger = ref<HTMLElement | null>(null)
+const pricingHeading = ref<HTMLElement | null>(null)
+const detailsSection = ref<'pricing' | null>(null)
 let loadGeneration = 0
+let disposed = false
 const capabilityOptions: { label: string; value: CapabilityFilter }[] = [{ label: 'Tools', value: 'tools' }, { label: 'Structured output', value: 'structuredOutput' }, { label: 'Reasoning', value: 'reasoning' }]
 const sortOptions = [{ label: 'Name A–Z', value: 'name' }, { label: 'Lowest opening price', value: 'price-asc' }, { label: 'Highest opening price', value: 'price-desc' }]
 
+const providerOptions = computed(() => [{ label: 'Any serving provider', value: noFilterValue }, ...Array.from(new Set(models.value.flatMap(model => model.providers || []))).sort().map(value => ({ label: value, value }))])
 const modalityOptions = computed(() => [{ label: 'Any input modality', value: noFilterValue }, ...Array.from(new Set(models.value.flatMap(model => model.modalities?.input || []).filter(Boolean))).sort().map(value => ({ label: `Accepts ${value}`, value }))])
 const filteredModels = computed(() => {
   const query = search.value.trim().toLowerCase()
   return models.value.filter(model =>
+    matchesCatalogFilter(model, '', provider.value, mineOnly.value && accessLoaded.value) &&
     (!inputModality.value || model.modalities?.status === 'known' && model.modalities.input?.includes(inputModality.value)) &&
     selectedCapabilities.value.every(capability => supportsCapability(model, capability)) &&
-    (!query || [model.id, model.display_name, model.description, ...capabilityLabels(model)].some(value => String(value || '').toLowerCase().includes(query)))
+    (!query || [model.id, model.display_name, model.description, ...(model.providers || []), ...capabilityLabels(model)].some(value => String(value || '').toLowerCase().includes(query)))
   ).sort((a, b) => {
     const name = (a.display_name || a.id).localeCompare(b.display_name || b.id)
     if (sortBy.value === 'name') return name
@@ -202,7 +239,9 @@ watch(filteredModels, () => { catalogPage.value = 1 }, { flush: 'sync' })
 
 watch(token, () => {
   loadGeneration++
-  models.value = publicCatalog.value.map(model => ({ ...model }))
+  detailOpen.value = false
+  selectedModel.value = null
+  models.value = mergeCatalogs(publicCatalog.value, null)
   access.value = null
   accessLoaded.value = false
   accessibleWarning.value = ''
@@ -210,7 +249,7 @@ watch(token, () => {
   void loadModels()
 })
 watch(() => route.query, applyRouteQuery)
-watch([search, inputModality, selectedCapabilities, mineOnly, sortBy], () => { void syncRouteQuery() }, { deep: true })
+watch([search, provider, inputModality, selectedCapabilities, mineOnly, sortBy], () => { void syncRouteQuery() }, { deep: true })
 watch(detailOpen, open => {
   if (!open && detailTrigger.value) {
     const trigger = detailTrigger.value
@@ -232,6 +271,7 @@ function applyRouteQuery() {
   const nextCapabilities = parseCapabilities(route.query.caps)
   const nextSort = validQueryString(route.query.sort)
   search.value = nextSearch
+  provider.value = validQueryString(route.query.provider)
 
   inputModality.value = nextModality
   selectedCapabilities.value = nextCapabilities
@@ -242,6 +282,7 @@ async function syncRouteQuery() {
   const query = { ...route.query }
   for (const key of queryKeys) delete query[key]
   if (search.value) query.q = search.value
+  if (provider.value) query.provider = provider.value
 
   if (inputModality.value) query.modality = inputModality.value
   if (selectedCapabilities.value.length) query.caps = capabilityOrder.filter(item => selectedCapabilities.value.includes(item)).join(',')
@@ -254,6 +295,7 @@ function normalizedQueryValue(value: unknown) { return typeof value === 'string'
 function validateCatalogFilters() {
   const modalities = new Set(models.value.flatMap(model => model.modalities?.input || []))
   if (inputModality.value && !modalities.has(inputModality.value)) inputModality.value = ''
+  if (provider.value && !models.value.some(model => model.providers?.includes(provider.value))) provider.value = ''
 }
 function setCapability(capability: CapabilityFilter, enabled: boolean) {
   const selected = new Set(selectedCapabilities.value)
@@ -267,7 +309,7 @@ function supportsCapability(model: CatalogModel, capability: CapabilityFilter) {
   return model.capabilities?.reasoning?.status === 'supported'
 }
 function modelLogoIcon(model: CatalogModel) {
-  const identity = [model.id, model.display_name, ...(model.providers || [])].join(' ').toLowerCase()
+  const identity = [model.id, model.display_name].join(' ').toLowerCase()
   if (/claude|anthropic/.test(identity)) return 'i-tabler-sparkles'
   if (/gemini|gemma|google|vertex|palm/.test(identity)) return 'i-tabler-brand-google'
   if (/gpt|openai|o1|o3|o4|codex/.test(identity)) return 'i-tabler-brand-openai'
@@ -289,7 +331,8 @@ async function refreshCatalog() {
   const capabilityRequest = loadCapabilities().catch((cause: any) => {
     if (!isNotFound(cause)) capabilityError.value = cause?.message || 'Unable to load server capabilities.'
   }).finally(() => { capabilityLoading.value = false })
-  await Promise.all([capabilityRequest, loadModels()])
+  await capabilityRequest
+  if (!disposed) await loadModels()
 }
 async function loadModels() {
   const generation = ++loadGeneration
@@ -298,12 +341,22 @@ async function loadModels() {
   catalogUnsupported.value = false
   error.value = ''
   accessibleWarning.value = ''
+  if (capabilities.value && capabilities.value.model_catalog === false) {
+    catalogUnsupported.value = true
+    publicCatalog.value = []
+    models.value = []
+    access.value = null
+    accessLoaded.value = false
+    loading.value = false
+    catalogReady.value = true
+    return
+  }
   const publicRequest = fetchAPI<{ models?: CatalogModel[] }>('/models', { auth: false })
   const accessibleRequest = tokenSnapshot
     ? fetchAPI<{ models?: CatalogModel[]; access?: AccessSummary }>('/models/accessible', { auth: true })
     : Promise.resolve(null)
   const [publicResult, accessibleResult] = await Promise.allSettled([publicRequest, accessibleRequest])
-  if (generation !== loadGeneration) return
+  if (generation !== loadGeneration || tokenSnapshot !== token.value) return
   try {
     if (publicResult.status === 'rejected') {
       if (isNotFound(publicResult.reason)) {
@@ -320,27 +373,26 @@ async function loadModels() {
     const publicModels = Array.isArray(publicResult.value.models) ? publicResult.value.models : []
     publicCatalog.value = publicModels.map(model => ({ ...model }))
     if (!tokenSnapshot) {
-      models.value = publicCatalog.value.map(model => ({ ...model }))
+      models.value = mergeCatalogs(publicCatalog.value, null)
       access.value = null
       accessLoaded.value = false
     } else if (accessibleResult.status === 'fulfilled' && accessibleResult.value) {
-      const publicByID = new Map(publicCatalog.value.map(model => [normalizedModelId(model.id), model]))
       const accessibleModels = Array.isArray(accessibleResult.value.models) ? accessibleResult.value.models : []
-      models.value = accessibleModels.map(model => {
-        const publicModel = publicByID.get(normalizedModelId(model.id))
-        return { ...publicModel, ...model, id: publicModel?.id || model.id, accessible: true }
-      })
+      models.value = mergeCatalogs(publicCatalog.value, accessibleModels)
       access.value = accessibleResult.value.access || null
       accessLoaded.value = true
     } else {
-      models.value = []
+      models.value = mergeCatalogs(publicCatalog.value, null)
       access.value = null
       accessLoaded.value = false
       const warning = accessibleResult.status === 'rejected' ? errorMessage(accessibleResult.reason, 'Unable to load your key access.') : 'Unable to load your key access.'
-      accessibleWarning.value = warning
+      accessibleWarning.value = `${warning} The public catalog is still available; key access is unknown.`
     }
     validateCatalogFilters()
-    if (selectedModel.value) selectedModel.value = models.value.find(model => normalizedModelId(model.id) === normalizedModelId(selectedModel.value?.id || '')) || selectedModel.value
+    if (selectedModel.value) {
+          selectedModel.value = models.value.find(model => normalizedModelId(model.id) === normalizedModelId(selectedModel.value?.id || '')) || null
+          if (!selectedModel.value) detailOpen.value = false
+        }
   } finally {
     if (generation === loadGeneration) {
       loading.value = false
@@ -350,7 +402,7 @@ async function loadModels() {
 }
 function errorMessage(cause: any, fallback: string) { return cause?.message || fallback }
 function isNotFound(cause: any) { return cause?.statusCode === 404 || cause?.status === 404 }
-function normalizedModelId(id: string) { return String(id || '').trim().toLowerCase() }
+
 async function copyModelId(id: string) {
   try {
     await navigator.clipboard.writeText(id)
@@ -359,12 +411,13 @@ async function copyModelId(id: string) {
     toast.add({ title: 'Unable to copy model ID', color: 'error' })
   }
 }
-function openDetails(model: CatalogModel, event: MouseEvent) {
+function openDetails(model: CatalogModel, event: MouseEvent, section: 'pricing' | null = null) {
+  detailsSection.value = section
   detailTrigger.value = event.currentTarget instanceof HTMLElement ? event.currentTarget : null
   selectedModel.value = model
   detailOpen.value = true
 }
-function capabilityLabels(model: UserModel) {
+function capabilityLabels(model: CatalogModel) {
   const labels: string[] = []
   if (model.capabilities?.reasoning?.status === 'supported') labels.push('Reasoning')
   if (model.capabilities?.tool_calling?.status === 'supported') labels.push('Tools')
@@ -375,37 +428,34 @@ function capabilityLabels(model: UserModel) {
 function formatTokens(value?: number) { if (!value) return 'Not published'; return value >= 1_000_000 ? `${(value / 1_000_000).toFixed(1)}M` : value >= 1000 ? `${(value / 1000).toFixed(1)}K` : String(value) }
 
 function availabilityLabel(model: CatalogModel) { const rate = model.availability?.availability_rate; return model.availability?.status === 'observed' && typeof rate === 'number' ? `${(rate * 100).toFixed(1)}% observed` : 'Insufficient data' }
-function lowestPrice(model: UserModel, kind: 'input' | 'output') {
-  if (model.pricing?.status !== 'published') return null
-  const values = (model.pricing.providers || []).flatMap(item => item.tiers.flatMap(tier => tier.rungs.map(rung => kind === 'input' ? rung.input_price_per_million : rung.output_price_per_million))).filter(Number.isFinite)
-  return values.length ? Math.min(...values) : null
+function openingPrice(model: CatalogModel) { return pricingEntryPoint(model.pricing)?.input ?? null }
+function focusPricing() {
+  if (detailsSection.value !== 'pricing') return
+  pricingHeading.value?.focus({ preventScroll: true })
+  pricingHeading.value?.scrollIntoView({ block: 'start' })
 }
-function openingPrice(model: UserModel) {
-  if (model.pricing?.status !== 'published') return null
-  const values = (model.pricing.providers || []).flatMap(provider => provider.tiers.flatMap(tier => {
-    const openingRung = [...tier.rungs].sort((a, b) => a.min_input_tokens - b.min_input_tokens)[0]
-    return openingRung && Number.isFinite(openingRung.input_price_per_million) ? [openingRung.input_price_per_million] : []
-  }))
-  return values.length ? Math.min(...values) : null
-}
-function credits(value: number | null) { return value == null ? 'Not published' : new Intl.NumberFormat(undefined, { maximumFractionDigits: 6 }).format(value) }
-function modalityText(model: UserModel, direction: 'input' | 'output') { return model.modalities?.status === 'known' && model.modalities[direction]?.length ? model.modalities[direction].join(', ') : 'Not published' }
+watch(pricingHeading, () => { void nextTick(focusPricing) })
+function modalityText(model: CatalogModel, direction: 'input' | 'output') { return model.modalities?.status === 'known' && model.modalities[direction]?.length ? model.modalities[direction].join(', ') : 'Not published' }
 function capabilityText(status?: string) { return status === 'supported' ? 'Supported' : status === 'unsupported' ? 'Unsupported' : 'Not published' }
 function budgetText(budget: Record<string, unknown>) { return Object.entries(budget).map(([key, value]) => `${key.replaceAll('_', ' ')}: ${value}`).join(' · ') }
 function duration(ms?: number) { return ms == null ? 'Not published' : `${ms.toLocaleString()} ms` }
 function dateText(value?: string) { return value ? new Date(value).toLocaleString() : 'Not published' }
 function providerLimit(value?: number) { return typeof value === 'number' && Number.isFinite(value) ? value.toLocaleString() : 'Not published' }
-function modelLimit(model: UserModel, field: 'context_length' | 'max_output_tokens') {
+function modelLimit(model: CatalogModel, field: 'context_length' | 'max_output_tokens') {
   if (model[field]) return formatTokens(model[field])
   const published = (model.provider_limits || []).map(limit => limit[field]).filter((value): value is number => Boolean(value))
   return published.length ? 'Varies by provider' : 'Not published'
 }
-function modelFacts(model: UserModel) { return [
+function modelFacts(model: CatalogModel) { return [
+  { label: 'Serving providers', value: model.providers?.join(', ') || 'Not published' },
+  { label: 'Key access', value: model.accessible === true ? 'Included in your keys' : model.accessible === false ? 'Not in your keys' : 'Unknown' },
   { label: 'Model ID', value: model.id }, { label: 'Context', value: modelLimit(model, 'context_length') },
   { label: 'Maximum output', value: modelLimit(model, 'max_output_tokens') }, { label: 'Version', value: model.version || 'Not published' },
   { label: 'Owner', value: model.owned_by || 'Not published' }, { label: 'Type', value: model.type || 'Not published' }
 ] }
 
+
+onScopeDispose(() => { disposed = true; loadGeneration++ })
 
 onMounted(() => {
   void syncRouteQuery()

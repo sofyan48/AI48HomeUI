@@ -17,7 +17,7 @@ export function normalizeQuotaEntry<T extends QuotaCollectionEntry>(entry: T): T
   const hasError = Boolean(entry.error?.code || entry.error?.message)
   return {
     ...entry,
-    // Passive Codex response-header observations are complete observations even
+    // Error-free response-header snapshots are complete observations even
     // though Home marks them partial to distinguish them from an active probe.
     collection_status:
       entry.collection_status === 'partial' && source === 'response_header' && !hasError
@@ -101,8 +101,18 @@ type QuotaWindow = {
 export function normalizeQuotaDetail(detail: any): any {
   if (!detail?.credential) return detail
   const collection = detail.collection || {}
-  const credential = normalizeQuotaEntry({ ...detail.credential, windows: detail.windows || detail.credential.windows || [], error: detail.credential.error ?? collection.error })
-  return { ...detail, credential, collection: { ...collection, status: credential.collection_status } }
+  const credential = normalizeQuotaEntry({
+    ...detail.credential,
+    collection_status: detail.credential.collection_status ?? collection.status,
+    source: detail.credential.source ?? collection.source,
+    freshness: detail.credential.freshness ?? collection.freshness,
+    observed_at: detail.credential.observed_at ?? collection.observed_at,
+    expires_at: detail.credential.expires_at ?? collection.expires_at,
+    last_attempt_at: detail.credential.last_attempt_at ?? collection.last_attempt_at,
+    windows: detail.windows ?? detail.credential.windows ?? [],
+    error: detail.credential.error ?? collection.error,
+  })
+  return { ...detail, credential, collection: { ...collection, status: credential.collection_status, error: credential.error } }
 }
 
 export function quotaWindowAmount(value: number | null | undefined, window: QuotaWindow): string {
@@ -172,20 +182,20 @@ export function needsQuotaPreviewDetail(entry: any): boolean {
 
 // Never attach stored windows to a different identity or an older snapshot.
 export function resolveQuotaPreviewEntry(entry: any, detail: any): any {
-  const candidate = detail?.credential
+  const candidate = normalizeQuotaDetail(detail)?.credential
   if (!candidate || candidate.credential_id !== entry.credential_id || candidate.provider !== entry.provider || candidate.credential_type !== entry.credential_type) return entry
   for (const field of ['observed_at', 'last_attempt_at']) {
     if (entry[field] && (!Number.isFinite(Date.parse(candidate[field] || '')) || Date.parse(candidate[field]) < Date.parse(entry[field]))) return entry
   }
   if (entry.last_attempt_at === candidate.last_attempt_at && entry.collection_status !== 'collecting' && candidate.collection_status === 'collecting') return entry
   const same = entry.observed_at === candidate.observed_at && entry.last_attempt_at === candidate.last_attempt_at
-  return { ...(same && entry.collection_status !== 'collecting' ? entry : normalizeQuotaEntry(candidate)), windows: detail.windows || [], freshness: same && (entry.freshness === 'stale' || candidate.freshness === 'stale') ? 'stale' : candidate.freshness }
+  return { ...(same && entry.collection_status !== 'collecting' ? entry : normalizeQuotaEntry(candidate)), windows: candidate.windows, reset_credits: detail.reset_credits, freshness: same && (entry.freshness === 'stale' || candidate.freshness === 'stale') ? 'stale' : candidate.freshness }
 }
 
-export function quotaCollectionMessage(error: { code?: string; message?: string } | null | undefined): string {
+export function quotaCollectionMessage(error: { code?: string; message?: string; upstream_status_code?: number } | null | undefined): string {
   if (error?.code === 'DCA_TOKEN_UNAVAILABLE') return 'Meta quota requires DCA authorization. Reauthorize this Meta account and collect quota again.'
   if (error?.code === 'AUTH_TOKEN_UNAVAILABLE') return 'Credential access token is unavailable. Check credential authorization before collecting again.'
-  if (error?.code === 'UPSTREAM_CLIENT_OUTDATED') return 'The upstream quota endpoint requires a newer client version. Update Home before retrying.'
+  if (error?.code === 'UPSTREAM_CLIENT_OUTDATED' || error?.upstream_status_code === 426) return 'The upstream quota endpoint requires a newer client version. Update Home before retrying.'
   return error?.message || 'Quota collection failed.'
 }
 

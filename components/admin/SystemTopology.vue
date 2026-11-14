@@ -219,6 +219,7 @@
 <script setup lang="ts">
 import { useWorkspaceState } from '~/composables/useWorkspaceState'
 import { useDataSync } from '~/composables/useDataSync'
+import { normalizeTopologyConfig } from '~/composables/systemTopologyConfig'
 const InfoField = defineComponent({
   props: { label: { type: String, required: true }, value: { type: String, required: true } },
   template: '<div class="min-w-0"><p class="text-xs font-medium text-[var(--ui-text-muted)]">{{ label }}</p><p class="mt-1 truncate font-mono text-xs" :title="value">{{ value }}</p></div>'
@@ -334,8 +335,9 @@ const summaryCards = computed(() => [
   { label: 'Config', value: configSnapshot.value ? 'Available' : 'N/A', detail: configSnapshot.value ? 'Summary loaded' : 'Summary unavailable', tone: configSnapshot.value ? 'success' : 'warning', icon: 'i-tabler-adjustments' }
 ])
 const topologyDescription = computed(() => nodesSupported.value ? topology.value ? `${cpaCount.value} CPA, ${homeCount.value} Home` : nodes.value.length ? `${nodes.value.length} CPA nodes across ${inferredHomeCount.value} Home nodes` : 'Node route is available, no connection records yet' : 'This runtime does not expose node queries')
-const diagnosticSignals = computed(() => [signal('Request logs', configSnapshot.value?.['request-log']), signal('Usage statistics', configSnapshot.value?.['usage-statistics-enabled']), signal('File logging', configSnapshot.value?.['logging-to-file'])])
-const runtimeSignals = computed(() => [signal('Debug mode', configSnapshot.value?.debug, true), signal('Proxy endpoint', Boolean(configSnapshot.value?.['proxy-url'])), { label: 'Routing strategy', value: configSnapshot.value?.routing?.strategy || 'Unknown', tone: configSnapshot.value?.routing?.strategy ? 'neutral' : 'warning' }])
+const configSummary = computed(() => normalizeTopologyConfig(configSnapshot.value))
+const diagnosticSignals = computed(() => [signal('Request logs', configSummary.value.requestLog), signal('Usage statistics', configSummary.value.usageStatistics), signal('File logging', configSummary.value.loggingToFile)])
+const runtimeSignals = computed(() => [signal('Debug mode', configSummary.value.debug, true), signal('Proxy endpoint', configSummary.value.proxyConfigured), { label: 'Routing strategy', value: configSummary.value.routingStrategy, tone: configSummary.value.routingStrategy === 'unknown' ? 'warning' : 'neutral' }])
 const diagnosticOutput = computed(() => diagnosticResult.value?.body || JSON.stringify(diagnosticResult.value?.header || diagnosticResult.value?.headers || {}, null, 2))
 
 function toneClasses(tone: string) {
