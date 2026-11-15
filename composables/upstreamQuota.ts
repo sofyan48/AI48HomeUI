@@ -1,3 +1,6 @@
+/** Optional translator (e.g. useAdminI18n().t); omitted callers keep the English defaults. */
+export type QuotaTranslator = (key: any, params?: Record<string, string | number | null | undefined>) => string
+
 export type QuotaCollectionEntry = {
   credential_id: string
   provider?: string
@@ -115,9 +118,9 @@ export function normalizeQuotaDetail(detail: any): any {
   return { ...detail, credential, collection: { ...collection, status: credential.collection_status, error: credential.error } }
 }
 
-export function quotaWindowAmount(value: number | null | undefined, window: QuotaWindow): string {
+export function quotaWindowAmount(value: number | null | undefined, window: QuotaWindow, locale?: string): string {
   if (value == null || !Number.isFinite(Number(value))) return '—'
-  const amount = Number(value).toLocaleString(undefined, { maximumFractionDigits: 2 })
+  const amount = Number(value).toLocaleString(locale, { maximumFractionDigits: 2 })
   if (window.unit === 'percentage') return `${amount}%`
   return window.currency ? `${amount} ${window.currency}` : amount
 }
@@ -154,13 +157,18 @@ export function quotaHistorical(quota: any, now = Date.now()): boolean {
   return Boolean(quota?.observed_at && (quota?.freshness !== 'fresh' || (Number.isFinite(expires) && expires <= now)))
 }
 
-export function quotaWindowLabel(window: any, provider?: string): string {
+const quotaUnitKeys: Record<string, string> = { minute: 'quota.unit.minute', hour: 'quota.unit.hour', day: 'quota.unit.day', week: 'quota.unit.week', month: 'quota.unit.month', year: 'quota.unit.year' }
+
+export function quotaWindowLabel(window: any, provider?: string, t?: QuotaTranslator): string {
+  const formatPeriod = (value: number, unit: string) => t
+    ? t('quota.period', { value, unit: quotaUnitKeys[unit] ? t(quotaUnitKeys[unit]) : unit })
+    : `${value} ${unit}`
   const period = window.period_unit === 'minute' && window.period_value % 60 === 0
-    ? `${window.period_value / 60} hour` : window.period_unit && window.period_unit !== 'unknown' && window.period_value
-      ? `${window.period_value} ${window.period_unit}` : ''
+    ? formatPeriod(window.period_value / 60, 'hour') : window.period_unit && window.period_unit !== 'unknown' && window.period_value
+      ? formatPeriod(window.period_value, window.period_unit) : ''
   if (provider === 'devin') {
-    if (window.id === 'devin-daily') return 'Daily'
-    if (window.id === 'devin-weekly') return 'Weekly'
+    if (window.id === 'devin-daily') return t ? t('quota.window.daily') : 'Daily'
+    if (window.id === 'devin-weekly') return t ? t('quota.window.weekly') : 'Weekly'
   }
   const identity = window.label || window.scope_id || window.id
   return period ? `${identity} · ${period}` : identity
@@ -171,9 +179,11 @@ export function quotaWindowRatio(window: any): number | null {
   return Math.max(0, Math.min(1, Number(window.remaining_ratio)))
 }
 
-export function quotaProductUsed(window: any): string {
+export function quotaProductUsed(window: any, t?: QuotaTranslator): string {
   const value = window.used ?? (window.used_ratio == null ? null : Number(window.used_ratio) * 100)
-  return value == null || !Number.isFinite(Number(value)) ? 'Unknown usage' : `${Math.round(Math.max(0, Math.min(100, Number(value))))}% used`
+  if (value == null || !Number.isFinite(Number(value))) return t ? t('quota.productUnknown') : 'Unknown usage'
+  const percent = Math.round(Math.max(0, Math.min(100, Number(value))))
+  return t ? t('quota.productUsed', { percent }) : `${percent}% used`
 }
 
 export function needsQuotaPreviewDetail(entry: any): boolean {
@@ -192,11 +202,11 @@ export function resolveQuotaPreviewEntry(entry: any, detail: any): any {
   return { ...(same && entry.collection_status !== 'collecting' ? entry : normalizeQuotaEntry(candidate)), windows: candidate.windows, reset_credits: detail.reset_credits, freshness: same && (entry.freshness === 'stale' || candidate.freshness === 'stale') ? 'stale' : candidate.freshness }
 }
 
-export function quotaCollectionMessage(error: { code?: string; message?: string; upstream_status_code?: number } | null | undefined): string {
-  if (error?.code === 'DCA_TOKEN_UNAVAILABLE') return 'Meta quota requires DCA authorization. Reauthorize this Meta account and collect quota again.'
-  if (error?.code === 'AUTH_TOKEN_UNAVAILABLE') return 'Credential access token is unavailable. Check credential authorization before collecting again.'
-  if (error?.code === 'UPSTREAM_CLIENT_OUTDATED' || error?.upstream_status_code === 426) return 'The upstream quota endpoint requires a newer client version. Update Home before retrying.'
-  return error?.message || 'Quota collection failed.'
+export function quotaCollectionMessage(error: { code?: string; message?: string; upstream_status_code?: number } | null | undefined, t?: QuotaTranslator): string {
+  if (error?.code === 'DCA_TOKEN_UNAVAILABLE') return t ? t('quota.error.dcaToken') : 'Meta quota requires DCA authorization. Reauthorize this Meta account and collect quota again.'
+  if (error?.code === 'AUTH_TOKEN_UNAVAILABLE') return t ? t('quota.error.authToken') : 'Credential access token is unavailable. Check credential authorization before collecting again.'
+  if (error?.code === 'UPSTREAM_CLIENT_OUTDATED' || error?.upstream_status_code === 426) return t ? t('quota.error.clientOutdated') : 'The upstream quota endpoint requires a newer client version. Update Home before retrying.'
+  return error?.message || (t ? t('quota.error.collectionFailed') : 'Quota collection failed.')
 }
 
 export function isQuotaAttention(quota: any): boolean {

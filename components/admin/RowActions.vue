@@ -26,8 +26,8 @@
         color="neutral"
         variant="ghost"
         icon="i-tabler-dots-vertical"
-        :aria-label="`More actions for ${menuLabel}`"
-        :title="`More actions`"
+        :aria-label="t('shared.rowActions.moreFor', { name: menuLabel })"
+        :title="t('common.moreActions')"
         :ui="buttonUI"
       />
     </UDropdownMenu>
@@ -54,6 +54,7 @@ const props = defineProps<{
   maxInline?: number
 }>()
 
+const { t } = useAdminI18n()
 const buttonUI = { base: 'admin-table-action min-h-10 sm:min-h-0' }
 const compact = ref(false)
 let mediaQuery: MediaQueryList | undefined

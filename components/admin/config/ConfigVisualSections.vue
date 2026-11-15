@@ -5,8 +5,8 @@
       color="neutral"
       variant="subtle"
       icon="i-tabler-refresh"
-      title="Loading configuration"
-      description="Configuration fields will be available when the current values finish loading."
+      :title="t('config.vs.loadingTitle')"
+      :description="t('config.vs.loadingDescription')"
     />
 
     <template v-for="section in sections" :key="section.id">
@@ -26,7 +26,7 @@
             trailing-icon="i-tabler-arrow-right"
             @click="emit('navigate', section.navigateTo)"
           >
-            Manage
+            {{ t('config.vs.manage') }}
           </AppButton>
         </div>
       </template>
@@ -94,7 +94,7 @@
                 color="neutral"
                 variant="outline"
                 :icon="secretVisible ? 'i-tabler-eye-off' : 'i-tabler-eye'"
-                :aria-label="secretVisible ? 'Hide secret key' : 'Reveal secret key'"
+                :aria-label="secretVisible ? t('config.vs.hideSecret') : t('config.vs.revealSecret')"
                 :disabled="loading"
                 @click="toggleSecretVisibility"
               />
@@ -166,146 +166,147 @@ const emit = defineEmits<{
 }>()
 
 const secretVisible = ref(false)
+const { t } = useAdminI18n()
 
-const routingOptions = [
-  { label: 'Round robin', value: 'round-robin' },
-  { label: 'Weighted round robin', value: 'weighted-round-robin' },
-  { label: 'Fill first', value: 'fill-first' }
-]
+const routingOptions = computed(() => [
+  { label: t('config.routing.roundRobin'), value: 'round-robin' },
+  { label: t('config.routing.weightedRoundRobin'), value: 'weighted-round-robin' },
+  { label: t('config.routing.fillFirst'), value: 'fill-first' }
+])
 
-const sections: Section[] = [
+const sections = computed<Section[]>(() => [
   {
     id: 'server',
-    title: 'Server',
-    description: 'Core CPA listener and diagnostic settings.',
+    title: t('config.vs.server.title'),
+    description: t('config.vs.server.description'),
     fields: [
-      { key: 'debug', label: 'Debug mode', type: 'switch', description: 'Enable verbose runtime diagnostics.' },
-      { key: 'port', label: 'CPA port', type: 'number', min: 1, max: 65535, step: 1, hint: 'Valid range: 1–65535' },
-            { key: 'cpaPublicUrl', label: 'CPA Public URL', type: 'url', placeholder: 'https://api.example.com/v1', hint: 'Display only in the user dashboard. Does not change listener, routing, or cluster settings. Leave empty to hide.' }
+      { key: 'debug', label: t('config.field.debug'), type: 'switch', description: t('config.field.debug.desc') },
+      { key: 'port', label: t('config.field.port'), type: 'number', min: 1, max: 65535, step: 1, hint: t('config.field.port.hint') },
+            { key: 'cpaPublicUrl', label: t('config.field.cpaPublicUrl'), type: 'url', placeholder: 'https://api.example.com/v1', hint: t('config.field.cpaPublicUrl.hint') }
     ]
   },
   {
     id: 'tls',
-    title: 'TLS',
-    description: 'Serve the CPA endpoint with the configured certificate and private key.',
+    title: t('config.vs.tls.title'),
+    description: t('config.vs.tls.description'),
     fields: [
-      { key: 'tlsEnable', label: 'Enable TLS', type: 'switch', description: 'Require TLS for the public CPA listener.' },
-      { key: 'tlsCert', label: 'Certificate path', type: 'text', placeholder: '/path/to/cert.pem' },
-      { key: 'tlsKey', label: 'Private key path', type: 'text', placeholder: '/path/to/key.pem' }
+      { key: 'tlsEnable', label: t('config.field.tlsEnable'), type: 'switch', description: t('config.field.tlsEnable.desc') },
+      { key: 'tlsCert', label: t('config.field.tlsCert'), type: 'text', placeholder: '/path/to/cert.pem' },
+      { key: 'tlsKey', label: t('config.field.tlsKey'), type: 'text', placeholder: '/path/to/key.pem' }
     ]
   },
   {
     id: 'remote-management',
-    title: 'Remote management',
-    description: 'Control Management API exposure and the bundled control panel.',
+    title: t('config.vs.remote.title'),
+    description: t('config.vs.remote.description'),
     fields: [
-      { key: 'remoteManagementAllowRemote', label: 'Allow remote access', type: 'switch', description: 'Accept Management API requests from non-loopback addresses.' },
-      { key: 'remoteManagementSecretKey', label: 'Secret key', type: 'password', placeholder: 'Empty disables Management API routes', hint: 'Keep this value private.' },
-      { key: 'remoteManagementDisableControlPanel', label: 'Disable control panel', type: 'switch', description: 'Do not serve the bundled browser control panel.' }
+      { key: 'remoteManagementAllowRemote', label: t('config.field.remoteManagementAllowRemote'), type: 'switch', description: t('config.field.remoteManagementAllowRemote.desc') },
+      { key: 'remoteManagementSecretKey', label: t('config.field.remoteManagementSecretKey'), type: 'password', placeholder: t('config.field.remoteManagementSecretKey.placeholder'), hint: t('config.field.remoteManagementSecretKey.hint') },
+      { key: 'remoteManagementDisableControlPanel', label: t('config.field.remoteManagementDisableControlPanel'), type: 'switch', description: t('config.field.remoteManagementDisableControlPanel.desc') }
     ]
   },
   {
     id: 'user-email',
-    title: 'Mail Setup',
-    description: 'Configure verification and password recovery. Set the SMTP password in the Home server environment, then restart Home; never enter the password here. External SMTP requires STARTTLS (port 587), not implicit TLS on port 465.',
+    title: t('config.vs.email.title'),
+    description: t('config.vs.email.description'),
     fields: [
-      { key: 'userEmailEnabled', label: 'Enable mail', type: 'switch', description: 'Enable email registration, verification, and password recovery when all settings are valid.' },
-      { key: 'userEmailPublicUrl', label: 'Public user panel URL', type: 'url', placeholder: 'https://home.example.com/user.html', hint: 'HTTPS required; HTTP is allowed only for localhost or loopback.' },
-      { key: 'userEmailFromAddress', label: 'From address', type: 'text', placeholder: 'no-reply@example.com', hint: 'A single mailbox without a display name.' },
-      { key: 'userEmailFromName', label: 'From name', type: 'text', placeholder: 'AI48Hub' },
-      { key: 'userEmailSenderType', label: 'Sender type', type: 'select', items: [{ label: 'SMTP', value: 'smtp' }] },
-      { key: 'userEmailSmtpHost', label: 'SMTP host', type: 'text', placeholder: 'smtp.example.com' },
-      { key: 'userEmailSmtpPort', label: 'SMTP port', type: 'number', min: 1, max: 65535, step: 1, hint: '587 recommended; 465 is unsupported.' },
-      { key: 'userEmailSmtpUsername', label: 'SMTP username', type: 'text', placeholder: 'smtp-user', hint: 'Optional for SMTP servers without authentication.' },
-      { key: 'userEmailSmtpPasswordEnv', label: 'SMTP password environment variable', type: 'text', placeholder: 'HOME_USER_EMAIL_SMTP_PASSWORD', hint: 'Variable name only. Its value must be set on the Home server.' },
-      { key: 'userEmailSmtpStarttls', label: 'Require STARTTLS', type: 'switch', description: 'Required for every non-loopback SMTP host. TLS 1.2 or newer.' },
-      { key: 'userEmailVerificationTtl', label: 'Verification token lifetime', type: 'text', placeholder: '24h', hint: 'Positive Go duration, for example 24h or 1h30m.' },
-      { key: 'userEmailResetTtl', label: 'Password reset token lifetime', type: 'text', placeholder: '30m', hint: 'Positive Go duration, for example 30m.' }
+      { key: 'userEmailEnabled', label: t('config.field.userEmailEnabled'), type: 'switch', description: t('config.field.userEmailEnabled.desc') },
+      { key: 'userEmailPublicUrl', label: t('config.field.userEmailPublicUrl'), type: 'url', placeholder: 'https://home.example.com/user.html', hint: t('config.field.userEmailPublicUrl.hint') },
+      { key: 'userEmailFromAddress', label: t('config.field.userEmailFromAddress'), type: 'text', placeholder: 'no-reply@example.com', hint: t('config.field.userEmailFromAddress.hint') },
+      { key: 'userEmailFromName', label: t('config.field.userEmailFromName'), type: 'text', placeholder: 'AI48Hub' },
+      { key: 'userEmailSenderType', label: t('config.field.userEmailSenderType'), type: 'select', items: [{ label: 'SMTP', value: 'smtp' }] },
+      { key: 'userEmailSmtpHost', label: t('config.field.userEmailSmtpHost'), type: 'text', placeholder: 'smtp.example.com' },
+      { key: 'userEmailSmtpPort', label: t('config.field.userEmailSmtpPort'), type: 'number', min: 1, max: 65535, step: 1, hint: t('config.field.userEmailSmtpPort.hint') },
+      { key: 'userEmailSmtpUsername', label: t('config.field.userEmailSmtpUsername'), type: 'text', placeholder: 'smtp-user', hint: t('config.field.userEmailSmtpUsername.hint') },
+      { key: 'userEmailSmtpPasswordEnv', label: t('config.field.userEmailSmtpPasswordEnv'), type: 'text', placeholder: 'HOME_USER_EMAIL_SMTP_PASSWORD', hint: t('config.field.userEmailSmtpPasswordEnv.hint') },
+      { key: 'userEmailSmtpStarttls', label: t('config.field.userEmailSmtpStarttls'), type: 'switch', description: t('config.field.userEmailSmtpStarttls.desc') },
+      { key: 'userEmailVerificationTtl', label: t('config.field.userEmailVerificationTtl'), type: 'text', placeholder: '24h', hint: t('config.field.userEmailVerificationTtl.hint') },
+      { key: 'userEmailResetTtl', label: t('config.field.userEmailResetTtl'), type: 'text', placeholder: '30m', hint: t('config.field.userEmailResetTtl.hint') }
     ]
   },
   {
     id: 'plugins',
-    title: 'Plugins',
-    description: 'Configure plugin loading and store source definitions.',
+    title: t('config.vs.plugins.title'),
+    description: t('config.vs.plugins.description'),
     navigateTo: 'plugins',
     fields: [
-      { key: 'pluginsEnabled', label: 'Enable plugins', type: 'switch', description: 'Load configured plugins at runtime.' },
-      { key: 'pluginsDir', label: 'Plugin artifact directory', type: 'text', placeholder: 'plugins' },
-      { key: 'pluginStoreSourcesJson', label: 'Third-party plugin sources', type: 'textarea', rows: 5, span: 'full', hint: 'One registry.json URL per line. The official source is always retained.', placeholder: 'https://example.com/plugins/registry.json' }
+      { key: 'pluginsEnabled', label: t('config.field.pluginsEnabled'), type: 'switch', description: t('config.field.pluginsEnabled.desc') },
+      { key: 'pluginsDir', label: t('config.field.pluginsDir'), type: 'text', placeholder: 'plugins' },
+      { key: 'pluginStoreSourcesJson', label: t('config.field.pluginStoreSourcesJson'), type: 'textarea', rows: 5, span: 'full', hint: t('config.field.pluginStoreSourcesJson.hint'), placeholder: 'https://example.com/plugins/registry.json' }
     ]
   },
   {
     id: 'models',
-    title: 'Model catalog sources',
-    description: 'Home loads all three catalogs from its database settings. Use an HTTP(S) URL or an absolute file path on the server. Empty uses the embedded fallback and official remote refresh. Sources refresh every 3 hours and when changed; failed refreshes retain the last valid catalog. Custom sources never fall back to official URLs.',
+    title: t('config.vs.models.title'),
+    description: t('config.vs.models.description'),
     fields: [
-      { key: 'modelsCatalog', label: 'General catalog', type: 'text', placeholder: 'https://example.com/models.json', hint: 'models.catalog — Home supplies the general model list to CPA nodes.' },
-      { key: 'modelsCodexCatalog', label: 'Codex client catalog', type: 'text', placeholder: '/etc/home/codex-models.json', hint: 'models.codex-catalog — also selects the Codex client catalog on CPA nodes.' },
-      { key: 'modelsDevinCatalog', label: 'Devin catalog', type: 'text', placeholder: 'https://example.com/devin-models.json', hint: 'models.devin-catalog — Home supplies the Devin model list to CPA nodes.' }
+      { key: 'modelsCatalog', label: t('config.field.modelsCatalog'), type: 'text', placeholder: 'https://example.com/models.json', hint: t('config.field.modelsCatalog.hint') },
+      { key: 'modelsCodexCatalog', label: t('config.field.modelsCodexCatalog'), type: 'text', placeholder: '/etc/home/codex-models.json', hint: t('config.field.modelsCodexCatalog.hint') },
+      { key: 'modelsDevinCatalog', label: t('config.field.modelsDevinCatalog'), type: 'text', placeholder: 'https://example.com/devin-models.json', hint: t('config.field.modelsDevinCatalog.hint') }
     ]
   },
   {
     id: 'logs',
-    title: 'Logs and statistics',
-    description: 'Choose collected diagnostics and local log retention limits. Home always collects usage statistics.',
+    title: t('config.vs.logs.title'),
+    description: t('config.vs.logs.description'),
     fields: [
-      { key: 'requestLog', label: 'Request logs', type: 'switch', description: 'Write per-request diagnostic records.' },
+      { key: 'requestLog', label: t('config.field.requestLog'), type: 'switch', description: t('config.field.requestLog.desc') },
 
-      { key: 'loggingToFile', label: 'Logging to file', type: 'switch', description: 'Persist application logs to local files.' },
-      { key: 'logsMaxTotalSizeMb', label: 'Maximum total log size', type: 'number', min: 0, step: 1, hint: 'Megabytes; 0 uses runtime behavior.' },
-      { key: 'errorLogsMaxFiles', label: 'Error log files', type: 'number', min: 0, step: 1, hint: 'Maximum retained error log files.' }
+      { key: 'loggingToFile', label: t('config.field.loggingToFile'), type: 'switch', description: t('config.field.loggingToFile.desc') },
+      { key: 'logsMaxTotalSizeMb', label: t('config.field.logsMaxTotalSizeMb'), type: 'number', min: 0, step: 1, hint: t('config.field.logsMaxTotalSizeMb.hint') },
+      { key: 'errorLogsMaxFiles', label: t('config.field.errorLogsMaxFiles'), type: 'number', min: 0, step: 1, hint: t('config.field.errorLogsMaxFiles.hint') }
     ]
   },
   {
     id: 'network',
-    title: 'Network',
-    description: 'Set the current global outbound proxy. Proxy pools are managed separately.',
+    title: t('config.vs.network.title'),
+    description: t('config.vs.network.description'),
     navigateTo: 'proxy-network',
     fields: [
-      { key: 'proxyUrl', label: 'Proxy URL', type: 'url', span: 'full', placeholder: 'http://user:password@proxy.example:8080', hint: 'Leave empty to connect directly.' },
-      { key: 'tlsHandshakeTimeoutSeconds', label: 'Upstream TLS handshake timeout', type: 'number', min: 0, step: 1, hint: 'Seconds; 0 disables the limit.', description: 'CPA shared uTLS client: Claude Code Anthropic and Chrome ChatGPT/Codex transports. Starts after TCP/proxy connection establishment; does not limit dialing, proxy CONNECT, or the request stream.' }
+      { key: 'proxyUrl', label: t('config.field.proxyUrl'), type: 'url', span: 'full', placeholder: 'http://user:password@proxy.example:8080', hint: t('config.field.proxyUrl.hint') },
+      { key: 'tlsHandshakeTimeoutSeconds', label: t('config.field.tlsHandshakeTimeoutSeconds'), type: 'number', min: 0, step: 1, hint: t('config.field.tlsHandshakeTimeoutSeconds.hint'), description: t('config.field.tlsHandshakeTimeoutSeconds.desc') }
     ]
   },
   {
     id: 'quota',
-    title: 'Quota handling',
-    description: 'Fallback behavior when an upstream project or preview model reaches quota.',
+    title: t('config.vs.quota.title'),
+    description: t('config.vs.quota.description'),
     navigateTo: 'quota',
     fields: [
-      { key: 'quotaSwitchProject', label: 'Switch project', type: 'switch', description: 'Try another project after quota exhaustion.' },
-      { key: 'quotaSwitchPreviewModel', label: 'Switch preview model', type: 'switch', description: 'Try preview-model alternatives after quota exhaustion.' }
+      { key: 'quotaSwitchProject', label: t('config.field.quotaSwitchProject'), type: 'switch', description: t('config.field.quotaSwitchProject.desc') },
+      { key: 'quotaSwitchPreviewModel', label: t('config.field.quotaSwitchPreviewModel'), type: 'switch', description: t('config.field.quotaSwitchPreviewModel.desc') }
     ]
   },
   {
     id: 'retry-routing',
-    title: 'Retry and routing',
-    description: 'Tune retry limits, cooling behavior, model prefixes, and credential selection.',
+    title: t('config.vs.routing.title'),
+    description: t('config.vs.routing.description'),
     fields: [
-      { key: 'requestRetry', label: 'Request retries', type: 'number', min: 0, step: 1 },
-      { key: 'maxRetryCredentials', label: 'Max retry credentials', type: 'number', min: 0, step: 1 },
-      { key: 'maxRetryInterval', label: 'Max retry interval', type: 'number', min: 0, step: 1, hint: 'Runtime interval value.' },
-      { key: 'disableCooling', label: 'Disable cooling', type: 'switch', description: 'Do not temporarily cool credentials after retryable failures.' },
-      { key: 'forceModelPrefix', label: 'Force model prefix', type: 'switch', description: 'Require provider prefixes on model names.' },
-      { key: 'routingStrategy', label: 'Routing strategy', type: 'select', items: routingOptions }
+      { key: 'requestRetry', label: t('config.field.requestRetry'), type: 'number', min: 0, step: 1 },
+      { key: 'maxRetryCredentials', label: t('config.field.maxRetryCredentials'), type: 'number', min: 0, step: 1 },
+      { key: 'maxRetryInterval', label: t('config.field.maxRetryInterval'), type: 'number', min: 0, step: 1, hint: t('config.field.maxRetryInterval.hint') },
+      { key: 'disableCooling', label: t('config.field.disableCooling'), type: 'switch', description: t('config.field.disableCooling.desc') },
+      { key: 'forceModelPrefix', label: t('config.field.forceModelPrefix'), type: 'switch', description: t('config.field.forceModelPrefix.desc') },
+      { key: 'routingStrategy', label: t('config.field.routingStrategy'), type: 'select', items: routingOptions.value }
     ]
   },
   {
     id: 'devin',
-    title: 'Devin OAuth',
-    description: 'OAuth-scoped Devin settings. These do not configure API-key credentials.',
+    title: t('config.vs.devin.title'),
+    description: t('config.vs.devin.description'),
     fields: [
-      { key: 'devinSensitiveWordsJson', label: 'Sensitive words obfuscation', type: 'textarea', rows: 5, span: 'full', hint: 'One word per line. Words are obfuscated in system prompts and messages.', placeholder: 'sensitive-word' }
+      { key: 'devinSensitiveWordsJson', label: t('config.field.devinSensitiveWordsJson'), type: 'textarea', rows: 5, span: 'full', hint: t('config.field.devinSensitiveWordsJson.hint'), placeholder: 'sensitive-word' }
     ]
   },
   {
     id: 'antigravity',
-    title: 'Antigravity',
-    description: 'Configure words obfuscated from Antigravity system instructions.',
+    title: t('config.vs.antigravity.title'),
+    description: t('config.vs.antigravity.description'),
     fields: [
-      { key: 'antigravitySensitiveWordsJson', label: 'Sensitive words obfuscation', type: 'textarea', rows: 5, span: 'full', hint: 'One word per line. Matching is case-insensitive; entries shorter than two characters are ignored.', placeholder: 'sensitive-word' }
+      { key: 'antigravitySensitiveWordsJson', label: t('config.field.antigravitySensitiveWordsJson'), type: 'textarea', rows: 5, span: 'full', hint: t('config.field.antigravitySensitiveWordsJson.hint'), placeholder: 'sensitive-word' }
     ]
   }
-]
+])
 
 function valueFor(key: string): DraftValue {
   return draft.value?.[key]

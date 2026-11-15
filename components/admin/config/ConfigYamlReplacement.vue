@@ -1,15 +1,15 @@
 <template>
-  <AppButton color="neutral" variant="outline" :disabled="disabled" @click="openEditor">Raw YAML replacement</AppButton>
-  <AppModal v-model:open="open" title="Replace full configuration" :description="'Explicit replacement mode: omitted settings and credential families are removed. Unknown keys are retained in the editor, but the backend may reject unsupported keys.'">
+  <AppButton color="neutral" variant="outline" :disabled="disabled" @click="openEditor">{{ t('config.yaml.open') }}</AppButton>
+  <AppModal v-model:open="open" :title="t('config.yaml.title')" :description="t('config.yaml.description')">
     <template #body>
       <div class="space-y-4">
-        <UAlert color="warning" title="Full replacement, not a visual save" description="This document includes secrets. Concurrent changes since loading can be overwritten. Preserve credential IDs and Home-owned revisions. Reload the document immediately before editing." />
-        <UAlert v-if="error" color="error" title="YAML replacement" :description="error" />
-        <UTextarea v-model="text" :disabled="loading || saving" :rows="18" class="w-full font-mono text-xs" aria-label="Complete v8 YAML configuration" spellcheck="false" />
-        <UCheckbox v-model="confirmed" :disabled="loading || saving" label="I understand this replaces the complete configuration, including credentials." />
+        <UAlert color="warning" :title="t('config.yaml.warningTitle')" :description="t('config.yaml.warningDescription')" />
+        <UAlert v-if="error" color="error" :title="t('config.yaml.errorTitle')" :description="error" />
+        <UTextarea v-model="text" :disabled="loading || saving" :rows="18" class="w-full font-mono text-xs" :aria-label="t('config.yaml.textareaLabel')" spellcheck="false" />
+        <UCheckbox v-model="confirmed" :disabled="loading || saving" :label="t('config.yaml.confirm')" />
         <div class="flex flex-col gap-2 sm:flex-row sm:justify-end">
-          <AppButton color="neutral" variant="outline" :disabled="saving" :loading="loading" @click="load">Reload document (discard edits)</AppButton>
-          <AppButton color="error" :loading="saving" :disabled="loading || !confirmed || !text.trim()" @click="replace">Replace full configuration</AppButton>
+          <AppButton color="neutral" variant="outline" :disabled="saving" :loading="loading" @click="load">{{ t('config.yaml.reload') }}</AppButton>
+          <AppButton color="error" :loading="saving" :disabled="loading || !confirmed || !text.trim()" @click="replace">{{ t('config.yaml.title') }}</AppButton>
         </div>
       </div>
     </template>
@@ -22,6 +22,7 @@ import { parseDocument } from 'yaml'
 withDefaults(defineProps<{ disabled?: boolean }>(), { disabled: false })
 const emit = defineEmits<{ saved: [] }>()
 const { fetchAPI } = useApi()
+const { t } = useAdminI18n()
 const open = ref(false)
 const text = ref('')
 const confirmed = ref(false)
@@ -36,7 +37,7 @@ async function load() {
   try {
     text.value = await fetchAPI<string>('/config.yaml', { responseType: 'text' })
   } catch (failure: any) {
-    error.value = failure?.message || 'Unable to load YAML.'
+    error.value = failure?.message || t('config.yaml.loadFailed')
     text.value = ''
   } finally {
     loading.value = false
@@ -55,7 +56,7 @@ async function replace() {
     const root = document.toJS({ maxAliasCount: 100 })
     if (!root || typeof root !== 'object' || Array.isArray(root) || root['config-version'] !== 8) throw new Error()
   } catch {
-    error.value = 'Enter a valid YAML mapping with config-version: 8.'
+    error.value = t('config.yaml.invalid')
     return
   }
   saving.value = true
@@ -66,7 +67,7 @@ async function replace() {
     text.value = ''
     emit('saved')
   } catch (failure: any) {
-    error.value = `${failure?.message || 'Replacement failed.'} The request may have committed before a reload failure. Reload the document and review before retrying; your text is retained.`
+    error.value = t('config.yaml.replaceFailedDetail', { error: failure?.message || t('config.yaml.replaceFailed') })
   } finally {
     confirmed.value = false
     saving.value = false

@@ -10,16 +10,16 @@
           <p class="mt-0.5 truncate text-xs text-[var(--ui-text-muted)]">{{ subtitle }}</p>
         </div>
         <div class="flex shrink-0 items-center gap-1">
-          <AppButton type="button" color="neutral" variant="ghost" size="sm" icon="i-tabler-chevron-up" aria-label="Previous request" title="Previous request" :disabled="loading || !hasPrevious" @click="emit('navigate', -1)" />
-          <AppButton type="button" color="neutral" variant="ghost" size="sm" icon="i-tabler-chevron-down" aria-label="Next request" title="Next request" :disabled="loading || !hasNext" @click="emit('navigate', 1)" />
+          <AppButton type="button" color="neutral" variant="ghost" size="sm" icon="i-tabler-chevron-up" :aria-label="t('requests.detail.prev')" :title="t('requests.detail.prev')" :disabled="loading || !hasPrevious" @click="emit('navigate', -1)" />
+          <AppButton type="button" color="neutral" variant="ghost" size="sm" icon="i-tabler-chevron-down" :aria-label="t('requests.detail.next')" :title="t('requests.detail.next')" :disabled="loading || !hasNext" @click="emit('navigate', 1)" />
           <span class="mx-1 h-5 w-px bg-[var(--ui-border)]" aria-hidden="true" />
-          <AppButton type="button" color="neutral" variant="ghost" size="sm" icon="i-tabler-x" aria-label="Close" @click="close" />
+          <AppButton type="button" color="neutral" variant="ghost" size="sm" icon="i-tabler-x" :aria-label="t('common.close')" @click="close" />
         </div>
       </div>
     </template>
 
     <template #body>
-      <div v-if="loading" role="status" class="flex items-center justify-center gap-2 py-10 text-sm text-[var(--ui-text-muted)]"><UIcon name="i-tabler-loader-2" class="size-5 animate-spin" />Loading request details…</div>
+      <div v-if="loading" role="status" class="flex items-center justify-center gap-2 py-10 text-sm text-[var(--ui-text-muted)]"><UIcon name="i-tabler-loader-2" class="size-5 animate-spin" />{{ t('requests.detail.loading') }}</div>
       <div v-else-if="detail" class="space-y-4 p-4 sm:p-5">
         <!-- Key facts: status, latency, tokens, cost -->
         <dl class="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -35,7 +35,7 @@
           <div class="flex items-start gap-2.5">
             <UIcon name="i-tabler-alert-circle" class="mt-0.5 size-4 shrink-0" />
             <div class="min-w-0 flex-1">
-              <h3 id="request-detail-error" class="text-sm font-semibold">{{ event.error?.reason || 'Request failed' }}</h3>
+              <h3 id="request-detail-error" class="text-sm font-semibold">{{ event.error?.reason || t('requests.detail.failed') }}</h3>
               <p v-if="event.error?.message" class="mt-0.5 break-words text-xs">{{ event.error.message }}</p>
               <p v-if="errorCodes" class="mt-1 font-mono text-[11px] opacity-80">{{ errorCodes }}</p>
             </div>
@@ -45,13 +45,13 @@
 
         <!-- Identifiers with copy -->
         <section class="rd-card" aria-labelledby="request-detail-ids">
-          <h3 id="request-detail-ids" class="rd-title">Identifiers</h3>
+          <h3 id="request-detail-ids" class="rd-title">{{ t('requests.detail.identifiers') }}</h3>
           <dl class="divide-y divide-[var(--ui-border)]">
             <div v-for="item in identifiers" :key="item.label" class="rd-row">
               <dt>{{ item.label }}</dt>
               <dd class="flex min-w-0 items-center justify-end gap-1">
                 <span class="truncate font-mono text-xs" :title="item.value">{{ item.value }}</span>
-                <AppButton type="button" color="neutral" variant="ghost" size="xs" icon="i-tabler-copy" class="shrink-0" :aria-label="`Copy ${item.label.toLowerCase()}`" :title="`Copy ${item.label.toLowerCase()}`" @click="copyText(item.value, item.label)" />
+                <AppButton type="button" color="neutral" variant="ghost" size="xs" icon="i-tabler-copy" class="shrink-0" :aria-label="t('requests.detail.copyItem', { item: item.label.toLowerCase() })" :title="t('requests.detail.copyItem', { item: item.label.toLowerCase() })" @click="copyText(item.value, item.label)" />
               </dd>
             </div>
           </dl>
@@ -60,8 +60,8 @@
         <!-- Tokens -->
         <section class="rd-card" aria-labelledby="request-detail-tokens">
           <div class="flex items-center justify-between gap-3">
-            <h3 id="request-detail-tokens" class="rd-title !mb-0">Tokens</h3>
-            <span class="text-xs text-[var(--ui-text-muted)]">Total <strong class="text-[var(--ui-text-highlighted)] tabular-nums">{{ number(event.tokens?.total_tokens) }}</strong><template v-if="cacheRate"> · {{ cacheRate }} cached</template></span>
+            <h3 id="request-detail-tokens" class="rd-title !mb-0">{{ t('common.tokens') }}</h3>
+            <span class="text-xs text-[var(--ui-text-muted)]">{{ t('common.total') }} <strong class="text-[var(--ui-text-highlighted)] tabular-nums">{{ number(event.tokens?.total_tokens) }}</strong><template v-if="cacheRate"> · {{ t('requests.detail.totalCached', { rate: cacheRate }) }}</template></span>
           </div>
           <div v-if="tokenParts.length" class="rd-token-bar" role="img" :aria-label="tokenParts.map(part => `${part.label} ${part.display}`).join(', ')">
             <span v-for="part in tokenParts" :key="part.label" :style="{ flexGrow: part.value, background: part.color }" :title="`${part.label} · ${part.display}`" />
@@ -88,16 +88,16 @@
                 <dd class="truncate" :class="item.mono ? 'font-mono text-xs' : ''" :title="item.value">{{ item.value }}</dd>
               </div>
             </dl>
-            <p v-else class="text-xs text-[var(--ui-text-dimmed)]">Not recorded</p>
+            <p v-else class="text-xs text-[var(--ui-text-dimmed)]">{{ t('requests.detail.notRecorded') }}</p>
           </section>
         </div>
 
         <!-- Billing -->
         <section v-if="costBreakdown.length" class="rd-card" aria-labelledby="request-detail-cost">
-          <h3 id="request-detail-cost" class="rd-title"><UIcon name="i-tabler-receipt" class="size-3.5" />Billing</h3>
+          <h3 id="request-detail-cost" class="rd-title"><UIcon name="i-tabler-receipt" class="size-3.5" />{{ t('requests.detail.billing') }}</h3>
           <dl class="divide-y divide-[var(--ui-border)]">
             <div v-for="(item, index) in costBreakdown" :key="item.label" class="rd-row" :class="index === 0 ? 'rd-row--total' : ''">
-              <dt>{{ item.label }}</dt>
+              <dt>{{ costRowLabel(item.label) }}</dt>
               <dd class="font-mono text-xs tabular-nums">{{ item.value }}</dd>
             </div>
             <div v-for="item in billingMeta" :key="item.label" class="rd-row">
@@ -110,20 +110,20 @@
         <!-- Log excerpt -->
         <section v-if="detail.log_excerpt?.length" class="rd-card !p-0" aria-labelledby="request-detail-log">
           <div class="flex items-center justify-between gap-2 px-4 py-3">
-            <h3 id="request-detail-log" class="rd-title !mb-0"><UIcon name="i-tabler-terminal-2" class="size-3.5" />Log excerpt</h3>
-            <span class="text-[11px] text-[var(--ui-text-muted)]">{{ detail.log_excerpt.length }} lines · redacted</span>
+            <h3 id="request-detail-log" class="rd-title !mb-0"><UIcon name="i-tabler-terminal-2" class="size-3.5" />{{ t('requests.detail.logExcerpt') }}</h3>
+            <span class="text-[11px] text-[var(--ui-text-muted)]">{{ t('requests.detail.logLines', { count: detail.log_excerpt.length }) }}</span>
           </div>
           <pre class="rd-log">{{ detail.log_excerpt.join('\n') }}</pre>
         </section>
       </div>
-      <div v-else class="flex flex-col items-center justify-center px-4 py-10 text-center text-sm text-[var(--ui-text-muted)]"><UIcon name="i-tabler-file-unknown" class="mb-2 size-6" />No request selected.</div>
+      <div v-else class="flex flex-col items-center justify-center px-4 py-10 text-center text-sm text-[var(--ui-text-muted)]"><UIcon name="i-tabler-file-unknown" class="mb-2 size-6" />{{ t('requests.detail.none') }}</div>
     </template>
 
     <template #footer>
       <div class="flex w-full items-center gap-2">
-        <AppButton type="button" color="neutral" variant="outline" size="sm" icon="i-tabler-copy" :disabled="loading || !event.request_id" @click="copyText(event.request_id, 'Request ID')">Copy request ID</AppButton>
+        <AppButton type="button" color="neutral" variant="outline" size="sm" icon="i-tabler-copy" :disabled="loading || !event.request_id" @click="copyText(event.request_id, t('requests.col.requestId'))">{{ t('requests.detail.copyRequestId') }}</AppButton>
         <p v-if="downloadError" role="alert" class="min-w-0 flex-1 truncate text-xs text-[var(--ui-color-error-500)]" :title="downloadError">{{ downloadError }}</p>
-        <AppButton type="button" color="neutral" variant="solid" size="sm" icon="i-tabler-download" class="ml-auto shrink-0" :loading="downloading" :disabled="loading || !downloadUrl || downloading" :title="!loading && !downloadUrl ? 'This request has no downloadable log' : undefined" @click="emit('download', downloadUrl, event.request_id)">Download log</AppButton>
+        <AppButton type="button" color="neutral" variant="solid" size="sm" icon="i-tabler-download" class="ml-auto shrink-0" :loading="downloading" :disabled="loading || !downloadUrl || downloading" :title="!loading && !downloadUrl ? t('requests.detail.noLog') : undefined" @click="emit('download', downloadUrl, event.request_id)">{{ t('requests.detail.downloadLog') }}</AppButton>
       </div>
     </template>
   </AppModal>
@@ -139,107 +139,123 @@ const props = defineProps<{ detail: Detail | null; loading: boolean; downloading
 const open = defineModel<boolean>('open', { default: false })
 const emit = defineEmits<{ download: [url: string, requestId: string]; navigate: [direction: -1 | 1] }>()
 const toast = useToast()
+const { t, intlLocale } = useAdminI18n()
 const event = computed(() => props.detail?.event || {})
 const payload = computed(() => props.detail?.payload_summary || {})
 
 const isEmpty = (value: unknown) => value == null || value === ''
-const number = (value: unknown) => isEmpty(value) ? '—' : new Intl.NumberFormat().format(Number(value))
-const decimal = (value: unknown, digits = 2) => new Intl.NumberFormat(undefined, { maximumFractionDigits: digits }).format(Number(value))
+const number = (value: unknown) => isEmpty(value) ? '—' : new Intl.NumberFormat(intlLocale.value).format(Number(value))
+const decimal = (value: unknown, digits = 2) => new Intl.NumberFormat(intlLocale.value, { maximumFractionDigits: digits }).format(Number(value))
 const duration = (ms: unknown) => isEmpty(ms) ? '' : Number(ms) >= 1000 ? `${decimal(Number(ms) / 1000)} s` : `${number(ms)} ms`
 // Drops empty rows so every section only shows recorded values.
 const rows = (items: RowInput[]): Row[] => items.filter(item => !isEmpty(item.value)).map(item => ({ ...item, value: String(item.value), hint: isEmpty(item.hint) ? undefined : String(item.hint) }))
 const display = (value: unknown) => isEmpty(value) ? '—' : String(value)
 const milliseconds = (value: unknown) => isEmpty(value) ? '—' : Number(value) >= 1000 ? `${decimal(Number(value) / 1000)} s` : `${number(value)} ms`
 
-const title = computed(() => [event.value.provider, event.value.model].filter(Boolean).join(' · ') || 'Request details')
+const title = computed(() => [event.value.provider, event.value.model].filter(Boolean).join(' · ') || t('requests.detail.title'))
 const subtitle = computed(() => {
-  const time = event.value.timestamp ? new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'medium' }).format(new Date(event.value.timestamp)) : ''
+  const time = event.value.timestamp ? new Intl.DateTimeFormat(intlLocale.value, { dateStyle: 'medium', timeStyle: 'medium' }).format(new Date(event.value.timestamp)) : ''
   const endpoint = [payload.value.method, event.value.endpoint].filter(Boolean).join(' ')
-  return [time, endpoint].filter(Boolean).join(' · ') || 'Routing, usage, billing, and redacted logs for this request.'
+  return [time, endpoint].filter(Boolean).join(' · ') || t('requests.detail.subtitle')
 })
 const downloadUrl = computed(() => event.value.related?.request_log?.download_url || '')
-const amount = computed(() => event.value.billing?.amount == null ? '—' : `${decimal(event.value.billing.amount)} ${event.value.billing.currency || 'credits'}`)
+const amount = computed(() => event.value.billing?.amount == null ? '—' : `${decimal(event.value.billing.amount)} ${event.value.billing.currency || t('usage.credits')}`)
 const endpoint = computed(() => [props.detail?.payload_summary?.method, event.value.endpoint].filter(Boolean).join(' '))
-const statusLabel = computed(() => event.value.status || (event.value.failed ? 'Failed' : 'Success'))
+const statusLabel = computed(() => event.value.status || (event.value.failed ? t('common.failed') : t('common.success')))
 const statusCode = computed(() => event.value.status_code || event.value.error?.status_code || event.value.upstream_status_code || '')
 const statusColor = computed(() => { const code = Number(statusCode.value); return event.value.failed || code >= 400 ? 'error' : code >= 200 && code < 400 ? 'success' : 'neutral' })
-const status = computed(() => [statusLabel.value, statusCode.value ? `HTTP ${statusCode.value}` : '', event.value.upstream_status_code && event.value.upstream_status_code !== event.value.status_code ? `Upstream ${event.value.upstream_status_code}` : ''].filter(Boolean).join(' · '))
+const status = computed(() => [statusLabel.value, statusCode.value ? `HTTP ${statusCode.value}` : '', event.value.upstream_status_code && event.value.upstream_status_code !== event.value.status_code ? t('requests.upstreamCode', { code: event.value.upstream_status_code }) : ''].filter(Boolean).join(' · '))
 const toolUsage = computed(() => toolUsageEntries(event.value.tool_usage).map(([key, value]) => ({ label: key.replaceAll('_', ' '), value: number(value) })))
 const costBreakdown = computed(() => requestCostRows(event.value.billing))
-const formatBoolean = (value: unknown) => value == null ? '—' : value ? 'Yes' : 'No'
+const formatBoolean = (value: unknown) => value == null ? '—' : value ? t('common.yes') : t('common.no')
 const hasError = computed(() => Boolean(event.value.error?.message || event.value.error?.reason || event.value.error?.body_preview))
 
 const present = (value: unknown) => !isEmpty(value) && value !== '—'
 const keyFacts = computed(() => [
-  { label: 'Status', icon: 'i-tabler-activity', value: statusCode.value ? `HTTP ${statusCode.value}` : statusLabel.value, hint: [statusCode.value ? statusLabel.value : '', event.value.upstream_status_code && event.value.upstream_status_code !== event.value.status_code ? `upstream ${event.value.upstream_status_code}` : ''].filter(Boolean).join(' · '), tone: statusColor.value },
-  { label: 'Latency', icon: 'i-tabler-clock', value: milliseconds(event.value.performance?.latency_ms), hint: [present(event.value.performance?.ttft_ms) ? `TTFT ${milliseconds(event.value.performance.ttft_ms)}` : '', present(event.value.performance?.tps) ? `${decimal(event.value.performance.tps)} tok/s` : ''].filter(Boolean).join(' · ') },
-  { label: 'Tokens', icon: 'i-tabler-database', value: number(event.value.tokens?.total_tokens), hint: `${number(event.value.tokens?.input_tokens)} in · ${number(event.value.tokens?.output_tokens)} out` },
-  { label: 'Cost', icon: 'i-tabler-coin', value: amount.value, hint: event.value.billing?.matched_price_rule ? 'Price rule matched' : '' }
+  { label: t('common.status'), icon: 'i-tabler-activity', value: statusCode.value ? `HTTP ${statusCode.value}` : statusLabel.value, hint: [statusCode.value ? statusLabel.value : '', event.value.upstream_status_code && event.value.upstream_status_code !== event.value.status_code ? t('requests.detail.upstreamLower', { code: event.value.upstream_status_code }) : ''].filter(Boolean).join(' · '), tone: statusColor.value },
+  { label: t('requests.col.latency'), icon: 'i-tabler-clock', value: milliseconds(event.value.performance?.latency_ms), hint: [present(event.value.performance?.ttft_ms) ? t('requests.ttft', { value: milliseconds(event.value.performance.ttft_ms) }) : '', present(event.value.performance?.tps) ? t('requests.detail.tps', { value: decimal(event.value.performance.tps) }) : ''].filter(Boolean).join(' · ') },
+  { label: t('common.tokens'), icon: 'i-tabler-database', value: number(event.value.tokens?.total_tokens), hint: t('requests.inOut', { input: number(event.value.tokens?.input_tokens), output: number(event.value.tokens?.output_tokens) }) },
+  { label: t('usage.col.cost'), icon: 'i-tabler-coin', value: amount.value, hint: event.value.billing?.matched_price_rule ? t('requests.detail.priceRuleMatched') : '' }
 ])
-const errorCodes = computed(() => [event.value.error?.status_code ? `HTTP ${event.value.error.status_code}` : '', event.value.error?.upstream_status_code ? `upstream ${event.value.error.upstream_status_code}` : ''].filter(Boolean).join(' · '))
+const errorCodes = computed(() => [event.value.error?.status_code ? `HTTP ${event.value.error.status_code}` : '', event.value.error?.upstream_status_code ? t('requests.detail.upstreamLower', { code: event.value.error.upstream_status_code }) : ''].filter(Boolean).join(' · '))
 const identifiers = computed(() => rows([
-  { label: 'Request ID', value: event.value.request_id },
-  { label: 'Upstream request ID', value: event.value.upstream_request_id },
-  { label: 'Event ID', value: event.value.id },
-  { label: 'Session ID', value: event.value.session_id },
-  { label: 'Parent session', value: event.value.parent_session_id },
-  { label: 'Root session', value: event.value.root_session_id }
+  { label: t('requests.col.requestId'), value: event.value.request_id },
+  { label: t('usage.detail.upstreamRequestId'), value: event.value.upstream_request_id },
+  { label: t('requests.detail.eventId'), value: event.value.id },
+  { label: t('requests.detail.sessionId'), value: event.value.session_id },
+  { label: t('requests.detail.parentSession'), value: event.value.parent_session_id },
+  { label: t('requests.detail.rootSession'), value: event.value.root_session_id }
 ]))
-const tokenPalette = { Input: '#8b5cf6', Output: '#10b981', Reasoning: '#f59e0b', 'Cache read': '#3b82f6', 'Cache creation': '#d946ef', Cached: '#06b6d4' } as Record<string, string>
+const tokenPalette = { input: '#8b5cf6', output: '#10b981', reasoning: '#f59e0b', cacheRead: '#3b82f6', cacheCreation: '#d946ef', cached: '#06b6d4' } as Record<string, string>
 const tokenRows = computed(() => [
-  ['Input', event.value.tokens?.input_tokens], ['Output', event.value.tokens?.output_tokens], ['Reasoning', event.value.tokens?.reasoning_tokens],
-  ['Cache read', event.value.tokens?.cache_read_tokens], ['Cache creation', event.value.tokens?.cache_creation_tokens], ['Cached', event.value.tokens?.cached_tokens]
-].filter(([, value]) => present(value)).map(([label, value]) => ({ label: String(label), value: Number(value) || 0, display: number(value), color: tokenPalette[String(label)] })))
+  ['input', t('requests.cost.input'), event.value.tokens?.input_tokens], ['output', t('requests.cost.output'), event.value.tokens?.output_tokens], ['reasoning', t('usage.tok.reasoning'), event.value.tokens?.reasoning_tokens],
+  ['cacheRead', t('usage.tok.cacheRead'), event.value.tokens?.cache_read_tokens], ['cacheCreation', t('requests.detail.tokCacheCreation'), event.value.tokens?.cache_creation_tokens], ['cached', t('requests.detail.tokCached'), event.value.tokens?.cached_tokens]
+].filter(([, , value]) => present(value)).map(([key, label, value]) => ({ key: String(key), label: String(label), value: Number(value) || 0, display: number(value), color: tokenPalette[String(key)] })))
 // Bar shows billable composition only; "Cached" overlaps cache read so it stays out of the bar.
-const tokenParts = computed(() => tokenRows.value.filter(part => part.value > 0 && part.label !== 'Cached'))
+const tokenParts = computed(() => tokenRows.value.filter(part => part.value > 0 && part.key !== 'cached'))
 const cacheRate = computed(() => {
   const input = Number(event.value.tokens?.input_tokens) || 0
   const cached = Number(event.value.tokens?.cache_read_tokens ?? event.value.tokens?.cached_tokens) || 0
   return input > 0 && cached > 0 ? `${Math.round(Math.min(1, cached / input) * 100)}%` : ''
 })
 const infoGroups = computed(() => [
-  { title: 'Request', icon: 'i-tabler-route', items: rows([
-    { label: 'Event type', value: event.value.event_type || 'completion' },
-    { label: 'Endpoint', value: endpoint.value, mono: true },
-    { label: 'Original model', value: event.value.original_model },
-    { label: 'Model alias', value: event.value.model_alias },
-    { label: 'Service tier', value: event.value.service_tier },
-    { label: 'Reasoning effort', value: event.value.reasoning_effort },
-    { label: 'Streaming', value: payload.value.stream == null ? '' : formatBoolean(payload.value.stream) },
-    { label: 'Messages / tools', value: payload.value.message_count == null && payload.value.tool_count == null ? '' : `${number(payload.value.message_count)} / ${number(payload.value.tool_count)}` },
-    { label: 'Executor', value: event.value.executor_type },
-    { label: 'Source', value: event.value.source }
+  { title: t('requests.detail.groupRequest'), icon: 'i-tabler-route', items: rows([
+    { label: t('requests.eventType'), value: event.value.event_type || 'completion' },
+    { label: t('usage.endpoint'), value: endpoint.value, mono: true },
+    { label: t('usage.detail.originalModel'), value: event.value.original_model },
+    { label: t('requests.detail.modelAlias'), value: event.value.model_alias },
+    { label: t('requests.detail.serviceTier'), value: event.value.service_tier },
+    { label: t('requests.detail.reasoningEffort'), value: event.value.reasoning_effort },
+    { label: t('usage.detail.streaming'), value: payload.value.stream == null ? '' : formatBoolean(payload.value.stream) },
+    { label: t('requests.detail.messagesTools'), value: payload.value.message_count == null && payload.value.tool_count == null ? '' : `${number(payload.value.message_count)} / ${number(payload.value.tool_count)}` },
+    { label: t('usage.executor'), value: event.value.executor_type },
+    { label: t('requests.detail.source'), value: event.value.source }
   ]) },
-  { title: 'Client', icon: 'i-tabler-user', items: rows([
-    { label: 'User', value: event.value.client?.username || event.value.client?.user_id },
-    { label: 'Access key', value: event.value.client?.client_key_label || event.value.client?.client_key_masked },
-    { label: 'Key ID', value: event.value.client?.client_key_id, mono: true },
-    { label: 'Client IP', value: event.value.client?.client_ip, mono: true }
+  { title: t('requests.detail.groupClient'), icon: 'i-tabler-user', items: rows([
+    { label: t('common.user'), value: event.value.client?.username || event.value.client?.user_id },
+    { label: t('requests.detail.accessKey'), value: event.value.client?.client_key_label || event.value.client?.client_key_masked },
+    { label: t('requests.detail.keyId'), value: event.value.client?.client_key_id, mono: true },
+    { label: t('usage.detail.clientIp'), value: event.value.client?.client_ip, mono: true }
   ]) },
-  { title: 'Credential', icon: 'i-tabler-id-badge-2', items: rows([
-    { label: 'Label', value: event.value.credential?.label },
-    { label: 'Type', value: event.value.credential?.credential_type },
-    { label: 'Provider', value: event.value.credential?.provider },
-    { label: 'Credential ID', value: event.value.credential?.credential_id, mono: true },
-    { label: 'Auth index', value: event.value.credential?.auth_index, mono: true },
-    { label: 'Key preview', value: event.value.credential?.api_key_preview, mono: true },
-    { label: 'Source', value: event.value.credential?.source }
+  { title: t('usage.credential'), icon: 'i-tabler-id-badge-2', items: rows([
+    { label: t('requests.detail.label'), value: event.value.credential?.label },
+    { label: t('common.type'), value: event.value.credential?.credential_type },
+    { label: t('common.provider'), value: event.value.credential?.provider },
+    { label: t('usage.credentialId'), value: event.value.credential?.credential_id, mono: true },
+    { label: t('requests.detail.authIndex'), value: event.value.credential?.auth_index, mono: true },
+    { label: t('requests.detail.keyPreview'), value: event.value.credential?.api_key_preview, mono: true },
+    { label: t('requests.detail.source'), value: event.value.credential?.source }
   ]) },
-  { title: 'Runtime', icon: 'i-tabler-server-2', items: rows([
-    { label: 'Home', value: event.value.runtime?.home_id },
-    { label: 'Home address', value: [event.value.runtime?.home_ip, event.value.runtime?.home_port].filter(Boolean).join(':'), mono: true },
-    { label: 'CPA node', value: event.value.runtime?.cpa_label || event.value.runtime?.cpa_node_id },
-    { label: 'CPA address', value: [event.value.runtime?.cpa_ip, event.value.runtime?.cpa_port].filter(Boolean).join(':'), mono: true }
+  { title: t('requests.detail.groupRuntime'), icon: 'i-tabler-server-2', items: rows([
+    { label: t('usage.detail.home'), value: event.value.runtime?.home_id },
+    { label: t('requests.detail.homeAddress'), value: [event.value.runtime?.home_ip, event.value.runtime?.home_port].filter(Boolean).join(':'), mono: true },
+    { label: t('usage.cpaNode'), value: event.value.runtime?.cpa_label || event.value.runtime?.cpa_node_id },
+    { label: t('requests.detail.cpaAddress'), value: [event.value.runtime?.cpa_ip, event.value.runtime?.cpa_port].filter(Boolean).join(':'), mono: true }
   ]) }
 ])
 const billingMeta = computed(() => rows([
-  { label: 'Charge ID', value: event.value.billing?.charge_id },
-  { label: 'Price rule', value: event.value.billing?.matched_price_rule }
+  { label: t('usage.detail.chargeId'), value: event.value.billing?.charge_id },
+  { label: t('requests.detail.priceRule'), value: event.value.billing?.matched_price_rule }
 ]))
 async function copyText(value: string | undefined, label: string) {
   if (!value) return
-  try { await navigator.clipboard.writeText(value); toast.add({ title: `${label} copied`, color: 'success' }) }
-  catch { toast.add({ title: `Could not copy ${label.toLowerCase()}`, description: 'Select the value and copy it manually.', color: 'error' }) }
+  try { await navigator.clipboard.writeText(value); toast.add({ title: t('requests.detail.copied', { item: label }), color: 'success' }) }
+  catch { toast.add({ title: t('requests.detail.copyFailed', { item: label.toLowerCase() }), description: t('requests.detail.copyManually'), color: 'error' }) }
+}
+// requestCostRows (requestTelemetry) emits English labels such as 'Output (15)'; translate the base label and keep the suffix.
+function costRowLabel(label: string) {
+  const match = /^(.*?)( \(.*\))?$/.exec(String(label || ''))
+  const base = match?.[1] || '', suffix = match?.[2] || ''
+  const translated: Record<string, string> = {
+    Total: t('requests.cost.total'), Input: t('requests.cost.input'), Output: t('requests.cost.output'), 'Cache read': t('usage.tok.cacheRead'), 'Cached text': t('requests.cost.cachedText'), 'Cache write': t('usage.tok.cacheWrite'),
+    'Image input': t('requests.cost.imageInput'), 'Audio input': t('requests.cost.audioInput'), 'Video input': t('requests.cost.videoInput'), 'File input': t('requests.cost.fileInput'),
+    'Image output': t('requests.cost.imageOutput'), 'Audio output': t('requests.cost.audioOutput'), 'Video output': t('requests.cost.videoOutput'),
+    'Image cache read': t('requests.cost.imageCacheRead'), 'Audio cache read': t('requests.cost.audioCacheRead'), 'Cache write 30m': t('requests.cost.cacheWrite30m'), 'Cache write 1h': t('requests.cost.cacheWrite1h'), 'Cache write 12h': t('requests.cost.cacheWrite12h'),
+    'Web search': t('requests.cost.webSearch'), 'Web search query': t('requests.cost.webSearchQuery'), 'Web fetch': t('requests.cost.webFetch'), 'X search': t('requests.cost.xSearch'), 'Code execution': t('requests.cost.codeExecution'),
+    'File search': t('requests.cost.fileSearch'), 'Document search': t('requests.cost.documentSearch'), 'Sources used': t('requests.cost.sourcesUsed'), 'Server tools': t('requests.cost.serverTools'),
+    'Request fee': t('requests.cost.requestFee'), 'Effort multiplier': t('requests.cost.effortMultiplier'), 'Billing multiplier': t('requests.cost.billingMultiplier')
+  }
+  return translated[base] ? `${translated[base]}${suffix}` : label
 }
 </script>
 

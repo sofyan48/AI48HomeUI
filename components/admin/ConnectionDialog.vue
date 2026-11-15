@@ -1,21 +1,21 @@
 <template>
-  <UModal v-model:open="open" title="Management connection" description="Manage the key for this Home instance without leaving your workspace." :dismissible="!pending" :close="!pending" :ui="{ content: 'sm:max-w-lg' }">
+  <UModal v-model:open="open" :title="t('shared.connection.title')" :description="t('shared.connection.description')" :dismissible="!pending" :close="!pending" :ui="{ content: 'sm:max-w-lg' }">
     <template #body>
       <form class="space-y-5" :aria-busy="pending" @submit.prevent="connect">
         <div class="space-y-1">
-          <p role="status" class="text-sm font-medium">{{ pending ? 'Checking connection' : statusLabel }}</p>
+          <p role="status" class="text-sm font-medium">{{ pending ? tc('connection.checking') : statusLabel }}</p>
           <p class="break-all text-xs text-[var(--ui-text-muted)]">{{ apiBase }}</p>
         </div>
-        <UAlert v-if="errorMessage || capabilitiesError" color="error" variant="subtle" title="Connection failed" :description="errorMessage || capabilitiesError || undefined" />
-        <UFormField label="Management key" required>
-          <UInput v-model="key" type="password" autocomplete="current-password" placeholder="Enter the management secret" icon="i-tabler-key" class="w-full" :disabled="pending" autofocus />
+        <UAlert v-if="errorMessage || capabilitiesError" color="error" variant="subtle" :title="tc('connection.failed')" :description="errorMessage || capabilitiesError || undefined" />
+        <UFormField :label="tc('connect.key')" required>
+          <UInput v-model="key" type="password" autocomplete="current-password" :placeholder="tc('connect.keyPlaceholder')" icon="i-tabler-key" class="w-full" :disabled="pending" autofocus />
         </UFormField>
-        <UCheckbox v-model="remember" label="Keep this management connection for 30 days" :disabled="pending" />
-        <p class="text-xs leading-5 text-[var(--ui-text-muted)]">Otherwise, the same-site cookie ends with this browser session. The key is sent only to the configured Management API path.</p>
+        <UCheckbox v-model="remember" :label="tc('connect.remember')" :disabled="pending" />
+        <p class="text-xs leading-5 text-[var(--ui-text-muted)]">{{ t('shared.connection.privacy') }}</p>
         <div class="flex flex-col gap-2 sm:flex-row sm:justify-end">
-          <AppButton v-if="token" type="button" color="error" variant="soft" :disabled="pending" @click="disconnect">Disconnect</AppButton>
-          <AppButton type="button" color="neutral" variant="ghost" :disabled="pending" @click="open = false">Cancel</AppButton>
-          <AppButton type="submit" :loading="pending" :disabled="pending || !key.trim()">Save and connect</AppButton>
+          <AppButton v-if="token" type="button" color="error" variant="soft" :disabled="pending" @click="disconnect">{{ tc('shell.disconnect') }}</AppButton>
+          <AppButton type="button" color="neutral" variant="ghost" :disabled="pending" @click="open = false">{{ t('common.cancel') }}</AppButton>
+          <AppButton type="submit" :loading="pending" :disabled="pending || !key.trim()">{{ t('shared.connection.submit') }}</AppButton>
         </div>
       </form>
     </template>
@@ -25,9 +25,12 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
 import { useManagementSessionStore } from '~/stores/managementSession'
+import { useConsoleLocale } from '~/composables/useConsoleLocale'
 
 const open = defineModel<boolean>('open', { default: false })
 defineProps<{ statusLabel: string }>()
+const { t } = useAdminI18n()
+const { t: tc } = useConsoleLocale()
 const { token, rememberSession } = storeToRefs(useManagementSessionStore())
 const { fetchAPI, apiBase } = useApi()
 const { error: capabilitiesError, refreshCapabilities, resetCapabilities } = useCapabilities()
@@ -70,7 +73,7 @@ async function connect() {
     await refreshCapabilities(true)
     if (!signal.aborted && token.value === candidate) open.value = false
   } catch (cause: any) {
-    if (!signal.aborted) errorMessage.value = cause?.message || 'Unable to reach the Management API.'
+    if (!signal.aborted) errorMessage.value = cause?.message || tc('connect.unreachable')
   } finally {
     pending.value = false
   }

@@ -1,5 +1,5 @@
 <template>
-  <section :aria-label="label" :aria-busy="loading || undefined" class="grid grid-cols-1 items-stretch gap-3" :class="columnClass">
+  <section :aria-label="label || t('shared.stats.summary')" :aria-busy="loading || undefined" class="grid grid-cols-1 items-stretch gap-3" :class="columnClass">
     <component
       :is="item.to ? NuxtLink : item.action ? 'button' : 'div'"
       v-for="item in items"
@@ -27,7 +27,7 @@
       </span>
 
       <!-- Trend sits beside the value so it never adds height. -->
-      <AdminUsageSparkline v-if="item.points?.length" :values="item.points" :label="`${item.label} trend`" class="kpi__spark" />
+      <AdminUsageSparkline v-if="item.points?.length" :values="item.points" :label="t('shared.stats.trend', { label: item.label })" class="kpi__spark" />
       <UIcon v-else-if="item.to || item.action" name="i-tabler-chevron-right" class="kpi__go size-4" aria-hidden="true" />
     </component>
   </section>
@@ -57,11 +57,12 @@ const props = withDefaults(defineProps<{
   loading?: boolean
   columns?: number
 }>(), {
-  label: 'Summary',
+  label: '',
   loading: false,
   columns: 0
 })
 const emit = defineEmits<{ select: [key: string] }>()
+const { t } = useAdminI18n()
 
 const ratioPercent = (ratio: number) => Math.round(Math.max(0, Math.min(1, Number(ratio) || 0)) * 100)
 

@@ -4,7 +4,7 @@
       v-if="pageError"
       color="error"
       variant="subtle"
-      title="Configuration needs attention"
+      :title="t('config.page.attention')"
       :description="pageError"
     />
 
@@ -22,7 +22,7 @@
           <p
             class="px-2 pb-2 text-xs font-semibold uppercase text-[var(--ui-text-muted)]"
           >
-            Configuration
+            {{ t('config.page.outlineTitle') }}
           </p>
           <button
             v-for="section in outline"
@@ -68,17 +68,16 @@
             >
               <template #header
                 ><div>
-                  <h2 class="font-semibold">OAuth model rules</h2>
+                  <h2 class="font-semibold">{{ t('config.oauthRules.title') }}</h2>
                   <p class="text-xs text-[var(--ui-text-muted)]">
-                    Configure disabled models and client-visible aliases for
-                    OAuth and file-backed credentials.
+                    {{ t('config.oauthRules.description') }}
                   </p>
                 </div></template
               >
               <div class="space-y-6">
                 <section class="space-y-3">
                   <div class="flex flex-col gap-3 lg:flex-row lg:items-end">
-                    <UFormField label="Channel" class="lg:w-64"
+                    <UFormField :label="t('config.oauthRules.channel')" class="lg:w-64"
                       ><USelect
                         v-model="exclusionChannel"
                         :items="channelOptions"
@@ -89,21 +88,21 @@
                     ><UInput
                       v-model="modelSearch"
                       icon="i-tabler-search"
-                      placeholder="Search model ID, name, or owner"
+                      :placeholder="t('config.oauthRules.searchPlaceholder')"
                       class="flex-1"
                     /><AppButton
                       color="neutral"
                       variant="outline"
                       :loading="modelsLoading"
                       @click="loadChannelModels"
-                      >Reload models</AppButton
+                      >{{ t('config.oauthRules.reloadModels') }}</AppButton
                     >
                   </div>
                   <UAlert
                     v-if="modelsError"
                     color="warning"
                     variant="subtle"
-                    title="Channel model definitions unavailable"
+                    :title="t('config.oauthRules.modelsUnavailable')"
                     :description="modelsError"
                   />
                   <div
@@ -131,22 +130,22 @@
                       v-if="modelsLoading || !filteredChannelModels.length"
                       class="p-6 text-center text-sm text-[var(--ui-text-muted)]"
                     >
-                      {{ modelsLoading ? 'Loading channel models…' : 'No matching model definitions. Manual rules remain available below.' }}
+                      {{ modelsLoading ? t('config.oauthRules.loadingModels') : t('config.oauthRules.noModels') }}
                     </p>
                   </div>
                   <div class="flex items-center justify-between">
                     <UBadge color="neutral" variant="subtle"
-                      >{{ excludedForChannel.length }} disabled</UBadge
+                      >{{ t('config.oauthRules.disabledCount', { count: excludedForChannel.length }) }}</UBadge
                     ><AppButton
                       color="neutral"
                       variant="ghost"
                       size="sm"
                       :disabled="!excludedForChannel.length || loading || saving || Boolean(validationErrors.oauthExcludedModelsJson)"
                       @click="clearExcludedChannel"
-                      >Clear channel</AppButton
+                      >{{ t('config.oauthRules.clearChannel') }}</AppButton
                     >
                   </div>
-                  <UFormField label="Manual exclusion rules (JSON)" hint="Map channel IDs to arrays of model IDs or wildcard patterns. Rules outside the catalog and custom channels are preserved." :error="validationErrors.oauthExcludedModelsJson">
+                  <UFormField :label="t('config.oauthRules.manualLabel')" :hint="t('config.oauthRules.manualHint')" :error="validationErrors.oauthExcludedModelsJson">
                     <UTextarea v-model="draft.oauthExcludedModelsJson" :disabled="loading || saving" :rows="6" class="w-full font-mono text-xs" spellcheck="false" />
                   </UFormField>
                 </section>
@@ -156,9 +155,9 @@
                 >
                   <div class="flex items-center justify-between">
                     <div>
-                      <h3 class="font-semibold">Model aliases</h3>
+                      <h3 class="font-semibold">{{ t('config.aliases.title') }}</h3>
                       <p class="text-xs text-[var(--ui-text-muted)]">
-                        Map upstream model names to client-visible aliases.
+                        {{ t('config.aliases.description') }}
                       </p>
                     </div>
                     <AppButton
@@ -166,7 +165,7 @@
                       color="neutral"
                       variant="outline"
                       @click="addAlias"
-                      >Add alias</AppButton
+                      >{{ t('config.aliases.add') }}</AppButton
                     >
                   </div>
                   <AppCard
@@ -175,28 +174,28 @@
                     :ui="{
                       body: 'grid gap-3 p-3 lg:grid-cols-2 lg:items-end',
                     }"
-                    ><UFormField label="Channel"
+                    ><UFormField :label="t('config.oauthRules.channel')"
                       ><UInput v-model="row.channel" /></UFormField
-                    ><UFormField label="Upstream model"
+                    ><UFormField :label="t('config.aliases.upstreamModel')"
                       ><UInput v-model="row.name" /></UFormField
-                    ><UFormField label="Client alias"
+                    ><UFormField :label="t('config.aliases.clientAlias')"
                       ><UInput v-model="row.alias" /></UFormField
-                    ><UFormField label="Display name (optional)"
+                    ><UFormField :label="t('config.aliases.displayName')"
                       ><UInput v-model="row.displayName" /></UFormField
-                    ><UCheckbox v-model="row.fork" label="Fork" /><UCheckbox
+                    ><UCheckbox v-model="row.fork" :label="t('config.aliases.fork')" /><UCheckbox
                       v-model="row.forceMapping"
-                      label="Force mapping" /><AppButton
+                      :label="t('config.aliases.forceMapping')" /><AppButton
                       color="error"
                       variant="ghost"
                       icon="i-tabler-trash"
-                      aria-label="Remove model alias"
+                      :aria-label="t('config.aliases.remove')"
                       @click="aliasRows.splice(index, 1)"
                   /></AppCard>
                   <p
                     v-if="!aliasRows.length"
                     class="py-6 text-center text-sm text-[var(--ui-text-muted)]"
                   >
-                    No rules configured.
+                    {{ t('config.aliases.empty') }}
                   </p>
                 </section>
               </div>
@@ -210,7 +209,7 @@
           <template #payload>
             <AdminConfigSharedUpstream
               v-model:draft="draft"
-              :sections="sharedConfigSections"
+              :sections="displaySharedSections"
               :validation-errors="validationErrors"
               :loading="loading || saving"
               class="mb-6"
@@ -220,20 +219,19 @@
             >
               <template #header
                 ><div>
-                  <h2 class="font-semibold">Request parameter rewriting</h2>
+                  <h2 class="font-semibold">{{ t('config.payload.title') }}</h2>
                   <p class="text-xs text-[var(--ui-text-muted)]">
-                    Match requests by model and protocol, then fill, override,
-                    or remove parameters.
+                    {{ t('config.payload.description') }}
                   </p>
                 </div></template
               >
               <div class="space-y-4">
-                <div class="flex flex-wrap gap-2" aria-label="Rule counts">
+                <div class="flex flex-wrap gap-2" :aria-label="t('config.payload.ruleCounts')">
                   <span
                     v-for="mode in payloadModes"
                     :key="mode.value"
                     class="inline-flex items-center gap-1.5 rounded-full border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-2.5 py-1 text-xs"
-                    ><span class="text-[var(--ui-text-muted)]">{{ mode.label }}</span
+                    ><span class="text-[var(--ui-text-muted)]">{{ payloadModeLabel(mode.value) }}</span
                     ><strong class="tabular-nums text-[var(--ui-text-highlighted)]">{{
                       payloadDraft[mode.value]?.length || 0
                     }}</strong></span
@@ -245,13 +243,13 @@
                   class="space-y-2"
                 >
                   <div class="flex items-center justify-between">
-                    <h3 class="font-semibold">{{ mode.label }}</h3>
+                    <h3 class="font-semibold">{{ payloadModeLabel(mode.value) }}</h3>
                     <AppButton
                       size="sm"
                       color="neutral"
                       variant="outline"
                       @click="addPayloadRule(mode.value)"
-                      >Add rule</AppButton
+                      >{{ t('config.payload.addRule') }}</AppButton
                     >
                   </div>
                   <AppCard
@@ -273,19 +271,19 @@
                           color="neutral"
                           variant="ghost"
                           @click="editPayload(mode.value, index)"
-                          >Edit</AppButton
+                          >{{ t('common.edit') }}</AppButton
                         ><AppButton
                           size="sm"
                           color="neutral"
                           variant="ghost"
                           @click="duplicatePayload(mode.value, index)"
-                          >Duplicate</AppButton
+                          >{{ t('config.payload.duplicate') }}</AppButton
                         ><AppButton
                           size="sm"
                           color="error"
                           variant="ghost"
                           @click="removePayload(mode.value, index)"
-                          >Remove</AppButton
+                          >{{ t('common.remove') }}</AppButton
                         >
                       </div>
                     </div></AppCard
@@ -293,7 +291,7 @@
                 </div>
                 <details>
                   <summary class="cursor-pointer text-sm">
-                    View payload JSON to save
+                    {{ t('config.payload.viewJson') }}
                   </summary>
                   <pre
                     class="mt-2 max-h-80 overflow-auto rounded-md bg-[var(--ui-bg-muted)] p-3 text-xs"
@@ -315,16 +313,16 @@
     >
       <div class="flex flex-wrap items-center gap-2">
         <UBadge color="neutral" variant="subtle"
-          >Runtime: {{ runtimeMode }}</UBadge
+          >{{ t('config.footer.runtime', { mode: runtimeMode }) }}</UBadge
         >
         <UBadge color="neutral" variant="subtle"
-          >Updated {{ updatedLabel }}</UBadge
+          >{{ t('config.footer.updated', { time: updatedLabel }) }}</UBadge
         >
         <UBadge :color="dirtyCount ? 'warning' : 'neutral'" variant="subtle">{{
-          dirtyCount ? `${dirtyCount} visual changes` : "No unsaved changes"
+          dirtyCount ? t('config.footer.changes', { count: dirtyCount }) : t('config.footer.noChanges')
         }}</UBadge>
         <UBadge v-if="validationCount" color="warning" variant="subtle"
-          >{{ validationCount }} fields need attention</UBadge
+          >{{ t('config.footer.attention', { count: validationCount }) }}</UBadge
         >
       </div>
       <div class="flex flex-wrap gap-2">
@@ -334,7 +332,7 @@
           variant="outline"
           :disabled="!dirtyCount"
           @click="changesOpen = true"
-          >View changes</AppButton
+          >{{ t('config.footer.viewChanges') }}</AppButton
         >
         <AppButton
           color="neutral"
@@ -343,22 +341,22 @@
           :loading="loading"
           :disabled="saving"
           @click="reloadWorkspace"
-          >Reload</AppButton
+          >{{ t('common.reload') }}</AppButton
         >
         <AppButton
           icon="i-tabler-check"
           :loading="saving"
           :disabled="!dirtyCount || validationCount > 0 || loading || saveNeedsReload"
           @click="saveWorkspace"
-          >Save</AppButton
+          >{{ t('common.save') }}</AppButton
         >
       </div>
     </AppCard>
 
     <USlideover
       v-model:open="changesOpen"
-      title="Configuration changes"
-      description="Review changed visual fields before saving."
+      :title="t('config.changes.title')"
+      :description="t('config.changes.description')"
       :ui="{ content: 'sm:max-w-xl' }"
       ><template #body
         ><div class="space-y-2">
@@ -386,22 +384,22 @@
 
     <AppModal
       v-model:open="reloadConfirmOpen"
-      title="Reload config?"
-      description="Discard unsaved local changes and reload?"
+      :title="t('config.reload.title')"
+      :description="t('config.reload.description')"
       ><template #body
         ><div class="flex justify-end gap-2">
           <AppButton
             color="neutral"
             variant="ghost"
             @click="reloadConfirmOpen = false"
-            >Cancel</AppButton
+            >{{ t('common.cancel') }}</AppButton
           ><AppButton
             color="error"
             @click="
               reloadConfirmOpen = false;
               loadWorkspace();
             "
-            >Discard and reload</AppButton
+            >{{ t('config.reload.confirm') }}</AppButton
           >
         </div></template
       ></AppModal
@@ -409,11 +407,11 @@
 
     <AppModal
       v-model:open="payloadEditorOpen"
-      :title="payloadEditIndex < 0 ? 'Add payload rule' : 'Edit payload rule'"
+      :title="payloadEditIndex < 0 ? t('config.payload.addTitle') : t('config.payload.editTitle')"
       :ui="{ content: 'sm:max-w-3xl' }"
       ><template #body
         ><form class="space-y-4" @submit.prevent="savePayloadEditor">
-          <UFormField label="Matched models (JSON array)" required
+          <UFormField :label="t('config.payload.models')" required
             ><UTextarea
               v-model="payloadEditor.models"
               :rows="8"
@@ -421,8 +419,8 @@
           ><UFormField
             :label="
               payloadEditMode === 'filter'
-                ? 'Paths to remove (JSON array)'
-                : 'Parameters (JSON object)'
+                ? t('config.payload.filterParams')
+                : t('config.payload.params')
             "
             required
             ><UTextarea
@@ -441,8 +439,8 @@
               color="neutral"
               variant="ghost"
               @click="payloadEditorOpen = false"
-              >Cancel</AppButton
-            ><AppButton type="submit">Save rule</AppButton>
+              >{{ t('common.cancel') }}</AppButton
+            ><AppButton type="submit">{{ t('config.payload.saveRule') }}</AppButton>
           </div>
         </form></template
       ></AppModal
@@ -459,6 +457,7 @@ import { planConfigWrites, applyConfigWrites, reconcileConfigDraft } from '~/com
 
 const { fetchAPI } = useApi();
 const toast = useToast();
+const { t, intlLocale } = useAdminI18n();
 const loading = useWorkspaceState('admin:config:loading', () => (false));
 const loaded = useWorkspaceState('admin:config:loaded', () => (false));
 const saving = useWorkspaceState('admin:config:saving', () => (false));
@@ -491,12 +490,21 @@ const payloadDraft = reactive({
 let payloadEditorBaseline = "";
 let payloadEditorSource = "{}";
 const payloadModes = [
-  { label: "Fill", value: "default" },
-  { label: "Raw fill", value: "default-raw" },
-  { label: "Override", value: "override" },
-  { label: "Raw override", value: "override-raw" },
-  { label: "Remove", value: "filter" },
+  { value: "default" },
+  { value: "default-raw" },
+  { value: "override" },
+  { value: "override-raw" },
+  { value: "filter" },
 ];
+function payloadModeLabel(mode) {
+  return {
+    default: t('config.payload.mode.default'),
+    "default-raw": t('config.payload.mode.defaultRaw'),
+    override: t('config.payload.mode.override'),
+    "override-raw": t('config.payload.mode.overrideRaw'),
+    filter: t('config.payload.mode.filter'),
+  }[mode] || mode;
+}
 const payloadEditorOpen = ref(false);
 const payloadEditMode = ref("default");
 const payloadEditIndex = ref(-1);
@@ -586,12 +594,92 @@ const sharedConfigSections = [
   },
 ];
 const sharedConfigFields = sharedConfigSections.flatMap(section => section.fields);
-const outline = [
-  { id: "server", short: "Server", keys: ["debug", "port", "cpaPublicUrl"] },
-  { id: "tls", short: "TLS", keys: ["tlsEnable", "tlsCert", "tlsKey"] },
+// Display text for shared sections, keyed by section id (`<id>.title`/`<id>.description`) and field key (`<key>`/`<key>.desc`).
+function sharedText() {
+  return {
+    "server-network.title": t('config.shared.server-network.title'), "server-network.description": t('config.shared.server-network.description'),
+    serverHost: t('config.shared.serverHost'), serverAllowHostJson: t('config.shared.serverAllowHostJson'), serverTrustedProxiesJson: t('config.shared.serverTrustedProxiesJson'),
+    serverCommercialMode: t('config.shared.serverCommercialMode'), managementBaseUrl: t('config.shared.managementBaseUrl'),
+    "discovery.title": t('config.shared.discovery.title'), "discovery.description": t('config.shared.discovery.description'),
+    discoveryEnabled: t('config.shared.discoveryEnabled'), discoveryServiceName: t('config.shared.discoveryServiceName'),
+    discoveryServiceType: t('config.shared.discoveryServiceType'), "discoveryServiceType.desc": t('config.shared.discoveryServiceType.desc'),
+    discoverySubtypesJson: t('config.shared.discoverySubtypesJson'), discoveryInterfacesIncludeJson: t('config.shared.discoveryInterfacesIncludeJson'),
+    discoveryInterfacesExcludeJson: t('config.shared.discoveryInterfacesExcludeJson'), discoveryAuthRequired: t('config.shared.discoveryAuthRequired'),
+    "discoveryAuthRequired.desc": t('config.shared.discoveryAuthRequired.desc'), discoveryAdvertiseManagement: t('config.shared.discoveryAdvertiseManagement'),
+    "response-diagnostics.title": t('config.shared.response-diagnostics.title'), "response-diagnostics.description": t('config.shared.response-diagnostics.description'),
+    passthroughHeaders: t('config.shared.passthroughHeaders'), pprofEnable: t('config.shared.pprofEnable'), pprofAddr: t('config.shared.pprofAddr'),
+    "multimedia.title": t('config.shared.multimedia.title'), "multimedia.description": t('config.shared.multimedia.description'),
+    multimediaDisableImageGeneration: t('config.shared.multimediaDisableImageGeneration'), "multimediaDisableImageGeneration.desc": t('config.shared.multimediaDisableImageGeneration.desc'),
+    multimediaGptImage2BaseModel: t('config.shared.multimediaGptImage2BaseModel'), multimediaVideoResultAuthCacheTtl: t('config.shared.multimediaVideoResultAuthCacheTtl'),
+    "oauth-defaults.title": t('config.shared.oauth-defaults.title'), "oauth-defaults.description": t('config.shared.oauth-defaults.description'),
+    oauthAuthDir: t('config.shared.oauthAuthDir'), oauthCodexHeaderUserAgent: t('config.shared.oauthCodexHeaderUserAgent'), oauthCodexHeaderBetaFeatures: t('config.shared.oauthCodexHeaderBetaFeatures'),
+    "live-media-relay.title": t('config.shared.live-media-relay.title'), "live-media-relay.description": t('config.shared.live-media-relay.description'),
+    liveMediaRelayEnabled: t('config.shared.liveMediaRelayEnabled'), liveMediaRelayDisablePrivateRemoteIps: t('config.shared.liveMediaRelayDisablePrivateRemoteIps'),
+    liveMediaRelayMaxSessions: t('config.shared.liveMediaRelayMaxSessions'), liveMediaRelayUdpPortMin: t('config.shared.liveMediaRelayUdpPortMin'),
+    liveMediaRelayUdpPortMax: t('config.shared.liveMediaRelayUdpPortMax'), liveMediaRelayPublicIp: t('config.shared.liveMediaRelayPublicIp'),
+    liveMediaRelayIceServersJson: t('config.shared.liveMediaRelayIceServersJson'), "liveMediaRelayIceServersJson.desc": t('config.shared.liveMediaRelayIceServersJson.desc'),
+    "antigravity-runtime.title": t('config.shared.antigravity-runtime.title'), "antigravity-runtime.description": t('config.shared.antigravity-runtime.description'),
+    antigravityCredits: t('config.shared.antigravityCredits'), antigravitySignatureCacheEnabled: t('config.shared.antigravitySignatureCacheEnabled'),
+    antigravitySignatureBypassStrict: t('config.shared.antigravitySignatureBypassStrict'), antigravityConnPoolEnabled: t('config.shared.antigravityConnPoolEnabled'),
+    antigravityConnPoolIdleTimeout: t('config.shared.antigravityConnPoolIdleTimeout'), "antigravityConnPoolIdleTimeout.desc": t('config.shared.antigravityConnPoolIdleTimeout.desc'),
+    antigravityConnPoolMaxIdleConnsPerHost: t('config.shared.antigravityConnPoolMaxIdleConnsPerHost'), "antigravityConnPoolMaxIdleConnsPerHost.desc": t('config.shared.antigravityConnPoolMaxIdleConnsPerHost.desc'),
+    "session-streaming.title": t('config.shared.session-streaming.title'), "session-streaming.description": t('config.shared.session-streaming.description'),
+    sessionAffinity: t('config.shared.sessionAffinity'), "sessionAffinity.desc": t('config.shared.sessionAffinity.desc'),
+    sessionAffinityTtl: t('config.shared.sessionAffinityTtl'), "sessionAffinityTtl.desc": t('config.shared.sessionAffinityTtl.desc'), "sessionAffinityTtl.placeholder": t('config.shared.sessionAffinityTtl.placeholder'),
+    sessionAffinitySubagents: t('config.shared.sessionAffinitySubagents'), "sessionAffinitySubagents.desc": t('config.shared.sessionAffinitySubagents.desc'),
+    streamingKeepaliveSeconds: t('config.shared.streamingKeepaliveSeconds'), "streamingKeepaliveSeconds.desc": t('config.shared.streamingKeepaliveSeconds.desc'),
+    streamingSendKeepaliveBeforeFt: t('config.shared.streamingSendKeepaliveBeforeFt'), "streamingSendKeepaliveBeforeFt.desc": t('config.shared.streamingSendKeepaliveBeforeFt.desc'),
+    streamingBootstrapRetries: t('config.shared.streamingBootstrapRetries'), "streamingBootstrapRetries.desc": t('config.shared.streamingBootstrapRetries.desc'),
+    nonstreamKeepaliveInterval: t('config.shared.nonstreamKeepaliveInterval'), "nonstreamKeepaliveInterval.desc": t('config.shared.nonstreamKeepaliveInterval.desc'),
+    "oauth-request-errors.title": t('config.shared.oauth-request-errors.title'), "oauth-request-errors.description": t('config.shared.oauth-request-errors.description'),
+    oauthRequestScopedErrorsJson: t('config.shared.oauthRequestScopedErrorsJson'), "oauthRequestScopedErrorsJson.desc": t('config.shared.oauthRequestScopedErrorsJson.desc'),
+    "upstream-claude.title": t('config.shared.upstream-claude.title'), "upstream-claude.description": t('config.shared.upstream-claude.description'),
+    claudeToolSearch: t('config.shared.claudeToolSearch'), "claudeToolSearch.desc": t('config.shared.claudeToolSearch.desc'),
+    claudeModelLevelCooling: t('config.shared.claudeModelLevelCooling'), "claudeModelLevelCooling.desc": t('config.shared.claudeModelLevelCooling.desc'),
+    claudeDisableCloakMode: t('config.shared.claudeDisableCloakMode'), "claudeDisableCloakMode.desc": t('config.shared.claudeDisableCloakMode.desc'),
+    claudeDisableCloakingModelList: t('config.shared.claudeDisableCloakingModelList'), "claudeDisableCloakingModelList.desc": t('config.shared.claudeDisableCloakingModelList.desc'),
+    claudeHeaderUserAgent: t('config.shared.claudeHeaderUserAgent'), "claudeHeaderUserAgent.desc": t('config.shared.claudeHeaderUserAgent.desc'),
+    claudeHeaderPackageVersion: t('config.shared.claudeHeaderPackageVersion'), "claudeHeaderPackageVersion.desc": t('config.shared.claudeHeaderPackageVersion.desc'),
+    claudeHeaderRuntimeVersion: t('config.shared.claudeHeaderRuntimeVersion'), "claudeHeaderRuntimeVersion.desc": t('config.shared.claudeHeaderRuntimeVersion.desc'),
+    claudeHeaderOs: t('config.shared.claudeHeaderOs'), "claudeHeaderOs.desc": t('config.shared.claudeHeaderOs.desc'),
+    claudeHeaderArch: t('config.shared.claudeHeaderArch'), "claudeHeaderArch.desc": t('config.shared.claudeHeaderArch.desc'),
+    claudeHeaderTimeout: t('config.shared.claudeHeaderTimeout'), "claudeHeaderTimeout.desc": t('config.shared.claudeHeaderTimeout.desc'),
+    claudeHeaderTimezone: t('config.shared.claudeHeaderTimezone'), "claudeHeaderTimezone.desc": t('config.shared.claudeHeaderTimezone.desc'),
+    claudeHeaderStabilizeDeviceProfile: t('config.shared.claudeHeaderStabilizeDeviceProfile'), "claudeHeaderStabilizeDeviceProfile.desc": t('config.shared.claudeHeaderStabilizeDeviceProfile.desc'),
+    "upstream-codex.title": t('config.shared.upstream-codex.title'), "upstream-codex.description": t('config.shared.upstream-codex.description'),
+    codexResponseSteering: t('config.shared.codexResponseSteering'), "codexResponseSteering.desc": t('config.shared.codexResponseSteering.desc'),
+    codexDisableCloaking: t('config.shared.codexDisableCloaking'), "codexDisableCloaking.desc": t('config.shared.codexDisableCloaking.desc'),
+    codexStreamBootstrapBuffering: t('config.shared.codexStreamBootstrapBuffering'), "codexStreamBootstrapBuffering.desc": t('config.shared.codexStreamBootstrapBuffering.desc'),
+    codexStreamBootstrapTimeout: t('config.shared.codexStreamBootstrapTimeout'), "codexStreamBootstrapTimeout.desc": t('config.shared.codexStreamBootstrapTimeout.desc'),
+    codexOrphanDelegationCompatibility: t('config.shared.codexOrphanDelegationCompatibility'), "codexOrphanDelegationCompatibility.desc": t('config.shared.codexOrphanDelegationCompatibility.desc'),
+    codexModelLevelCooling: t('config.shared.codexModelLevelCooling'), "codexModelLevelCooling.desc": t('config.shared.codexModelLevelCooling.desc'),
+    "client-codex.title": t('config.shared.client-codex.title'), "client-codex.description": t('config.shared.client-codex.description'),
+    codexOptimizeMultiAgentV2: t('config.shared.codexOptimizeMultiAgentV2'), "codexOptimizeMultiAgentV2.desc": t('config.shared.codexOptimizeMultiAgentV2.desc'),
+    "upstream-xai.title": t('config.shared.upstream-xai.title'), "upstream-xai.description": t('config.shared.upstream-xai.description'),
+    xaiInjectXSearch: t('config.shared.xaiInjectXSearch'), "xaiInjectXSearch.desc": t('config.shared.xaiInjectXSearch.desc'),
+  };
+}
+const displaySharedSections = computed(() => {
+  const text = sharedText();
+  return sharedConfigSections.map(section => ({
+    ...section,
+    title: text[`${section.id}.title`] || section.title,
+    description: text[`${section.id}.description`] || section.description,
+    fields: section.fields.map(field => ({
+      ...field,
+      label: text[field.key] || field.label,
+      // Descriptions only exist where the source has one; an empty source stays empty.
+      description: field.description ? text[`${field.key}.desc`] || field.description : field.description,
+      placeholder: field.placeholder ? text[`${field.key}.placeholder`] || field.placeholder : field.placeholder,
+    })),
+  }));
+});
+const outline = computed(() => [
+  { id: "server", short: t('config.outline.server'), keys: ["debug", "port", "cpaPublicUrl"] },
+  { id: "tls", short: t('config.outline.tls'), keys: ["tlsEnable", "tlsCert", "tlsKey"] },
   {
     id: "remote-management",
-    short: "Management",
+    short: t('config.outline.management'),
     keys: [
       "remoteManagementAllowRemote",
       "remoteManagementSecretKey",
@@ -601,22 +689,22 @@ const outline = [
   },
   {
     id: "user-email",
-    short: "Mail Setup",
+    short: t('config.outline.mail'),
     keys: ["userEmailEnabled", "userEmailPublicUrl", "userEmailFromAddress", "userEmailFromName", "userEmailSenderType", "userEmailSmtpHost", "userEmailSmtpPort", "userEmailSmtpUsername", "userEmailSmtpPasswordEnv", "userEmailSmtpStarttls", "userEmailVerificationTtl", "userEmailResetTtl"],
   },
   {
     id: "plugins",
-    short: "Plugins",
+    short: t('config.outline.plugins'),
     keys: ["pluginsEnabled", "pluginsDir", "pluginStoreSourcesJson"],
   },
   {
     id: "oauth-rules",
-    short: "OAuth rules",
+    short: t('config.outline.oauthRules'),
     keys: ["oauthExcludedModelsJson", "oauthModelAliasJson"],
   },
   {
     id: "logs",
-    short: "Logs",
+    short: t('config.outline.logs'),
     keys: [
       "requestLog",
 
@@ -625,16 +713,16 @@ const outline = [
       "errorLogsMaxFiles",
     ],
   },
-  { id: "models", short: "Model catalogs", keys: ["modelsCatalog", "modelsCodexCatalog", "modelsDevinCatalog"] },
-  { id: "network", short: "Network", keys: ["proxyUrl", "tlsHandshakeTimeoutSeconds"] },
+  { id: "models", short: t('config.outline.models'), keys: ["modelsCatalog", "modelsCodexCatalog", "modelsDevinCatalog"] },
+  { id: "network", short: t('config.outline.network'), keys: ["proxyUrl", "tlsHandshakeTimeoutSeconds"] },
   {
     id: "quota",
-    short: "Quota",
+    short: t('config.outline.quota'),
     keys: ["quotaSwitchProject", "quotaSwitchPreviewModel"],
   },
   {
     id: "retry-routing",
-    short: "Routing",
+    short: t('config.outline.routing'),
     keys: [
       "requestRetry",
       "maxRetryCredentials",
@@ -644,28 +732,57 @@ const outline = [
       "routingStrategy",
     ],
   },
-  ...sharedConfigSections.map(section => ({ id: section.id, short: section.title, keys: section.fields.map(field => field.key) })),
-  { id: "payload", short: "Parameters", keys: ["payloadJson"] },
-  { id: "devin", short: "Devin OAuth", keys: ["devinSensitiveWordsJson"] },
+  ...displaySharedSections.value.map(section => ({ id: section.id, short: section.title, keys: section.fields.map(field => field.key) })),
+  { id: "payload", short: t('config.outline.parameters'), keys: ["payloadJson"] },
+  { id: "devin", short: t('config.outline.devin'), keys: ["devinSensitiveWordsJson"] },
   {
     id: "antigravity",
-    short: "Antigravity",
+    short: t('config.outline.antigravity'),
     keys: ["antigravitySensitiveWordsJson"],
   },
-];
-const labels = Object.fromEntries(
-  outline.flatMap((section) =>
-    section.keys.map((key) => [
-      key,
-      key
-        .replace(/([A-Z])/g, " $1")
-        .replace(/^./, (value) => value.toUpperCase()),
-    ]),
-  ),
-);
+]);
+function visualFieldLabels() {
+  return {
+    debug: t('config.field.debug'), port: t('config.field.port'), cpaPublicUrl: t('config.field.cpaPublicUrl'),
+    tlsEnable: t('config.field.tlsEnable'), tlsCert: t('config.field.tlsCert'), tlsKey: t('config.field.tlsKey'),
+    remoteManagementAllowRemote: t('config.field.remoteManagementAllowRemote'), remoteManagementSecretKey: t('config.field.remoteManagementSecretKey'),
+    remoteManagementDisableControlPanel: t('config.field.remoteManagementDisableControlPanel'),
+    userEmailEnabled: t('config.field.userEmailEnabled'), userEmailPublicUrl: t('config.field.userEmailPublicUrl'),
+    userEmailFromAddress: t('config.field.userEmailFromAddress'), userEmailFromName: t('config.field.userEmailFromName'),
+    userEmailSenderType: t('config.field.userEmailSenderType'), userEmailSmtpHost: t('config.field.userEmailSmtpHost'),
+    userEmailSmtpPort: t('config.field.userEmailSmtpPort'), userEmailSmtpUsername: t('config.field.userEmailSmtpUsername'),
+    userEmailSmtpPasswordEnv: t('config.field.userEmailSmtpPasswordEnv'), userEmailSmtpStarttls: t('config.field.userEmailSmtpStarttls'),
+    userEmailVerificationTtl: t('config.field.userEmailVerificationTtl'), userEmailResetTtl: t('config.field.userEmailResetTtl'),
+    pluginsEnabled: t('config.field.pluginsEnabled'), pluginsDir: t('config.field.pluginsDir'), pluginStoreSourcesJson: t('config.field.pluginStoreSourcesJson'),
+    oauthExcludedModelsJson: t('config.oauthRules.manualLabel'), oauthModelAliasJson: t('config.aliases.title'),
+    requestLog: t('config.field.requestLog'), loggingToFile: t('config.field.loggingToFile'),
+    logsMaxTotalSizeMb: t('config.field.logsMaxTotalSizeMb'), errorLogsMaxFiles: t('config.field.errorLogsMaxFiles'),
+    modelsCatalog: t('config.field.modelsCatalog'), modelsCodexCatalog: t('config.field.modelsCodexCatalog'), modelsDevinCatalog: t('config.field.modelsDevinCatalog'),
+    proxyUrl: t('config.field.proxyUrl'), tlsHandshakeTimeoutSeconds: t('config.field.tlsHandshakeTimeoutSeconds'),
+    quotaSwitchProject: t('config.field.quotaSwitchProject'), quotaSwitchPreviewModel: t('config.field.quotaSwitchPreviewModel'),
+    requestRetry: t('config.field.requestRetry'), maxRetryCredentials: t('config.field.maxRetryCredentials'), maxRetryInterval: t('config.field.maxRetryInterval'),
+    disableCooling: t('config.field.disableCooling'), forceModelPrefix: t('config.field.forceModelPrefix'), routingStrategy: t('config.field.routingStrategy'),
+    payloadJson: t('config.field.payloadJson'), devinSensitiveWordsJson: t('config.field.devinSensitiveWordsJson'),
+    antigravitySensitiveWordsJson: t('config.field.antigravitySensitiveWordsJson'),
+  };
+}
+const labels = computed(() => {
+  const visual = visualFieldLabels();
+  const shared = Object.fromEntries(displaySharedSections.value.flatMap(section => section.fields.map(field => [field.key, field.label])));
+  return Object.fromEntries(
+    outline.value.flatMap((section) =>
+      section.keys.map((key) => [
+        key,
+        visual[key] || shared[key] || key
+          .replace(/([A-Z])/g, " $1")
+          .replace(/^./, (value) => value.toUpperCase()),
+      ]),
+    ),
+  );
+});
 const updatedLabel = computed(() =>
   updatedAt.value
-    ? new Intl.DateTimeFormat(undefined, {
+    ? new Intl.DateTimeFormat(intlLocale.value, {
         dateStyle: "medium",
         timeStyle: "short",
       }).format(updatedAt.value)
@@ -686,26 +803,26 @@ const validationErrors = computed(() => {
     Number(draft.value.port) < 1 ||
     Number(draft.value.port) > 65535
   )
-    errors.port = "Enter an integer from 1 to 65535.";
+    errors.port = t('config.validation.port');
   for (const key of integerKeys)
     if (
       draft.value[key] === null || draft.value[key] === "" ||
       !Number.isInteger(Number(draft.value[key])) ||
       Number(draft.value[key]) < 0
     )
-      errors[key] = "Enter a non-negative integer.";
+      errors[key] = t('config.validation.nonNegativeInteger');
   if (
     !["round-robin", "weighted-round-robin", "fill-first"].includes(
       draft.value.routingStrategy,
     )
   )
-    errors.routingStrategy = "Select a supported strategy.";
+    errors.routingStrategy = t('config.validation.strategy');
   if (String(draft.value.cpaPublicUrl || "").trim()) {
     try {
       const url = new URL(String(draft.value.cpaPublicUrl).trim());
       if (!["http:", "https:"].includes(url.protocol) || url.username || url.password) throw new Error();
     } catch {
-      errors.cpaPublicUrl = "Enter an absolute HTTP or HTTPS URL without credentials.";
+      errors.cpaPublicUrl = t('config.validation.cpaPublicUrl');
     }
   }
   for (const key of ["modelsCatalog", "modelsCodexCatalog", "modelsDevinCatalog"]) {
@@ -715,7 +832,7 @@ const validationErrors = computed(() => {
       const url = new URL(source);
       if (!["http:", "https:"].includes(url.protocol) || !url.hostname) throw new Error();
     } catch {
-      errors[key] = "Enter an HTTP(S) URL or an absolute server file path, or leave empty for the default.";
+      errors[key] = t('config.validation.catalog');
     }
   }
   if (draft.value.userEmailEnabled) {
@@ -725,36 +842,36 @@ const validationErrors = computed(() => {
       const url = new URL(text("userEmailPublicUrl"));
       if (url.username || url.password || !(url.protocol === "https:" || (url.protocol === "http:" && isLoopback(url.hostname)))) throw new Error();
     } catch {
-      errors.userEmailPublicUrl = "Enter an absolute HTTPS URL (HTTP is allowed only for loopback).";
+      errors.userEmailPublicUrl = t('config.validation.emailPublicUrl');
     }
-    if (!/^[^\s<>@]+@[^\s<>@]+$/.test(text("userEmailFromAddress"))) errors.userEmailFromAddress = "Enter one mailbox without a display name.";
-    if (text("userEmailSenderType") !== "smtp") errors.userEmailSenderType = "Only SMTP is supported.";
-    if (!text("userEmailSmtpHost")) errors.userEmailSmtpHost = "Enter the SMTP host.";
+    if (!/^[^\s<>@]+@[^\s<>@]+$/.test(text("userEmailFromAddress"))) errors.userEmailFromAddress = t('config.validation.fromAddress');
+    if (text("userEmailSenderType") !== "smtp") errors.userEmailSenderType = t('config.validation.smtpOnly');
+    if (!text("userEmailSmtpHost")) errors.userEmailSmtpHost = t('config.validation.smtpHost');
     const port = Number(draft.value.userEmailSmtpPort);
-    if (!Number.isInteger(port) || port < 1 || port > 65535 || port === 465) errors.userEmailSmtpPort = "Enter a port from 1 to 65535, excluding unsupported port 465.";
-    if (!draft.value.userEmailSmtpStarttls && !isLoopback(text("userEmailSmtpHost").toLowerCase())) errors.userEmailSmtpStarttls = "STARTTLS is required for non-loopback SMTP hosts.";
-    if (text("userEmailSmtpUsername") && !text("userEmailSmtpPasswordEnv")) errors.userEmailSmtpPasswordEnv = "Enter the environment variable name containing the SMTP password.";
+    if (!Number.isInteger(port) || port < 1 || port > 65535 || port === 465) errors.userEmailSmtpPort = t('config.validation.smtpPort');
+    if (!draft.value.userEmailSmtpStarttls && !isLoopback(text("userEmailSmtpHost").toLowerCase())) errors.userEmailSmtpStarttls = t('config.validation.starttls');
+    if (text("userEmailSmtpUsername") && !text("userEmailSmtpPasswordEnv")) errors.userEmailSmtpPasswordEnv = t('config.validation.passwordEnv');
     for (const key of ["userEmailVerificationTtl", "userEmailResetTtl"]) {
       const value = text(key);
-      if (!/^\+?(?:(?:\d+(?:\.\d*)?|\.\d+)(?:ns|us|µs|μs|ms|s|m|h))+$/.test(value) || !/[1-9]/.test(value)) errors[key] = "Enter a positive Go duration, for example 24h or 30m.";
+      if (!/^\+?(?:(?:\d+(?:\.\d*)?|\.\d+)(?:ns|us|µs|μs|ms|s|m|h))+$/.test(value) || !/[1-9]/.test(value)) errors[key] = t('config.validation.positiveDuration');
     }
   }
   const exclusions = parseJSON(draft.value.oauthExcludedModelsJson, null);
   if (!exclusions || typeof exclusions !== "object" || Array.isArray(exclusions) || Object.values(exclusions).some(rules => !Array.isArray(rules) || rules.some(rule => typeof rule !== "string"))) {
-    errors.oauthExcludedModelsJson = "Enter a JSON object mapping channel IDs to arrays of strings.";
+    errors.oauthExcludedModelsJson = t('config.validation.exclusions');
   }
   for (const field of sharedConfigFields) {
     const value = draft.value[field.key];
     if (value === null || value === undefined) continue;
     if (configParitySections.some(section => section.fields.some(item => item.key === field.key))) {
       const error = validateConfigParityField(field, value);
-      if (error) errors[field.key] = error;
+      if (error) errors[field.key] = parityErrorText(field);
       continue;
     }
     if (field.type === "boolean") {
-      if (typeof value !== "boolean") errors[field.key] = "Select the backend default, enabled or disabled.";
+      if (typeof value !== "boolean") errors[field.key] = t('config.validation.boolean');
     } else if (field.type === "number") {
-      if (typeof value !== "number" || !Number.isSafeInteger(value)) errors[field.key] = "Enter an integer, or use the backend default.";
+      if (typeof value !== "number" || !Number.isSafeInteger(value)) errors[field.key] = t('config.validation.integer');
     } else if (field.type === "json") {
       const rules = parseJSON(value, null);
       const isObject = item => item !== null && typeof item === "object" && !Array.isArray(item);
@@ -764,27 +881,36 @@ const validationErrors = computed(() => {
         (rule.status !== undefined && !Number.isSafeInteger(rule.status)) ||
         ["match", "match-regexr"].some(key => rule[key] !== undefined && (!Array.isArray(rule[key]) || rule[key].some(item => typeof item !== "string"))) ||
         Object.hasOwn(rule, "match-regex")
-      ))) errors[field.key] = "Enter a provider-to-rule-array JSON object with a supported action, optional integer status, and optional string arrays match / match-regexr (not match-regex).";
+      ))) errors[field.key] = t('config.validation.requestScopedRules');
     } else if (typeof value !== "string") {
-      errors[field.key] = "Enter a string value or use the backend default.";
+      errors[field.key] = t('config.validation.string');
     } else if (field.type === "session-duration") {
       if (value.trim() !== "" && value.trim() !== "0" && !/^\+?(?:(?:\d+(?:\.\d*)?|\.\d+)(?:ns|us|µs|μs|ms|s|m|h))+$/.test(value.trim())) {
-        errors[field.key] = "Enter a non-negative Go duration (e.g. 1h or 30m), or leave empty for the backend fallback.";
+        errors[field.key] = t('config.validation.sessionDuration');
       }
     } else if (field.type === "duration") {
       const text = value.trim().toLowerCase();
       if (!["", "0", "0s", "none", "unlimited", "disabled", "off", "never"].includes(text) && !/^\+?(?:(?:\d+(?:\.\d*)?|\.\d+)(?:ns|us|µs|μs|ms|s|m|h))+$/.test(value.trim())) {
-        errors[field.key] = "Enter a non-negative Go duration (e.g. 20s or 1m30s), or an unlimited alias.";
+        errors[field.key] = t('config.validation.duration');
       }
     } else if (/[\r\n\u0000]/.test(value)) {
-      errors[field.key] = "Header defaults must not contain line breaks or NUL characters.";
+      errors[field.key] = t('config.validation.header');
     }
   }
   if (draft.value.liveMediaRelayUdpPortMin != null && draft.value.liveMediaRelayUdpPortMax != null && Number(draft.value.liveMediaRelayUdpPortMin) > Number(draft.value.liveMediaRelayUdpPortMax)) {
-    errors.liveMediaRelayUdpPortMax = "Maximum UDP port must not be less than the minimum.";
+    errors.liveMediaRelayUdpPortMax = t('config.validation.udpRange');
   }
   return errors;
 });
+// configParity.ts returns English messages (asserted by tests); show the translation for the failing field type.
+function parityErrorText(field) {
+  if (field.type === "image-mode") return t('config.validation.imageMode');
+  if (field.type === "string-list") return t('config.validation.stringList');
+  if (field.type === "ice-servers") return t('config.validation.iceServers');
+  if (field.type === "go-duration") return t('config.validation.goDuration');
+  if (field.type === "number") return t('config.validation.integerRange', { min: field.min ?? t('config.validation.rangeMin'), max: field.max ?? t('config.validation.rangeMax') });
+  return t('config.validation.header');
+}
 const validationCount = computed(
   () => Object.keys(validationErrors.value).length,
 );
@@ -793,11 +919,11 @@ const changes = computed(() =>
     .filter((key) => fieldChanged(key))
     .map((key) => ({
       key,
-      label: labels[key] || key,
+      label: labels.value[key] || key,
       before: formatChangeValue(key, baseline.value[key]),
       after: formatChangeValue(key, draft.value[key]),
       section:
-        outline.find((section) => section.keys.includes(key))?.id || "server",
+        outline.value.find((section) => section.keys.includes(key))?.id || "server",
     })),
 );
 const dirtyCount = computed(() => changes.value.length);
@@ -850,10 +976,10 @@ function fieldChanged(key) {
   return String(draft.value[key]) !== String(baseline.value[key]);
 }
 function formatChangeValue(key, value) {
-  if (key === "remoteManagementSecretKey" || key === "liveMediaRelayIceServersJson") return "[sensitive value]";
+  if (key === "remoteManagementSecretKey" || key === "liveMediaRelayIceServersJson") return t('config.changes.sensitive');
   if (sharedConfigFields.some(field => field.key === key)) {
-    if (value === null || value === undefined) return "Backend default (unset)";
-    if (value === "") return '"" (explicit empty string)';
+    if (value === null || value === undefined) return t('config.changes.unset');
+    if (value === "") return t('config.changes.emptyString');
   }
   return String(value ?? "");
 }
@@ -1017,7 +1143,7 @@ async function loadWorkspace(preserveDraft = false) {
     configSnapshot.value = config;
     yamlText.value = String(yaml || "");
     const document = parseDocument(yamlText.value);
-    if (document.errors.length) throw new Error("The backend returned invalid configuration YAML.");
+    if (document.errors.length) throw new Error(t('config.load.invalidYaml'));
     const root = document.toJS() || {};
     const next = buildDraft(config, root);
     const reconciled = preserveDraft === true
@@ -1040,7 +1166,7 @@ async function loadWorkspace(preserveDraft = false) {
       error?.data?.message ||
       error?.data?.error ||
       error?.message ||
-      "Check the management endpoint, key, and config routes.";
+      t('config.load.fallback');
   } finally {
     loading.value = false;
   }
@@ -1059,11 +1185,11 @@ async function loadChannelModels() {
   try {
     const response = await fetchAPI(`/routing/model-definitions/${encodeURIComponent(channel)}`);
     if (version !== modelRequestVersion) return;
-    if (!Array.isArray(response?.models)) throw new Error("Invalid model definitions response.");
+    if (!Array.isArray(response?.models)) throw new Error(t('config.models.invalidResponse'));
     channelModels.value = response.models;
   } catch (error) {
     if (version !== modelRequestVersion) return;
-    modelsError.value = error?.message || "Unable to load channel model definitions. Edit rules manually below.";
+    modelsError.value = error?.message || t('config.models.loadFailed');
   } finally {
     if (version === modelRequestVersion) modelsLoading.value = false;
   }
@@ -1094,8 +1220,8 @@ function addAlias() {
 }
 function payloadRuleSummary(rule) {
   return Array.isArray(rule?.models)
-    ? rule.models.map((model) => model?.name || "(unnamed)").join(", ")
-    : "Unsupported matcher";
+    ? rule.models.map((model) => model?.name || t('config.payload.unnamed')).join(", ")
+    : t('config.payload.unsupportedMatcher');
 }
 function payloadRulePaths(rule, mode) {
   return mode === "filter"
@@ -1142,13 +1268,13 @@ function savePayloadEditor() {
       !models.length ||
       models.some((model) => !model?.name?.trim())
     )
-      throw new Error("Add at least one named model matcher.");
+      throw new Error(t('config.payload.errorModels'));
     if (
       payloadEditMode.value === "filter"
         ? !Array.isArray(params)
         : !params || typeof params !== "object" || Array.isArray(params)
     )
-      throw new Error("Parameters use the wrong shape.");
+      throw new Error(t('config.payload.errorParams'));
     const rule = { models, params };
     if (payloadEditIndex.value < 0)
       payloadDraft[payloadEditMode.value].push(rule);
@@ -1253,16 +1379,22 @@ async function saveWorkspace() {
     saveNeedsReload.value = Boolean(pageError.value);
     if (result.failed) {
       const error = result.error;
-      const detail = error?.data?.message || error?.data?.error || error?.message || "Request failed.";
+      const detail = error?.data?.message || error?.data?.error || error?.message || t('config.save.requestFailed');
       const refreshError = pageError.value;
-      pageError.value = `${result.completed.length} of ${writes.length} targeted writes acknowledged. Stopped at ${result.failed.path}: ${detail} ${refreshError ? `Readback failed: ${refreshError} Reload before retrying; the failed request may already have committed.` : 'State reread; remaining edits are retained. Review before retrying.'}`;
+      pageError.value = t('config.save.partial', {
+        completed: result.completed.length,
+        total: writes.length,
+        path: result.failed.path,
+        detail,
+        next: refreshError ? t('config.save.readbackFailedRetry', { error: refreshError }) : t('config.save.reread'),
+      });
     } else if (pageError.value) {
-      pageError.value = `Writes acknowledged, but readback failed: ${pageError.value} Reload before retrying.`;
+      pageError.value = t('config.save.readbackFailed', { error: pageError.value });
     } else {
-      toast.add({ title: "Config saved", color: "success" });
+      toast.add({ title: t('config.save.saved'), color: "success" });
     }
   } catch (error) {
-    pageError.value = error?.message || "Unable to prepare targeted configuration writes.";
+    pageError.value = error?.message || t('config.save.prepareFailed');
   } finally {
     saving.value = false;
   }

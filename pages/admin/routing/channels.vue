@@ -5,50 +5,50 @@
         <div class="flex min-w-0 items-start gap-3">
           <span class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[var(--admin-selected)] text-[var(--ui-primary)]" aria-hidden="true"><UIcon name="i-tabler-route" class="size-4.5" /></span>
           <div class="min-w-0">
-            <p class="text-sm text-[var(--ui-text-muted)]">Group credential auth IDs into reusable routing scopes for client API keys and model-specific restrictions.</p>
-            <div class="mt-1.5 flex flex-wrap gap-1.5 text-xs" aria-label="Group summary">
-              <span class="inline-flex items-center gap-1.5 rounded-full bg-[var(--ui-bg-muted)] px-2 py-0.5"><strong class="tabular-nums">{{ groups.length }}</strong> groups</span>
-              <span class="inline-flex items-center gap-1.5 rounded-full bg-[var(--ui-bg-muted)] px-2 py-0.5"><span class="size-1.5 rounded-full bg-emerald-500" /><strong class="tabular-nums">{{ groups.filter(group => !group.disabled).length }}</strong> active</span>
-              <span v-if="groups.some(group => group.disabled)" class="inline-flex items-center gap-1.5 rounded-full bg-[var(--ui-bg-muted)] px-2 py-0.5"><span class="size-1.5 rounded-full bg-zinc-400" /><strong class="tabular-nums">{{ groups.filter(group => group.disabled).length }}</strong> disabled</span>
+            <p class="text-sm text-[var(--ui-text-muted)]">{{ t('channels.intro') }}</p>
+            <div class="mt-1.5 flex flex-wrap gap-1.5 text-xs" :aria-label="t('routing.groupSummary')">
+              <span class="inline-flex items-center gap-1.5 rounded-full bg-[var(--ui-bg-muted)] px-2 py-0.5"><strong class="tabular-nums">{{ groups.length }}</strong> {{ t('routing.summaryGroups') }}</span>
+              <span class="inline-flex items-center gap-1.5 rounded-full bg-[var(--ui-bg-muted)] px-2 py-0.5"><span class="size-1.5 rounded-full bg-emerald-500" /><strong class="tabular-nums">{{ groups.filter(group => !group.disabled).length }}</strong> {{ t('routing.summaryActive') }}</span>
+              <span v-if="groups.some(group => group.disabled)" class="inline-flex items-center gap-1.5 rounded-full bg-[var(--ui-bg-muted)] px-2 py-0.5"><span class="size-1.5 rounded-full bg-zinc-400" /><strong class="tabular-nums">{{ groups.filter(group => group.disabled).length }}</strong> {{ t('routing.summaryDisabled') }}</span>
             </div>
           </div>
         </div>
         <div class="flex flex-wrap items-center gap-2">
-          <UInput v-model="search" icon="i-tabler-search" placeholder="Search channel groups..." aria-label="Search channel groups" class="w-full sm:w-64" />
-          <AppButton color="neutral" variant="outline" icon="i-tabler-refresh" :loading="pending" aria-label="Refresh" @click="refreshWorkspace" />
-          <AppButton color="primary" icon="i-tabler-plus" @click="openCreateGroup">New channel group</AppButton>
+          <UInput v-model="search" icon="i-tabler-search" :placeholder="t('channels.searchPlaceholder')" :aria-label="t('channels.searchLabel')" class="w-full sm:w-64" />
+          <AppButton color="neutral" variant="outline" icon="i-tabler-refresh" :loading="pending" :aria-label="t('common.refresh')" @click="refreshWorkspace" />
+          <AppButton color="primary" icon="i-tabler-plus" @click="openCreateGroup">{{ t('channels.newGroup') }}</AppButton>
         </div>
       </div>
     </AppCard>
 
-    <UAlert v-if="pageError" color="error" variant="subtle" icon="i-tabler-alert-triangle" title="Unable to load channel groups" :description="pageError" />
+    <UAlert v-if="pageError" color="error" variant="subtle" icon="i-tabler-alert-triangle" :title="t('channels.loadFailed')" :description="pageError" />
 
     <div class="grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.6fr)]">
       <AppCard :ui="{ body: 'p-0' }">
         <template #header>
           <div>
-            <p class="font-semibold">Groups</p>
-            <p class="text-xs text-[var(--ui-text-muted)]">Select a group to manage its credentials.</p>
+            <p class="font-semibold">{{ t('routing.groupsTitle') }}</p>
+            <p class="text-xs text-[var(--ui-text-muted)]">{{ t('channels.selectHint') }}</p>
           </div>
         </template>
         <AppTable :columns="groupColumns" :data="filteredGroups" :loading="pending" @select="selectGroup">
           <template #identity-cell="{ row }">
             <button type="button" class="w-full text-left" @click.stop="selectGroup(rowValue(row))">
               <p class="font-medium text-[var(--ui-text-highlighted)]">{{ rowValue(row).channel_name }}</p>
-              <p class="mt-1 text-xs text-[var(--ui-text-muted)]">Group #{{ rowValue(row).id }}</p>
+              <p class="mt-1 text-xs text-[var(--ui-text-muted)]">{{ t('routing.groupNumber', { id: rowValue(row).id }) }}</p>
             </button>
           </template>
           <template #status-cell="{ row }">
-            <UBadge :color="rowValue(row).disabled ? 'error' : 'success'" variant="subtle" size="sm">{{ rowValue(row).disabled ? 'Disabled' : 'Active' }}</UBadge>
+            <UBadge :color="rowValue(row).disabled ? 'error' : 'success'" variant="subtle" size="sm">{{ rowValue(row).disabled ? t('common.disabled') : t('common.active') }}</UBadge>
           </template>
           <template #actions-cell="{ row }">
             <div class="flex justify-end gap-1">
-              <AdminTableAction action="edit" label="Edit group" @click.stop="openEditGroup(rowValue(row))" />
-              <AdminTableAction action="delete" label="Delete group" destructive @click.stop="confirmDelete('group', rowValue(row))" />
+              <AdminTableAction action="edit" :label="t('routing.editGroup')" @click.stop="openEditGroup(rowValue(row))" />
+              <AdminTableAction action="delete" :label="t('routing.deleteGroup')" destructive @click.stop="confirmDelete('group', rowValue(row))" />
             </div>
           </template>
           <template #empty>
-            <div class="px-6 py-12 text-center text-sm text-[var(--ui-text-muted)]">{{ search ? 'No matching channel groups.' : 'No channel groups yet.' }}</div>
+            <div class="px-6 py-12 text-center text-sm text-[var(--ui-text-muted)]">{{ search ? t('channels.noMatching') : t('channels.empty') }}</div>
           </template>
         </AppTable>
       </AppCard>
@@ -59,14 +59,14 @@
             <div>
               <div class="flex items-center gap-2">
                 <p class="text-base font-semibold">{{ selectedGroup.channel_name }}</p>
-                <UBadge :color="selectedGroup.disabled ? 'error' : 'success'" variant="subtle" size="sm">{{ selectedGroup.disabled ? 'Disabled' : 'Active' }}</UBadge>
+                <UBadge :color="selectedGroup.disabled ? 'error' : 'success'" variant="subtle" size="sm">{{ selectedGroup.disabled ? t('common.disabled') : t('common.active') }}</UBadge>
               </div>
-              <p class="mt-1 text-xs text-[var(--ui-text-muted)]">{{ details.length }} credential binding{{ details.length === 1 ? '' : 's' }}</p>
+              <p class="mt-1 text-xs text-[var(--ui-text-muted)]">{{ details.length === 1 ? t('channels.bindingCountOne', { count: details.length }) : t('channels.bindingCountOther', { count: details.length }) }}</p>
             </div>
-            <AppButton color="primary" variant="soft" icon="i-tabler-plus" @click="openCreateDetail">Add credential</AppButton>
+            <AppButton color="primary" variant="soft" icon="i-tabler-plus" @click="openCreateDetail">{{ t('channels.addCredential') }}</AppButton>
           </div>
         </template>
-        <AppTable :columns="detailColumns" :data="details" :loading="detailsPending" searchable search-placeholder="Search bindings…">
+        <AppTable :columns="detailColumns" :data="details" :loading="detailsPending" searchable :search-placeholder="t('channels.searchBindings')">
           <template #credential-cell="{ row }">
             <div class="min-w-0">
               <p class="truncate font-medium">{{ credentialLabel(rowValue(row).auth_id) }}</p>
@@ -74,19 +74,19 @@
             </div>
           </template>
           <template #provider-cell="{ row }">
-            <span class="text-sm">{{ credentialById(rowValue(row).auth_id)?.provider || credentialById(rowValue(row).auth_id)?.type || 'Manual ID' }}</span>
+            <span class="text-sm">{{ credentialById(rowValue(row).auth_id)?.provider || credentialById(rowValue(row).auth_id)?.type || t('channels.manualId') }}</span>
           </template>
           <template #actions-cell="{ row }">
             <div class="flex justify-end gap-1">
-              <AdminTableAction action="edit" label="Edit credential binding" @click="openEditDetail(rowValue(row))" />
-              <AdminTableAction action="delete" label="Delete credential binding" destructive @click="confirmDelete('detail', rowValue(row))" />
+              <AdminTableAction action="edit" :label="t('channels.editBinding')" @click="openEditDetail(rowValue(row))" />
+              <AdminTableAction action="delete" :label="t('channels.deleteBinding')" destructive @click="confirmDelete('detail', rowValue(row))" />
             </div>
           </template>
           <template #empty>
             <div class="flex flex-col items-center px-6 py-8 text-center">
               <UIcon name="i-tabler-id" class="mb-3 size-8 text-[var(--ui-text-muted)]" />
-              <p class="font-medium">No credentials in this group</p>
-              <p class="mt-1 text-sm text-[var(--ui-text-muted)]">Add an auth ID from the available credentials or enter one manually.</p>
+              <p class="font-medium">{{ t('channels.noCredentials') }}</p>
+              <p class="mt-1 text-sm text-[var(--ui-text-muted)]">{{ t('channels.noCredentialsHint') }}</p>
             </div>
           </template>
         </AppTable>
@@ -94,61 +94,61 @@
 
       <div v-else class="flex min-h-40 flex-col items-center justify-center rounded-[var(--admin-panel-radius)] border border-dashed border-[var(--admin-panel-border)] bg-[var(--admin-panel-bg)]/60 p-8 text-center">
         <UIcon name="i-tabler-arrows-exchange" class="mb-3 size-8 text-[var(--ui-text-muted)]" />
-        <p class="font-medium">Select a channel group</p>
-        <p class="mt-1 text-sm text-[var(--ui-text-muted)]">Its credential bindings will appear here.</p>
+        <p class="font-medium">{{ t('channels.selectGroup') }}</p>
+        <p class="mt-1 text-sm text-[var(--ui-text-muted)]">{{ t('channels.selectGroupHint') }}</p>
       </div>
     </div>
 
-    <AppModal v-model:open="groupFormOpen" :title="editingGroup ? 'Edit channel group' : 'Create channel group'" description="Channel groups are reusable credential routing scopes.">
+    <AppModal v-model:open="groupFormOpen" :title="editingGroup ? t('channels.editGroupTitle') : t('channels.createGroupTitle')" :description="t('channels.groupFormDescription')">
       <template #body>
         <form class="space-y-5" @submit.prevent="submitGroup">
-          <UAlert v-if="formError" color="error" variant="subtle" icon="i-tabler-alert-circle" title="Could not save channel group" :description="formError" />
-          <UFormField label="Group name" required>
+          <UAlert v-if="formError" color="error" variant="subtle" icon="i-tabler-alert-circle" :title="t('channels.saveGroupFailed')" :description="formError" />
+          <UFormField :label="t('routing.groupName')" required>
             <UInput v-model="groupForm.channel_name" class="w-full" placeholder="premium-tier" autofocus />
           </UFormField>
-          <UFormField label="Status">
+          <UFormField :label="t('common.status')">
             <div class="flex items-center gap-3 rounded-lg border border-[var(--ui-border)] p-3">
               <USwitch v-model="groupForm.enabled" />
               <div>
-                <p class="text-sm font-medium">{{ groupForm.enabled ? 'Active' : 'Disabled' }}</p>
-                <p class="text-xs text-[var(--ui-text-muted)]">Disabled groups do not contribute eligible credentials.</p>
+                <p class="text-sm font-medium">{{ groupForm.enabled ? t('common.active') : t('common.disabled') }}</p>
+                <p class="text-xs text-[var(--ui-text-muted)]">{{ t('channels.disabledHint') }}</p>
               </div>
             </div>
           </UFormField>
           <div class="flex justify-end gap-3 border-t border-[var(--ui-border)] pt-4">
-            <AppButton color="neutral" variant="ghost" type="button" @click="groupFormOpen = false">Cancel</AppButton>
-            <AppButton color="primary" type="submit" :loading="submitting">{{ editingGroup ? 'Save changes' : 'Create group' }}</AppButton>
+            <AppButton color="neutral" variant="ghost" type="button" @click="groupFormOpen = false">{{ t('common.cancel') }}</AppButton>
+            <AppButton color="primary" type="submit" :loading="submitting">{{ editingGroup ? t('routing.saveChanges') : t('routing.createGroup') }}</AppButton>
           </div>
         </form>
       </template>
     </AppModal>
 
-    <AppModal v-model:open="detailFormOpen" :title="editingDetail ? 'Edit credential binding' : 'Add credential binding'" description="The backend stores the credential's canonical auth_id.">
+    <AppModal v-model:open="detailFormOpen" :title="editingDetail ? t('channels.editBinding') : t('channels.addBindingTitle')" :description="t('channels.bindingFormDescription')">
       <template #body>
         <form class="space-y-5" @submit.prevent="submitDetail">
-          <UAlert v-if="formError" color="error" variant="subtle" icon="i-tabler-alert-circle" title="Could not save credential binding" :description="formError" />
-          <UFormField label="Credential suggestion" hint="Optional">
-            <USelectMenu v-model="detailForm.suggested_auth_id" :items="credentialOptions" value-key="value" label-key="label" class="w-full" placeholder="Search credentials..." :search-input="{ placeholder: 'Search credential name, provider, or ID...' }" @update:model-value="applyCredentialSuggestion" />
+          <UAlert v-if="formError" color="error" variant="subtle" icon="i-tabler-alert-circle" :title="t('channels.saveBindingFailed')" :description="formError" />
+          <UFormField :label="t('channels.credentialSuggestion')" :hint="t('common.optional')">
+            <USelectMenu v-model="detailForm.suggested_auth_id" :items="credentialOptions" value-key="value" label-key="label" class="w-full" :placeholder="t('channels.searchCredentials')" :search-input="{ placeholder: t('channels.searchCredentialsInput') }" @update:model-value="applyCredentialSuggestion" />
           </UFormField>
-          <UFormField label="Auth ID" required>
+          <UFormField :label="t('channels.authId')" required>
             <UInput v-model="detailForm.auth_id" class="w-full font-mono" placeholder="auth-db-id" autofocus />
-            <p class="mt-1 text-xs text-[var(--ui-text-muted)]">You may enter an ID manually when the credential is not present in the current auth-files response.</p>
+            <p class="mt-1 text-xs text-[var(--ui-text-muted)]">{{ t('channels.authIdHint') }}</p>
           </UFormField>
           <div class="flex justify-end gap-3 border-t border-[var(--ui-border)] pt-4">
-            <AppButton color="neutral" variant="ghost" type="button" @click="detailFormOpen = false">Cancel</AppButton>
-            <AppButton color="primary" type="submit" :loading="submitting">{{ editingDetail ? 'Save changes' : 'Add credential' }}</AppButton>
+            <AppButton color="neutral" variant="ghost" type="button" @click="detailFormOpen = false">{{ t('common.cancel') }}</AppButton>
+            <AppButton color="primary" type="submit" :loading="submitting">{{ editingDetail ? t('routing.saveChanges') : t('channels.addCredential') }}</AppButton>
           </div>
         </form>
       </template>
     </AppModal>
 
-    <AppModal v-model:open="deleteOpen" :title="deleteKind === 'group' ? 'Delete channel group' : 'Remove credential binding'" description="This action soft-deletes the selected record.">
+    <AppModal v-model:open="deleteOpen" :title="deleteKind === 'group' ? t('channels.deleteGroupTitle') : t('channels.removeBindingTitle')" :description="t('routing.softDeleteDescription')">
       <template #body>
         <div class="space-y-5">
-          <UAlert color="warning" variant="subtle" icon="i-tabler-alert-triangle" title="Confirm deletion" :description="deleteDescription" />
+          <UAlert color="warning" variant="subtle" icon="i-tabler-alert-triangle" :title="t('routing.confirmDeletion')" :description="deleteDescription" />
           <div class="flex justify-end gap-3">
-            <AppButton color="neutral" variant="ghost" @click="deleteOpen = false">Cancel</AppButton>
-            <AppButton color="error" :loading="deleting" @click="performDelete">Delete</AppButton>
+            <AppButton color="neutral" variant="ghost" @click="deleteOpen = false">{{ t('common.cancel') }}</AppButton>
+            <AppButton color="error" :loading="deleting" @click="performDelete">{{ t('common.delete') }}</AppButton>
           </div>
         </div>
       </template>
@@ -160,6 +160,7 @@
 import { useWorkspaceState } from '~/composables/useWorkspaceState'
 import { useStoreData } from '~/composables/useStoreData'
 const { fetchAPI } = useApi()
+const { t } = useAdminI18n()
 const toast = useToast()
 const rowValue = (row) => row?.original ?? row
 const search = ref('')
@@ -178,16 +179,16 @@ const deleting = useWorkspaceState('admin:routing:channels:deleting', () => (fal
 const groupForm = ref({ channel_name: '', enabled: true })
 const detailForm = ref({ auth_id: '', suggested_auth_id: '' })
 
-const groupColumns = [
-  { accessorKey: 'identity', header: 'Channel group' },
-  { accessorKey: 'status', header: 'Status' },
+const groupColumns = computed(() => [
+  { accessorKey: 'identity', header: t('channels.columnGroup') },
+  { accessorKey: 'status', header: t('common.status') },
   { accessorKey: 'actions', header: '', meta: { class: { th: 'table-action-head', td: 'table-action-cell' } } }
-]
-const detailColumns = [
-  { accessorKey: 'credential', header: 'Credential' },
-  { accessorKey: 'provider', header: 'Provider' },
+])
+const detailColumns = computed(() => [
+  { accessorKey: 'credential', header: t('channels.columnCredential') },
+  { accessorKey: 'provider', header: t('common.provider') },
   { accessorKey: 'actions', header: '', meta: { class: { th: 'table-action-head', td: 'table-action-cell' } } }
-]
+])
 
 async function loadWorkspace() {
   pageError.value = ''
@@ -210,7 +211,7 @@ const filteredGroups = computed(() => {
 })
 const credentialOptions = computed(() => credentials.value.map(auth => ({
   value: auth.id || auth.auth_index || '',
-  label: `${auth.label || auth.email || auth.name || auth.id || auth.auth_index} · ${auth.provider || auth.type || 'unknown'} · ${auth.id || auth.auth_index}`
+  label: `${auth.label || auth.email || auth.name || auth.id || auth.auth_index} · ${auth.provider || auth.type || t('common.unknown')} · ${auth.id || auth.auth_index}`
 })).filter(option => option.value))
 
 async function loadDetails() {
@@ -227,8 +228,8 @@ const details = computed(() => Array.isArray(detailsData.value?.channel_group_de
 const deleteDescription = computed(() => {
   if (!deleteTarget.value) return ''
   return deleteKind.value === 'group'
-    ? `${deleteTarget.value.channel_name} and all of its credential bindings will be deleted.`
-    : `${credentialLabel(deleteTarget.value.auth_id)} will be removed from ${selectedGroup.value?.channel_name || 'this group'}.`
+    ? t('channels.deleteGroupDescription', { name: deleteTarget.value.channel_name })
+    : t('channels.removeBindingDescription', { credential: credentialLabel(deleteTarget.value.auth_id), group: selectedGroup.value?.channel_name || t('routing.thisGroup') })
 })
 
 async function selectGroup(row) {
@@ -250,7 +251,7 @@ function openEditGroup(group) {
 async function submitGroup() {
   formError.value = ''
   const channelName = groupForm.value.channel_name.trim()
-  if (!channelName) return void (formError.value = 'Group name is required.')
+  if (!channelName) return void (formError.value = t('routing.groupNameRequired'))
   submitting.value = true
   try {
     const response = await fetchAPI(editingGroup.value ? `/channel-groups/${editingGroup.value.id}` : '/channel-groups', {
@@ -262,7 +263,7 @@ async function submitGroup() {
     if (!editingGroup.value && response?.channel_group?.id) selectedGroupId.value = response.channel_group.id
     if (editingGroup.value?.id === selectedGroupId.value) selectedGroupId.value = editingGroup.value.id
     if (selectedGroupId.value) await refreshDetails()
-    toast.add({ title: editingGroup.value ? 'Channel group updated' : 'Channel group created', color: 'success', icon: 'i-tabler-circle-check' })
+    toast.add({ title: editingGroup.value ? t('channels.groupUpdated') : t('channels.groupCreated'), color: 'success', icon: 'i-tabler-circle-check' })
   } catch (error) {
     formError.value = errorMessage(error)
   } finally {
@@ -287,7 +288,7 @@ function applyCredentialSuggestion(value) {
 async function submitDetail() {
   formError.value = ''
   const authId = detailForm.value.auth_id.trim()
-  if (!authId) return void (formError.value = 'Auth ID is required.')
+  if (!authId) return void (formError.value = t('channels.authIdRequired'))
   submitting.value = true
   try {
     await fetchAPI(editingDetail.value ? `/channel-group-details/${editingDetail.value.id}` : '/channel-group-details', {
@@ -296,7 +297,7 @@ async function submitDetail() {
     })
     detailFormOpen.value = false
     await refreshDetails()
-    toast.add({ title: editingDetail.value ? 'Credential binding updated' : 'Credential added', color: 'success', icon: 'i-tabler-circle-check' })
+    toast.add({ title: editingDetail.value ? t('channels.bindingUpdated') : t('channels.credentialAdded'), color: 'success', icon: 'i-tabler-circle-check' })
   } catch (error) {
     formError.value = errorMessage(error)
   } finally {
@@ -320,9 +321,9 @@ async function performDelete() {
     } else {
       await refreshDetails()
     }
-    toast.add({ title: deleteKind.value === 'group' ? 'Channel group deleted' : 'Credential binding removed', color: 'success', icon: 'i-tabler-circle-check' })
+    toast.add({ title: deleteKind.value === 'group' ? t('channels.groupDeleted') : t('channels.bindingRemoved'), color: 'success', icon: 'i-tabler-circle-check' })
   } catch (error) {
-    toast.add({ title: 'Delete failed', description: errorMessage(error), color: 'error', icon: 'i-tabler-alert-circle' })
+    toast.add({ title: t('routing.deleteFailed'), description: errorMessage(error), color: 'error', icon: 'i-tabler-alert-circle' })
   } finally {
     deleting.value = false
   }
@@ -335,6 +336,6 @@ function credentialLabel(authId) {
   return auth?.label || auth?.email || auth?.name || authId
 }
 function errorMessage(error) {
-  return error?.data?.message || error?.data?.error || error?.response?._data?.message || error?.response?._data?.error || error?.message || 'Unexpected request error.'
+  return error?.data?.message || error?.data?.error || error?.response?._data?.message || error?.response?._data?.error || error?.message || t('routing.unexpectedError')
 }
 </script>

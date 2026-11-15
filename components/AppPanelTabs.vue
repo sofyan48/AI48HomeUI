@@ -1,5 +1,5 @@
 <template>
-  <div role="tablist" :aria-label="label" class="app-panel-tabs">
+  <div role="tablist" :aria-label="label || t('shared.tabs.sections')" class="app-panel-tabs">
     <AppButton
       v-for="item in items"
       :key="item.value"
@@ -22,8 +22,9 @@ withDefaults(defineProps<{
   label?: string
 }>(), {
   items: () => [],
-  label: 'Sections'
+  label: ''
 })
+const { t } = useAdminI18n()
 
 defineEmits<{ 'update:modelValue': [value: string] }>()
 </script>

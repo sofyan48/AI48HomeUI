@@ -1,6 +1,6 @@
 <template>
-  <AdminDataPanel title="Proxy pool" description="Globally scoped proxy records. Changes are applied immediately.">
-    <template #actions><AppButton color="neutral" variant="ghost" icon="i-tabler-refresh" :loading="loading" @click="loadPools" /><AppButton size="sm" icon="i-tabler-plus" :disabled="unsupported" @click="openCreate">New proxy</AppButton></template>
+  <AdminDataPanel :title="t('proxy.pool.title')" :description="t('proxy.pool.description')">
+    <template #actions><AppButton color="neutral" variant="ghost" icon="i-tabler-refresh" :aria-label="t('common.refresh')" :loading="loading" @click="loadPools" /><AppButton size="sm" icon="i-tabler-plus" :disabled="unsupported" @click="openCreate">{{ t('proxy.pool.new') }}</AppButton></template>
 
     <div v-if="unsupported || loadError" class="p-4">
     <UAlert
@@ -8,20 +8,20 @@
       color="warning"
       variant="subtle"
       icon="i-tabler-alert-triangle"
-      title="Proxy pools are not supported"
-      description="This Home instance does not expose the proxy-pool Management API. Upgrade Home to create and manage proxy-pool records."
+      :title="t('proxy.pool.unsupportedTitle')"
+      :description="t('proxy.pool.unsupportedDescription')"
     />
     <UAlert
       v-else-if="loadError"
       color="error"
       variant="subtle"
       icon="i-tabler-alert-circle"
-      title="Proxy pools could not be loaded"
+      :title="t('proxy.pool.loadErrorTitle')"
       :description="loadError"
     />
     </div>
 
-        <AppTable :columns="columns" :data="sortedPools" :loading="loading" searchable search-placeholder="Search proxy pools…" class="min-w-[1180px]">
+        <AppTable :columns="columns" :data="sortedPools" :loading="loading" searchable :search-placeholder="t('proxy.pool.searchPlaceholder')" class="min-w-[1180px]">
           <template #name-cell="{ row }">
             <span class="font-medium text-[var(--ui-text-highlighted)]">{{ rowValue(row).name }}</span>
           </template>
@@ -35,10 +35,10 @@
               <USwitch
                 :model-value="Boolean(rowValue(row).enabled)"
                 :disabled="Boolean(togglingId)"
-                :aria-label="`${rowValue(row).enabled ? 'Disable' : 'Enable'} ${rowValue(row).name}`"
+                :aria-label="rowValue(row).enabled ? t('proxy.pool.toggleDisable', { name: rowValue(row).name }) : t('proxy.pool.toggleEnable', { name: rowValue(row).name })"
                 @update:model-value="toggleEnabled(rowValue(row), Boolean($event))"
               />
-              <span class="text-xs text-[var(--ui-text-muted)]">{{ rowValue(row).enabled ? 'Enabled' : 'Disabled' }}</span>
+              <span class="text-xs text-[var(--ui-text-muted)]">{{ rowValue(row).enabled ? t('common.enabled') : t('common.disabled') }}</span>
             </div>
           </template>
 
@@ -53,9 +53,9 @@
           <template #last_test-cell="{ row }">
             <div class="min-w-36">
               <UBadge v-if="rowValue(row).last_test_result" :color="testColor(rowValue(row).last_test_result)" variant="subtle">
-                {{ rowValue(row).last_test_result }}
+                {{ testLabel(rowValue(row).last_test_result) }}
               </UBadge>
-              <span v-else class="text-sm text-[var(--ui-text-muted)]">Not tested</span>
+              <span v-else class="text-sm text-[var(--ui-text-muted)]">{{ t('proxy.notTested') }}</span>
               <p class="mt-1 text-xs text-[var(--ui-text-dimmed)]">{{ formatDate(rowValue(row).last_tested_at) }}</p>
             </div>
           </template>
@@ -64,65 +64,65 @@
             <span class="block max-w-56 truncate text-sm text-[var(--ui-text-muted)]" :title="rowValue(row).note || ''">{{ rowValue(row).note || '—' }}</span>
           </template>
 
-          <template #actions-cell="{ row }"><div class="flex justify-end gap-1"><AdminTableAction action="test" label="Test proxy" :loading="testingId === rowValue(row).id" :disabled="Boolean(testingId)" @click="testPool(rowValue(row))" /><AdminTableAction action="edit" label="Edit proxy" @click="openEdit(rowValue(row))" /><AdminTableAction action="delete" :label="`Delete ${rowValue(row).name}`" destructive @click="confirmDelete(rowValue(row))" /></div></template>
+          <template #actions-cell="{ row }"><div class="flex justify-end gap-1"><AdminTableAction action="test" :label="t('proxy.action.test')" :loading="testingId === rowValue(row).id" :disabled="Boolean(testingId)" @click="testPool(rowValue(row))" /><AdminTableAction action="edit" :label="t('proxy.action.edit')" @click="openEdit(rowValue(row))" /><AdminTableAction action="delete" :label="t('proxy.action.deleteNamed', { name: rowValue(row).name })" destructive @click="confirmDelete(rowValue(row))" /></div></template>
 
           <template #empty>
             <div class="py-12 text-center text-sm text-[var(--ui-text-muted)]">
-              {{ unsupported ? 'Proxy pools are unavailable on this Home instance.' : 'No proxy-pool records.' }}
+              {{ unsupported ? t('proxy.pool.unavailable') : t('proxy.pool.empty') }}
             </div>
           </template>
         </AppTable>
 
-    <AppModal v-model:open="formOpen" :title="editingId ? 'Edit proxy' : 'New proxy'" description="Proxy-pool changes take effect immediately.">
+    <AppModal v-model:open="formOpen" :title="editingId ? t('proxy.form.editTitle') : t('proxy.pool.new')" :description="t('proxy.form.description')">
       <template #body>
         <form class="space-y-4" @submit.prevent="savePool">
-          <UFormField label="Name" required :error="formErrors.name">
-            <UInput v-model="form.name" class="w-full" autocomplete="off" placeholder="Primary proxy" />
+          <UFormField :label="t('common.name')" required :error="formErrors.name">
+            <UInput v-model="form.name" class="w-full" autocomplete="off" :placeholder="t('proxy.field.namePlaceholder')" />
           </UFormField>
 
-          <UFormField label="Proxy URL" required :error="formErrors.proxy_url" help="Supported schemes: http, https, socks5, socks5h.">
+          <UFormField :label="t('proxy.field.url')" required :error="formErrors.proxy_url" :help="t('proxy.field.urlHelp')">
             <UInput v-model="form.proxy_url" class="w-full" autocomplete="off" placeholder="http://127.0.0.1:7890" />
           </UFormField>
 
           <div class="grid gap-4 sm:grid-cols-2">
-            <UFormField label="Priority" required :error="formErrors.priority">
+            <UFormField :label="t('proxy.field.priority')" required :error="formErrors.priority">
               <UInput v-model="form.priority" type="number" step="1" class="w-full" />
             </UFormField>
-            <UFormField label="Scope">
+            <UFormField :label="t('proxy.field.scope')">
               <UInput model-value="global" readonly class="w-full" />
             </UFormField>
           </div>
 
-          <UFormField label="Note">
-            <UTextarea v-model="form.note" :rows="3" class="w-full" placeholder="Optional operator note" />
+          <UFormField :label="t('proxy.field.note')">
+            <UTextarea v-model="form.note" :rows="3" class="w-full" :placeholder="t('proxy.field.notePlaceholder')" />
           </UFormField>
 
           <label class="flex items-center justify-between gap-4 rounded-lg border border-[var(--ui-border)] p-3">
             <span>
-              <span class="block text-sm font-medium text-[var(--ui-text-highlighted)]">Enabled</span>
-              <span class="block text-xs text-[var(--ui-text-muted)]">Store this proxy in the enabled state.</span>
+              <span class="block text-sm font-medium text-[var(--ui-text-highlighted)]">{{ t('common.enabled') }}</span>
+              <span class="block text-xs text-[var(--ui-text-muted)]">{{ t('proxy.field.enabledHint') }}</span>
             </span>
             <USwitch v-model="form.enabled" />
           </label>
 
-          <UAlert v-if="formError" color="error" variant="subtle" icon="i-tabler-alert-circle" title="Proxy could not be saved" :description="formError" />
+          <UAlert v-if="formError" color="error" variant="subtle" icon="i-tabler-alert-circle" :title="t('proxy.form.saveFailedTitle')" :description="formError" />
 
           <div class="flex justify-end gap-2">
-            <AppButton type="button" color="neutral" variant="ghost" :disabled="saving" @click="closeForm">Cancel</AppButton>
-            <AppButton type="submit" :loading="saving">{{ editingId ? 'Save changes' : 'Create proxy' }}</AppButton>
+            <AppButton type="button" color="neutral" variant="ghost" :disabled="saving" @click="closeForm">{{ t('common.cancel') }}</AppButton>
+            <AppButton type="submit" :loading="saving">{{ editingId ? t('proxy.form.saveChanges') : t('proxy.form.create') }}</AppButton>
           </div>
         </form>
       </template>
     </AppModal>
 
-    <AppModal v-model:open="deleteOpen" title="Delete proxy">
+    <AppModal v-model:open="deleteOpen" :title="t('proxy.action.delete')">
       <template #body>
         <div class="space-y-5">
-          <UAlert color="warning" variant="subtle" icon="i-tabler-alert-triangle" title="This proxy record will be deleted" :description="deleteTarget?.name || deleteTarget?.proxy_url" />
-          <p class="text-sm text-[var(--ui-text-muted)]">This action cannot be undone.</p>
+          <UAlert color="warning" variant="subtle" icon="i-tabler-alert-triangle" :title="t('proxy.delete.warning')" :description="deleteTarget?.name || deleteTarget?.proxy_url" />
+          <p class="text-sm text-[var(--ui-text-muted)]">{{ t('proxy.delete.irreversible') }}</p>
           <div class="flex justify-end gap-2">
-            <AppButton color="neutral" variant="ghost" :disabled="deleting" @click="closeDelete">Cancel</AppButton>
-            <AppButton color="error" :loading="deleting" @click="deletePool">Delete</AppButton>
+            <AppButton color="neutral" variant="ghost" :disabled="deleting" @click="closeDelete">{{ t('common.cancel') }}</AppButton>
+            <AppButton color="error" :loading="deleting" @click="deletePool">{{ t('common.delete') }}</AppButton>
           </div>
         </div>
       </template>
@@ -155,17 +155,18 @@ interface ProxyPoolResponse {
 
 const { fetchAPI } = useApi()
 const toast = useToast()
+const { t, intlLocale } = useAdminI18n()
 
-const columns = [
-  { accessorKey: 'name', header: 'Name' },
-  { accessorKey: 'proxy_url', header: 'URL' },
-  { accessorKey: 'state', header: 'State' },
-  { accessorKey: 'scope', header: 'Scope' },
-  { accessorKey: 'priority', header: 'Priority' },
-  { accessorKey: 'last_test', header: 'Last test' },
-  { accessorKey: 'note', header: 'Note' },
-  { accessorKey: 'actions', header: 'Actions', meta: { class: { th: 'table-action-head', td: 'table-action-cell' } } }
-]
+const columns = computed(() => [
+  { accessorKey: 'name', header: t('common.name') },
+  { accessorKey: 'proxy_url', header: t('proxy.col.url') },
+  { accessorKey: 'state', header: t('proxy.col.state') },
+  { accessorKey: 'scope', header: t('proxy.field.scope') },
+  { accessorKey: 'priority', header: t('proxy.field.priority') },
+  { accessorKey: 'last_test', header: t('proxy.col.lastTest') },
+  { accessorKey: 'note', header: t('proxy.field.note') },
+  { accessorKey: 'actions', header: t('common.actions'), meta: { class: { th: 'table-action-head', td: 'table-action-cell' } } }
+])
 
 const pools = useWorkspaceState<ProxyPool[]>('admin:config:-config-proxy-pool:pools', () => ([]))
 const loading = useWorkspaceState('admin:config:-config-proxy-pool:loading', () => (false))
@@ -191,8 +192,9 @@ const sortedPools = computed(() => [...pools.value].sort((left, right) => {
 
 const rowValue = (row: any): ProxyPool => row?.original ?? row
 const errorMessage = (error: any, fallback: string) => error?.data?.message || error?.data?.error || error?.message || fallback
-const formatDate = (value?: string | null) => value ? new Date(value).toLocaleString() : '—'
+const formatDate = (value?: string | null) => value ? new Date(value).toLocaleString(intlLocale.value) : '—'
 const testColor = (result?: string | null) => result === 'passed' ? 'success' : result === 'failed' ? 'error' : 'neutral'
+const testLabel = (result?: string | null) => result === 'passed' ? t('proxy.test.passed') : result === 'failed' ? t('proxy.test.failed') : result
 
 function isUnsupportedError(error: any) {
   const text = errorMessage(error, '').toLowerCase()
@@ -217,7 +219,7 @@ async function loadPools() {
       unsupported.value = true
       pools.value = []
     } else {
-      loadError.value = errorMessage(error, 'Unable to load proxy pools.')
+      loadError.value = errorMessage(error, t('proxy.error.load'))
     }
   } finally {
     loading.value = false
@@ -258,19 +260,19 @@ function validateForm() {
   const proxyURL = form.proxy_url.trim()
   const priority = Number(form.priority)
 
-  if (!name) formErrors.name = 'Name is required.'
+  if (!name) formErrors.name = t('proxy.validation.nameRequired')
   if (!proxyURL) {
-    formErrors.proxy_url = 'Proxy URL is required.'
+    formErrors.proxy_url = t('proxy.validation.urlRequired')
   } else {
     try {
       const parsed = new URL(proxyURL)
-      if (!['http:', 'https:', 'socks5:', 'socks5h:'].includes(parsed.protocol)) formErrors.proxy_url = 'Use an http, https, socks5, or socks5h URL.'
-      else if (!parsed.hostname) formErrors.proxy_url = 'Proxy URL must include a host.'
+      if (!['http:', 'https:', 'socks5:', 'socks5h:'].includes(parsed.protocol)) formErrors.proxy_url = t('proxy.validation.scheme')
+      else if (!parsed.hostname) formErrors.proxy_url = t('proxy.validation.host')
     } catch {
-      formErrors.proxy_url = 'Enter a valid proxy URL.'
+      formErrors.proxy_url = t('proxy.validation.url')
     }
   }
-  if (!Number.isInteger(priority)) formErrors.priority = 'Priority must be an integer.'
+  if (!Number.isInteger(priority)) formErrors.priority = t('proxy.validation.priority')
 
   return !formErrors.name && !formErrors.proxy_url && !formErrors.priority
 }
@@ -294,9 +296,9 @@ async function savePool() {
       : await fetchAPI<ProxyPoolResponse>('/proxy/proxy-pools', { method: 'POST', body })
     if (response?.proxy_pool) replacePool(response.proxy_pool)
     formOpen.value = false
-    toast.add({ title: editingId.value ? 'Proxy updated' : 'Proxy created', color: 'success', icon: 'i-tabler-circle-check' })
+    toast.add({ title: editingId.value ? t('proxy.toast.updated') : t('proxy.toast.created'), color: 'success', icon: 'i-tabler-circle-check' })
   } catch (error: any) {
-    formError.value = errorMessage(error, 'Unable to save the proxy.')
+    formError.value = errorMessage(error, t('proxy.error.save'))
   } finally {
     saving.value = false
   }
@@ -308,9 +310,9 @@ async function toggleEnabled(pool: ProxyPool, enabled: boolean) {
   try {
     const response = await fetchAPI<ProxyPoolResponse>(`/proxy/proxy-pools/${encodeURIComponent(pool.id)}`, { method: 'PATCH', body: { enabled } })
     replacePool(response?.proxy_pool || { ...pool, enabled })
-    toast.add({ title: enabled ? 'Proxy enabled' : 'Proxy disabled', color: 'success' })
+    toast.add({ title: enabled ? t('proxy.toast.enabled') : t('proxy.toast.disabled'), color: 'success' })
   } catch (error: any) {
-    toast.add({ title: 'State update failed', description: errorMessage(error, 'Unable to update the proxy state.'), color: 'error' })
+    toast.add({ title: t('proxy.toast.stateFailed'), description: errorMessage(error, t('proxy.error.state')), color: 'error' })
   } finally {
     togglingId.value = ''
   }
@@ -324,12 +326,12 @@ async function testPool(pool: ProxyPool) {
     const result = response?.result || 'failed'
     replacePool({ ...pool, last_test_result: result, last_tested_at: new Date().toISOString() })
     toast.add({
-      title: result === 'passed' ? 'Proxy test passed' : 'Proxy test failed',
+      title: result === 'passed' ? t('proxy.toast.testPassed') : t('proxy.toast.testFailed'),
       description: response?.message,
       color: result === 'passed' ? 'success' : 'error'
     })
   } catch (error: any) {
-    toast.add({ title: 'Proxy test failed', description: errorMessage(error, 'Unable to test the proxy.'), color: 'error' })
+    toast.add({ title: t('proxy.toast.testFailed'), description: errorMessage(error, t('proxy.error.test')), color: 'error' })
   } finally {
     testingId.value = ''
   }
@@ -357,9 +359,9 @@ async function deletePool() {
     pools.value = pools.value.filter(pool => pool.id !== target.id)
     deleteOpen.value = false
     deleteTarget.value = null
-    toast.add({ title: 'Proxy deleted', color: 'success', icon: 'i-tabler-circle-check' })
+    toast.add({ title: t('proxy.toast.deleted'), color: 'success', icon: 'i-tabler-circle-check' })
   } catch (error: any) {
-    toast.add({ title: 'Delete failed', description: errorMessage(error, 'Unable to delete the proxy.'), color: 'error' })
+    toast.add({ title: t('proxy.toast.deleteFailed'), description: errorMessage(error, t('proxy.error.delete')), color: 'error' })
   } finally {
     deleting.value = false
   }

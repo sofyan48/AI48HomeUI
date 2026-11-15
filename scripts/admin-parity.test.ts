@@ -41,13 +41,13 @@ describe('plugin install trust and payloads', () => {
     expect(canConfirm('auth', '')).toBe(true)
     expect(script).not.toContain('installTrust.official')
     expect(script).not.toContain('installTrust.value.official')
-    expect(script).toContain('Registry and repository labels do not verify the provenance')
+    expect(source('locales/admin/plugins.ts')).toContain('Registry and repository labels do not verify the provenance')
   })
   test('sends entered version or an empty latest-release body, retaining source selector', async () => {
     const script = source('pages/admin/plugins.vue')
     const calls: any[] = []
     const functions = script.slice(script.indexOf('async function performInstall('), script.indexOf('function assignAuth('))
-    const { performInstall, performUninstall } = new Function('fetchAPI', 'busyPlugin', 'operation', 'toast', 'refreshAll', 'message', `${functions}; return { performInstall, performUninstall }`)(async (...args: any[]) => { calls.push(args); return { status: 'installed' } }, { value: '' }, { value: null }, { add() {} }, async () => {}, String)
+    const { performInstall, performUninstall } = new Function('fetchAPI', 'busyPlugin', 'operation', 'toast', 'refreshAll', 'message', 't', `${functions}; return { performInstall, performUninstall }`)(async (...args: any[]) => { calls.push(args); return { status: 'installed' } }, { value: '' }, { value: null }, { add() {} }, async () => {}, String, (key: string) => key)
     const plugin = { id: 'a/b', version: 'registry-version', source_id: 'third-party' }
     await performInstall(plugin, 'v1.2.3')
     await performInstall(plugin, '')
@@ -67,7 +67,7 @@ test('Meta discovery uses official default and never enables Meta WebSockets', (
     expect(result).toBe(expected)
   }
   expect(script).toContain("const supportsWebsockets = computed(() => ['codex-api-key', 'xai-api-key']")
-  expect(script).toContain('Signing is automatic on supported direct upstreams')
+  expect(source('locales/admin/upstream.ts')).toContain('Signing is automatic on supported direct upstreams')
 })
 
 for (const path of ['pages/admin/plugins.vue', 'components/admin/UpstreamProviders.vue', 'components/admin/SystemTopology.vue']) {

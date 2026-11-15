@@ -1,30 +1,30 @@
 <template>
     <AppModal
         :open="open"
-        :title="`Configure ${plugin?.metadata?.name || plugin?.name || plugin?.id || 'plugin'}`"
+        :title="t('plugins.config.title', { name: plugin?.metadata?.name || plugin?.name || plugin?.id || t('plugins.config.pluginFallback') })"
         :description="plugin?.id"
         :dismissible="!saving"
         @update:open="close"
     >
         <template #body>
-            <p v-if="loading" role="status" class="text-sm text-[var(--ui-text-muted)]">Loading plugin configuration…</p>
+            <p v-if="loading" role="status" class="text-sm text-[var(--ui-text-muted)]">{{ t('plugins.config.loading') }}</p>
             <div v-else-if="!ready" class="space-y-3">
-                <UAlert v-if="error" color="error" variant="subtle" title="Cannot load plugin configuration" :description="error" />
-                <AppButton color="neutral" variant="outline" @click="load">Retry</AppButton>
+                <UAlert v-if="error" color="error" variant="subtle" :title="t('plugins.config.loadFailed')" :description="error" />
+                <AppButton color="neutral" variant="outline" @click="load">{{ t('common.retry') }}</AppButton>
             </div>
             <form v-else class="space-y-5" @submit.prevent="save">
                 <fieldset :disabled="saving" class="space-y-5">
-                    <UCheckbox v-model="enabled" label="Enable this plugin" description="This is the per-plugin switch. Global plugins must also be enabled before it can become effective." />
-                    <UFormField label="Priority" description="Startup and routing order. Leave blank or use 0 for the default.">
+                    <UCheckbox v-model="enabled" :label="t('plugins.config.enableLabel')" :description="t('plugins.config.enableDescription')" />
+                    <UFormField :label="t('plugins.config.priority')" :description="t('plugins.config.priorityDescription')">
                         <UInput v-model="priority" inputmode="numeric" placeholder="0" class="w-full" />
                     </UFormField>
-                    <UCheckbox v-model="loadInHome" label="Load in Home" description="Only enable for trusted provider/auth plugins that must run inside Home. Store plugins otherwise run on CPA nodes." />
+                    <UCheckbox v-model="loadInHome" :label="t('plugins.config.loadInHome')" :description="t('plugins.config.loadInHomeDescription')" />
                     <section class="space-y-3 rounded-lg border border-[var(--ui-border)] p-3">
-                        <h3 class="text-sm font-semibold">Declared parameters</h3>
-                        <p v-if="!fields.length" class="text-xs text-[var(--ui-text-muted)]">No parameter declarations are available. Plugins not loaded in Home may not expose metadata; use custom parameters below.</p>
+                        <h3 class="text-sm font-semibold">{{ t('plugins.config.declared') }}</h3>
+                        <p v-if="!fields.length" class="text-xs text-[var(--ui-text-muted)]">{{ t('plugins.config.noDeclared') }}</p>
                         <UFormField v-for="field in fields" :key="field.name" :label="`${field.name} (${field.type})`" :description="field.description">
                             <div class="space-y-2">
-                                <UCheckbox :model-value="declared[field.name]?.active" label="Set value" @update:model-value="setActive(field.name, $event)" />
+                                <UCheckbox :model-value="declared[field.name]?.active" :label="t('plugins.config.setValue')" @update:model-value="setActive(field.name, $event)" />
                                 <template v-if="declared[field.name]?.active">
                                     <USelect v-if="field.type === 'boolean'" v-model="declared[field.name].value" :items="['true', 'false']" :aria-label="field.name" class="w-full" />
                                     <USelect v-else-if="field.type === 'enum' && field.enum_values.length" v-model="declared[field.name].value" :items="field.enum_values" :aria-label="field.name" class="w-full" />
@@ -36,26 +36,26 @@
                     </section>
                     <section class="space-y-3 rounded-lg border border-[var(--ui-border)] p-3">
                         <div class="flex flex-wrap items-center justify-between gap-2">
-                            <h3 class="text-sm font-semibold">Custom parameters</h3>
-                            <AppButton type="button" color="neutral" variant="outline" size="sm" icon="i-tabler-plus" :disabled="saving" @click="addCustom">Add parameter</AppButton>
+                            <h3 class="text-sm font-semibold">{{ t('plugins.config.custom') }}</h3>
+                            <AppButton type="button" color="neutral" variant="outline" size="sm" icon="i-tabler-plus" :disabled="saving" @click="addCustom">{{ t('plugins.config.addParameter') }}</AppButton>
                         </div>
-                        <p class="text-xs text-[var(--ui-text-muted)]">Choose a value type explicitly. Arrays and objects use JSON. The pinned store manifest is preserved and cannot be edited here.</p>
+                        <p class="text-xs text-[var(--ui-text-muted)]">{{ t('plugins.config.customHint') }}</p>
                         <div v-for="(entry, index) in custom" :key="entry.id" class="space-y-2 border-t border-[var(--ui-border)] pt-3">
                             <div class="flex items-center gap-2">
-                                <UInput v-model="entry.key" :aria-label="`Parameter ${index + 1} name`" placeholder="option-key" class="min-w-0 flex-1" />
-                                <USelect v-model="entry.type" :items="parameterTypes" :aria-label="`Parameter ${index + 1} type`" />
-                                <AppButton type="button" color="error" variant="ghost" icon="i-tabler-trash" :aria-label="`Remove parameter ${index + 1}`" :disabled="saving" @click="custom.splice(index, 1)" />
+                                <UInput v-model="entry.key" :aria-label="t('plugins.config.paramName', { index: index + 1 })" placeholder="option-key" class="min-w-0 flex-1" />
+                                <USelect v-model="entry.type" :items="parameterTypes" :aria-label="t('plugins.config.paramType', { index: index + 1 })" />
+                                <AppButton type="button" color="error" variant="ghost" icon="i-tabler-trash" :aria-label="t('plugins.config.paramRemove', { index: index + 1 })" :disabled="saving" @click="custom.splice(index, 1)" />
                             </div>
-                            <USelect v-if="entry.type === 'boolean'" v-model="entry.value" :items="['true', 'false']" :aria-label="`Parameter ${index + 1} value`" class="w-full" />
-                            <UTextarea v-else-if="['array', 'object'].includes(entry.type)" v-model="entry.value" :aria-label="`Parameter ${index + 1} JSON value`" class="w-full font-mono" />
-                            <UInput v-else-if="entry.type !== 'null'" v-model="entry.value" :aria-label="`Parameter ${index + 1} value`" class="w-full" />
+                            <USelect v-if="entry.type === 'boolean'" v-model="entry.value" :items="['true', 'false']" :aria-label="t('plugins.config.paramValue', { index: index + 1 })" class="w-full" />
+                            <UTextarea v-else-if="['array', 'object'].includes(entry.type)" v-model="entry.value" :aria-label="t('plugins.config.paramJsonValue', { index: index + 1 })" class="w-full font-mono" />
+                            <UInput v-else-if="entry.type !== 'null'" v-model="entry.value" :aria-label="t('plugins.config.paramValue', { index: index + 1 })" class="w-full" />
                         </div>
                     </section>
                 </fieldset>
-                <UAlert v-if="error" color="error" variant="subtle" title="Configuration not saved" :description="error" />
+                <UAlert v-if="error" color="error" variant="subtle" :title="t('plugins.config.notSaved')" :description="error" />
                 <div class="flex justify-end gap-3">
-                    <AppButton type="button" color="neutral" variant="outline" :disabled="saving" @click="close(false)">Cancel</AppButton>
-                    <AppButton type="submit" :loading="saving" :disabled="saving || disabled">Save configuration</AppButton>
+                    <AppButton type="button" color="neutral" variant="outline" :disabled="saving" @click="close(false)">{{ t('common.cancel') }}</AppButton>
+                    <AppButton type="submit" :loading="saving" :disabled="saving || disabled">{{ t('plugins.config.save') }}</AppButton>
                 </div>
             </form>
         </template>
@@ -73,6 +73,7 @@ type Entry = { id: number; key: string; type: string; value: string }
 const props = defineProps<{ open: boolean; plugin: Plugin | null; disabled?: boolean }>()
 const emit = defineEmits<{ 'update:open': [value: boolean]; saved: [id: string] }>()
 const { fetchAPI, token } = useApi()
+const { t } = useAdminI18n()
 const toast = useToast()
 const reserved = new Set(['enabled', 'priority', 'load-in-home', 'store'])
 const parameterTypes = ['string', 'boolean', 'integer', 'number', 'array', 'object', 'null']
@@ -113,7 +114,7 @@ function normalizeFields(plugin: Plugin): Field[] {
 async function readConfig(url: string, signal: AbortSignal): Promise<Config> {
     try {
         const value = await fetchAPI<unknown>(url, { signal })
-        if (!isRecord(value)) throw new Error('The plugin configuration is not an object. Use the configuration workspace to repair it before editing.')
+        if (!isRecord(value)) throw new Error(t('plugins.config.errNotObject'))
         return value
     } catch (cause) {
         if ((cause as { statusCode?: number })?.statusCode === 404) return {}
@@ -165,7 +166,7 @@ function close(open: boolean) {
 }
 function parseValue(type: string, raw: string, name: string, options: string[] = []): unknown {
     const text = raw.trim()
-    const invalid = () => new Error(`${name}: enter a valid ${type} value.`)
+    const invalid = () => new Error(t('plugins.config.errInvalid', { name, type }))
     if (type === 'boolean') {
         if (text !== 'true' && text !== 'false') throw invalid()
         return text === 'true'
@@ -185,7 +186,7 @@ function parseValue(type: string, raw: string, name: string, options: string[] =
         return parsed
     }
     if (type === 'null') return null
-    if (type === 'enum' && options.length && !options.includes(raw)) throw new Error(`${name}: choose one of the declared options.`)
+    if (type === 'enum' && options.length && !options.includes(raw)) throw new Error(t('plugins.config.errOption', { name }))
     return raw
 }
 
@@ -202,9 +203,9 @@ function collectParams(): Config {
     const names = new Set(fields.value.map((field) => field.name))
     for (const entry of custom.value) {
         const key = entry.key.trim()
-        if (!key) throw new Error('Every custom parameter needs a name. Remove unused rows before saving.')
-        if (reserved.has(key)) throw new Error(`${key} is reserved and cannot be a custom parameter.`)
-        if (names.has(key) || Object.hasOwn(params, key)) throw new Error(`Duplicate parameter: ${key}.`)
+        if (!key) throw new Error(t('plugins.config.errNoName'))
+        if (reserved.has(key)) throw new Error(t('plugins.config.errReserved', { key }))
+        if (names.has(key) || Object.hasOwn(params, key)) throw new Error(t('plugins.config.errDuplicate', { key }))
         params[key] = Object.hasOwn(baseline, key) && entry.type === valueType(baseline[key]) && entry.value === format(baseline[key])
             ? baseline[key] : parseValue(entry.type, entry.value, key)
     }
@@ -229,7 +230,7 @@ async function save() {
     let params: Config
     let order: number
     try {
-        order = priority.value.trim() ? parseValue('integer', priority.value, 'Priority') as number : 0
+        order = priority.value.trim() ? parseValue('integer', priority.value, t('plugins.config.priority')) as number : 0
         params = collectParams()
     } catch (cause) { error.value = message(cause); return }
     const current = generation
@@ -258,11 +259,11 @@ async function save() {
         }
         await fetchAPI(url, { method: 'PUT', body: next, signal: controller.signal })
         if (current !== generation) return
-        toast.add({ title: 'Plugin configuration saved', description: id, color: 'success' })
+        toast.add({ title: t('plugins.config.saved'), description: id, color: 'success' })
         emit('saved', id)
         emit('update:open', false)
     } catch (cause) {
-        if (current === generation) error.value = `${message(cause)} If Home reported a reload failure, the write may already be committed; close and reopen to reread before retrying.`
+        if (current === generation) error.value = t('plugins.config.errSave', { message: message(cause) })
     } finally {
         if (current === generation) saving.value = false
     }

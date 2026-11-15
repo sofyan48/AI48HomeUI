@@ -113,6 +113,7 @@ function pageFixture() {
   const context = vm.createContext({
     ref, computed, watch, URLSearchParams, AbortController, Intl, Date,
     useApplicationLogTail,
+    useAdminI18n: () => ({ t: key => key, intlLocale: ref('en'), locale: ref('en') }),
     useApi: () => ({ token: ref('test'), fetchAPI: async (url, options) => {
       calls.push({ query: new URL(url, 'http://home').searchParams, ...options })
       return respond()

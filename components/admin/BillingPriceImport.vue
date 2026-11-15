@@ -1,178 +1,178 @@
 <template>
-  <USlideover v-model:open="open" side="right" title="Import model prices" description="Preview catalog matches, review write fields, and manually confirm the import." :dismissible="!applying" :close="!applying" :ui="{ content: 'w-full sm:max-w-4xl', body: 'min-h-0 overflow-y-auto', footer: 'shrink-0 bg-[var(--ui-bg)]' }">
+  <USlideover v-model:open="open" side="right" :title="t('billing.prices.import')" :description="t('billing.import.description')" :dismissible="!applying" :close="!applying" :ui="{ content: 'w-full sm:max-w-4xl', body: 'min-h-0 overflow-y-auto', footer: 'shrink-0 bg-[var(--ui-bg)]' }">
     <template #body>
     <div class="space-y-5">
       <UAlert v-if="error" color="error" variant="subtle" :description="error" />
-      <UAlert v-if="recoveryError" color="warning" variant="subtle" title="Applying prices is disabled" :description="recoveryError" />
-      <UAlert v-else-if="applySupportError" color="warning" variant="subtle" title="New applies are unavailable" :description="applySupportError" />
-      <AppButton v-if="recoveryError && storageKey" color="error" variant="outline" :disabled="busy" @click="discardPendingOpen = true">Discard unreadable recovery request…</AppButton>
+      <UAlert v-if="recoveryError" color="warning" variant="subtle" :title="t('billing.import.applyDisabled')" :description="recoveryError" />
+      <UAlert v-else-if="applySupportError" color="warning" variant="subtle" :title="t('billing.import.newAppliesUnavailable')" :description="libMessage(applySupportError)" />
+      <AppButton v-if="recoveryError && storageKey" color="error" variant="outline" :disabled="busy" @click="discardPendingOpen = true">{{ t('billing.import.discardUnreadable') }}</AppButton>
       <section v-if="pendingApply" class="space-y-3 rounded-lg border border-[var(--ui-border)] p-4" aria-labelledby="pending-import-title">
-        <h3 id="pending-import-title" class="text-sm font-semibold">Saved apply request · outcome uncertain</h3>
-        <p class="text-sm">This request may already have been applied. Retry sends the exact saved selection and idempotency key, even after preview expiry, to recover the original result without duplicate writes. New previews and applies are blocked until this is resolved.</p>
-        <p class="break-all text-xs text-[var(--ui-text-muted)]">Saved {{ new Date(pendingApply.createdAt).toLocaleString() }} · {{ pendingApply.input.selected_keys.length }} rule(s) · Preview {{ pendingApply.input.preview_id }}</p>
+        <h3 id="pending-import-title" class="text-sm font-semibold">{{ t('billing.import.pendingTitle') }}</h3>
+        <p class="text-sm">{{ t('billing.import.pendingBody') }}</p>
+        <p class="break-all text-xs text-[var(--ui-text-muted)]">{{ t('billing.import.pendingMeta', { date: formatDate(pendingApply.createdAt), count: pendingApply.input.selected_keys.length, id: pendingApply.input.preview_id }) }}</p>
         <div class="flex flex-col gap-2 sm:flex-row">
-          <AppButton :loading="applying" :disabled="busy || !recoveryReady" @click="retryPendingApply">Retry saved request</AppButton>
-          <AppButton color="error" variant="outline" :disabled="busy" @click="discardPendingOpen = true">Discard recovery request…</AppButton>
+          <AppButton :loading="applying" :disabled="busy || !recoveryReady" @click="retryPendingApply">{{ t('billing.import.retrySaved') }}</AppButton>
+          <AppButton color="error" variant="outline" :disabled="busy" @click="discardPendingOpen = true">{{ t('billing.import.discardRecoveryEllipsis') }}</AppButton>
         </div>
       </section>
-      <UAlert v-if="importUnavailable" color="warning" variant="subtle" title="Catalog import unavailable" description="This Home instance does not expose the catalog import preview endpoint. Manual model-price editing remains available." />
+      <UAlert v-if="importUnavailable" color="warning" variant="subtle" :title="t('billing.import.unavailableTitle')" :description="t('billing.import.unavailableDescription')" />
       <section class="rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] p-4" aria-labelledby="import-context-title">
         <div class="flex flex-wrap items-center justify-between gap-2">
-          <h3 id="import-context-title" class="text-sm font-semibold">Runtime matching context</h3>
-          <UBadge color="neutral" variant="subtle">{{ serviceTierSource === 'response' ? 'Provider response tier' : 'Client request tier' }}</UBadge>
+          <h3 id="import-context-title" class="text-sm font-semibold">{{ t('billing.import.contextTitle') }}</h3>
+          <UBadge color="neutral" variant="subtle">{{ serviceTierSource === 'response' ? t('billing.tierSource.response') : t('billing.import.clientRequestTier') }}</UBadge>
         </div>
-        <p class="mt-2 text-xs text-[var(--ui-text-muted)]">{{ serviceTierSource === 'response' ? 'Future charges match the provider response tier, falling back to the request tier.' : 'Future charges match the service tier sent in the client request.' }} Imports create wildcard-tier rules at Home-supported catalog context bands; this does not change your billing settings.</p>
+        <p class="mt-2 text-xs text-[var(--ui-text-muted)]">{{ serviceTierSource === 'response' ? t('billing.import.contextResponse') : t('billing.import.contextRequest') }} {{ t('billing.import.contextSuffix') }}</p>
       </section>
       <fieldset class="space-y-3 rounded-lg border border-[var(--ui-border)] p-4" :disabled="applying">
-        <legend class="px-1 text-sm font-semibold">Import targets</legend>
-        <UFormField label="Catalog source"><USelect v-model="source" :items="billingCatalogSources" value-key="value" label-key="label" class="w-full" :disabled="busy || !!pendingApply" /></UFormField>
+        <legend class="px-1 text-sm font-semibold">{{ t('billing.import.targetsTitle') }}</legend>
+        <UFormField :label="t('billing.import.catalogSource')"><USelect v-model="source" :items="catalogSourceOptions" value-key="value" label-key="label" class="w-full" :disabled="busy || !!pendingApply" /></UFormField>
         <p class="text-xs text-[var(--ui-text-muted)]">{{ sourceDescription }}</p>
         <div class="grid gap-3 sm:grid-cols-2">
-          <UFormField label="Provider"><USelect v-model="providerFilter" :items="providerOptions" value-key="value" label-key="label" class="w-full" /></UFormField>
-          <UFormField label="Target set"><USelect v-model="targetSet" :items="targetSetOptions" value-key="value" label-key="label" class="w-full" /></UFormField>
+          <UFormField :label="t('common.provider')"><USelect v-model="providerFilter" :items="providerOptions" value-key="value" label-key="label" class="w-full" /></UFormField>
+          <UFormField :label="t('billing.import.targetSet')"><USelect v-model="targetSet" :items="targetSetOptions" value-key="value" label-key="label" class="w-full" /></UFormField>
         </div>
-        <p class="text-xs text-[var(--ui-text-muted)]">{{ targets.length }} target(s) · {{ targetSet === 'manual' ? 'Edit provider/model pairs in Advanced options below.' : 'Provider/model pairs from loaded candidates or existing synced rules, not the entire selected catalog.' }}</p>
-        <p class="text-xs text-[var(--ui-text-muted)]">Home fetches the selected catalogs server-side; the browser sends management credentials only to Home, not to catalog providers. Preview and update checks never apply automatically.</p>
+        <p class="text-xs text-[var(--ui-text-muted)]">{{ t('billing.import.targetCount', { count: targets.length }) }} · {{ targetSet === 'manual' ? t('billing.import.targetsManualHint') : t('billing.import.targetsAutoHint') }}</p>
+        <p class="text-xs text-[var(--ui-text-muted)]">{{ t('billing.import.credentialsNote') }}</p>
       </fieldset>
       <fieldset class="space-y-3 rounded-lg border border-[var(--ui-border)] p-4" :disabled="applying">
-        <legend class="px-1 text-sm font-semibold">Import policy</legend>
+        <legend class="px-1 text-sm font-semibold">{{ t('billing.import.policyTitle') }}</legend>
         <div class="grid gap-3 sm:grid-cols-2">
-          <UFormField label="Default multiplier"><UInput v-model.number="defaultMultiplier" type="number" min="0.000001" step="0.01" class="w-full" /></UFormField>
-          <UFormField label="Existing rule handling"><USelect v-model="overwriteMode" :items="overwriteOptions" value-key="value" label-key="label" class="w-full" /></UFormField>
+          <UFormField :label="t('billing.import.defaultMultiplier')"><UInput v-model.number="defaultMultiplier" type="number" min="0.000001" step="0.01" class="w-full" /></UFormField>
+          <UFormField :label="t('billing.import.existingHandling')"><USelect v-model="overwriteMode" :items="overwriteOptions" value-key="value" label-key="label" class="w-full" /></UFormField>
         </div>
-        <UCheckbox v-model="includeZeroCost" label="Include zero-cost catalog rows" />
-        <p class="text-xs text-[var(--ui-text-muted)]">Missing only preserves existing rules. Sync updates protect manual rules. Replacing all requires explicit overwrite confirmation.</p>
+        <UCheckbox v-model="includeZeroCost" :label="t('billing.import.includeZeroCost')" />
+        <p class="text-xs text-[var(--ui-text-muted)]">{{ t('billing.import.policyHint') }}</p>
       </fieldset>
       <details ref="advancedDetails" class="rounded-lg border border-[var(--ui-border)] p-4">
-        <summary class="cursor-pointer text-sm font-semibold">Advanced options · manual targets, matching, multipliers &amp; operation lookup</summary>
+        <summary class="cursor-pointer text-sm font-semibold">{{ t('billing.import.advanced') }}</summary>
         <fieldset class="mt-4 min-w-0 space-y-4" :disabled="applying">
       <fieldset class="space-y-3 rounded-lg border border-[var(--ui-border)] p-4">
-        <div class="flex items-center justify-between gap-3"><legend class="font-medium">Manual targets</legend><AppButton size="sm" color="neutral" variant="outline" icon="i-tabler-plus" @click="addTarget">Add target</AppButton></div>
-        <p class="text-xs text-[var(--ui-text-muted)]">Each target creates wildcard-tier rules at the catalog context bands supported by Home.</p>
+        <div class="flex items-center justify-between gap-3"><legend class="font-medium">{{ t('billing.import.manualTargets') }}</legend><AppButton size="sm" color="neutral" variant="outline" icon="i-tabler-plus" @click="addTarget">{{ t('billing.import.addTarget') }}</AppButton></div>
+        <p class="text-xs text-[var(--ui-text-muted)]">{{ t('billing.import.manualTargetsHint') }}</p>
         <div v-for="(target, index) in targets" :key="index" class="grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
-          <UFormField :label="`Provider #${index + 1}`"><UInputMenu v-model="target.provider" :items="providers" create-item placeholder="Search or enter provider" class="w-full" @update:model-value="targetSet = 'manual'" @create="targetSet = 'manual'; target.provider = $event.trim()" /></UFormField>
-          <UFormField :label="`Model #${index + 1}`"><UInputMenu v-model="target.model" :items="models" create-item placeholder="Search or enter model ID" class="w-full" @update:model-value="targetSet = 'manual'" @create="targetSet = 'manual'; target.model = $event.trim()" /></UFormField>
-          <AppButton v-if="targets.length > 1" color="error" variant="ghost" icon="i-tabler-trash" aria-label="Remove target" class="self-end" @click="removeTarget(index)" />
+          <UFormField :label="t('billing.import.providerN', { n: index + 1 })"><UInputMenu v-model="target.provider" :items="providers" create-item :placeholder="t('billing.import.providerPlaceholder')" class="w-full" @update:model-value="targetSet = 'manual'" @create="targetSet = 'manual'; target.provider = $event.trim()" /></UFormField>
+          <UFormField :label="t('billing.import.modelN', { n: index + 1 })"><UInputMenu v-model="target.model" :items="models" create-item :placeholder="t('billing.import.modelPlaceholder')" class="w-full" @update:model-value="targetSet = 'manual'" @create="targetSet = 'manual'; target.model = $event.trim()" /></UFormField>
+          <AppButton v-if="targets.length > 1" color="error" variant="ghost" icon="i-tabler-trash" :aria-label="t('billing.import.removeTarget')" class="self-end" @click="removeTarget(index)" />
         </div>
       </fieldset>
       <fieldset class="space-y-3 rounded-lg border border-[var(--ui-border)] p-4">
-        <div class="flex items-center justify-between gap-3"><legend class="font-medium">Model aliases</legend><AppButton size="sm" color="neutral" variant="outline" @click="() => { aliases.push({ target_model: '', source_models: '' }) }">Add alias</AppButton></div>
-        <p class="text-xs text-[var(--ui-text-muted)]">Try these catalog model IDs when matching a target model. Separate multiple IDs with commas; order matters.</p>
+        <div class="flex items-center justify-between gap-3"><legend class="font-medium">{{ t('billing.import.aliases') }}</legend><AppButton size="sm" color="neutral" variant="outline" @click="() => { aliases.push({ target_model: '', source_models: '' }) }">{{ t('billing.import.addAlias') }}</AppButton></div>
+        <p class="text-xs text-[var(--ui-text-muted)]">{{ t('billing.import.aliasesHint') }}</p>
         <div v-for="(alias, index) in aliases" :key="index" class="grid gap-3 sm:grid-cols-[1fr_2fr_auto]">
-          <UFormField label="Target model"><UInput v-model="alias.target_model" placeholder="Target model ID" class="w-full" /></UFormField>
-          <UFormField label="Catalog model IDs (comma-separated)"><UInput v-model="alias.source_models" placeholder="catalog-model-a, catalog-model-b" class="w-full" /></UFormField>
-          <AppButton color="error" variant="ghost" icon="i-tabler-trash" aria-label="Remove alias" class="self-end" @click="() => { aliases.splice(index, 1) }" />
+          <UFormField :label="t('billing.import.targetModel')"><UInput v-model="alias.target_model" :placeholder="t('billing.import.targetModelPlaceholder')" class="w-full" /></UFormField>
+          <UFormField :label="t('billing.import.catalogModelIds')"><UInput v-model="alias.source_models" placeholder="catalog-model-a, catalog-model-b" class="w-full" /></UFormField>
+          <AppButton color="error" variant="ghost" icon="i-tabler-trash" :aria-label="t('billing.import.removeAlias')" class="self-end" @click="() => { aliases.splice(index, 1) }" />
         </div>
       </fieldset>
       <fieldset class="space-y-3 rounded-lg border border-[var(--ui-border)] p-4">
-        <div class="flex items-center justify-between gap-3"><legend class="font-medium">Multiplier rules</legend><AppButton size="sm" color="neutral" variant="outline" @click="() => { multiplierRules.push({ id: '', label: '', match_mode: 'prefix', pattern: '', multiplier: 1 }) }">Add rule</AppButton></div>
-        <p class="text-xs text-[var(--ui-text-muted)]">First matching rule wins against the target model ID (case-insensitive). Exact row multipliers take precedence.</p>
+        <div class="flex items-center justify-between gap-3"><legend class="font-medium">{{ t('billing.import.multiplierRules') }}</legend><AppButton size="sm" color="neutral" variant="outline" @click="() => { multiplierRules.push({ id: '', label: '', match_mode: 'prefix', pattern: '', multiplier: 1 }) }">{{ t('billing.import.addRule') }}</AppButton></div>
+        <p class="text-xs text-[var(--ui-text-muted)]">{{ t('billing.import.multiplierRulesHint') }}</p>
         <div v-for="(rule, index) in multiplierRules" :key="index" class="grid gap-3 sm:grid-cols-[1fr_1fr_1fr_1fr_auto]">
-          <UFormField label="Label (optional)"><UInput v-model="rule.label" class="w-full" /></UFormField>
-          <UFormField label="Match"><USelect v-model="rule.match_mode" :items="['prefix', 'regex']" class="w-full" /></UFormField>
-          <UFormField label="Pattern"><UInput v-model="rule.pattern" :placeholder="rule.match_mode === 'regex' ? 'Go-compatible regex' : 'Model prefix'" class="w-full" /></UFormField>
-          <UFormField label="Multiplier"><UInput v-model.number="rule.multiplier" type="number" min="0.000001" step="0.01" class="w-full" /></UFormField>
-          <AppButton color="error" variant="ghost" icon="i-tabler-trash" aria-label="Remove multiplier rule" class="self-end" @click="() => { multiplierRules.splice(index, 1) }" />
+          <UFormField :label="t('billing.import.labelOptional')"><UInput v-model="rule.label" class="w-full" /></UFormField>
+          <UFormField :label="t('billing.import.match')"><USelect v-model="rule.match_mode" :items="matchModeOptions" value-key="value" label-key="label" class="w-full" /></UFormField>
+          <UFormField :label="t('billing.import.pattern')"><UInput v-model="rule.pattern" :placeholder="rule.match_mode === 'regex' ? t('billing.import.regexPlaceholder') : t('billing.import.prefixPlaceholder')" class="w-full" /></UFormField>
+          <UFormField :label="t('billing.import.multiplier')"><UInput v-model.number="rule.multiplier" type="number" min="0.000001" step="0.01" class="w-full" /></UFormField>
+          <AppButton color="error" variant="ghost" icon="i-tabler-trash" :aria-label="t('billing.import.removeMultiplierRule')" class="self-end" @click="() => { multiplierRules.splice(index, 1) }" />
         </div>
       </fieldset>
       <fieldset class="space-y-3 rounded-lg border border-[var(--ui-border)] p-4">
-        <div class="flex items-center justify-between gap-3"><legend class="font-medium">Exact row multipliers</legend><AppButton size="sm" color="neutral" variant="outline" @click="() => { rowMultipliers.push({ row_key: '', multiplier: 1 }) }">Add row</AppButton></div>
-        <p class="text-xs text-[var(--ui-text-muted)]">Use the exact preview row key, including ::*::token-boundary for context bands. Preview again after editing.</p>
+        <div class="flex items-center justify-between gap-3"><legend class="font-medium">{{ t('billing.import.rowMultipliers') }}</legend><AppButton size="sm" color="neutral" variant="outline" @click="() => { rowMultipliers.push({ row_key: '', multiplier: 1 }) }">{{ t('billing.import.addRow') }}</AppButton></div>
+        <p class="text-xs text-[var(--ui-text-muted)]">{{ t('billing.import.rowMultipliersHint') }}</p>
         <div v-for="(row, index) in rowMultipliers" :key="index" class="grid gap-3 sm:grid-cols-[2fr_1fr_auto]">
-          <UFormField label="Row key"><UInput v-model="row.row_key" placeholder="provider::model or provider::model::*::200000" class="w-full" /></UFormField>
-          <UFormField label="Multiplier"><UInput v-model.number="row.multiplier" type="number" min="0.000001" step="0.01" class="w-full" /></UFormField>
-          <AppButton color="error" variant="ghost" icon="i-tabler-trash" aria-label="Remove row multiplier" class="self-end" @click="() => { rowMultipliers.splice(index, 1) }" />
+          <UFormField :label="t('billing.import.rowKey')"><UInput v-model="row.row_key" placeholder="provider::model or provider::model::*::200000" class="w-full" /></UFormField>
+          <UFormField :label="t('billing.import.multiplier')"><UInput v-model.number="row.multiplier" type="number" min="0.000001" step="0.01" class="w-full" /></UFormField>
+          <AppButton color="error" variant="ghost" icon="i-tabler-trash" :aria-label="t('billing.import.removeRowMultiplier')" class="self-end" @click="() => { rowMultipliers.splice(index, 1) }" />
         </div>
       </fieldset>
       <fieldset class="space-y-3 rounded-lg border border-[var(--ui-border)] p-4">
-        <div class="flex items-center justify-between gap-3"><legend class="font-medium">Source match overrides</legend><AppButton size="sm" color="neutral" variant="outline" @click="() => { matchOverrides.push({ target_provider: '', target_model: '', source_provider: '', source_model: '' }) }">Add override</AppButton></div>
-        <p class="text-xs text-[var(--ui-text-muted)]">Force one requested target to an exact catalog provider and model. A missing catalog match stays unmatched.</p>
+        <div class="flex items-center justify-between gap-3"><legend class="font-medium">{{ t('billing.import.overrides') }}</legend><AppButton size="sm" color="neutral" variant="outline" @click="() => { matchOverrides.push({ target_provider: '', target_model: '', source_provider: '', source_model: '' }) }">{{ t('billing.import.addOverride') }}</AppButton></div>
+        <p class="text-xs text-[var(--ui-text-muted)]">{{ t('billing.import.overridesHint') }}</p>
         <div v-for="(override, index) in matchOverrides" :key="index" class="grid gap-3 sm:grid-cols-[1fr_1fr_1fr_1fr_auto]">
-          <UFormField label="Target provider"><UInput v-model="override.target_provider" class="w-full" /></UFormField>
-          <UFormField label="Target model"><UInput v-model="override.target_model" class="w-full" /></UFormField>
-          <UFormField label="Catalog provider"><UInput v-model="override.source_provider" class="w-full" /></UFormField>
-          <UFormField label="Catalog model"><UInput v-model="override.source_model" class="w-full" /></UFormField>
-          <AppButton color="error" variant="ghost" icon="i-tabler-trash" aria-label="Remove match override" class="self-end" @click="() => { matchOverrides.splice(index, 1) }" />
+          <UFormField :label="t('billing.import.targetProvider')"><UInput v-model="override.target_provider" class="w-full" /></UFormField>
+          <UFormField :label="t('billing.import.targetModel')"><UInput v-model="override.target_model" class="w-full" /></UFormField>
+          <UFormField :label="t('billing.import.catalogProvider')"><UInput v-model="override.source_provider" class="w-full" /></UFormField>
+          <UFormField :label="t('billing.import.catalogModel')"><UInput v-model="override.source_model" class="w-full" /></UFormField>
+          <AppButton color="error" variant="ghost" icon="i-tabler-trash" :aria-label="t('billing.import.removeOverride')" class="self-end" @click="() => { matchOverrides.splice(index, 1) }" />
         </div>
       </fieldset>
         <form class="space-y-3 rounded-lg border border-[var(--ui-border)] p-4" @submit.prevent="lookupOperation">
-          <h4 class="text-sm font-medium">Look up a stored import operation</h4>
-          <p class="text-xs text-[var(--ui-text-muted)]">Lookup only reads the stored result; it does not apply prices again.</p>
+          <h4 class="text-sm font-medium">{{ t('billing.import.lookupTitle') }}</h4>
+          <p class="text-xs text-[var(--ui-text-muted)]">{{ t('billing.import.lookupHint') }}</p>
           <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
-            <UFormField label="Operation ID" class="flex-1"><UInput v-model="operationId" placeholder="import_…" class="w-full" :disabled="operationLoading" /></UFormField>
-            <AppButton type="submit" color="neutral" variant="outline" :loading="operationLoading" :disabled="busy || !operationId.trim()">Look up operation</AppButton>
+            <UFormField :label="t('billing.import.operationId')" class="flex-1"><UInput v-model="operationId" placeholder="import_…" class="w-full" :disabled="operationLoading" /></UFormField>
+            <AppButton type="submit" color="neutral" variant="outline" :loading="operationLoading" :disabled="busy || !operationId.trim()">{{ t('billing.import.lookup') }}</AppButton>
           </div>
-          <UAlert v-if="operationError" color="error" variant="subtle" title="Operation lookup failed" :description="operationError" />
+          <UAlert v-if="operationError" color="error" variant="subtle" :title="t('billing.import.lookupFailed')" :description="operationError" />
         </form>
         </fieldset>
       </details>
       <UAlert v-if="validationError" color="warning" variant="subtle" :description="validationError" />
       <section class="space-y-3" aria-labelledby="import-preview-title" aria-live="polite">
         <div class="flex flex-wrap items-center justify-between gap-3">
-          <div><h3 id="import-preview-title" class="text-sm font-semibold">Preview results</h3><p class="text-xs text-[var(--ui-text-muted)]">Review exact write fields before confirming. Changes to targets or policy require a new preview.</p></div>
+          <div><h3 id="import-preview-title" class="text-sm font-semibold">{{ t('billing.import.previewTitle') }}</h3><p class="text-xs text-[var(--ui-text-muted)]">{{ t('billing.import.previewHint') }}</p></div>
           <div class="flex flex-wrap gap-2">
-            <AppButton size="sm" color="neutral" variant="outline" icon="i-tabler-download" :disabled="!preview || busy" @click="exportPreview">Export preview</AppButton>
-            <AppButton size="sm" color="neutral" variant="outline" icon="i-tabler-refresh" :loading="loading" :disabled="busy || !!pendingApply || importUnavailable || !!validationError" @click="previewPrices(targetSet === 'synced')">{{ preview ? 'Refresh preview' : 'Generate preview' }}</AppButton>
+            <AppButton size="sm" color="neutral" variant="outline" icon="i-tabler-download" :disabled="!preview || busy" @click="exportPreview">{{ t('billing.import.exportPreview') }}</AppButton>
+            <AppButton size="sm" color="neutral" variant="outline" icon="i-tabler-refresh" :loading="loading" :disabled="busy || !!pendingApply || importUnavailable || !!validationError" @click="previewPrices(targetSet === 'synced')">{{ preview ? t('billing.import.refreshPreview') : t('billing.import.generatePreview') }}</AppButton>
           </div>
         </div>
       <template v-if="preview">
         <div class="flex flex-wrap gap-2">
-          <UBadge color="neutral" variant="subtle">{{ preview.rows?.length || 0 }} rows</UBadge>
-          <UBadge color="success" variant="subtle">{{ changedRows }} applicable</UBadge>
-          <UBadge color="warning" variant="subtle">{{ reviewRows }} need review</UBadge>
-          <UBadge color="primary" variant="subtle">{{ selected.length }} selected</UBadge>
+          <UBadge color="neutral" variant="subtle">{{ t('billing.import.rowsBadge', { count: preview.rows?.length || 0 }) }}</UBadge>
+          <UBadge color="success" variant="subtle">{{ t('billing.import.applicableBadge', { count: changedRows }) }}</UBadge>
+          <UBadge color="warning" variant="subtle">{{ t('billing.import.reviewBadge', { count: reviewRows }) }}</UBadge>
+          <UBadge color="primary" variant="subtle">{{ t('billing.import.selectedBadge', { count: selected.length }) }}</UBadge>
         </div>
-        <p class="text-xs text-[var(--ui-text-muted)]">Expires {{ preview.expires_at ? new Date(preview.expires_at).toLocaleString() : 'unknown' }}</p>
-        <p class="break-all text-xs text-[var(--ui-text-muted)]">Source {{ preview.source_url }} · Fetched {{ new Date(preview.source_fetched_at).toLocaleString() }} · Version {{ preview.source_version }}</p>
-        <UAlert v-if="checkingUpdates" :color="changedRows || reviewRows ? 'info' : 'success'" variant="subtle" :title="changedRows ? `${changedRows} new or changed price rule(s)` : reviewRows ? 'No applicable price changes; review required' : 'No applicable price changes found'" :description="`${reviewRows} row(s) require review. Unchanged rows cannot be selected. Only successfully matched catalog rows were compared; inspect skipped rows below.`" />
-        <p v-if="!preview.rows?.length" class="text-sm text-[var(--ui-text-muted)]">The catalog preview returned no rows.</p>
-        <p v-else-if="!changedRows && !checkingUpdates" class="text-sm text-[var(--ui-text-muted)]">No applicable rules. Review matching reasons below or adjust the import policy.</p>
+        <p class="text-xs text-[var(--ui-text-muted)]">{{ t('billing.import.expires', { date: preview.expires_at ? formatDate(preview.expires_at) : t('common.unknown') }) }}</p>
+        <p class="break-all text-xs text-[var(--ui-text-muted)]">{{ t('billing.import.sourceMeta', { url: preview.source_url, date: formatDate(preview.source_fetched_at), version: preview.source_version }) }}</p>
+        <UAlert v-if="checkingUpdates" :color="changedRows || reviewRows ? 'info' : 'success'" variant="subtle" :title="changedRows ? t('billing.import.changedTitle', { count: changedRows }) : reviewRows ? t('billing.import.reviewRequiredTitle') : t('billing.import.noChangesTitle')" :description="t('billing.import.updatesDescription', { count: reviewRows })" />
+        <p v-if="!preview.rows?.length" class="text-sm text-[var(--ui-text-muted)]">{{ t('billing.import.noRows') }}</p>
+        <p v-else-if="!changedRows && !checkingUpdates" class="text-sm text-[var(--ui-text-muted)]">{{ t('billing.import.noApplicable') }}</p>
         <div class="max-h-[28rem] overflow-auto rounded-lg border border-[var(--ui-border)]">
           <table class="w-full text-left text-sm">
-            <caption class="sr-only">Model price import preview and exact write fields</caption>
-            <thead class="sticky top-0 z-10 bg-[var(--ui-bg-muted)] text-xs text-[var(--ui-text-muted)]"><tr><th scope="col" class="p-3">Select</th><th scope="col" class="p-3">Target / catalog match</th><th scope="col" class="p-3">Action</th><th scope="col" class="p-3">Write fields</th></tr></thead>
+            <caption class="sr-only">{{ t('billing.import.tableCaption') }}</caption>
+            <thead class="sticky top-0 z-10 bg-[var(--ui-bg-muted)] text-xs text-[var(--ui-text-muted)]"><tr><th scope="col" class="p-3">{{ t('billing.import.colSelect') }}</th><th scope="col" class="p-3">{{ t('billing.import.colTarget') }}</th><th scope="col" class="p-3">{{ t('billing.import.colAction') }}</th><th scope="col" class="p-3">{{ t('billing.import.colWriteFields') }}</th></tr></thead>
             <tbody>
               <tr v-for="row in preview.rows || []" :key="row.row_key" class="border-t border-[var(--ui-border)] align-top">
-                <td class="p-3"><input v-model="selected" type="checkbox" :value="row.row_key" :aria-label="`Select ${row.row_key}`" :disabled="applying || !selectable(row)" class="accent-[var(--ui-primary)]" /></td>
+                <td class="p-3"><input v-model="selected" type="checkbox" :value="row.row_key" :aria-label="t('billing.import.selectRow', { key: row.row_key })" :disabled="applying || !selectable(row)" class="accent-[var(--ui-primary)]" /></td>
                 <td class="min-w-48 p-3"><p class="break-all font-medium">{{ row.model || row.row_key }}</p><p class="break-all text-xs text-[var(--ui-text-muted)]">{{ row.row_key }}</p><p v-if="row.matched_model" class="mt-1 break-all text-xs">{{ row.matched_provider }}/{{ row.matched_model }} · ×{{ row.multiplier }}</p></td>
-                <td class="p-3"><UBadge :color="selectable(row) ? 'success' : 'neutral'" variant="subtle">{{ checkingUpdates && row.action === 'update_sync' && !pricesChanged(row) ? 'unchanged' : row.action }}</UBadge><p v-for="(reason, index) in row.reasons || []" :key="index" class="mt-1 text-xs text-[var(--ui-text-muted)]">{{ reason.message || reason.code }}</p></td>
+                <td class="p-3"><UBadge :color="selectable(row) ? 'success' : 'neutral'" variant="subtle">{{ checkingUpdates && row.action === 'update_sync' && !pricesChanged(row) ? t('billing.import.action.unchanged') : actionLabel(row.action) }}</UBadge><p v-for="(reason, index) in row.reasons || []" :key="index" class="mt-1 text-xs text-[var(--ui-text-muted)]">{{ reason.message || reason.code }}</p></td>
                 <td class="min-w-64 p-3">
                   <dl v-if="row.write_rule" class="space-y-1 text-xs"><div v-for="field in writeFields" :key="field.key" class="flex justify-between gap-3"><dt class="text-[var(--ui-text-muted)]">{{ field.label }}</dt><dd class="font-mono">{{ (field.cost ? row.final?.[field.cost] : row.write_rule[field.key]) ?? '—' }}</dd></div></dl>
-                  <p v-else class="text-xs text-[var(--ui-text-muted)]">No applicable write rule</p>
-                  <details class="mt-2"><summary class="cursor-pointer text-xs text-[var(--ui-text-muted)]">Exact rule &amp; comparison</summary><pre class="mt-2 max-w-80 overflow-auto rounded bg-[var(--ui-bg-muted)] p-2 text-xs">{{ JSON.stringify({ official: row.official, final: row.final, write_rule: row.write_rule, existing_rule: row.existing_rule, reasons: row.reasons }, null, 2) }}</pre></details>
-                  <AppButton v-if="row.official && !rowMultipliers.some((entry) => entry.row_key === row.row_key)" size="xs" color="neutral" variant="ghost" class="mt-2" :disabled="applying" @click="setRowMultiplier(row)">Set row multiplier</AppButton>
+                  <p v-else class="text-xs text-[var(--ui-text-muted)]">{{ t('billing.import.noWriteRule') }}</p>
+                  <details class="mt-2"><summary class="cursor-pointer text-xs text-[var(--ui-text-muted)]">{{ t('billing.import.exactRule') }}</summary><pre class="mt-2 max-w-80 overflow-auto rounded bg-[var(--ui-bg-muted)] p-2 text-xs">{{ JSON.stringify({ official: row.official, final: row.final, write_rule: row.write_rule, existing_rule: row.existing_rule, reasons: row.reasons }, null, 2) }}</pre></details>
+                  <AppButton v-if="row.official && !rowMultipliers.some((entry) => entry.row_key === row.row_key)" size="xs" color="neutral" variant="ghost" class="mt-2" :disabled="applying" @click="setRowMultiplier(row)">{{ t('billing.import.setRowMultiplier') }}</AppButton>
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
       </template>
-      <p v-else class="rounded-lg border border-dashed border-[var(--ui-border)] p-6 text-center text-sm text-[var(--ui-text-muted)]">{{ loading ? 'Fetching and matching catalog prices…' : 'Generate a preview to review matches and price rules. Nothing is written until you confirm.' }}</p>
+      <p v-else class="rounded-lg border border-dashed border-[var(--ui-border)] p-6 text-center text-sm text-[var(--ui-text-muted)]">{{ loading ? t('billing.import.fetching') : t('billing.import.emptyPreview') }}</p>
       </section>
-      <UAlert v-if="operation" :color="operation.status === 'applied' ? 'success' : 'warning'" variant="subtle" :title="`Import ${operation.status}`" :description="`Operation ${operation.operation_id} · ${operation.rows?.length || 0} row(s) · ${operation.atomic ? 'Atomic' : 'Non-atomic'} · Applied ${operation.applied_at ? new Date(operation.applied_at).toLocaleString() : 'unknown'}`" />
-      <AppButton v-if="failedRows.length" color="neutral" variant="outline" :disabled="busy || !!pendingApply" @click="retryFailedRows">Preview failed/conflicting rows ({{ failedRows.length }})</AppButton>
+      <UAlert v-if="operation" :color="operation.status === 'applied' ? 'success' : 'warning'" variant="subtle" :title="t('billing.import.operationTitle', { status: statusLabel(operation.status) })" :description="t('billing.import.operationDescription', { id: operation.operation_id, count: operation.rows?.length || 0, atomic: operation.atomic ? t('billing.import.atomic') : t('billing.import.nonAtomic'), date: operation.applied_at ? formatDate(operation.applied_at) : t('common.unknown') })" />
+      <AppButton v-if="failedRows.length" color="neutral" variant="outline" :disabled="busy || !!pendingApply" @click="retryFailedRows">{{ t('billing.import.retryFailed', { count: failedRows.length }) }}</AppButton>
       <pre v-if="operation?.summary" class="overflow-auto rounded-lg bg-[var(--ui-bg-muted)] p-3 text-xs">{{ JSON.stringify(operation.summary, null, 2) }}</pre>
-      <div v-if="operation?.rows?.length" class="max-h-56 space-y-2 overflow-y-auto"><div v-for="result in operation.rows" :key="result.key" class="rounded-lg border border-[var(--ui-border)] p-3 text-xs"><strong>{{ result.key }}</strong><span> · {{ result.status || result.action }}</span><span v-if="result.resource_id" class="block font-mono text-[var(--ui-text-muted)]">{{ result.resource_id }}</span><span v-if="result.error_code || result.error_message" class="block text-[var(--ui-error)]">{{ result.error_code }} {{ result.error_message }}</span></div></div>
+      <div v-if="operation?.rows?.length" class="max-h-56 space-y-2 overflow-y-auto"><div v-for="result in operation.rows" :key="result.key" class="rounded-lg border border-[var(--ui-border)] p-3 text-xs"><strong>{{ result.key }}</strong><span> · {{ result.status ? statusLabel(result.status) : actionLabel(result.action) }}</span><span v-if="result.resource_id" class="block font-mono text-[var(--ui-text-muted)]">{{ result.resource_id }}</span><span v-if="result.error_code || result.error_message" class="block text-[var(--ui-error)]">{{ result.error_code }} {{ result.error_message }}</span></div></div>
     </div>
     </template>
     <template #footer>
       <div class="w-full space-y-3">
-        <UCheckbox v-if="requiresOverwrite" v-model="confirmOverwrite" :disabled="applying" label="I confirm replacing existing model-price rules" />
+        <UCheckbox v-if="requiresOverwrite" v-model="confirmOverwrite" :disabled="applying" :label="t('billing.import.confirmOverwrite')" />
         <div class="flex flex-wrap items-center justify-between gap-3">
-          <p class="text-xs text-[var(--ui-text-muted)]">{{ selected.length }} rules selected · Future charges only</p>
+          <p class="text-xs text-[var(--ui-text-muted)]">{{ t('billing.import.selectedFooter', { count: selected.length }) }}</p>
           <div class="flex gap-2">
-            <AppButton color="neutral" variant="outline" :disabled="applying" @click="open = false">Cancel</AppButton>
-            <AppButton :loading="applying" :disabled="busy || !recoveryReady || !!applySupportError || !!pendingApply || !preview || !selected.length || (requiresOverwrite && !confirmOverwrite)" @click="applyPrices">Confirm apply ({{ selected.length }})</AppButton>
+            <AppButton color="neutral" variant="outline" :disabled="applying" @click="open = false">{{ t('common.cancel') }}</AppButton>
+            <AppButton :loading="applying" :disabled="busy || !recoveryReady || !!applySupportError || !!pendingApply || !preview || !selected.length || (requiresOverwrite && !confirmOverwrite)" @click="applyPrices">{{ t('billing.import.confirmApply', { count: selected.length }) }}</AppButton>
           </div>
         </div>
       </div>
     </template>
   </USlideover>
-  <UModal v-model:open="discardPendingOpen" title="Discard saved import request?" description="Discarding does not cancel or undo an import that Home may already have applied. Retry the saved request first when possible. A new import must use a fresh preview.">
+  <UModal v-model:open="discardPendingOpen" :title="t('billing.import.discardTitle')" :description="t('billing.import.discardDescription')">
     <template #footer>
       <div class="flex w-full flex-col gap-2 sm:flex-row sm:justify-end">
-        <AppButton color="neutral" variant="outline" @click="discardPendingOpen = false">Keep recovery request</AppButton>
-        <AppButton color="error" :disabled="busy" @click="discardPendingApply">Discard recovery request</AppButton>
+        <AppButton color="neutral" variant="outline" @click="discardPendingOpen = false">{{ t('billing.import.keepRecovery') }}</AppButton>
+        <AppButton color="error" :disabled="busy" @click="discardPendingApply">{{ t('billing.import.discardRecovery') }}</AppButton>
       </div>
     </template>
   </UModal>
@@ -183,33 +183,65 @@ import { billingImportApplySupportError, createBillingImportIdempotencyKey, bill
 import { billingCatalogSources, defaultBillingImportPreferences, readBillingImportPreferences, writeBillingImportPreferences, type BillingCatalogSource, type BillingImportPreferences } from '~/composables/billingPreferences'
 type ImportTarget = { provider: string; model: string }
 const props = defineProps<{ providers: string[]; models: string[]; candidates: ImportTarget[]; availableTargets: ImportTarget[]; priceRules: { provider: string; model: string; source: string }[]; serviceTierSource: string }>()
+const { t, intlLocale } = useAdminI18n()
+const formatDate = (value: string) => new Date(value).toLocaleString(intlLocale.value)
+const catalogLabels = computed<Record<string, { label: string; description: string }>>(() => ({
+  auto: { label: t('billing.catalog.auto'), description: t('billing.catalog.autoDescription') },
+  openrouter: { label: 'OpenRouter', description: t('billing.catalog.openrouterDescription') },
+  litellm: { label: 'LiteLLM', description: t('billing.catalog.litellmDescription') },
+  'models.dev': { label: 'models.dev', description: t('billing.catalog.modelsDevDescription') }
+}))
+const catalogSourceOptions = computed(() => billingCatalogSources.map(option => ({ ...option, ...catalogLabels.value[option.value] })))
+const matchModeOptions = computed(() => [{ label: t('billing.import.matchPrefix'), value: 'prefix' }, { label: t('billing.import.matchRegex'), value: 'regex' }])
+function actionLabel(action: string) {
+  const labels: Record<string, string> = { create: t('billing.import.action.create'), update_sync: t('billing.import.action.updateSync'), overwrite: t('billing.import.action.overwrite'), skip: t('billing.import.action.skip'), review: t('billing.import.action.review') }
+  return labels[action] || action
+}
+function statusLabel(status: string) {
+  const labels: Record<string, string> = { applied: t('billing.import.status.applied'), failed: t('billing.import.status.failed'), conflict: t('billing.import.status.conflict'), expired: t('billing.import.status.expired'), created: t('billing.import.status.created'), updated: t('billing.import.status.updated'), overwritten: t('billing.import.status.overwritten') }
+  return labels[status] || status
+}
+// Maps the English messages thrown by composables/billingImport.ts; other messages (e.g. from the backend) pass through.
+function libMessage(message?: string) {
+  if (!message) return message || ''
+  const labels: Record<string, string> = {
+    'Safe import recovery requires Web Crypto.': t('billing.import.lib.webCrypto'),
+    'Applying prices requires crypto.randomUUID.': t('billing.import.lib.randomUuid'),
+    'Stored import recovery data is invalid.': t('billing.import.lib.invalidStored'),
+    'Invalid import operation response.': t('billing.import.lib.invalidOperation'),
+    'Invalid import row response.': t('billing.import.lib.invalidRow'),
+    'Incomplete import result.': t('billing.import.lib.incomplete')
+  }
+  const prefix = Object.keys(labels).find(start => message.startsWith(start))
+  return prefix ? labels[prefix]! : message
+}
 const open = ref(false)
 const advancedDetails = ref<HTMLDetailsElement | null>(null)
 const providerFilter = ref('__all_providers__')
 const targetSet = ref('available')
-const targetSetOptions = [
-  { label: 'All candidates', value: 'all' },
-  { label: 'Available models', value: 'available' },
-  { label: 'Existing synced rules', value: 'synced' },
-  { label: 'Manual targets', value: 'manual' }
-]
-const overwriteOptions = [
-  { label: 'Missing only · preserve existing rules', value: 'missing' },
-  { label: 'Update synced rules · protect manual rules', value: 'sync' },
-  { label: 'Replace all · confirmation required', value: 'all' }
-]
+const targetSetOptions = computed(() => [
+  { label: t('billing.import.targetSetAll'), value: 'all' },
+  { label: t('billing.import.targetSetAvailable'), value: 'available' },
+  { label: t('billing.import.targetSetSynced'), value: 'synced' },
+  { label: t('billing.import.manualTargets'), value: 'manual' }
+])
+const overwriteOptions = computed(() => [
+  { label: t('billing.import.overwriteMissing'), value: 'missing' },
+  { label: t('billing.import.overwriteSync'), value: 'sync' },
+  { label: t('billing.import.overwriteAll'), value: 'all' }
+])
 const providerOptions = computed(() => [
-  { label: 'All providers', value: '__all_providers__' },
+  { label: t('billing.filter.allProviders'), value: '__all_providers__' },
   ...[...new Set([...props.candidates, ...props.availableTargets, ...props.priceRules].map(target => target.provider).filter(Boolean))].sort().map(provider => ({ label: provider, value: provider }))
 ])
-const writeFields: { key: string; cost?: string; label: string }[] = [
-  { key: 'service_tier', label: 'Service tier' }, { key: 'min_input_tokens', label: 'Minimum input tokens' },
-  { key: 'input_price_per_million', cost: 'input', label: 'Input / 1M' }, { key: 'output_price_per_million', cost: 'output', label: 'Output / 1M' },
-  { key: 'cache_read_price_per_million', cost: 'cache_read', label: 'Cache read / 1M' }, { key: 'cache_write_price_per_million', cost: 'cache_write', label: 'Cache write / 1M' },
-  { key: 'request_price', cost: 'request', label: 'Per request' }
-]
+const writeFields = computed<{ key: string; cost?: string; label: string }[]>(() => [
+  { key: 'service_tier', label: t('billing.prices.serviceTier') }, { key: 'min_input_tokens', label: t('billing.priceForm.minInputTokens') },
+  { key: 'input_price_per_million', cost: 'input', label: t('billing.priceForm.inputPerM') }, { key: 'output_price_per_million', cost: 'output', label: t('billing.priceForm.outputPerM') },
+  { key: 'cache_read_price_per_million', cost: 'cache_read', label: t('billing.priceForm.cacheReadPerM') }, { key: 'cache_write_price_per_million', cost: 'cache_write', label: t('billing.priceForm.cacheWritePerM') },
+  { key: 'request_price', cost: 'request', label: t('billing.col.perRequest') }
+])
 const source = ref<BillingCatalogSource>('auto')
-const sourceDescription = computed(() => billingCatalogSources.find(option => option.value === source.value)?.description)
+const sourceDescription = computed(() => catalogSourceOptions.value.find(option => option.value === source.value)?.description)
 let preferenceKey = ''
 const importUnavailable = ref(false)
 const checkingUpdates = ref(false)
@@ -319,7 +351,7 @@ async function lookupOperation() {
     const result = await fetchAPI(`/billing/model-prices/import/operations/${encodeURIComponent(id)}`, { method: 'GET', signal: controller.signal })
     if (!disposed && session === sessionVersion && !controller.signal.aborted) operation.value = result
   } catch (cause: any) {
-    if (!disposed && session === sessionVersion && !controller.signal.aborted) operationError.value = cause?.message || 'Unable to load the stored import operation.'
+    if (!disposed && session === sessionVersion && !controller.signal.aborted) operationError.value = cause?.message || t('billing.import.err.lookup')
   } finally {
     if (!disposed && session === sessionVersion && operationController === controller) {
       operationLoading.value = false
@@ -390,7 +422,7 @@ watch(effectiveToken, async () => {
     pendingApply.value = readBillingImportPending(window.sessionStorage, key)
     recoveryReady.value = true
   } catch (cause: any) {
-    if (!disposed && session === sessionVersion) recoveryError.value = `${cause?.message || 'Import recovery storage is unavailable.'} No apply request will be sent. Previews and update checks remain available. If storage is blocked, enable session storage and reload this UI.`
+    if (!disposed && session === sessionVersion) recoveryError.value = t('billing.import.err.recoveryUnavailable', { reason: libMessage(cause?.message) || t('billing.import.err.recoveryStorage') })
   }
 }, { immediate: true, flush: 'sync' })
 watch([targetSet, automaticTargets], () => {
@@ -404,17 +436,17 @@ const addTarget = () => { targetSet.value = 'manual'; targets.push(emptyTarget()
 const removeTarget = (index: number) => { targetSet.value = 'manual'; targets.splice(index, 1) }
 const positive = (value: number) => typeof value === 'number' && Number.isFinite(value) && value > 0
 const validationError = computed(() => {
-  if (!targets.length) return 'No targets in this selection. Choose another provider or target set, or add manual targets in Advanced options.'
-    if (targets.some(target => !target.provider.trim() || !target.model.trim())) return 'Every target needs a provider and model.'
+  if (!targets.length) return t('billing.import.err.noTargets')
+    if (targets.some(target => !target.provider.trim() || !target.model.trim())) return t('billing.import.err.targetIncomplete')
   const targetKeys = targets.map(target => `${target.provider.trim().toLowerCase()}::${target.model.trim()}`)
-  if (new Set(targetKeys).size !== targetKeys.length) return 'Duplicate import targets are not allowed.'
-  if (!positive(defaultMultiplier.value)) return 'Default multiplier must be positive and finite.'
-  if (aliases.some(alias => !alias.target_model.trim() || alias.source_models.split(',').some(model => !model.trim()))) return 'Each alias needs a target model and comma-separated catalog model IDs.'
-  if (multiplierRules.some(rule => !rule.pattern.trim() || !positive(rule.multiplier))) return 'Each multiplier rule needs a pattern and a positive multiplier.'
+  if (new Set(targetKeys).size !== targetKeys.length) return t('billing.import.err.duplicateTargets')
+  if (!positive(defaultMultiplier.value)) return t('billing.import.err.defaultMultiplier')
+  if (aliases.some(alias => !alias.target_model.trim() || alias.source_models.split(',').some(model => !model.trim()))) return t('billing.import.err.alias')
+  if (multiplierRules.some(rule => !rule.pattern.trim() || !positive(rule.multiplier))) return t('billing.import.err.multiplierRule')
   const rowKeys = rowMultipliers.map(row => row.row_key.trim())
-  if (rowMultipliers.some(row => !row.row_key.trim() || !positive(row.multiplier)) || new Set(rowKeys).size !== rowKeys.length) return 'Row multipliers need distinct nonempty keys and positive values.'
+  if (rowMultipliers.some(row => !row.row_key.trim() || !positive(row.multiplier)) || new Set(rowKeys).size !== rowKeys.length) return t('billing.import.err.rowMultiplier')
   const overrideKeys = matchOverrides.map(item => `${item.target_provider.trim().toLowerCase()}::${item.target_model.trim()}`)
-  if (matchOverrides.some(item => !item.target_provider.trim() || !item.target_model.trim() || !item.source_provider.trim() || !item.source_model.trim()) || new Set(overrideKeys).size !== overrideKeys.length || overrideKeys.some(key => !targetKeys.includes(key))) return 'Each match override must identify a distinct requested target and a catalog provider/model.'
+  if (matchOverrides.some(item => !item.target_provider.trim() || !item.target_model.trim() || !item.source_provider.trim() || !item.source_model.trim()) || new Set(overrideKeys).size !== overrideKeys.length || overrideKeys.some(key => !targetKeys.includes(key))) return t('billing.import.err.override')
   return ''
 })
 const requiresOverwrite = computed(() => (preview.value?.rows || []).some((row: any) => selected.value.includes(row.row_key) && row.action === 'overwrite'))
@@ -455,7 +487,7 @@ async function previewPrices(updates = false, preferredSelection?: string[]) {
   } catch (cause: any) {
     if (!disposed && session === sessionVersion && !controller.signal.aborted && version === inputVersion) {
       if ([404, 405, 501].includes(cause?.statusCode)) importUnavailable.value = true
-      else error.value = cause?.message || 'Unable to preview model prices.'
+      else error.value = cause?.message || t('billing.import.err.preview')
     }
   } finally {
     if (!disposed && session === sessionVersion && previewController === controller) {
@@ -467,7 +499,7 @@ async function previewPrices(updates = false, preferredSelection?: string[]) {
 async function applyPrices() {
   if (!preview.value || !selected.value.length || busy.value || pendingApply.value || (requiresOverwrite.value && !confirmOverwrite.value)) return
   if (!recoveryReady.value || applySupportError) {
-    error.value = recoveryError.value || applySupportError || 'Import recovery is still initializing. Wait before applying prices.'
+    error.value = recoveryError.value || libMessage(applySupportError) || t('billing.import.err.initializing')
     return
   }
   try {
@@ -485,7 +517,7 @@ async function applyPrices() {
     writeBillingImportPending(window.sessionStorage, storageKey, pending)
     pendingApply.value = pending
   } catch (cause: any) {
-    error.value = cause?.message || 'Unable to save the recovery request. Nothing was sent; enable session storage before applying.'
+    error.value = libMessage(cause?.message) || t('billing.import.err.saveRecovery')
     return
   }
   await retryPendingApply()
@@ -517,11 +549,11 @@ async function retryPendingApply() {
         pendingApply.value = null
         invalidatePreview()
       } catch {
-        error.value = 'Unable to clear the saved recovery request. It has been retained.'
+        error.value = t('billing.import.err.clearRecovery')
         return
       }
     }
-    error.value = cause?.message || 'Apply outcome is uncertain. Retry the saved request to recover the original result.'
+    error.value = libMessage(cause?.message) || t('billing.import.err.uncertain')
   } finally {
     if (!disposed && session === sessionVersion && applyController === controller) {
       applying.value = false
@@ -539,7 +571,7 @@ function discardPendingApply() {
     recoveryReady.value = true
     invalidatePreview()
   } catch {
-    error.value = 'Unable to remove the saved recovery request.'
+    error.value = t('billing.import.err.removeRecovery')
   }
 }
 const failedRows = computed<any[]>(() => (operation.value?.rows || []).filter((row: any) => ['failed', 'conflict'].includes(row.status)))
@@ -548,7 +580,7 @@ async function retryFailedRows() {
   const rows = [...failedRows.value]
   const retryTargets = rows.map(row => ({ provider: row.provider, model: row.model }))
   if (retryTargets.some(target => typeof target.provider !== 'string' || !target.provider.trim() || typeof target.model !== 'string' || !target.model.trim())) {
-    error.value = 'The stored result has no valid target identities. Choose targets and generate a fresh preview manually.'
+    error.value = t('billing.import.err.noIdentities')
     return
   }
   targetSet.value = 'manual'

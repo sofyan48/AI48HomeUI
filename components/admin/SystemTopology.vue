@@ -2,7 +2,7 @@
   <section class="grid w-full gap-4">
     <AppCard v-if="loading && !loaded" class="min-h-36">
       <div class="flex min-h-28 items-center justify-center text-[var(--ui-text-muted)]">
-        <UIcon name="i-tabler-loader-2" class="mr-2 size-5 animate-spin" /> Loading system information…
+        <UIcon name="i-tabler-loader-2" class="mr-2 size-5 animate-spin" /> {{ t('system.loading') }}
       </div>
     </AppCard>
 
@@ -13,20 +13,20 @@
             <UIcon name="i-tabler-alert-triangle" class="size-5" />
           </div>
           <div>
-            <h2 class="text-lg font-semibold">Runtime and diagnostics could not be loaded</h2>
+            <h2 class="text-lg font-semibold">{{ t('system.fatalTitle') }}</h2>
             <p class="mt-2 max-w-2xl text-sm leading-6 text-[var(--ui-text-muted)]">{{ fatalError }}</p>
           </div>
         </div>
-        <AppButton color="neutral" variant="outline" icon="i-tabler-refresh" @click="refreshSystem">Retry</AppButton>
+        <AppButton color="neutral" variant="outline" icon="i-tabler-refresh" @click="refreshSystem">{{ t('common.retry') }}</AppButton>
       </div>
     </AppCard>
 
     <template v-else>
-      <section class="console" :class="`console--${verdictLevel}`" aria-label="System verdict">
+      <section class="console" :class="`console--${verdictLevel}`" :aria-label="t('system.verdictAria')">
         <div class="console__main">
           <div class="flex flex-wrap items-center gap-2">
             <span class="console__led" aria-hidden="true" />
-            <span class="font-mono text-[11px] uppercase tracking-[0.14em] text-zinc-400">{{ runtimeLabel }} · system</span>
+            <span class="font-mono text-[11px] uppercase tracking-[0.14em] text-zinc-400">{{ t('system.runtimeTag', { runtime: runtimeLabel }) }}</span>
             <UBadge :color="verdictColor" variant="subtle" size="sm">{{ verdict.badge }}</UBadge>
           </div>
           <h2 class="console__title">{{ verdict.title }}</h2>
@@ -37,41 +37,41 @@
         </div>
         <div class="console__side">
           <dl class="grid grid-cols-2 gap-2 font-mono text-[11px]">
-            <div class="console__kv"><dt>capabilities</dt><dd>{{ formatDate(probedAt) }}</dd></div>
-            <div class="console__kv"><dt>last sync</dt><dd>{{ formatDate(fetchedAt) }}</dd></div>
+            <div class="console__kv"><dt>{{ t('system.capabilities') }}</dt><dd>{{ formatDate(probedAt) }}</dd></div>
+            <div class="console__kv"><dt>{{ t('system.lastSync') }}</dt><dd>{{ formatDate(fetchedAt) }}</dd></div>
           </dl>
           <div class="flex flex-wrap gap-2">
             <AppSyncButton :loading="loading" @click="refreshSystem" />
-            <AppButton color="neutral" variant="outline" icon="i-tabler-square-terminal" @click="openDiagnostics">Diagnostics</AppButton>
+            <AppButton color="neutral" variant="outline" icon="i-tabler-square-terminal" @click="openDiagnostics">{{ t('system.diagnostics') }}</AppButton>
           </div>
         </div>
       </section>
 
-      <UAlert v-if="issues.length" color="warning" variant="subtle" icon="i-tabler-alert-triangle" title="Some diagnostic data could not be loaded">
+      <UAlert v-if="issues.length" color="warning" variant="subtle" icon="i-tabler-alert-triangle" :title="t('system.issuesTitle')">
         <template #description>
           <div class="mt-2 grid gap-1">
-            <p v-for="issue in issues" :key="`${issue.scope}:${issue.message}`"><strong>{{ issue.scope }}</strong> · {{ issue.message }}</p>
+            <p v-for="issue in issues" :key="`${issue.scope}:${issue.message}`"><strong>{{ scopeLabel(issue.scope) }}</strong> · {{ issue.message || t('system.requestFailed') }}</p>
           </div>
         </template>
       </UAlert>
 
-      <AdminStatGrid label="System summary" :items="summaryStats" :columns="6" />
+      <AdminStatGrid :label="t('system.summaryAria')" :items="summaryStats" :columns="6" />
 
       <AppCard :ui="{ body: 'p-4' }">
         <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div class="min-w-0">
             <div class="flex flex-wrap items-center gap-2">
-              <h2 class="text-base font-semibold">Home / CPA topology</h2>
+              <h2 class="text-base font-semibold">{{ t('system.topology.title') }}</h2>
               <UBadge :color="nodesSupported ? 'info' : 'warning'" variant="subtle">{{ topologySourceLabel }}</UBadge>
             </div>
             <p class="mt-1 text-xs leading-5 text-[var(--ui-text-muted)]">{{ topologyDescription }}</p>
           </div>
-          <AppButton icon="i-tabler-plus" class="lg:shrink-0" @click="openEnrollment">Add node</AppButton>
+          <AppButton icon="i-tabler-plus" class="lg:shrink-0" @click="openEnrollment">{{ t('system.topology.addNode') }}</AppButton>
         </div>
 
         <div class="mt-4">
-          <div v-if="!nodesSupported" class="rounded-md border border-dashed p-8 text-center text-sm text-[var(--ui-text-muted)]">The current {{ runtimeLabel }} runtime does not expose the node query route.</div>
-          <div v-else-if="!homeGroups.length" class="rounded-md border border-dashed p-8 text-center text-sm text-[var(--ui-text-muted)]">The node route is available, but there are no connection records yet.</div>
+          <div v-if="!nodesSupported" class="rounded-md border border-dashed p-8 text-center text-sm text-[var(--ui-text-muted)]">{{ t('system.topology.noRoute', { runtime: runtimeLabel }) }}</div>
+          <div v-else-if="!homeGroups.length" class="rounded-md border border-dashed p-8 text-center text-sm text-[var(--ui-text-muted)]">{{ t('system.topology.noRecords') }}</div>
           <div v-else class="grid gap-3">
             <div class="flex flex-wrap gap-2">
               <UBadge color="info" variant="subtle">{{ homeGroups.length }} Home</UBadge>
@@ -82,43 +82,43 @@
               <div class="px-3 py-3">
                 <div class="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                   <div class="min-w-0">
-                    <p class="text-xs font-medium text-[var(--ui-text-muted)]">Home address</p>
-                    <p class="mt-1 truncate font-mono text-sm">{{ group.unknown ? 'Unknown Home' : group.label }}</p>
+                    <p class="text-xs font-medium text-[var(--ui-text-muted)]">{{ t('system.topology.homeAddress') }}</p>
+                    <p class="mt-1 truncate font-mono text-sm">{{ group.unknown ? t('system.topology.unknownHome') : group.label }}</p>
                   </div>
                   <div class="flex flex-wrap gap-2 lg:justify-end">
-                    <UBadge v-if="group.unknown" color="warning" variant="subtle">Partial data</UBadge>
+                    <UBadge v-if="group.unknown" color="warning" variant="subtle">{{ t('system.topology.partialData') }}</UBadge>
                     <UBadge :color="roleColor(group.role)" variant="subtle">{{ roleLabel(group.role) }}</UBadge>
                     <UBadge :color="healthColor(group.health)" variant="subtle">{{ healthLabel(group.health) }}</UBadge>
-                    <UBadge :color="group.cpaCount > 0 && group.healthyCpaCount === group.cpaCount ? 'success' : 'warning'" variant="subtle">{{ group.healthyCpaCount }} / {{ group.cpaCount }} healthy</UBadge>
+                    <UBadge :color="group.cpaCount > 0 && group.healthyCpaCount === group.cpaCount ? 'success' : 'warning'" variant="subtle">{{ t('system.topology.healthyCount', { healthy: group.healthyCpaCount, total: group.cpaCount }) }}</UBadge>
                   </div>
                 </div>
                 <div class="mt-3 grid gap-x-4 gap-y-2 sm:grid-cols-2 lg:grid-cols-5">
-                  <InfoField label="Home role" :value="roleLabel(group.role)" />
-                  <InfoField label="CPA count" :value="String(group.cpaCount)" />
-                  <InfoField label="Clients" :value="String(group.clientCount)" />
-                  <InfoField label="Connected since" :value="formatDate(group.startedAt)" />
-                  <InfoField label="Last seen" :value="formatDate(group.lastSeenAt)" />
+                  <InfoField :label="t('system.topology.homeRole')" :value="roleLabel(group.role)" />
+                  <InfoField :label="t('system.topology.cpaCount')" :value="String(group.cpaCount)" />
+                  <InfoField :label="t('system.topology.clients')" :value="String(group.clientCount)" />
+                  <InfoField :label="t('system.topology.connectedSince')" :value="formatDate(group.startedAt)" />
+                  <InfoField :label="t('system.topology.lastSeen')" :value="formatDate(group.lastSeenAt)" />
                 </div>
-                <p v-if="group.unknown" class="mt-3 text-xs leading-5 text-[var(--ui-text-muted)]">These CPAs cannot be matched to a Home yet.</p>
+                <p v-if="group.unknown" class="mt-3 text-xs leading-5 text-[var(--ui-text-muted)]">{{ t('system.topology.unmatched') }}</p>
               </div>
 
               <div class="bg-[var(--ui-bg-muted)]/30">
-                <div v-if="!group.nodes.length" class="border-t border-[var(--ui-border)] px-3 py-6 text-center text-sm text-[var(--ui-text-muted)]">This Home has no CPA connection records yet.</div>
+                <div v-if="!group.nodes.length" class="border-t border-[var(--ui-border)] px-3 py-6 text-center text-sm text-[var(--ui-text-muted)]">{{ t('system.topology.noCpa') }}</div>
                 <div v-for="node in group.nodes" :key="nodeKey(node)" class="grid gap-3 border-t border-[var(--ui-border)] px-3 py-3 lg:grid-cols-[minmax(120px,0.65fr)_minmax(0,2.6fr)_auto] lg:items-start">
                   <div class="min-w-0">
-                    <p class="text-xs font-medium text-[var(--ui-text-muted)]">{{ node.node_name ? 'CPA node name' : 'CPA node IP' }}</p>
+                    <p class="text-xs font-medium text-[var(--ui-text-muted)]">{{ node.node_name ? t('system.topology.nodeName') : t('system.topology.nodeIp') }}</p>
                     <div class="mt-1 flex min-w-0 flex-wrap items-center gap-2">
-                      <p class="truncate text-sm" :class="node.node_name ? 'font-medium' : 'font-mono'">{{ node.node_name || node.ip || 'Unknown node' }}</p>
-                      <AppButton v-if="node.node_id" color="neutral" variant="ghost" size="xs" icon="i-tabler-pencil" :aria-label="`Rename ${node.node_name || node.ip || 'node'}`" @click="openRename(node)" />
+                      <p class="truncate text-sm" :class="node.node_name ? 'font-medium' : 'font-mono'">{{ node.node_name || node.ip || t('system.topology.unknownNode') }}</p>
+                      <AppButton v-if="node.node_id" color="neutral" variant="ghost" size="xs" icon="i-tabler-pencil" :aria-label="t('system.topology.renameAria', { name: node.node_name || node.ip || t('system.topology.node') })" @click="openRename(node)" />
                       <UBadge :color="healthColor(nodeHealth(node))" variant="subtle">{{ healthLabel(nodeHealth(node)) }}</UBadge>
                     </div>
-                    <p v-if="node.node_name" class="mt-1 truncate font-mono text-xs text-[var(--ui-text-muted)]">{{ node.ip || 'N/A' }}</p>
+                    <p v-if="node.node_name" class="mt-1 truncate font-mono text-xs text-[var(--ui-text-muted)]">{{ node.ip || t('system.na') }}</p>
                   </div>
                   <div class="grid min-w-0 gap-x-4 gap-y-2 sm:grid-cols-2 xl:grid-cols-[minmax(240px,1.6fr)_minmax(160px,1fr)_minmax(160px,1fr)_minmax(72px,0.45fr)]">
-                    <InfoField label="CPA node ID" :value="node.node_id || 'N/A'" />
-                    <InfoField label="Connected time" :value="formatDate(node.connected_time)" />
-                    <InfoField label="Last seen" :value="formatDate(node.last_seen_at)" />
-                    <InfoField label="Clients" :value="String(node.client_count ?? 0)" />
+                    <InfoField :label="t('system.topology.nodeId')" :value="node.node_id || t('system.na')" />
+                    <InfoField :label="t('system.topology.connectedTime')" :value="formatDate(node.connected_time)" />
+                    <InfoField :label="t('system.topology.lastSeen')" :value="formatDate(node.last_seen_at)" />
+                    <InfoField :label="t('system.topology.clients')" :value="String(node.client_count ?? 0)" />
                   </div>
                   <div class="flex items-center lg:justify-self-end">
                     <UBadge :color="pluginReportColor(node.plugin_report_state)" variant="subtle">{{ pluginReportLabel(node.plugin_report_state) }}</UBadge>
@@ -131,84 +131,84 @@
       </AppCard>
 
       <AppCard :ui="{ body: 'p-4' }">
-        <h2 class="text-base font-semibold">Runtime configuration signals</h2>
-        <p class="mt-1 text-xs leading-5 text-[var(--ui-text-muted)]">Read-only signals for diagnostic logs and routing policy state.</p>
+        <h2 class="text-base font-semibold">{{ t('system.signals.title') }}</h2>
+        <p class="mt-1 text-xs leading-5 text-[var(--ui-text-muted)]">{{ t('system.signals.description') }}</p>
         <div v-if="configSnapshot" class="mt-3 grid gap-3 lg:grid-cols-2">
-          <ConfigSignals title="Diagnostic logs" :items="diagnosticSignals" />
-          <ConfigSignals title="Routing runtime" :items="runtimeSignals" />
+          <ConfigSignals :title="t('system.signals.diagnosticLogs')" :items="diagnosticSignals" />
+          <ConfigSignals :title="t('system.signals.routingRuntime')" :items="runtimeSignals" />
         </div>
-        <div v-else class="mt-3 rounded-md border border-dashed p-8 text-center text-sm text-[var(--ui-text-muted)]">No config summary yet.</div>
+        <div v-else class="mt-3 rounded-md border border-dashed p-8 text-center text-sm text-[var(--ui-text-muted)]">{{ t('system.signals.empty') }}</div>
       </AppCard>
 
       <section class="credits" aria-labelledby="system-credits-title">
         <div class="flex min-w-0 items-start gap-3">
           <AppBrandMark size="sm" />
           <div class="min-w-0">
-            <h2 id="system-credits-title" class="text-sm font-semibold text-[var(--ui-text-highlighted)]">About AI48Hub</h2>
+            <h2 id="system-credits-title" class="text-sm font-semibold text-[var(--ui-text-highlighted)]">{{ t('system.credits.title') }}</h2>
             <p class="mt-0.5 text-xs leading-5 text-[var(--ui-text-muted)]">
-              AI48Hub is inspired by and built upon
+              {{ t('system.credits.builtUpon') }}
               <a href="https://github.com/router-for-me/CLIProxyAPIHome" target="_blank" rel="noopener noreferrer" class="credits__link">router-for-me/CLIProxyAPIHome</a>.
-              Thanks to its authors and contributors for the original control plane for CLIProxyAPI.
+              {{ t('system.credits.thanks') }}
             </p>
           </div>
         </div>
         <div class="flex shrink-0 flex-wrap items-center gap-2">
           <span class="inline-flex items-center gap-1.5 rounded-full bg-[var(--ui-bg-muted)] px-2.5 py-1 font-mono text-[11px] text-[var(--ui-text-muted)]"><UIcon name="i-tabler-tag" class="size-3.5" aria-hidden="true" />{{ currentVersion }}</span>
-          <AppButton to="https://github.com/router-for-me/CLIProxyAPIHome" target="_blank" rel="noopener noreferrer" size="sm" color="neutral" variant="outline" icon="i-tabler-brand-github" trailing-icon="i-tabler-external-link">Original project</AppButton>
+          <AppButton to="https://github.com/router-for-me/CLIProxyAPIHome" target="_blank" rel="noopener noreferrer" size="sm" color="neutral" variant="outline" icon="i-tabler-brand-github" trailing-icon="i-tabler-external-link">{{ t('system.credits.original') }}</AppButton>
         </div>
       </section>
 
-      <USlideover v-model:open="diagnosticsOpen" title="Management API diagnostic request" description="Send one upstream request from the server to diagnose connectivity, credential, or upstream API issues." :ui="{ content: 'sm:max-w-xl' }">
+      <USlideover v-model:open="diagnosticsOpen" :title="t('system.diag.title')" :description="t('system.diag.description')" :ui="{ content: 'sm:max-w-xl' }">
         <template #body>
           <div class="space-y-4">
-            <UAlert color="warning" variant="subtle" icon="i-tabler-shield-exclamation" title="High-privilege diagnostic action" description="This tool sends one upstream request from the server. Use it only to diagnose connection, credential, or upstream API issues. Avoid sending production-sensitive data." />
+            <UAlert color="warning" variant="subtle" icon="i-tabler-shield-exclamation" :title="t('system.diag.warningTitle')" :description="t('system.diag.warningDesc')" />
             <form class="space-y-4" @submit.prevent="runDiagnostic">
               <div class="grid gap-3 sm:grid-cols-[120px_minmax(0,1fr)]">
-                <UFormField label="Method"><USelect v-model="diagnostic.method" :items="methods" class="w-full" /></UFormField>
-                <UFormField label="Target URL" required><UInput v-model="diagnostic.url" placeholder="https://api.example.com/v1/ping" class="w-full" /></UFormField>
+                <UFormField :label="t('system.diag.method')"><USelect v-model="diagnostic.method" :items="methods" class="w-full" /></UFormField>
+                <UFormField :label="t('system.diag.targetUrl')" required><UInput v-model="diagnostic.url" placeholder="https://api.example.com/v1/ping" class="w-full" /></UFormField>
               </div>
-              <UFormField label="Credential index"><UInput v-model="diagnostic.authIndex" placeholder="Optional, leave blank to use the default credential" class="w-full" /></UFormField>
-              <UFormField label="Headers JSON"><UTextarea v-model="diagnostic.headers" :rows="6" class="w-full font-mono text-xs" /></UFormField>
-              <UFormField label="Body"><UTextarea v-model="diagnostic.data" :rows="6" placeholder="Optional, body is sent as written" class="w-full font-mono text-xs" /></UFormField>
+              <UFormField :label="t('system.diag.credentialIndex')"><UInput v-model="diagnostic.authIndex" :placeholder="t('system.diag.credentialIndexPlaceholder')" class="w-full" /></UFormField>
+              <UFormField :label="t('system.diag.headers')"><UTextarea v-model="diagnostic.headers" :rows="6" class="w-full font-mono text-xs" /></UFormField>
+              <UFormField :label="t('system.diag.body')"><UTextarea v-model="diagnostic.data" :rows="6" :placeholder="t('system.diag.bodyPlaceholder')" class="w-full font-mono text-xs" /></UFormField>
               <UAlert v-if="diagnosticError" color="error" variant="subtle" :description="diagnosticError" />
-              <AppButton type="submit" icon="i-tabler-player-play" :loading="diagnosticLoading">Send diagnostic request</AppButton>
+              <AppButton type="submit" icon="i-tabler-player-play" :loading="diagnosticLoading">{{ t('system.diag.send') }}</AppButton>
             </form>
             <div v-if="diagnosticResult" class="rounded-md border border-[var(--ui-border)] p-3">
-              <p class="text-sm font-medium">Response status: {{ diagnosticResult.status_code ?? 'N/A' }}</p>
+              <p class="text-sm font-medium">{{ t('system.diag.responseStatus', { status: diagnosticResult.status_code ?? t('system.na') }) }}</p>
               <pre class="mt-3 max-h-72 overflow-auto whitespace-pre-wrap rounded-md bg-[var(--ui-bg-muted)] p-3 text-xs">{{ diagnosticOutput }}</pre>
             </div>
           </div>
         </template>
       </USlideover>
 
-      <AppModal v-model:open="enrollmentOpen" title="Node enrollment token" :description="enrollment ? 'Configure the credential on the node you want to enroll. Store it securely; closing this panel does not revoke the token.' : 'Name this node so you can identify it later, then generate its credential.'">
+      <AppModal v-model:open="enrollmentOpen" :title="t('system.enroll.title')" :description="enrollment ? t('system.enroll.descResult') : t('system.enroll.descForm')">
         <template #body>
           <div v-if="enrollment" class="space-y-4">
-            <div v-if="enrollment.id"><p class="text-xs font-medium text-[var(--ui-text-muted)]">Client ID</p><p class="mt-2 break-all font-mono text-sm">{{ enrollment.id }}</p></div>
-            <div v-if="enrollment.node_name"><p class="text-xs font-medium text-[var(--ui-text-muted)]">Node name</p><p class="mt-2 text-sm">{{ enrollment.node_name }}</p></div>
-            <div><p class="text-xs font-medium text-[var(--ui-text-muted)]">Credential</p><pre class="mt-2 max-h-64 overflow-auto whitespace-pre-wrap break-all rounded-md border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] p-3 font-mono text-xs leading-5">{{ enrollment.home_jwt }}</pre></div>
-            <div class="flex justify-end"><AppButton icon="i-tabler-copy" @click="copyJWT">Copy credential</AppButton></div>
+            <div v-if="enrollment.id"><p class="text-xs font-medium text-[var(--ui-text-muted)]">{{ t('system.enroll.clientId') }}</p><p class="mt-2 break-all font-mono text-sm">{{ enrollment.id }}</p></div>
+            <div v-if="enrollment.node_name"><p class="text-xs font-medium text-[var(--ui-text-muted)]">{{ t('system.enroll.nodeName') }}</p><p class="mt-2 text-sm">{{ enrollment.node_name }}</p></div>
+            <div><p class="text-xs font-medium text-[var(--ui-text-muted)]">{{ t('system.enroll.credential') }}</p><pre class="mt-2 max-h-64 overflow-auto whitespace-pre-wrap break-all rounded-md border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] p-3 font-mono text-xs leading-5">{{ enrollment.home_jwt }}</pre></div>
+            <div class="flex justify-end"><AppButton icon="i-tabler-copy" @click="copyJWT">{{ t('system.enroll.copy') }}</AppButton></div>
           </div>
           <form v-else class="space-y-4" @submit.prevent="generateEnrollment">
-            <UFormField label="Node name" hint="Optional. Up to 128 characters. You can rename the node later.">
-              <UInput v-model="nodeName" maxlength="128" placeholder="e.g. us-east-gateway" class="w-full" />
+            <UFormField :label="t('system.enroll.nodeName')" :hint="t('system.enroll.nodeNameHint')">
+              <UInput v-model="nodeName" maxlength="128" :placeholder="t('system.enroll.nodeNamePlaceholder')" class="w-full" />
             </UFormField>
             <UAlert v-if="enrollmentError" color="error" variant="subtle" :description="enrollmentError" />
-            <div class="flex justify-end"><AppButton type="submit" :loading="generating">Generate credential</AppButton></div>
+            <div class="flex justify-end"><AppButton type="submit" :loading="generating">{{ t('system.enroll.generate') }}</AppButton></div>
           </form>
         </template>
       </AppModal>
 
-      <AppModal v-model:open="renameOpen" title="Rename CPA node" description="Give this CPA node a recognizable name. Names are console labels only and do not need to be unique.">
+      <AppModal v-model:open="renameOpen" :title="t('system.rename.title')" :description="t('system.rename.description')">
         <template #body>
           <form class="space-y-4" @submit.prevent="saveRename">
-            <UFormField label="Node name" hint="Up to 128 characters. Leave empty to clear the name.">
-              <UInput v-model="renameValue" maxlength="128" placeholder="e.g. us-east-gateway" class="w-full" />
+            <UFormField :label="t('system.enroll.nodeName')" :hint="t('system.rename.hint')">
+              <UInput v-model="renameValue" maxlength="128" :placeholder="t('system.enroll.nodeNamePlaceholder')" class="w-full" />
             </UFormField>
             <UAlert v-if="renameError" color="error" variant="subtle" :description="renameError" />
             <div class="flex justify-end gap-2">
-              <AppButton type="button" color="neutral" variant="outline" :disabled="renaming" @click="closeRename">Cancel</AppButton>
-              <AppButton type="submit" :loading="renaming">Save name</AppButton>
+              <AppButton type="button" color="neutral" variant="outline" :disabled="renaming" @click="closeRename">{{ t('common.cancel') }}</AppButton>
+              <AppButton type="submit" :loading="renaming">{{ t('system.rename.save') }}</AppButton>
             </div>
           </form>
         </template>
@@ -234,6 +234,7 @@ const ConfigSignals = defineComponent({
 const { fetchAPI, apiBase } = useApi()
 const { capabilities, serverInfo, supports, refreshCapabilities } = useCapabilities()
 const toast = useToast()
+const { t, intlLocale } = useAdminI18n()
 
 const topology = useWorkspaceState<any>('admin:system-topology:topology', () => (null))
 const nodesResponse = useWorkspaceState<any>('admin:system-topology:nodesResponse', () => (null))
@@ -266,8 +267,8 @@ const homes = computed<any[]>(() => Array.isArray(topology.value?.homes) ? topol
 const nodes = computed<any[]>(() => Array.isArray(nodesResponse.value?.nodes) ? nodesResponse.value.nodes : Array.isArray(topology.value?.cpas) ? topology.value.cpas : [])
 const nodesSupported = computed(() => supports('topology', false) || supports('nodes', false))
 const topologySource = computed(() => topology.value ? 'topology' : nodesResponse.value ? 'nodes' : 'unsupported')
-const topologySourceLabel = computed(() => topologySource.value === 'topology' ? 'Cluster topology' : topologySource.value === 'nodes' ? 'Partial topology' : 'Unavailable')
-const runtimeLabel = computed(() => supports('topology', false) ? 'Home cluster' : supports('nodes', false) || serverInfo.value.home_version ? 'Home runtime' : 'CPA')
+const topologySourceLabel = computed(() => topologySource.value === 'topology' ? t('system.topology.cluster') : topologySource.value === 'nodes' ? t('system.topology.partial') : t('system.topology.unavailable'))
+const runtimeLabel = computed(() => supports('topology', false) ? t('system.runtime.homeCluster') : supports('nodes', false) || serverInfo.value.home_version ? t('system.runtime.homeRuntime') : 'CPA')
 const currentVersion = computed(() => serverInfo.value.home_version || configSnapshot.value?.version || configSnapshot.value?.['version'] || 'Unknown')
 const summary = computed(() => topology.value?.summary || {})
 const inferredHomeCount = computed(() => new Set(nodes.value.map(node => homeKey(node)).filter(key => key !== 'unknown-home')).size)
@@ -276,7 +277,8 @@ const healthyHomeCount = computed(() => summary.value.healthy_home_count ?? home
 const cpaCount = computed(() => summary.value.cpa_count ?? nodes.value.length)
 const healthyCpaCount = computed(() => summary.value.healthy_cpa_count ?? nodes.value.filter(node => nodeHealth(node) === 'healthy').length)
 const attentionCount = computed(() => summary.value.attention_count ?? issues.value.length + nodes.value.filter(node => nodeHealth(node) !== 'healthy' || !['reported_ok', 'not_required'].includes(node.plugin_report_state)).length)
-const masterHome = computed(() => topology.value?.master?.id || homes.value.find(home => home.is_master)?.id || 'N/A')
+const currentVersionLabel = computed(() => currentVersion.value === 'Unknown' ? t('common.unknown') : currentVersion.value)
+const masterHome = computed(() => topology.value?.master?.id || homes.value.find(home => home.is_master)?.id || t('system.na'))
 
 const homeGroups = computed(() => {
   const groups = new Map<string, any>()
@@ -314,37 +316,37 @@ const verdictLevel = computed(() => {
   return 'ready'
 })
 const verdict = computed(() => ({
-  ready: { title: 'System information is synced', badge: 'Normal', description: 'Version, config, and node connection state are synced for the current runtime assessment.' },
-  limited: { title: 'System information is synced', badge: 'Nodes unavailable', description: 'This runtime does not expose the node query route. Use version and config summary as the primary signals.' },
-  degraded: { title: 'System information partially failed to sync', badge: 'Partial failure', description: 'The page continues to show loaded information. Resolve failed items before making a full assessment.' },
-  unavailable: { title: 'System information is unavailable', badge: 'Unavailable', description: 'Key diagnostic routes did not return usable data. Check the Management API, management key, and runtime diagnostic capabilities.' }
+  ready: { title: t('system.verdict.syncedTitle'), badge: t('system.verdict.readyBadge'), description: t('system.verdict.readyDesc') },
+  limited: { title: t('system.verdict.syncedTitle'), badge: t('system.verdict.limitedBadge'), description: t('system.verdict.limitedDesc') },
+  degraded: { title: t('system.verdict.degradedTitle'), badge: t('system.verdict.degradedBadge'), description: t('system.verdict.degradedDesc') },
+  unavailable: { title: t('system.verdict.unavailableTitle'), badge: t('system.verdict.unavailableBadge'), description: t('system.verdict.unavailableDesc') }
 }[verdictLevel.value]))
 const verdictColor = computed<any>(() => verdictLevel.value === 'ready' ? 'success' : verdictLevel.value === 'limited' ? 'info' : verdictLevel.value === 'degraded' ? 'warning' : 'error')
 const verdictIcon = computed(() => verdictLevel.value === 'ready' ? 'i-tabler-circle-check' : verdictLevel.value === 'limited' ? 'i-tabler-info-circle' : 'i-tabler-alert-triangle')
 const verdictClasses = computed(() => ({ icon: toneClasses(verdictLevel.value === 'ready' ? 'success' : verdictLevel.value === 'limited' ? 'info' : 'warning') }))
 const verdictFacts = computed(() => [
-  { label: `Version info: ${currentVersion.value === 'Unknown' ? 'N/A' : 'Available'}`, tone: currentVersion.value === 'Unknown' ? 'warning' : 'success' },
-  { label: nodesSupported.value ? homeCount.value > 0 ? `Node records: ${nodes.value.length} CPA / ${homeCount.value} Home` : `Node records: ${nodes.value.length}` : 'Node route: unavailable', tone: nodesSupported.value ? nodes.value.length ? 'success' : 'neutral' : 'info' },
-  { label: issues.value.length ? `Load issues: ${issues.value.length}` : 'No load issues', tone: issues.value.length ? 'warning' : 'success' }
+  { label: t('system.fact.version', { state: currentVersion.value === 'Unknown' ? t('system.na') : t('system.fact.available') }), tone: currentVersion.value === 'Unknown' ? 'warning' : 'success' },
+  { label: nodesSupported.value ? homeCount.value > 0 ? t('system.fact.nodesWithHome', { cpa: nodes.value.length, home: homeCount.value }) : t('system.fact.nodes', { count: nodes.value.length }) : t('system.fact.nodeRouteUnavailable'), tone: nodesSupported.value ? nodes.value.length ? 'success' : 'neutral' : 'info' },
+  { label: issues.value.length ? t('system.fact.loadIssues', { count: issues.value.length }) : t('system.fact.noLoadIssues'), tone: issues.value.length ? 'warning' : 'success' }
 ])
 const summaryCards = computed(() => [
-  { label: 'Version', value: currentVersion.value, detail: `Latest: ${latestVersion.value || 'Unknown'}`, tone: currentVersion.value === 'Unknown' ? 'warning' : 'success', icon: 'i-tabler-tag' },
-  { label: 'Endpoint', value: apiBase, detail: `Master: ${masterHome.value}`, tone: apiBase ? 'info' : 'warning', icon: 'i-tabler-link' },
-  { label: 'Home', value: nodesSupported.value ? String(homeCount.value) : 'N/A', detail: topology.value ? `${healthyHomeCount.value} / ${homeCount.value} healthy` : homeCount.value ? `${homeCount.value} inferred` : 'No Home list yet', tone: homeCount.value ? 'info' : 'warning', icon: 'i-tabler-building' },
-  { label: 'CPA', value: String(cpaCount.value), detail: `${healthyCpaCount.value} / ${cpaCount.value} healthy`, tone: cpaCount.value ? 'success' : 'neutral', icon: 'i-tabler-server-2' },
-  { label: 'Attention', value: String(attentionCount.value), detail: attentionCount.value ? 'Topology needs review' : 'No attention items', tone: attentionCount.value ? 'warning' : 'success', icon: 'i-tabler-alert-triangle' },
-  { label: 'Config', value: configSnapshot.value ? 'Available' : 'N/A', detail: configSnapshot.value ? 'Summary loaded' : 'Summary unavailable', tone: configSnapshot.value ? 'success' : 'warning', icon: 'i-tabler-adjustments' }
+  { key: 'version', label: t('system.stat.version'), value: currentVersionLabel.value, detail: t('system.stat.latest', { version: latestVersion.value || t('common.unknown') }), tone: currentVersion.value === 'Unknown' ? 'warning' : 'success', icon: 'i-tabler-tag' },
+  { key: 'endpoint', label: t('system.stat.endpoint'), value: apiBase, detail: t('system.stat.master', { id: masterHome.value }), tone: apiBase ? 'info' : 'warning', icon: 'i-tabler-link' },
+  { key: 'home', label: 'Home', value: nodesSupported.value ? String(homeCount.value) : t('system.na'), detail: topology.value ? t('system.topology.healthyCount', { healthy: healthyHomeCount.value, total: homeCount.value }) : homeCount.value ? t('system.stat.inferred', { count: homeCount.value }) : t('system.stat.noHomeList'), tone: homeCount.value ? 'info' : 'warning', icon: 'i-tabler-building' },
+  { key: 'cpa', label: 'CPA', value: String(cpaCount.value), detail: t('system.topology.healthyCount', { healthy: healthyCpaCount.value, total: cpaCount.value }), tone: cpaCount.value ? 'success' : 'neutral', icon: 'i-tabler-server-2' },
+  { key: 'attention', label: t('system.stat.attention'), value: String(attentionCount.value), detail: attentionCount.value ? t('system.stat.needsReview') : t('system.stat.noAttention'), tone: attentionCount.value ? 'warning' : 'success', icon: 'i-tabler-alert-triangle' },
+  { key: 'config', label: t('system.stat.config'), value: configSnapshot.value ? t('system.fact.available') : t('system.na'), detail: configSnapshot.value ? t('system.stat.summaryLoaded') : t('system.stat.summaryUnavailable'), tone: configSnapshot.value ? 'success' : 'warning', icon: 'i-tabler-adjustments' }
 ])
 const statTones: Record<string, 'emerald' | 'blue' | 'amber' | 'rose' | 'neutral'> = { success: 'emerald', info: 'blue', warning: 'amber', danger: 'rose', neutral: 'neutral' }
 const summaryStats = computed(() => summaryCards.value.map(stat => ({
   ...stat,
   tone: statTones[stat.tone] || 'neutral',
-  warning: stat.tone === 'warning' && stat.label === 'Attention'
+  warning: stat.tone === 'warning' && stat.key === 'attention'
 })))
-const topologyDescription = computed(() => nodesSupported.value ? topology.value ? `${cpaCount.value} CPA, ${homeCount.value} Home` : nodes.value.length ? `${nodes.value.length} CPA nodes across ${inferredHomeCount.value} Home nodes` : 'Node route is available, no connection records yet' : 'This runtime does not expose node queries')
+const topologyDescription = computed(() => nodesSupported.value ? topology.value ? t('system.topology.descCluster', { cpa: cpaCount.value, home: homeCount.value }) : nodes.value.length ? t('system.topology.descInferred', { cpa: nodes.value.length, home: inferredHomeCount.value }) : t('system.topology.descEmpty') : t('system.topology.descUnsupported'))
 const configSummary = computed(() => normalizeTopologyConfig(configSnapshot.value))
-const diagnosticSignals = computed(() => [signal('Request logs', configSummary.value.requestLog), signal('Usage statistics', configSummary.value.usageStatistics), signal('File logging', configSummary.value.loggingToFile)])
-const runtimeSignals = computed(() => [signal('Debug mode', configSummary.value.debug, true), signal('Proxy endpoint', configSummary.value.proxyConfigured), { label: 'Routing strategy', value: configSummary.value.routingStrategy, tone: configSummary.value.routingStrategy === 'unknown' ? 'warning' : 'neutral' }])
+const diagnosticSignals = computed(() => [signal(t('system.signals.requestLogs'), configSummary.value.requestLog), signal(t('system.signals.usageStatistics'), configSummary.value.usageStatistics), signal(t('system.signals.fileLogging'), configSummary.value.loggingToFile)])
+const runtimeSignals = computed(() => [signal(t('system.signals.debugMode'), configSummary.value.debug, true), signal(t('system.signals.proxyEndpoint'), configSummary.value.proxyConfigured), { label: t('system.signals.routingStrategy'), value: configSummary.value.routingStrategy === 'unknown' ? t('common.unknown') : configSummary.value.routingStrategy, tone: configSummary.value.routingStrategy === 'unknown' ? 'warning' : 'neutral' }])
 const diagnosticOutput = computed(() => diagnosticResult.value?.body || JSON.stringify(diagnosticResult.value?.header || diagnosticResult.value?.headers || {}, null, 2))
 
 function toneClasses(tone: string) {
@@ -359,14 +361,18 @@ function homeKey(node: any) { return node.home_id || endpoint(node.home_ip, node
 function nodeKey(node: any) { return node.node_id || `${node.ip || 'node'}:${node.connected_time || ''}` }
 function nodeHealth(node: any) { return node.health || (node.healthy === true ? 'healthy' : node.healthy === false ? 'stale' : 'unknown') }
 function homeHealth(home: any) { return home?.health || (home?.healthy === true ? 'healthy' : home?.healthy === false ? 'stale' : 'unknown') }
-function healthLabel(value: string) { return value === 'healthy' ? 'Healthy' : value === 'stale' ? 'Stale' : 'Unknown' }
+function healthLabel(value: string) { return value === 'healthy' ? t('system.health.healthy') : value === 'stale' ? t('system.health.stale') : t('common.unknown') }
 function healthColor(value: string): any { return value === 'healthy' ? 'success' : value === 'stale' ? 'error' : 'warning' }
-function roleLabel(value: string) { return value === 'master' ? 'Master' : value === 'follower' ? 'Follower' : 'Unknown role' }
+function roleLabel(value: string) { return value === 'master' ? t('system.role.master') : value === 'follower' ? t('system.role.follower') : t('system.role.unknown') }
 function roleColor(value: string): any { return value === 'master' ? 'success' : value === 'follower' ? 'info' : 'warning' }
-function pluginReportLabel(value?: string) { return ({ not_required: 'Not required', missing_report: 'Missing report', reported_partial: 'Partial report', reported_failed: 'Report failed', reported_ok: 'Report OK' } as Record<string, string>)[value || ''] || 'Report unknown' }
+function pluginReportLabel(value?: string) { return ({ not_required: t('system.plugin.notRequired'), missing_report: t('system.plugin.missingReport'), reported_partial: t('system.plugin.partial'), reported_failed: t('system.plugin.failed'), reported_ok: t('system.plugin.ok') } as Record<string, string>)[value || ''] || t('system.plugin.unknown') }
 function pluginReportColor(value?: string): any { return value === 'reported_ok' || value === 'not_required' ? 'success' : value === 'reported_failed' || value === 'missing_report' ? 'error' : 'warning' }
-function formatDate(value?: string | Date | null) { if (!value) return 'N/A'; const date = new Date(value); return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString() }
-function signal(label: string, value: unknown, warn = false) { return { label, value: value ? 'Enabled' : 'Disabled', tone: value ? warn ? 'warning' : 'success' : 'neutral' } }
+function formatDate(value?: string | Date | null) { if (!value) return t('system.na'); const date = new Date(value); return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString(intlLocale.value) }
+function signal(label: string, value: unknown, warn = false) { return { label, value: value ? t('common.enabled') : t('common.disabled'), tone: value ? warn ? 'warning' : 'success' : 'neutral' } }
+// Issue scopes are stored as stable English names and translated at render time.
+function scopeLabel(scope: string) {
+  return ({ 'Latest version': t('system.scope.latestVersion'), 'Config summary': t('system.scope.configSummary'), 'Node connections': t('system.scope.nodeConnections'), 'Cluster topology': t('system.scope.clusterTopology') } as Record<string, string>)[scope] || scope
+}
 function errorMessage(error: any, fallback: string) { return error?.data?.message || error?.data?.error || error?.message || fallback }
 
 async function refreshSystem() {
@@ -386,13 +392,13 @@ async function refreshSystem() {
     const results = await Promise.allSettled(requests.map(item => item.run()))
     results.forEach((result, index) => {
       const request = requests[index]
-      if (result.status === 'rejected' && request) issues.value.push({ scope: request.scope, message: errorMessage(result.reason, 'Request failed') })
+      if (result.status === 'rejected' && request) issues.value.push({ scope: request.scope, message: errorMessage(result.reason, '') })
     })
     fetchedAt.value = new Date()
     loaded.value = true
-    if (results.every(result => result.status === 'rejected')) fatalError.value = 'Check the management endpoint, management key, and system diagnostic routes.'
+    if (results.every(result => result.status === 'rejected')) fatalError.value = t('system.fatalFallback')
   } catch (error: any) {
-    fatalError.value = errorMessage(error, 'Check the management endpoint, management key, and system diagnostic routes.')
+    fatalError.value = errorMessage(error, t('system.fatalFallback'))
   } finally {
     loading.value = false
   }
@@ -402,11 +408,11 @@ function closeRename() { renameOpen.value = false }
 function openEnrollment() { enrollment.value = null; nodeName.value = ''; enrollmentError.value = ''; enrollmentOpen.value = true }
 async function generateEnrollment() {
   generating.value = true; enrollmentError.value = ''
-  try { enrollment.value = await fetchAPI('/certificates/clients', { method: 'POST', body: { node_name: nodeName.value.trim() } }); toast.add({ title: 'Node client created', color: 'success' }) }
-  catch (error: any) { enrollmentError.value = errorMessage(error, 'Unable to generate credential.') }
+  try { enrollment.value = await fetchAPI('/certificates/clients', { method: 'POST', body: { node_name: nodeName.value.trim() } }); toast.add({ title: t('system.enroll.created'), color: 'success' }) }
+  catch (error: any) { enrollmentError.value = errorMessage(error, t('system.enroll.failed')) }
   finally { generating.value = false }
 }
-async function copyJWT() { if (!enrollment.value?.home_jwt) return; await navigator.clipboard.writeText(enrollment.value.home_jwt); toast.add({ title: 'Credential copied to clipboard', color: 'success' }) }
+async function copyJWT() { if (!enrollment.value?.home_jwt) return; await navigator.clipboard.writeText(enrollment.value.home_jwt); toast.add({ title: t('system.enroll.copied'), color: 'success' }) }
 function openRename(node: any) { renameTarget.value = node; renameValue.value = node.node_name || ''; renameError.value = ''; renameOpen.value = true }
 async function saveRename() {
   if (!renameTarget.value?.node_id) return
@@ -417,21 +423,21 @@ async function saveRename() {
     for (const node of nodes.value) if (node.node_id === renameTarget.value.node_id) node.node_name = name
     if (Array.isArray(topology.value?.cpas)) for (const node of topology.value.cpas) if (node.node_id === renameTarget.value.node_id) node.node_name = name
     renameOpen.value = false
-    toast.add({ title: name ? 'Node name updated' : 'Node name cleared', color: 'success' })
-  } catch (error: any) { renameError.value = errorMessage(error, 'Unable to rename the node.') }
+    toast.add({ title: name ? t('system.rename.updated') : t('system.rename.cleared'), color: 'success' })
+  } catch (error: any) { renameError.value = errorMessage(error, t('system.rename.failed')) }
   finally { renaming.value = false }
 }
 async function runDiagnostic() {
   diagnosticError.value = ''; diagnosticResult.value = null
-  if (!diagnostic.url.trim()) { diagnosticError.value = 'Enter a target URL.'; return }
+  if (!diagnostic.url.trim()) { diagnosticError.value = t('system.diag.urlRequired'); return }
   let headers: Record<string, string>
   try { headers = JSON.parse(diagnostic.headers || '{}'); if (!headers || Array.isArray(headers) || typeof headers !== 'object') throw new Error() }
-  catch { diagnosticError.value = 'Headers must be a valid JSON object.'; return }
+  catch { diagnosticError.value = t('system.diag.headersInvalid'); return }
   diagnosticLoading.value = true
   try {
     diagnosticResult.value = await fetchAPI('/requests/api-call', { method: 'POST', body: { auth_index: diagnostic.authIndex || undefined, method: diagnostic.method, url: diagnostic.url.trim(), header: headers, data: diagnostic.data } })
-    toast.add({ title: 'Diagnostic request completed', color: 'success' })
-  } catch (error: any) { diagnosticError.value = errorMessage(error, 'The diagnostic request failed.') }
+    toast.add({ title: t('system.diag.completed'), color: 'success' })
+  } catch (error: any) { diagnosticError.value = errorMessage(error, t('system.diag.failed')) }
   finally { diagnosticLoading.value = false }
 }
 

@@ -7,7 +7,7 @@
       ref="sidebarElement"
       :role="mobileOpen ? 'dialog' : undefined"
       :aria-modal="mobileOpen ? true : undefined"
-      :aria-label="t('shell.management')"
+      :aria-label="tc('shell.management')"
       :inert="!desktopViewport && !mobileOpen"
       class="admin-sidebar admin-rail fixed inset-y-0 left-0 z-50 flex w-64 max-w-[calc(100vw-2rem)] flex-col transition-[transform,width] duration-200 motion-reduce:transition-none lg:inset-y-3 lg:left-3 lg:translate-x-0"
       @keydown="handleSidebarKeydown"
@@ -18,21 +18,21 @@
           <AppBrandMark />
           <div class="min-w-0 leading-tight" :class="sidebarCollapsed ? 'lg:hidden' : ''">
             <p class="admin-wordmark truncate">AI48<span class="admin-brand-accent">Hub</span></p>
-            <p class="truncate text-[11px] text-[var(--ui-text-muted)]">{{ t('shell.tagline') }}</p>
+            <p class="truncate text-[11px] text-[var(--ui-text-muted)]">{{ tc('shell.tagline') }}</p>
           </div>
         </NuxtLink>
 
-        <AppButton class="lg:hidden" icon="i-tabler-x" color="neutral" variant="ghost" :aria-label="t('shell.closeNavigation')" @click="closeMobile" />
+        <AppButton class="lg:hidden" icon="i-tabler-x" color="neutral" variant="ghost" :aria-label="tc('shell.closeNavigation')" @click="closeMobile" />
       </div>
 
       <div class="admin-rail__divider" aria-hidden="true" />
 
-      <nav :aria-label="t('shell.management')" class="admin-rail__nav min-h-0 flex-1 overflow-y-auto px-2.5 py-3">
+      <nav :aria-label="tc('shell.management')" class="admin-rail__nav min-h-0 flex-1 overflow-y-auto px-2.5 py-3">
         <div v-for="section in visibleSections" :key="section.label" class="mb-4 last:mb-0">
           <p class="admin-rail__section" :class="sidebarCollapsed ? 'lg:sr-only' : ''">
             {{ section.label }}
           </p>
-          <div class="space-y-0.5" :class="sidebarCollapsed && section.label !== t('nav.operate') ? 'lg:border-t lg:border-[var(--ui-border)] lg:pt-2' : ''">
+          <div class="space-y-0.5" :class="sidebarCollapsed && section.label !== tc('nav.operate') ? 'lg:border-t lg:border-[var(--ui-border)] lg:pt-2' : ''">
             <NuxtLink
               v-for="item in section.items"
               :key="item.to"
@@ -56,7 +56,7 @@
       <div class="admin-rail__footer" :class="sidebarCollapsed ? 'lg:flex-col lg:px-1.5' : ''">
         <button
           type="button"
-          :aria-label="t('shell.manageConnection')"
+          :aria-label="tc('shell.manageConnection')"
           class="admin-connection-status flex min-w-0 flex-1 items-center gap-2.5 rounded-xl px-2.5 py-2 text-left"
           :class="sidebarCollapsed ? 'lg:w-full lg:justify-center lg:px-0' : ''"
           :title="connectionStatus.label"
@@ -67,11 +67,11 @@
             <span class="admin-status-dot absolute -right-0.5 -bottom-0.5 size-2.5 rounded-full ring-2 ring-[var(--admin-rail-bg)]" :class="connectionStatus.dot" />
           </span>
           <span class="min-w-0 leading-tight" :class="sidebarCollapsed ? 'lg:sr-only' : ''">
-            <span class="block truncate text-xs font-semibold text-[var(--ui-text-highlighted)]">{{ t('shell.management') }}</span>
+            <span class="block truncate text-xs font-semibold text-[var(--ui-text-highlighted)]">{{ tc('shell.management') }}</span>
             <span role="status" class="block truncate text-[11px] text-[var(--ui-text-muted)]">{{ connectionStatus.label }}</span>
           </span>
         </button>
-        <AppButton icon="i-tabler-plug-off" color="neutral" variant="ghost" size="sm" :aria-label="t('shell.disconnect')" :title="t('shell.disconnect')" :disabled="!token" @click="handleDisconnect" />
+        <AppButton icon="i-tabler-plug-off" color="neutral" variant="ghost" size="sm" :aria-label="tc('shell.disconnect')" :title="tc('shell.disconnect')" :disabled="!token" @click="handleDisconnect" />
       </div>
     </aside>
 
@@ -79,21 +79,21 @@
       <div class="admin-canvas flex min-h-0 min-w-0 flex-1 flex-col">
         <header class="admin-workspace-header z-30 flex h-[4.25rem] shrink-0 items-center justify-between gap-2 px-3 sm:gap-3 sm:px-6">
           <div class="flex min-w-0 flex-1 items-center gap-2">
-            <AppButton class="shrink-0 lg:hidden" icon="i-tabler-menu-2" color="neutral" variant="ghost" :aria-label="t('shell.openNavigation')" aria-controls="management-sidebar" :aria-expanded="mobileOpen" @click="openMobile" />
+            <AppButton class="shrink-0 lg:hidden" icon="i-tabler-menu-2" color="neutral" variant="ghost" :aria-label="tc('shell.openNavigation')" aria-controls="management-sidebar" :aria-expanded="mobileOpen" @click="openMobile" />
             <AppButton
               class="hidden shrink-0 lg:inline-flex"
               :icon="sidebarCollapsed ? 'i-tabler-layout-sidebar-left-expand' : 'i-tabler-layout-sidebar-left-collapse'"
               color="neutral"
               variant="ghost"
-              :aria-label="sidebarCollapsed ? t('shell.expandSidebar') : t('shell.collapseSidebar')"
-              :title="sidebarCollapsed ? t('shell.expandSidebar') : t('shell.collapseSidebar')"
+              :aria-label="sidebarCollapsed ? tc('shell.expandSidebar') : tc('shell.collapseSidebar')"
+              :title="sidebarCollapsed ? tc('shell.expandSidebar') : tc('shell.collapseSidebar')"
               :aria-expanded="!sidebarCollapsed"
               aria-controls="management-sidebar"
               @click="toggleSidebar"
             />
             <span v-if="currentNavigation" class="admin-page-glyph hidden sm:flex" aria-hidden="true"><UIcon :name="currentNavigation.icon" class="size-[1.125rem]" /></span>
             <div class="min-w-0 leading-tight">
-              <nav aria-label="Breadcrumb" class="hidden items-center gap-1 text-[11px] font-medium text-[var(--ui-text-muted)] sm:flex">
+              <nav :aria-label="t('shared.breadcrumb')" class="hidden items-center gap-1 text-[11px] font-medium text-[var(--ui-text-muted)] sm:flex">
                 <span>AI48Hub</span>
                 <template v-if="currentSection"><UIcon name="i-tabler-slash" class="size-3 text-[var(--ui-text-dimmed)]" aria-hidden="true" /><span class="truncate">{{ currentSection }}</span></template>
               </nav>
@@ -102,16 +102,16 @@
           </div>
 
           <div class="flex shrink-0 items-center gap-2">
-            <button type="button" class="admin-search hidden md:flex" :aria-label="t('shell.search')" aria-haspopup="dialog" @click="openCommands">
+            <button type="button" class="admin-search hidden md:flex" :aria-label="tc('shell.search')" aria-haspopup="dialog" @click="openCommands">
               <UIcon name="i-tabler-search" class="size-4 shrink-0" aria-hidden="true" />
-              <span class="min-w-0 flex-1 truncate text-left">{{ t('shell.search') }}</span>
+              <span class="min-w-0 flex-1 truncate text-left">{{ tc('shell.search') }}</span>
               <kbd>⌘K</kbd>
             </button>
             <div class="admin-dock">
-              <AppButton class="md:hidden" icon="i-tabler-search" color="neutral" variant="ghost" size="sm" :aria-label="t('shell.search')" :title="t('shell.search')" aria-haspopup="dialog" @click="openCommands" />
+              <AppButton class="md:hidden" icon="i-tabler-search" color="neutral" variant="ghost" size="sm" :aria-label="tc('shell.search')" :title="tc('shell.search')" aria-haspopup="dialog" @click="openCommands" />
               <ThemeSwitcher />
               <ConsoleLanguageSwitcher />
-              <AppButton icon="i-tabler-plug" color="neutral" variant="ghost" size="sm" :aria-label="t('shell.manageConnection')" :title="t('shell.manageConnection')" aria-haspopup="dialog" @click="openConnection" />
+              <AppButton icon="i-tabler-plug" color="neutral" variant="ghost" size="sm" :aria-label="tc('shell.manageConnection')" :title="tc('shell.manageConnection')" aria-haspopup="dialog" @click="openConnection" />
               <AppButton
                 icon="i-tabler-refresh"
                 color="primary"
@@ -120,8 +120,8 @@
                 class="rounded-full"
                 :loading="syncing"
                 :disabled="syncing || !token"
-                :aria-label="t('shell.sync')"
-                :title="t('shell.sync')"
+                :aria-label="tc('shell.sync')"
+                :title="tc('shell.sync')"
                 @click="syncData"
               />
             </div>
@@ -135,7 +135,7 @@
             color="warning"
             variant="subtle"
             icon="i-tabler-alert-triangle"
-            :title="t('shell.capabilitiesError')"
+            :title="tc('shell.capabilitiesError')"
             :description="capabilitiesError"
           />
           <div class="admin-page mx-auto w-full max-w-[96rem]">
@@ -166,7 +166,8 @@ interface NavigationItem {
 
 function toggleSidebar() { sidebarCollapsed.value = !sidebarCollapsed.value }
 
-const { t } = useConsoleLocale()
+const { t: tc } = useConsoleLocale()
+const { t } = useAdminI18n()
 const route = useRoute()
 const router = useRouter()
 const colorMode = useColorMode()
@@ -186,11 +187,11 @@ const managementConfig = useManagementConfigStore()
 const commandOpen = ref(false)
 const connectionOpen = ref(false)
 const connectionStatus = computed(() => {
-  if (!token.value) return { label: t('connection.disconnected'), dot: 'bg-[var(--ui-text-dimmed)]' }
-  if (capabilitiesLoading.value) return { label: t('connection.checking'), dot: 'motion-safe:animate-pulse bg-[var(--ui-primary)]' }
-  if (capabilitiesError.value) return { label: t('connection.failed'), dot: 'bg-[var(--ui-warning)]' }
-  if (capabilitiesLoaded.value) return { label: t('connection.connected'), dot: 'bg-[var(--ui-success)]' }
-  return { label: t('connection.checking'), dot: 'motion-safe:animate-pulse bg-[var(--ui-primary)]' }
+  if (!token.value) return { label: tc('connection.disconnected'), dot: 'bg-[var(--ui-text-dimmed)]' }
+  if (capabilitiesLoading.value) return { label: tc('connection.checking'), dot: 'motion-safe:animate-pulse bg-[var(--ui-primary)]' }
+  if (capabilitiesError.value) return { label: tc('connection.failed'), dot: 'bg-[var(--ui-warning)]' }
+  if (capabilitiesLoaded.value) return { label: tc('connection.connected'), dot: 'bg-[var(--ui-success)]' }
+  return { label: tc('connection.checking'), dot: 'motion-safe:animate-pulse bg-[var(--ui-primary)]' }
 })
 const openConnection = () => {
   commandOpen.value = false
@@ -212,9 +213,9 @@ const syncData = async () => {
     const results = await Promise.allSettled([refreshCapabilities(true), workspace.sync('admin:')])
     const failed = results.find(result => result.status === 'rejected')
     if (failed?.status === 'rejected') throw failed.reason
-    toast.add({ title: t('shell.syncSuccess'), color: 'success' })
+    toast.add({ title: tc('shell.syncSuccess'), color: 'success' })
   } catch (cause: any) {
-    toast.add({ title: t('shell.syncFailed'), description: cause?.message || t('shell.syncError'), color: 'error' })
+    toast.add({ title: tc('shell.syncFailed'), description: cause?.message || tc('shell.syncError'), color: 'error' })
   } finally {
     syncing.value = false
   }
@@ -269,36 +270,36 @@ onMounted(() => {
 
 const navigationSections = computed<Array<{ label: string; tone: string; items: NavigationItem[] }>>(() => [
   {
-    label: t('nav.operate'), tone: 'violet',
-    items: [{ label: t('nav.dashboard'), to: '/admin/dashboard', icon: 'i-tabler-grid-dots', subtitle: t('nav.dashboardDescription') }]
+    label: tc('nav.operate'), tone: 'violet',
+    items: [{ label: tc('nav.dashboard'), to: '/admin/dashboard', icon: 'i-tabler-grid-dots', subtitle: tc('nav.dashboardDescription') }]
   },
   {
-    label: t('nav.gateway'), tone: 'violet',
+    label: tc('nav.gateway'), tone: 'violet',
     items: [
-      { label: t('nav.upstream'), to: '/admin/upstream', icon: 'i-tabler-cloud-upload', subtitle: t('nav.upstreamDescription') },
-      { label: t('nav.models'), to: '/admin/routing/models', icon: 'i-tabler-box-multiple', subtitle: t('nav.modelsDescription') },
-      { label: t('nav.accessKeys'), to: '/admin/access-keys', icon: 'i-tabler-key', subtitle: t('nav.accessKeysDescription') },
-      { label: t('nav.users'), to: '/admin/users', icon: 'i-tabler-users', subtitle: t('nav.usersDescription'), capability: 'users' }
+      { label: tc('nav.upstream'), to: '/admin/upstream', icon: 'i-tabler-cloud-upload', subtitle: tc('nav.upstreamDescription') },
+      { label: tc('nav.models'), to: '/admin/routing/models', icon: 'i-tabler-box-multiple', subtitle: tc('nav.modelsDescription') },
+      { label: tc('nav.accessKeys'), to: '/admin/access-keys', icon: 'i-tabler-key', subtitle: tc('nav.accessKeysDescription') },
+      { label: tc('nav.users'), to: '/admin/users', icon: 'i-tabler-users', subtitle: tc('nav.usersDescription'), capability: 'users' }
     ]
   },
   {
-    label: t('nav.observe'), tone: 'blue',
+    label: tc('nav.observe'), tone: 'blue',
     items: [
-      { label: t('nav.usage'), to: '/admin/usage', icon: 'i-tabler-chart-bar', subtitle: t('nav.usageDescription'), capability: 'usage_records' },
-      { label: t('nav.diagnostics'), to: '/admin/diagnostics', icon: 'i-tabler-tools', subtitle: t('nav.diagnosticsDescription') },
-      { label: t('nav.logs'), to: '/admin/logs', icon: 'i-tabler-file-text', subtitle: t('nav.logsDescription'), capability: 'logs' }
+      { label: tc('nav.usage'), to: '/admin/usage', icon: 'i-tabler-chart-bar', subtitle: tc('nav.usageDescription'), capability: 'usage_records' },
+      { label: tc('nav.diagnostics'), to: '/admin/diagnostics', icon: 'i-tabler-tools', subtitle: tc('nav.diagnosticsDescription') },
+      { label: tc('nav.logs'), to: '/admin/logs', icon: 'i-tabler-file-text', subtitle: tc('nav.logsDescription'), capability: 'logs' }
     ]
   },
   {
-    label: t('nav.finance'), tone: 'emerald',
-    items: [{ label: t('nav.billing'), to: '/admin/billing', icon: 'i-tabler-cash-banknote', subtitle: t('nav.billingDescription') }]
+    label: tc('nav.finance'), tone: 'emerald',
+    items: [{ label: tc('nav.billing'), to: '/admin/billing', icon: 'i-tabler-cash-banknote', subtitle: tc('nav.billingDescription') }]
   },
   {
-    label: t('nav.control'), tone: 'amber',
+    label: tc('nav.control'), tone: 'amber',
     items: [
-      { label: t('nav.config'), to: '/admin/config', icon: 'i-tabler-adjustments-horizontal', subtitle: t('nav.configDescription') },
-      { label: t('nav.plugins'), to: '/admin/plugins', icon: 'i-tabler-puzzle', subtitle: t('nav.pluginsDescription') },
-      { label: t('nav.system'), to: '/admin/system-nodes', icon: 'i-tabler-server-2', subtitle: t('nav.systemDescription'), capability: 'topology' }
+      { label: tc('nav.config'), to: '/admin/config', icon: 'i-tabler-adjustments-horizontal', subtitle: tc('nav.configDescription') },
+      { label: tc('nav.plugins'), to: '/admin/plugins', icon: 'i-tabler-puzzle', subtitle: tc('nav.pluginsDescription') },
+      { label: tc('nav.system'), to: '/admin/system-nodes', icon: 'i-tabler-server-2', subtitle: tc('nav.systemDescription'), capability: 'topology' }
     ]
   }
 ])
@@ -319,7 +320,7 @@ const isActive = (item: NavigationItem) => item.to === '/admin/upstream'
       : route.path === item.to
 
 const currentNavigation = computed(() => navigationSections.value.flatMap(section => section.items).find(isActive))
-const pageTitle = computed(() => currentNavigation.value?.label || t('shell.management'))
+const pageTitle = computed(() => currentNavigation.value?.label || tc('shell.management'))
 const pageSubtitle = computed(() => currentNavigation.value?.subtitle || '')
 const currentSectionEntry = computed(() => navigationSections.value.find(section => section.items.some(isActive)))
 const currentSection = computed(() => currentSectionEntry.value?.label || '')
@@ -343,17 +344,17 @@ const commandGroups = computed(() => [
   })),
   {
     id: 'actions',
-    label: t('shell.globalActions'),
+    label: tc('shell.globalActions'),
     items: [
-      { label: t('shell.manageConnection'), description: t('shell.connectionDescription'), icon: 'i-tabler-plug', onSelect: openConnection },
-      { label: t('shell.sync'), icon: 'i-tabler-refresh', disabled: syncing.value || !token.value, onSelect: () => { commandOpen.value = false; void syncData() } },
-      { label: sidebarCollapsed.value ? t('shell.expandSidebar') : t('shell.collapseSidebar'), icon: 'i-tabler-layout-sidebar', onSelect: () => { commandOpen.value = false; toggleSidebar() } },
+      { label: tc('shell.manageConnection'), description: tc('shell.connectionDescription'), icon: 'i-tabler-plug', onSelect: openConnection },
+      { label: tc('shell.sync'), icon: 'i-tabler-refresh', disabled: syncing.value || !token.value, onSelect: () => { commandOpen.value = false; void syncData() } },
+      { label: sidebarCollapsed.value ? tc('shell.expandSidebar') : tc('shell.collapseSidebar'), icon: 'i-tabler-layout-sidebar', onSelect: () => { commandOpen.value = false; toggleSidebar() } },
       ...[
-        { label: t('shell.lightTheme'), value: 'light', icon: 'i-tabler-sun' },
-        { label: t('shell.darkTheme'), value: 'dark', icon: 'i-tabler-moon' },
-        { label: t('shell.systemTheme'), value: 'system', icon: 'i-tabler-device-desktop' }
+        { label: tc('shell.lightTheme'), value: 'light', icon: 'i-tabler-sun' },
+        { label: tc('shell.darkTheme'), value: 'dark', icon: 'i-tabler-moon' },
+        { label: tc('shell.systemTheme'), value: 'system', icon: 'i-tabler-device-desktop' }
       ].map(theme => ({ label: theme.label, icon: theme.icon, onSelect: () => { colorMode.preference = theme.value; commandOpen.value = false } })),
-      { label: t('shell.disconnect'), icon: 'i-tabler-plug-off', disabled: !token.value, onSelect: () => { commandOpen.value = false; handleDisconnect() } }
+      { label: tc('shell.disconnect'), icon: 'i-tabler-plug-off', disabled: !token.value, onSelect: () => { commandOpen.value = false; handleDisconnect() } }
     ]
   }
 ])

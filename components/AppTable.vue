@@ -5,12 +5,12 @@
         v-model="query"
         icon="i-tabler-search"
         size="sm"
-        :placeholder="searchPlaceholder"
-        :aria-label="searchPlaceholder"
+        :placeholder="searchPlaceholder || t('shared.table.search')"
+        :aria-label="searchPlaceholder || t('shared.table.search')"
         class="w-full sm:w-72"
       />
       <span class="text-xs tabular-nums text-[var(--ui-text-muted)]" role="status" aria-live="polite">
-        {{ query ? `${visibleData.length} of ${sourceData.length}` : `${sourceData.length} rows` }}
+        {{ query ? t('shared.table.matchCount', { shown: visibleData.length, total: sourceData.length }) : t('shared.table.rowCount', { count: sourceData.length }) }}
       </span>
     </div>
 
@@ -37,7 +37,7 @@
           <slot :name="name" v-bind="slotProps || {}" />
         </template>
         <template v-if="query && !$slots.empty" #empty>
-          <div class="py-8 text-center text-sm text-[var(--ui-text-muted)]">No rows match “{{ query }}”.</div>
+          <div class="py-8 text-center text-sm text-[var(--ui-text-muted)]">{{ t('shared.table.noMatch', { query }) }}</div>
         </template>
       </UTable>
     </div>
@@ -59,7 +59,9 @@ const props = withDefaults(defineProps<{
   // Client-side quick search over every row field; only for fully loaded data sets.
   searchable?: boolean
   searchPlaceholder?: string
-}>(), { data: undefined, columns: undefined, native: false, numbered: true, numberOffset: 0, scroll: true, searchable: false, searchPlaceholder: 'Search rows…' })
+}>(), { data: undefined, columns: undefined, native: false, numbered: true, numberOffset: 0, scroll: true, searchable: false, searchPlaceholder: '' })
+
+const { t } = useAdminI18n()
 
 const attrs = useAttrs()
 const nativeRoot = ref<HTMLElement | null>(null)
@@ -91,7 +93,7 @@ const showNumber = computed(() => props.numbered && !sourceColumns.value.some((c
 }))
 const tableColumns = computed(() => {
   if (!showNumber.value) return sourceColumns.value
-  const column = { id: NUMBER_COLUMN, header: 'No.', enableSorting: false, meta: { class: { th: 'app-table-number-head', td: 'app-table-number-cell' } } }
+  const column = { id: NUMBER_COLUMN, header: t('shared.table.number'), enableSorting: false, meta: { class: { th: 'app-table-number-head', td: 'app-table-number-cell' } } }
   // Keep selection checkboxes first, number right after.
   const selectIndex = sourceColumns.value.findIndex(item => String(item?.id ?? item?.accessorKey ?? '') === 'select')
   const next = [...sourceColumns.value]

@@ -5,50 +5,50 @@
         <div class="flex min-w-0 items-start gap-3">
           <span class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[var(--admin-selected)] text-[var(--ui-primary)]" aria-hidden="true"><UIcon name="i-tabler-layout-grid" class="size-4.5" /></span>
           <div class="min-w-0">
-            <p class="text-sm text-[var(--ui-text-muted)]">Define reusable model allowlists. Each model may optionally be restricted to selected channel groups.</p>
-            <div class="mt-1.5 flex flex-wrap gap-1.5 text-xs" aria-label="Group summary">
-              <span class="inline-flex items-center gap-1.5 rounded-full bg-[var(--ui-bg-muted)] px-2 py-0.5"><strong class="tabular-nums">{{ groups.length }}</strong> groups</span>
-              <span class="inline-flex items-center gap-1.5 rounded-full bg-[var(--ui-bg-muted)] px-2 py-0.5"><span class="size-1.5 rounded-full bg-emerald-500" /><strong class="tabular-nums">{{ groups.filter(group => !group.disabled).length }}</strong> active</span>
-              <span v-if="groups.some(group => group.disabled)" class="inline-flex items-center gap-1.5 rounded-full bg-[var(--ui-bg-muted)] px-2 py-0.5"><span class="size-1.5 rounded-full bg-zinc-400" /><strong class="tabular-nums">{{ groups.filter(group => group.disabled).length }}</strong> disabled</span>
+            <p class="text-sm text-[var(--ui-text-muted)]">{{ t('groups.intro') }}</p>
+            <div class="mt-1.5 flex flex-wrap gap-1.5 text-xs" :aria-label="t('routing.groupSummary')">
+              <span class="inline-flex items-center gap-1.5 rounded-full bg-[var(--ui-bg-muted)] px-2 py-0.5"><strong class="tabular-nums">{{ groups.length }}</strong> {{ t('routing.summaryGroups') }}</span>
+              <span class="inline-flex items-center gap-1.5 rounded-full bg-[var(--ui-bg-muted)] px-2 py-0.5"><span class="size-1.5 rounded-full bg-emerald-500" /><strong class="tabular-nums">{{ groups.filter(group => !group.disabled).length }}</strong> {{ t('routing.summaryActive') }}</span>
+              <span v-if="groups.some(group => group.disabled)" class="inline-flex items-center gap-1.5 rounded-full bg-[var(--ui-bg-muted)] px-2 py-0.5"><span class="size-1.5 rounded-full bg-zinc-400" /><strong class="tabular-nums">{{ groups.filter(group => group.disabled).length }}</strong> {{ t('routing.summaryDisabled') }}</span>
             </div>
           </div>
         </div>
         <div class="flex flex-wrap items-center gap-2">
-          <UInput v-model="search" icon="i-tabler-search" placeholder="Search model groups..." aria-label="Search model groups" class="w-full sm:w-64" />
-          <AppButton color="neutral" variant="outline" icon="i-tabler-refresh" :loading="pending" aria-label="Refresh" @click="refreshWorkspace" />
-          <AppButton color="primary" icon="i-tabler-plus" @click="openCreateGroup">New model group</AppButton>
+          <UInput v-model="search" icon="i-tabler-search" :placeholder="t('groups.searchPlaceholder')" :aria-label="t('groups.searchLabel')" class="w-full sm:w-64" />
+          <AppButton color="neutral" variant="outline" icon="i-tabler-refresh" :loading="pending" :aria-label="t('common.refresh')" @click="refreshWorkspace" />
+          <AppButton color="primary" icon="i-tabler-plus" @click="openCreateGroup">{{ t('groups.newGroup') }}</AppButton>
         </div>
       </div>
     </AppCard>
 
-    <UAlert v-if="pageError" color="error" variant="subtle" icon="i-tabler-alert-triangle" title="Unable to load model groups" :description="pageError" />
+    <UAlert v-if="pageError" color="error" variant="subtle" icon="i-tabler-alert-triangle" :title="t('groups.loadFailed')" :description="pageError" />
 
     <div class="grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.6fr)]">
       <AppCard :ui="{ body: 'p-0' }">
         <template #header>
           <div>
-            <p class="font-semibold">Groups</p>
-            <p class="text-xs text-[var(--ui-text-muted)]">Select a group to manage its model bindings.</p>
+            <p class="font-semibold">{{ t('routing.groupsTitle') }}</p>
+            <p class="text-xs text-[var(--ui-text-muted)]">{{ t('groups.selectHint') }}</p>
           </div>
         </template>
         <AppTable :columns="groupColumns" :data="filteredGroups" :loading="pending" @select="selectGroup">
           <template #identity-cell="{ row }">
             <button type="button" class="w-full text-left" @click.stop="selectGroup(rowValue(row))">
               <p class="font-medium text-[var(--ui-text-highlighted)]">{{ rowValue(row).group_name }}</p>
-              <p class="mt-1 text-xs text-[var(--ui-text-muted)]">Group #{{ rowValue(row).id }}</p>
+              <p class="mt-1 text-xs text-[var(--ui-text-muted)]">{{ t('routing.groupNumber', { id: rowValue(row).id }) }}</p>
             </button>
           </template>
           <template #status-cell="{ row }">
-            <UBadge :color="rowValue(row).disabled ? 'error' : 'success'" variant="subtle" size="sm">{{ rowValue(row).disabled ? 'Disabled' : 'Active' }}</UBadge>
+            <UBadge :color="rowValue(row).disabled ? 'error' : 'success'" variant="subtle" size="sm">{{ rowValue(row).disabled ? t('common.disabled') : t('common.active') }}</UBadge>
           </template>
           <template #actions-cell="{ row }">
             <div class="flex justify-end gap-1">
-              <AdminTableAction action="edit" label="Edit group" @click.stop="openEditGroup(rowValue(row))" />
-              <AdminTableAction action="delete" label="Delete group" destructive @click.stop="confirmDelete('group', rowValue(row))" />
+              <AdminTableAction action="edit" :label="t('routing.editGroup')" @click.stop="openEditGroup(rowValue(row))" />
+              <AdminTableAction action="delete" :label="t('routing.deleteGroup')" destructive @click.stop="confirmDelete('group', rowValue(row))" />
             </div>
           </template>
           <template #empty>
-            <div class="px-6 py-12 text-center text-sm text-[var(--ui-text-muted)]">{{ search ? 'No matching model groups.' : 'No model groups yet.' }}</div>
+            <div class="px-6 py-12 text-center text-sm text-[var(--ui-text-muted)]">{{ search ? t('groups.noMatching') : t('groups.empty') }}</div>
           </template>
         </AppTable>
       </AppCard>
@@ -59,14 +59,14 @@
             <div>
               <div class="flex items-center gap-2">
                 <p class="text-base font-semibold">{{ selectedGroup.group_name }}</p>
-                <UBadge :color="selectedGroup.disabled ? 'error' : 'success'" variant="subtle" size="sm">{{ selectedGroup.disabled ? 'Disabled' : 'Active' }}</UBadge>
+                <UBadge :color="selectedGroup.disabled ? 'error' : 'success'" variant="subtle" size="sm">{{ selectedGroup.disabled ? t('common.disabled') : t('common.active') }}</UBadge>
               </div>
-              <p class="mt-1 text-xs text-[var(--ui-text-muted)]">{{ details.length }} model binding{{ details.length === 1 ? '' : 's' }}</p>
+              <p class="mt-1 text-xs text-[var(--ui-text-muted)]">{{ details.length === 1 ? t('groups.bindingCountOne', { count: details.length }) : t('groups.bindingCountOther', { count: details.length }) }}</p>
             </div>
-            <AppButton color="primary" variant="soft" icon="i-tabler-plus" @click="openCreateDetail">Add model</AppButton>
+            <AppButton color="primary" variant="soft" icon="i-tabler-plus" @click="openCreateDetail">{{ t('groups.addModel') }}</AppButton>
           </div>
         </template>
-        <AppTable :columns="detailColumns" :data="details" :loading="detailsPending" searchable search-placeholder="Search models…">
+        <AppTable :columns="detailColumns" :data="details" :loading="detailsPending" searchable :search-placeholder="t('groups.searchModels')">
           <template #model-cell="{ row }">
             <div class="min-w-0">
               <p class="truncate font-mono text-sm font-semibold">{{ rowValue(row).model_id }}</p>
@@ -77,19 +77,19 @@
             <div v-if="rowValue(row).channels?.length" class="flex max-w-md flex-wrap gap-1">
               <UBadge v-for="id in rowValue(row).channels" :key="id" color="primary" variant="subtle" size="sm">{{ channelName(id) }}</UBadge>
             </div>
-            <span v-else class="text-sm text-[var(--ui-text-muted)]">Inherit API key scope</span>
+            <span v-else class="text-sm text-[var(--ui-text-muted)]">{{ t('groups.inheritScope') }}</span>
           </template>
           <template #actions-cell="{ row }">
             <div class="flex justify-end gap-1">
-              <AdminTableAction action="edit" label="Edit model binding" @click="openEditDetail(rowValue(row))" />
-              <AdminTableAction action="delete" label="Delete model binding" destructive @click="confirmDelete('detail', rowValue(row))" />
+              <AdminTableAction action="edit" :label="t('groups.editBinding')" @click="openEditDetail(rowValue(row))" />
+              <AdminTableAction action="delete" :label="t('groups.deleteBinding')" destructive @click="confirmDelete('detail', rowValue(row))" />
             </div>
           </template>
           <template #empty>
             <div class="flex flex-col items-center px-6 py-8 text-center">
               <UIcon name="i-tabler-box" class="mb-3 size-8 text-[var(--ui-text-muted)]" />
-              <p class="font-medium">No models in this group</p>
-              <p class="mt-1 text-sm text-[var(--ui-text-muted)]">Add a model and optionally select channel groups allowed to execute it.</p>
+              <p class="font-medium">{{ t('groups.noModels') }}</p>
+              <p class="mt-1 text-sm text-[var(--ui-text-muted)]">{{ t('groups.noModelsHint') }}</p>
             </div>
           </template>
         </AppTable>
@@ -97,75 +97,75 @@
 
       <div v-else class="flex min-h-40 flex-col items-center justify-center rounded-[var(--admin-panel-radius)] border border-dashed border-[var(--admin-panel-border)] bg-[var(--admin-panel-bg)]/60 p-8 text-center">
         <UIcon name="i-tabler-layout-grid" class="mb-3 size-8 text-[var(--ui-text-muted)]" />
-        <p class="font-medium">Select a model group</p>
-        <p class="mt-1 text-sm text-[var(--ui-text-muted)]">Its model bindings will appear here.</p>
+        <p class="font-medium">{{ t('groups.selectGroup') }}</p>
+        <p class="mt-1 text-sm text-[var(--ui-text-muted)]">{{ t('groups.selectGroupHint') }}</p>
       </div>
     </div>
 
-    <AppModal v-model:open="groupFormOpen" :title="editingGroup ? 'Edit model group' : 'Create model group'" description="Model groups are reusable model allowlists for client API keys.">
+    <AppModal v-model:open="groupFormOpen" :title="editingGroup ? t('groups.editGroupTitle') : t('groups.createGroupTitle')" :description="t('groups.groupFormDescription')">
       <template #body>
         <form class="space-y-5" @submit.prevent="submitGroup">
-          <UAlert v-if="formError" color="error" variant="subtle" icon="i-tabler-alert-circle" title="Could not save model group" :description="formError" />
-          <UFormField label="Group name" required>
+          <UAlert v-if="formError" color="error" variant="subtle" icon="i-tabler-alert-circle" :title="t('groups.saveGroupFailed')" :description="formError" />
+          <UFormField :label="t('routing.groupName')" required>
             <UInput v-model="groupForm.group_name" class="w-full" placeholder="premium-models" autofocus />
           </UFormField>
-          <UFormField label="Status">
+          <UFormField :label="t('common.status')">
             <div class="flex items-center gap-3 rounded-lg border border-[var(--ui-border)] p-3">
               <USwitch v-model="groupForm.enabled" />
               <div>
-                <p class="text-sm font-medium">{{ groupForm.enabled ? 'Active' : 'Disabled' }}</p>
-                <p class="text-xs text-[var(--ui-text-muted)]">Disabled groups do not contribute model access.</p>
+                <p class="text-sm font-medium">{{ groupForm.enabled ? t('common.active') : t('common.disabled') }}</p>
+                <p class="text-xs text-[var(--ui-text-muted)]">{{ t('groups.disabledHint') }}</p>
               </div>
             </div>
           </UFormField>
           <div class="flex justify-end gap-3 border-t border-[var(--ui-border)] pt-4">
-            <AppButton color="neutral" variant="ghost" type="button" @click="groupFormOpen = false">Cancel</AppButton>
-            <AppButton color="primary" type="submit" :loading="submitting">{{ editingGroup ? 'Save changes' : 'Create group' }}</AppButton>
+            <AppButton color="neutral" variant="ghost" type="button" @click="groupFormOpen = false">{{ t('common.cancel') }}</AppButton>
+            <AppButton color="primary" type="submit" :loading="submitting">{{ editingGroup ? t('routing.saveChanges') : t('routing.createGroup') }}</AppButton>
           </div>
         </form>
       </template>
     </AppModal>
 
-    <AppModal v-model:open="detailFormOpen" :title="editingDetail ? 'Edit model binding' : 'Add model binding'" description="Choose a catalog model or enter a canonical model ID manually.">
+    <AppModal v-model:open="detailFormOpen" :title="editingDetail ? t('groups.editBindingTitle') : t('groups.addBindingTitle')" :description="t('groups.bindingFormDescription')">
       <template #body>
         <form class="space-y-5" @submit.prevent="submitDetail">
-          <UAlert v-if="formError" color="error" variant="subtle" icon="i-tabler-alert-circle" title="Could not save model binding" :description="formError" />
-          <UFormField label="Catalog model" hint="Optional">
-            <USelectMenu v-model="detailForm.suggested_model_id" :items="modelOptions" value-key="value" label-key="label" class="w-full" placeholder="Search catalog models..." :search-input="{ placeholder: 'Search model ID or name...' }" @update:model-value="applyModelSuggestion" />
+          <UAlert v-if="formError" color="error" variant="subtle" icon="i-tabler-alert-circle" :title="t('groups.saveBindingFailed')" :description="formError" />
+          <UFormField :label="t('groups.catalogModel')" :hint="t('common.optional')">
+            <USelectMenu v-model="detailForm.suggested_model_id" :items="modelOptions" value-key="value" label-key="label" class="w-full" :placeholder="t('groups.searchCatalog')" :search-input="{ placeholder: t('groups.searchCatalogInput') }" @update:model-value="applyModelSuggestion" />
           </UFormField>
-          <UFormField label="Model ID" required>
+          <UFormField :label="t('groups.modelId')" required>
             <UInput v-model="detailForm.model_id" class="w-full font-mono" placeholder="gpt-5.5" autofocus />
-            <p class="mt-1 text-xs text-[var(--ui-text-muted)]">Request-option suffixes such as “(high)” are stripped by the backend.</p>
+            <p class="mt-1 text-xs text-[var(--ui-text-muted)]">{{ t('groups.modelIdHint') }}</p>
           </UFormField>
           <fieldset class="rounded-lg border border-[var(--ui-border)] p-4">
-            <legend class="px-1 text-sm font-medium">Allowed channel groups</legend>
-            <p class="mb-3 text-xs text-[var(--ui-text-muted)]">Leave all unchecked to inherit the client API key's credential scope.</p>
+            <legend class="px-1 text-sm font-medium">{{ t('groups.allowedChannels') }}</legend>
+            <p class="mb-3 text-xs text-[var(--ui-text-muted)]">{{ t('groups.allowedChannelsHint') }}</p>
             <div v-if="channels.length" class="max-h-56 space-y-2 overflow-auto pr-1">
               <UCheckbox
                 v-for="channel in channels"
                 :key="channel.id"
                 :model-value="detailForm.channels.includes(channel.id)"
-                :label="`${channel.channel_name}${channel.disabled ? ' (disabled)' : ''}`"
+                :label="`${channel.channel_name}${channel.disabled ? t('groups.channelDisabledSuffix') : ''}`"
                 @update:model-value="toggleChannel(channel.id, $event)"
               />
             </div>
-            <p v-else class="text-sm text-[var(--ui-text-muted)]">No channel groups configured.</p>
+            <p v-else class="text-sm text-[var(--ui-text-muted)]">{{ t('groups.noChannels') }}</p>
           </fieldset>
           <div class="flex justify-end gap-3 border-t border-[var(--ui-border)] pt-4">
-            <AppButton color="neutral" variant="ghost" type="button" @click="detailFormOpen = false">Cancel</AppButton>
-            <AppButton color="primary" type="submit" :loading="submitting">{{ editingDetail ? 'Save changes' : 'Add model' }}</AppButton>
+            <AppButton color="neutral" variant="ghost" type="button" @click="detailFormOpen = false">{{ t('common.cancel') }}</AppButton>
+            <AppButton color="primary" type="submit" :loading="submitting">{{ editingDetail ? t('routing.saveChanges') : t('groups.addModel') }}</AppButton>
           </div>
         </form>
       </template>
     </AppModal>
 
-    <AppModal v-model:open="deleteOpen" :title="deleteKind === 'group' ? 'Delete model group' : 'Remove model binding'" description="This action soft-deletes the selected record.">
+    <AppModal v-model:open="deleteOpen" :title="deleteKind === 'group' ? t('groups.deleteGroupTitle') : t('groups.removeBindingTitle')" :description="t('routing.softDeleteDescription')">
       <template #body>
         <div class="space-y-5">
-          <UAlert color="warning" variant="subtle" icon="i-tabler-alert-triangle" title="Confirm deletion" :description="deleteDescription" />
+          <UAlert color="warning" variant="subtle" icon="i-tabler-alert-triangle" :title="t('routing.confirmDeletion')" :description="deleteDescription" />
           <div class="flex justify-end gap-3">
-            <AppButton color="neutral" variant="ghost" @click="deleteOpen = false">Cancel</AppButton>
-            <AppButton color="error" :loading="deleting" @click="performDelete">Delete</AppButton>
+            <AppButton color="neutral" variant="ghost" @click="deleteOpen = false">{{ t('common.cancel') }}</AppButton>
+            <AppButton color="error" :loading="deleting" @click="performDelete">{{ t('common.delete') }}</AppButton>
           </div>
         </div>
       </template>
@@ -177,6 +177,7 @@
 import { useWorkspaceState } from '~/composables/useWorkspaceState'
 import { useStoreData } from '~/composables/useStoreData'
 const { fetchAPI } = useApi()
+const { t } = useAdminI18n()
 const toast = useToast()
 const rowValue = (row) => row?.original ?? row
 const search = ref('')
@@ -195,16 +196,16 @@ const deleting = useWorkspaceState('admin:routing:model-groups:deleting', () => 
 const groupForm = ref({ group_name: '', enabled: true })
 const detailForm = ref({ model_id: '', suggested_model_id: '', channels: [] })
 
-const groupColumns = [
-  { accessorKey: 'identity', header: 'Model group' },
-  { accessorKey: 'status', header: 'Status' },
+const groupColumns = computed(() => [
+  { accessorKey: 'identity', header: t('groups.columnGroup') },
+  { accessorKey: 'status', header: t('common.status') },
   { accessorKey: 'actions', header: '', meta: { class: { th: 'table-action-head', td: 'table-action-cell' } } }
-]
-const detailColumns = [
-  { accessorKey: 'model', header: 'Model' },
-  { accessorKey: 'channels', header: 'Credential scope' },
+])
+const detailColumns = computed(() => [
+  { accessorKey: 'model', header: t('common.model') },
+  { accessorKey: 'channels', header: t('groups.columnScope') },
   { accessorKey: 'actions', header: '', meta: { class: { th: 'table-action-head', td: 'table-action-cell' } } }
-]
+])
 
 async function loadWorkspace() {
   pageError.value = ''
@@ -258,8 +259,8 @@ const details = computed(() => Array.isArray(detailsData.value?.model_group_deta
 const deleteDescription = computed(() => {
   if (!deleteTarget.value) return ''
   return deleteKind.value === 'group'
-    ? `${deleteTarget.value.group_name} and all of its model bindings will be deleted.`
-    : `${deleteTarget.value.model_id} will be removed from ${selectedGroup.value?.group_name || 'this group'}.`
+    ? t('groups.deleteGroupDescription', { name: deleteTarget.value.group_name })
+    : t('groups.removeBindingDescription', { model: deleteTarget.value.model_id, group: selectedGroup.value?.group_name || t('routing.thisGroup') })
 })
 
 async function selectGroup(row) {
@@ -281,7 +282,7 @@ function openEditGroup(group) {
 async function submitGroup() {
   formError.value = ''
   const groupName = groupForm.value.group_name.trim()
-  if (!groupName) return void (formError.value = 'Group name is required.')
+  if (!groupName) return void (formError.value = t('routing.groupNameRequired'))
   submitting.value = true
   try {
     const response = await fetchAPI(editingGroup.value ? `/model-groups/${editingGroup.value.id}` : '/model-groups', {
@@ -293,7 +294,7 @@ async function submitGroup() {
     if (!editingGroup.value && response?.model_group?.id) selectedGroupId.value = response.model_group.id
     if (editingGroup.value?.id === selectedGroupId.value) selectedGroupId.value = editingGroup.value.id
     if (selectedGroupId.value) await refreshDetails()
-    toast.add({ title: editingGroup.value ? 'Model group updated' : 'Model group created', color: 'success', icon: 'i-tabler-circle-check' })
+    toast.add({ title: editingGroup.value ? t('groups.groupUpdated') : t('groups.groupCreated'), color: 'success', icon: 'i-tabler-circle-check' })
   } catch (error) {
     formError.value = errorMessage(error)
   } finally {
@@ -327,7 +328,7 @@ function toggleChannel(id, checked) {
 async function submitDetail() {
   formError.value = ''
   const modelId = detailForm.value.model_id.trim()
-  if (!modelId) return void (formError.value = 'Model ID is required.')
+  if (!modelId) return void (formError.value = t('groups.modelIdRequired'))
   submitting.value = true
   try {
     await fetchAPI(editingDetail.value ? `/model-group-details/${editingDetail.value.id}` : '/model-group-details', {
@@ -336,7 +337,7 @@ async function submitDetail() {
     })
     detailFormOpen.value = false
     await refreshDetails()
-    toast.add({ title: editingDetail.value ? 'Model binding updated' : 'Model added', color: 'success', icon: 'i-tabler-circle-check' })
+    toast.add({ title: editingDetail.value ? t('groups.bindingUpdated') : t('groups.modelAdded'), color: 'success', icon: 'i-tabler-circle-check' })
   } catch (error) {
     formError.value = errorMessage(error)
   } finally {
@@ -360,9 +361,9 @@ async function performDelete() {
     } else {
       await refreshDetails()
     }
-    toast.add({ title: deleteKind.value === 'group' ? 'Model group deleted' : 'Model binding removed', color: 'success', icon: 'i-tabler-circle-check' })
+    toast.add({ title: deleteKind.value === 'group' ? t('groups.groupDeleted') : t('groups.bindingRemoved'), color: 'success', icon: 'i-tabler-circle-check' })
   } catch (error) {
-    toast.add({ title: 'Delete failed', description: errorMessage(error), color: 'error', icon: 'i-tabler-alert-circle' })
+    toast.add({ title: t('routing.deleteFailed'), description: errorMessage(error), color: 'error', icon: 'i-tabler-alert-circle' })
   } finally {
     deleting.value = false
   }
@@ -372,9 +373,9 @@ function modelById(id) {
 }
 function channelName(id) {
   const channel = channels.value.find(item => item.id === id)
-  return channel ? `${channel.channel_name}${channel.disabled ? ' (disabled)' : ''}` : `Channel #${id}`
+  return channel ? `${channel.channel_name}${channel.disabled ? t('groups.channelDisabledSuffix') : ''}` : t('groups.channelNumber', { id })
 }
 function errorMessage(error) {
-  return error?.data?.message || error?.data?.error || error?.response?._data?.message || error?.response?._data?.error || error?.message || 'Unexpected request error.'
+  return error?.data?.message || error?.data?.error || error?.response?._data?.message || error?.response?._data?.error || error?.message || t('routing.unexpectedError')
 }
 </script>

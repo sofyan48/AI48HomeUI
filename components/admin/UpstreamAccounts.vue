@@ -3,89 +3,89 @@
     <input ref="fileInput" type="file" accept="application/json,.json" multiple class="hidden" @change="uploadFiles">
 
 
-    <UAlert v-if="pageError" color="error" variant="subtle" icon="i-tabler-alert-triangle" title="Unable to load credentials" :description="pageError" />
-    <UAlert v-if="flightError" color="warning" variant="subtle" icon="i-tabler-alert-triangle" title="In-flight summary unavailable" :description="flightError" />
+    <UAlert v-if="pageError" color="error" variant="subtle" icon="i-tabler-alert-triangle" :title="t('cred.loadFailed')" :description="pageError" />
+    <UAlert v-if="flightError" color="warning" variant="subtle" icon="i-tabler-alert-triangle" :title="t('cred.flightUnavailable')" :description="flightError" />
 
 
 
 
-    <section class="app-surface min-w-0 overflow-hidden" aria-label="Upstream accounts">
+    <section class="app-surface min-w-0 overflow-hidden" :aria-label="t('cred.title')">
       <div class="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--ui-border)] px-4 py-3">
         <div class="flex min-w-0 items-center gap-3">
           <span class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[var(--admin-selected)] text-[var(--ui-primary)]" aria-hidden="true"><UIcon name="i-tabler-user-shield" class="size-4" /></span>
-          <div class="min-w-0"><h2 class="text-sm font-semibold">Upstream accounts</h2><p class="text-xs text-[var(--ui-text-muted)]">OAuth and file-backed credentials used for dispatch</p></div>
+          <div class="min-w-0"><h2 class="text-sm font-semibold">{{ t('cred.title') }}</h2><p class="text-xs text-[var(--ui-text-muted)]">{{ t('cred.subtitle') }}</p></div>
         </div>
         <div class="flex items-center gap-2">
 
-          <AppButton size="sm" icon="i-tabler-plus" :disabled="busy" @click="createOpen = true">Add credential</AppButton>
+          <AppButton size="sm" icon="i-tabler-plus" :disabled="busy" @click="createOpen = true">{{ t('cred.add') }}</AppButton>
         </div>
       </div>
       <div class="flex flex-col gap-3 border-b border-[var(--ui-border)] bg-[var(--admin-control-bg)] px-4 py-2.5 lg:flex-row lg:items-center">
-        <UInput v-model="search" type="search" icon="i-tabler-search" placeholder="Search credentials..." aria-label="Search credentials" class="w-full lg:max-w-80 lg:flex-1" />
+        <UInput v-model="search" type="search" icon="i-tabler-search" :placeholder="t('cred.searchPlaceholder')" :aria-label="t('cred.searchAria')" class="w-full lg:max-w-80 lg:flex-1" />
         <div class="grid w-full grid-cols-1 items-center gap-2 min-[480px]:grid-cols-2 sm:flex sm:flex-wrap lg:flex-1">
-          <USelect v-model="statusFilter" aria-label="Filter by status" :items="statusOptions" value-key="value" label-key="label" class="w-full sm:w-40" />
-          <USelectMenu v-model="providerFilter" aria-label="Filter by provider" :items="providerOptions" value-key="value" label-key="label" :search-input="{ placeholder: 'Search providers...' }" class="w-full sm:w-52" />
+          <USelect v-model="statusFilter" :aria-label="t('cred.filterStatus')" :items="statusOptions" value-key="value" label-key="label" class="w-full sm:w-40" />
+          <USelectMenu v-model="providerFilter" :aria-label="t('cred.filterProvider')" :items="providerOptions" value-key="value" label-key="label" :search-input="{ placeholder: t('quota.searchProviders') }" class="w-full sm:w-52" />
           <div class="col-span-full flex flex-wrap gap-2 sm:col-span-1">
-            <AppButton size="sm" :color="attentionOnly ? 'warning' : 'neutral'" :variant="attentionOnly ? 'soft' : 'outline'" :aria-pressed="attentionOnly" @click="attentionOnly = !attentionOnly">Needs attention</AppButton>
-            <AppButton size="sm" color="neutral" :variant="websocketsFilter === 'on' ? 'soft' : 'outline'" :aria-pressed="websocketsFilter === 'on'" @click="websocketsFilter = websocketsFilter === 'on' ? ALL_FILTER : 'on'">WebSockets</AppButton>
-            <USelect v-model="websocketsFilter" aria-label="Filter by WebSockets" :items="websocketsOptions" value-key="value" label-key="label" class="w-36" />
+            <AppButton size="sm" :color="attentionOnly ? 'warning' : 'neutral'" :variant="attentionOnly ? 'soft' : 'outline'" :aria-pressed="attentionOnly" @click="attentionOnly = !attentionOnly">{{ t('cred.needsAttention') }}</AppButton>
+            <AppButton size="sm" color="neutral" :variant="websocketsFilter === 'on' ? 'soft' : 'outline'" :aria-pressed="websocketsFilter === 'on'" @click="websocketsFilter = websocketsFilter === 'on' ? ALL_FILTER : 'on'">{{ t('cred.websockets') }}</AppButton>
+            <USelect v-model="websocketsFilter" :aria-label="t('cred.filterWebsockets')" :items="websocketsOptions" value-key="value" label-key="label" class="w-36" />
           </div>
           <div class="col-span-full flex min-h-9 items-center justify-between gap-2 sm:ml-auto">
-            <span role="status" aria-live="polite" class="text-xs tabular-nums text-[var(--ui-text-muted)]">{{ filteredCredentials.length }} of {{ credentials.length }} results</span>
-            <AppButton v-if="hasActiveFilters" size="sm" color="neutral" variant="ghost" @click="clearFilters">Clear filters</AppButton>
+            <span role="status" aria-live="polite" class="text-xs tabular-nums text-[var(--ui-text-muted)]">{{ t('cred.results', { count: filteredCredentials.length, total: credentials.length }) }}</span>
+            <AppButton v-if="hasActiveFilters" size="sm" color="neutral" variant="ghost" @click="clearFilters">{{ t('cred.clearFilters') }}</AppButton>
           </div>
         </div>
       </div>
       <div>
         <div v-if="selectedIDs.size" class="flex flex-col gap-3 border-b border-[var(--ui-border)] bg-[var(--admin-selected)] px-4 py-2.5 lg:flex-row lg:items-center lg:justify-between">
-          <div><p class="text-sm font-medium">{{ selectedIDs.size }} selected</p><p class="mt-0.5 text-xs text-[var(--ui-text-muted)]">{{ selectedEnabledCount }} enabled · {{ selectedDisabledCount }} disabled</p></div>
+          <div><p class="text-sm font-medium">{{ t('cred.selected', { count: selectedIDs.size }) }}</p><p class="mt-0.5 text-xs text-[var(--ui-text-muted)]">{{ t('cred.selectedBreakdown', { enabled: selectedEnabledCount, disabled: selectedDisabledCount }) }}</p></div>
           <div class="flex flex-wrap gap-2">
-            <AppButton size="sm" color="neutral" variant="ghost" :disabled="bulkBusy" @click="selectedIDs = new Set()">Clear selection</AppButton>
-            <AppButton size="sm" color="neutral" variant="ghost" icon="i-tabler-check" :disabled="!selectedDisabledCount || busy || pending" :loading="bulkBusy && bulkAction === 'Enable'" @click="bulkStatus(false)">Enable selected</AppButton>
-            <AppButton size="sm" color="neutral" variant="ghost" icon="i-tabler-alert-triangle" :disabled="!selectedEnabledCount || busy || pending" :loading="bulkBusy && bulkAction === 'Disable'" @click="bulkStatus(true)">Disable selected</AppButton>
-            <AppButton size="sm" color="error" variant="ghost" icon="i-tabler-trash" :disabled="busy || pending" @click="bulkDeleteOpen = true">Delete selected</AppButton>
+            <AppButton size="sm" color="neutral" variant="ghost" :disabled="bulkBusy" @click="selectedIDs = new Set()">{{ t('cred.clearSelection') }}</AppButton>
+            <AppButton size="sm" color="neutral" variant="ghost" icon="i-tabler-check" :disabled="!selectedDisabledCount || busy || pending" :loading="bulkBusy && bulkAction === 'Enable'" @click="bulkStatus(false)">{{ t('cred.enableSelected') }}</AppButton>
+            <AppButton size="sm" color="neutral" variant="ghost" icon="i-tabler-alert-triangle" :disabled="!selectedEnabledCount || busy || pending" :loading="bulkBusy && bulkAction === 'Disable'" @click="bulkStatus(true)">{{ t('cred.disableSelected') }}</AppButton>
+            <AppButton size="sm" color="error" variant="ghost" icon="i-tabler-trash" :disabled="busy || pending" @click="bulkDeleteOpen = true">{{ t('cred.deleteSelected') }}</AppButton>
           </div>
         </div>
       <div class="min-w-0 overflow-x-auto">
       <AppTable :columns="columns" :data="filteredCredentials" :loading="pending" class="accounts-table min-w-0">
-        <template #select-header><input type="checkbox" aria-label="Select all visible credentials" :checked="allVisibleSelected" :indeterminate="someVisibleSelected && !allVisibleSelected" :disabled="bulkBusy || pending || !filteredCredentials.length" @change="toggleAllVisible($event.target.checked)"></template>
-        <template #select-cell="{ row }"><input type="checkbox" :aria-label="`Select ${value(row).label || value(row).name || value(row).id}`" :checked="selectedIDs.has(value(row).id)" :disabled="bulkBusy || pending" @change="toggleSelected(value(row).id, $event.target.checked)"></template>
+        <template #select-header><input type="checkbox" :aria-label="t('cred.selectAll')" :checked="allVisibleSelected" :indeterminate="someVisibleSelected && !allVisibleSelected" :disabled="bulkBusy || pending || !filteredCredentials.length" @change="toggleAllVisible($event.target.checked)"></template>
+        <template #select-cell="{ row }"><input type="checkbox" :aria-label="t('cred.selectOne', { name: value(row).label || value(row).name || value(row).id })" :checked="selectedIDs.has(value(row).id)" :disabled="bulkBusy || pending" @change="toggleSelected(value(row).id, $event.target.checked)"></template>
         <template #identity-cell="{ row }"><div class="flex min-w-0 items-center gap-2.5"><span class="flex size-8 shrink-0 items-center justify-center rounded-md bg-[var(--ui-bg-elevated)] text-[var(--ui-primary)]"><UIcon name="i-tabler-key" class="size-4" /></span><div class="min-w-0"><p class="truncate font-medium">{{ value(row).label || value(row).name }}</p><p class="mt-1 truncate font-mono text-xs text-[var(--ui-text-muted)]" :title="credentialIdentifier(value(row))">{{ compactIdentifier(credentialIdentifier(value(row))) }}</p><p v-if="value(row).note" class="mt-0.5 truncate text-xs text-[var(--ui-text-muted)]">{{ value(row).note }}</p></div></div></template>
-        <template #provider-cell="{ row }"><div class="flex flex-col items-start gap-1"><UBadge color="primary" variant="subtle">{{ value(row).provider || value(row).type || 'Unknown' }}</UBadge><UBadge v-if="value(row).type && String(value(row).type).toLowerCase() !== String(value(row).provider || '').toLowerCase()" color="neutral" variant="subtle" class="font-mono text-xs">{{ value(row).type }}</UBadge></div></template>
-        <template #status-cell="{ row }"><div class="flex items-center gap-2"><USwitch :model-value="!value(row).disabled" :disabled="busy" :loading="changing === value(row).id" :aria-label="`${value(row).disabled ? 'Enable' : 'Disable'} ${value(row).label || value(row).id}`" @update:model-value="toggleStatus(value(row))" /><UBadge :color="credentialColor(value(row))" variant="subtle"><UIcon :name="value(row).disabled || value(row).unavailable ? 'i-tabler-alert-triangle' : 'i-tabler-circle-check'" class="mr-1 inline size-3" />{{ credentialStatus(value(row)) }}</UBadge></div></template>
-        <template #concurrency-cell="{ row }"><div class="text-sm"><span class="font-semibold">{{ concurrency(value(row)).in_flight || value(row).in_flight || 0 }}</span><span class="text-[var(--ui-text-muted)]"> / {{ concurrency(value(row)).max_in_flight ?? value(row).max_in_flight ?? '∞' }}</span><p v-if="concurrency(value(row)).total_saturated || value(row).total_saturated" class="text-xs text-amber-500">Saturated</p></div></template>
+        <template #provider-cell="{ row }"><div class="flex flex-col items-start gap-1"><UBadge color="primary" variant="subtle">{{ value(row).provider || value(row).type || t('common.unknown') }}</UBadge><UBadge v-if="value(row).type && String(value(row).type).toLowerCase() !== String(value(row).provider || '').toLowerCase()" color="neutral" variant="subtle" class="font-mono text-xs">{{ value(row).type }}</UBadge></div></template>
+        <template #status-cell="{ row }"><div class="flex items-center gap-2"><USwitch :model-value="!value(row).disabled" :disabled="busy" :loading="changing === value(row).id" :aria-label="value(row).disabled ? t('cred.enableOne', { name: value(row).label || value(row).id }) : t('cred.disableOne', { name: value(row).label || value(row).id })" @update:model-value="toggleStatus(value(row))" /><UBadge :color="credentialColor(value(row))" variant="subtle"><UIcon :name="value(row).disabled || value(row).unavailable ? 'i-tabler-alert-triangle' : 'i-tabler-circle-check'" class="mr-1 inline size-3" />{{ credentialStatusLabel(credentialStatus(value(row))) }}</UBadge></div></template>
+        <template #concurrency-cell="{ row }"><div class="text-sm"><span class="font-semibold">{{ concurrency(value(row)).in_flight || value(row).in_flight || 0 }}</span><span class="text-[var(--ui-text-muted)]"> / {{ concurrency(value(row)).max_in_flight ?? value(row).max_in_flight ?? '∞' }}</span><p v-if="concurrency(value(row)).total_saturated || value(row).total_saturated" class="text-xs text-amber-500">{{ t('cred.saturated') }}</p></div></template>
         <template #quota-cell="{ row }">
-          <button type="button" class="rounded-md p-1 -m-1 text-left hover:bg-[var(--ui-hover)]" :aria-label="`View quota for ${value(row).label || value(row).id}`" @click="openAccountQuota(value(row))">
+          <button type="button" class="rounded-md p-1 -m-1 text-left hover:bg-[var(--ui-hover)]" :aria-label="t('cred.viewQuotaFor', { name: value(row).label || value(row).id })" @click="openAccountQuota(value(row))">
             <AdminCredentialQuotaPreview :quota="quotaByID.get(value(row).id)" :pending="quotaPending" :read-error="quotaError" />
           </button>
         </template>
         <template #websockets-cell="{ row }">
-          <div v-if="['on', 'off'].includes(credentialWebsocketState(value(row)))" class="flex flex-col items-start gap-1" title="Responses WebSocket transport setting">
-            <USwitch :model-value="credentialWebsocketState(value(row)) === 'on'" :disabled="busy || !value(row).id" :loading="inlineChanging === value(row).id" :aria-label="`WebSockets for ${value(row).label || value(row).name || value(row).id}`" @update:model-value="setInlineField(value(row), 'websockets', $event)" />
-            <span class="text-xs text-[var(--ui-text-muted)]">{{ credentialWebsocketState(value(row)) === 'on' ? 'WS enabled' : 'WS disabled' }}</span>
+          <div v-if="['on', 'off'].includes(credentialWebsocketState(value(row)))" class="flex flex-col items-start gap-1" :title="t('cred.wsSettingTitle')">
+            <USwitch :model-value="credentialWebsocketState(value(row)) === 'on'" :disabled="busy || !value(row).id" :loading="inlineChanging === value(row).id" :aria-label="t('cred.wsFor', { name: value(row).label || value(row).name || value(row).id })" @update:model-value="setInlineField(value(row), 'websockets', $event)" />
+            <span class="text-xs text-[var(--ui-text-muted)]">{{ credentialWebsocketState(value(row)) === 'on' ? t('cred.wsEnabled') : t('cred.wsDisabled') }}</span>
           </div>
-          <span v-else class="text-xs text-[var(--ui-text-muted)]" :title="supportsWebsockets(value(row)) ? 'Home did not return a WebSocket setting; this is not an off state.' : 'WebSockets are not applicable to this provider'">{{ supportsWebsockets(value(row)) ? 'Unknown' : 'N/A' }}</span>
+          <span v-else class="text-xs text-[var(--ui-text-muted)]" :title="supportsWebsockets(value(row)) ? t('cred.wsUnknownTitle') : t('cred.wsNotApplicable')">{{ supportsWebsockets(value(row)) ? t('common.unknown') : t('cred.na') }}</span>
         </template>
-        <template #cooling-cell="{ row }"><USwitch :model-value="!value(row)['disable-cooling']" :disabled="busy || !value(row).id" :loading="inlineChanging === value(row).id" :aria-label="`Cooling schedule for ${value(row).label || value(row).name || value(row).id}`" @update:model-value="setInlineField(value(row), 'disable_cooling', !$event)" /></template>
-        <template #priority-cell="{ row }"><span class="font-mono text-xs tabular-nums" :title="value(row).priority == null ? 'Not set' : undefined">{{ value(row).priority ?? '—' }}</span></template>
+        <template #cooling-cell="{ row }"><USwitch :model-value="!value(row)['disable-cooling']" :disabled="busy || !value(row).id" :loading="inlineChanging === value(row).id" :aria-label="t('cred.coolingFor', { name: value(row).label || value(row).name || value(row).id })" @update:model-value="setInlineField(value(row), 'disable_cooling', !$event)" /></template>
+        <template #priority-cell="{ row }"><span class="font-mono text-xs tabular-nums" :title="value(row).priority == null ? t('cred.notSet') : undefined">{{ value(row).priority ?? '—' }}</span></template>
         <template #actions-cell="{ row }">
-          <AdminRowActions :actions="credentialRowActions(value(row))" :max-inline="1" :menu-label="`credential ${value(row).label || value(row).name || value(row).id}`" />
+          <AdminRowActions :actions="credentialRowActions(value(row))" :max-inline="1" :menu-label="t('cred.menuLabel', { name: value(row).label || value(row).name || value(row).id })" />
         </template>
-        <template #empty><div class="py-8 text-center text-sm text-[var(--ui-text-muted)]"><p>{{ pending ? 'Loading accounts…' : pageError ? 'Could not load accounts. Check the connection and refresh.' : hasActiveFilters ? 'No matching credentials.' : 'No credentials have been added.' }}</p><AppButton v-if="hasActiveFilters && !pending" class="mt-3" color="neutral" variant="outline" size="sm" @click="clearFilters">Clear filters</AppButton></div></template>
+        <template #empty><div class="py-8 text-center text-sm text-[var(--ui-text-muted)]"><p>{{ pending ? t('cred.loadingAccounts') : pageError ? t('cred.loadAccountsFailed') : hasActiveFilters ? t('cred.noMatching') : t('cred.none') }}</p><AppButton v-if="hasActiveFilters && !pending" class="mt-3" color="neutral" variant="outline" size="sm" @click="clearFilters">{{ t('cred.clearFilters') }}</AppButton></div></template>
       </AppTable>
       </div>
       </div>
     </section>
 
-    <AppModal v-model:open="createOpen" :dismissible="false" title="Add credential" description="Choose how to add an upstream account." :ui="{ content: 'sm:max-w-2xl' }" @update:open="handleCreateOpen">
+    <AppModal v-model:open="createOpen" :dismissible="false" :title="t('cred.add')" :description="t('cred.create.description')" :ui="{ content: 'sm:max-w-2xl' }" @update:open="handleCreateOpen">
       <template #body>
         <div class="space-y-5">
-          <div class="grid grid-cols-3 gap-1 rounded-md bg-[var(--ui-bg-elevated)] p-1" role="tablist" aria-label="Credential creation method">
+          <div class="grid grid-cols-3 gap-1 rounded-md bg-[var(--ui-bg-elevated)] p-1" role="tablist" :aria-label="t('cred.create.methodAria')">
             <AppButton v-for="mode in createModes" :key="mode.value" role="tab" :aria-selected="createMode === mode.value" color="neutral" :variant="createMode === mode.value ? 'solid' : 'ghost'" size="sm" class="justify-center" :disabled="uploading" @click="createMode = mode.value">{{ mode.label }}</AppButton>
           </div>
-          <div v-if="createMode === 'oauth'" class="max-h-[65vh] space-y-3 overflow-y-auto"><p class="text-sm text-[var(--ui-text-muted)]">Start a login for the provider you want to connect.</p><div v-for="provider in oauthProviders" :key="provider.value" class="rounded-lg border border-[var(--ui-border)] p-3"><div class="flex items-center justify-between gap-3"><strong>{{ provider.label }}</strong><AppButton size="sm" :loading="startingOAuth === provider.value" @click="startOAuth(provider.value)">Start login</AppButton></div><template v-if="oauthSessions[provider.value]"><div class="mt-3 break-all rounded-md bg-[var(--ui-bg-elevated)] p-2 font-mono text-xs">{{ oauthSessions[provider.value].url }}</div><div class="mt-2 flex flex-wrap gap-2"><AppButton size="sm" color="neutral" variant="outline" @click="copyOAuthLink(provider.value)">Copy authorization link</AppButton><AppButton size="sm" color="neutral" variant="outline" @click="openOAuthLink(provider.value)">Open authorization link</AppButton><AppButton size="sm" color="neutral" variant="outline" :loading="checkingOAuth === provider.value" @click="checkOAuthStatus(provider.value)">Check status</AppButton></div><p v-if="oauthSessions[provider.value].status" class="mt-2 text-sm">{{ oauthSessions[provider.value].status }} {{ oauthSessions[provider.value].error }}</p><form v-if="provider.value !== 'kimi'" class="mt-3 grid gap-2" @submit.prevent="submitCallback(provider.value)"><UInput v-model="oauthSessions[provider.value].redirect_url" placeholder="Callback URL" /><div class="grid gap-2 sm:grid-cols-2"><UInput v-model="oauthSessions[provider.value].code" placeholder="Authorization code" /><UInput v-model="oauthSessions[provider.value].state" placeholder="State" /></div><UInput v-model="oauthSessions[provider.value].callback_error" placeholder="Provider error (optional)" /><AppButton type="submit" size="sm" :loading="submittingCallback === provider.value">Submit callback</AppButton></form></template></div><UAlert v-if="oauthError" color="error" variant="subtle" :description="oauthError" /></div>
-          <div v-else-if="createMode === 'upload'" class="space-y-4"><button type="button" class="w-full rounded-lg border border-dashed border-[var(--ui-border)] p-6 text-center disabled:opacity-50" :disabled="uploadActive || busy" @click="fileInput?.click()" @dragenter.prevent @dragover.prevent @dragleave.prevent @drop.prevent.stop="uploadDroppedFiles"><UIcon name="i-tabler-upload" class="mx-auto mb-2 size-6" /><p class="text-sm">Drop credential JSON files here or choose files</p></button><p v-if="uploadResults.length" class="text-xs text-[var(--ui-text-muted)]">{{ uploadActive ? `${uploadResults.filter(item => ['success', 'error'].includes(item.status)).length} / ${uploadResults.length} completed` : `${uploadResults.filter(item => item.status === 'success').length} successful · ${failedUploads.length} failed` }}</p><div v-for="(result, index) in uploadResults" :key="result.id" class="rounded-md border border-[var(--ui-border)] p-3 text-sm"><div class="flex items-start justify-between gap-2"><div class="min-w-0"><p class="truncate font-medium">{{ result.file.name }}</p><p class="text-xs text-[var(--ui-text-muted)]">{{ formatFileSize(result.file.size) }} · {{ uploadMessage(result) }}<span v-if="result.resultName"> · {{ result.resultName }}</span></p></div><div class="flex gap-1"><AppButton v-if="isRetryableUpload(result)" size="xs" variant="ghost" @click="retryUpload(result)">Retry</AppButton><AppButton v-if="result.status !== 'uploading' && !uploadActive" size="xs" variant="ghost" color="error" @click="uploadResults.splice(index, 1)">Remove</AppButton></div></div><div v-if="result.status === 'uploading'" class="mt-2 h-1.5 overflow-hidden rounded-full bg-[var(--ui-bg-muted)]"><div class="h-full bg-[var(--ui-primary)]" :style="{ width: `${result.progress}%` }" /></div></div><div v-if="!uploadActive" class="flex gap-2"><AppButton v-if="failedUploads.filter(isRetryableUpload).length > 1" size="sm" variant="outline" @click="retryFailedUploads">Retry failed</AppButton><AppButton v-if="uploadResults.length" size="sm" variant="ghost" @click="uploadResults = []">Clear results</AppButton></div></div>
-          <form v-else class="space-y-4" @submit.prevent="importVertex"><div class="rounded-lg border border-dashed border-[var(--ui-border)] p-5" @dragover.prevent @drop.prevent="vertexFile = $event.dataTransfer.files?.[0] || null"><UFormField label="Service account JSON" required><input type="file" accept="application/json,.json" class="block w-full text-sm" @change="vertexFile = $event.target.files?.[0] || null" /></UFormField><p v-if="vertexFile" class="mt-2 text-xs">{{ vertexFile.name }} <AppButton size="xs" variant="ghost" @click="vertexFile = null">Remove</AppButton></p></div><UFormField label="Location"><UInput v-model="vertexLocation" class="w-full" placeholder="us-central1" /></UFormField><UAlert v-if="vertexError" color="error" variant="subtle" :description="vertexError" /><div v-if="vertexResult" class="rounded-md border border-[var(--ui-border)] p-3 text-sm"><p>Status: {{ vertexResult.status }}</p><p>Project: {{ vertexResult.project_id }}</p><p>Email: {{ vertexResult.email }}</p><p>Location: {{ vertexResult.location }}</p><p>Auth file: {{ vertexResult['auth-file'] }}</p></div><div class="flex justify-end"><AppButton type="submit" :loading="importingVertex">Import</AppButton></div></form>
+          <div v-if="createMode === 'oauth'" class="max-h-[65vh] space-y-3 overflow-y-auto"><p class="text-sm text-[var(--ui-text-muted)]">{{ t('cred.oauth.intro') }}</p><div v-for="provider in oauthProviders" :key="provider.value" class="rounded-lg border border-[var(--ui-border)] p-3"><div class="flex items-center justify-between gap-3"><strong>{{ provider.label }}</strong><AppButton size="sm" :loading="startingOAuth === provider.value" @click="startOAuth(provider.value)">{{ t('cred.oauth.start') }}</AppButton></div><template v-if="oauthSessions[provider.value]"><div class="mt-3 break-all rounded-md bg-[var(--ui-bg-elevated)] p-2 font-mono text-xs">{{ oauthSessions[provider.value].url }}</div><div class="mt-2 flex flex-wrap gap-2"><AppButton size="sm" color="neutral" variant="outline" @click="copyOAuthLink(provider.value)">{{ t('cred.oauth.copyLink') }}</AppButton><AppButton size="sm" color="neutral" variant="outline" @click="openOAuthLink(provider.value)">{{ t('cred.oauth.openLink') }}</AppButton><AppButton size="sm" color="neutral" variant="outline" :loading="checkingOAuth === provider.value" @click="checkOAuthStatus(provider.value)">{{ t('cred.oauth.checkStatus') }}</AppButton></div><p v-if="oauthSessions[provider.value].status" class="mt-2 text-sm">{{ oauthSessions[provider.value].status }} {{ oauthSessions[provider.value].error }}</p><form v-if="provider.value !== 'kimi'" class="mt-3 grid gap-2" @submit.prevent="submitCallback(provider.value)"><UInput v-model="oauthSessions[provider.value].redirect_url" :placeholder="t('cred.oauth.callbackUrl')" /><div class="grid gap-2 sm:grid-cols-2"><UInput v-model="oauthSessions[provider.value].code" :placeholder="t('cred.oauth.code')" /><UInput v-model="oauthSessions[provider.value].state" :placeholder="t('cred.oauth.state')" /></div><UInput v-model="oauthSessions[provider.value].callback_error" :placeholder="t('cred.oauth.providerError')" /><AppButton type="submit" size="sm" :loading="submittingCallback === provider.value">{{ t('cred.oauth.submitCallback') }}</AppButton></form></template></div><UAlert v-if="oauthError" color="error" variant="subtle" :description="oauthError" /></div>
+          <div v-else-if="createMode === 'upload'" class="space-y-4"><button type="button" class="w-full rounded-lg border border-dashed border-[var(--ui-border)] p-6 text-center disabled:opacity-50" :disabled="uploadActive || busy" @click="fileInput?.click()" @dragenter.prevent @dragover.prevent @dragleave.prevent @drop.prevent.stop="uploadDroppedFiles"><UIcon name="i-tabler-upload" class="mx-auto mb-2 size-6" /><p class="text-sm">{{ t('cred.upload.drop') }}</p></button><p v-if="uploadResults.length" class="text-xs text-[var(--ui-text-muted)]">{{ uploadActive ? t('cred.upload.progress', { done: uploadResults.filter(item => ['success', 'error'].includes(item.status)).length, total: uploadResults.length }) : t('cred.upload.summary', { succeeded: uploadResults.filter(item => item.status === 'success').length, failed: failedUploads.length }) }}</p><div v-for="(result, index) in uploadResults" :key="result.id" class="rounded-md border border-[var(--ui-border)] p-3 text-sm"><div class="flex items-start justify-between gap-2"><div class="min-w-0"><p class="truncate font-medium">{{ result.file.name }}</p><p class="text-xs text-[var(--ui-text-muted)]">{{ formatFileSize(result.file.size) }} · {{ uploadMessage(result) }}<span v-if="result.resultName"> · {{ result.resultName }}</span></p></div><div class="flex gap-1"><AppButton v-if="isRetryableUpload(result)" size="xs" variant="ghost" @click="retryUpload(result)">{{ t('common.retry') }}</AppButton><AppButton v-if="result.status !== 'uploading' && !uploadActive" size="xs" variant="ghost" color="error" @click="uploadResults.splice(index, 1)">{{ t('common.remove') }}</AppButton></div></div><div v-if="result.status === 'uploading'" class="mt-2 h-1.5 overflow-hidden rounded-full bg-[var(--ui-bg-muted)]"><div class="h-full bg-[var(--ui-primary)]" :style="{ width: `${result.progress}%` }" /></div></div><div v-if="!uploadActive" class="flex gap-2"><AppButton v-if="failedUploads.filter(isRetryableUpload).length > 1" size="sm" variant="outline" @click="retryFailedUploads">{{ t('cred.upload.retryFailed') }}</AppButton><AppButton v-if="uploadResults.length" size="sm" variant="ghost" @click="uploadResults = []">{{ t('cred.upload.clearResults') }}</AppButton></div></div>
+          <form v-else class="space-y-4" @submit.prevent="importVertex"><div class="rounded-lg border border-dashed border-[var(--ui-border)] p-5" @dragover.prevent @drop.prevent="vertexFile = $event.dataTransfer.files?.[0] || null"><UFormField :label="t('cred.vertex.file')" required><input type="file" accept="application/json,.json" class="block w-full text-sm" @change="vertexFile = $event.target.files?.[0] || null" /></UFormField><p v-if="vertexFile" class="mt-2 text-xs">{{ vertexFile.name }} <AppButton size="xs" variant="ghost" @click="vertexFile = null">{{ t('common.remove') }}</AppButton></p></div><UFormField :label="t('cred.vertex.location')"><UInput v-model="vertexLocation" class="w-full" placeholder="us-central1" /></UFormField><UAlert v-if="vertexError" color="error" variant="subtle" :description="vertexError" /><div v-if="vertexResult" class="rounded-md border border-[var(--ui-border)] p-3 text-sm"><p>{{ t('cred.vertex.status', { value: vertexResult.status }) }}</p><p>{{ t('cred.vertex.project', { value: vertexResult.project_id }) }}</p><p>{{ t('cred.vertex.email', { value: vertexResult.email }) }}</p><p>{{ t('cred.vertex.locationValue', { value: vertexResult.location }) }}</p><p>{{ t('cred.vertex.authFile', { value: vertexResult['auth-file'] }) }}</p></div><div class="flex justify-end"><AppButton type="submit" :loading="importingVertex">{{ t('cred.vertex.import') }}</AppButton></div></form>
         </div>
       </template>
     </AppModal>
@@ -93,123 +93,123 @@
 
 
 
-    <USlideover v-model:open="detailsOpen" :dismissible="!savingFields && !savingPolicy && !credentialAction" :title="detailsTarget?.label || detailsTarget?.name || 'Credential details'" :description="detailsTarget?.id || ''" :ui="{ content: 'sm:max-w-xl' }">
+    <USlideover v-model:open="detailsOpen" :dismissible="!savingFields && !savingPolicy && !credentialAction" :title="detailsTarget?.label || detailsTarget?.name || t('cred.details.title')" :description="detailsTarget?.id || ''" :ui="{ content: 'sm:max-w-xl' }">
       <template #body>
         <div v-if="detailsTarget" class="space-y-5">
-          <div class="-mx-4 flex flex-wrap gap-1 border-b border-[var(--ui-border)] bg-[var(--ui-bg-elevated)] px-4 py-2" role="tablist" aria-label="Credential details"><AppButton v-for="section in detailSections" :key="section" role="tab" :aria-selected="detailsTab === section" size="sm" color="neutral" :variant="detailsTab === section ? 'soft' : 'ghost'" :disabled="savingFields || savingPolicy || Boolean(credentialAction)" @click="selectDetailSection(section)">{{ section }}</AppButton></div>
-          <section v-if="detailsTab === 'Overview'" class="space-y-3"><div><h3 class="font-semibold">Overview</h3><p class="text-xs text-[var(--ui-text-muted)]">Credential identity, routing, and runtime state.</p></div><dl class="grid gap-3 text-sm"><div v-for="entry in overviewFields(detailsTarget)" :key="entry.label" class="rounded-md border border-[var(--ui-border)] px-3 py-2.5"><dt class="text-xs text-[var(--ui-text-muted)]">{{ entry.label }}</dt><dd class="mt-1 break-words font-mono text-xs">{{ entry.value }}</dd></div></dl><UAlert v-if="detailsTarget.status_message" color="warning" variant="subtle" :description="detailsTarget.status_message" /></section>
-          <form v-else-if="detailsTab === 'Metadata'" class="space-y-4 text-sm" @submit.prevent="saveFields"><div><h3 class="font-semibold">Metadata</h3><p class="text-xs text-[var(--ui-text-muted)]">Edit routing and credential metadata directly.</p></div>
+          <div class="-mx-4 flex flex-wrap gap-1 border-b border-[var(--ui-border)] bg-[var(--ui-bg-elevated)] px-4 py-2" role="tablist" :aria-label="t('cred.details.title')"><AppButton v-for="section in detailSections" :key="section" role="tab" :aria-selected="detailsTab === section" size="sm" color="neutral" :variant="detailsTab === section ? 'soft' : 'ghost'" :disabled="savingFields || savingPolicy || Boolean(credentialAction)" @click="selectDetailSection(section)">{{ detailSectionLabel(section) }}</AppButton></div>
+          <section v-if="detailsTab === 'Overview'" class="space-y-3"><div><h3 class="font-semibold">{{ t('cred.tab.overview') }}</h3><p class="text-xs text-[var(--ui-text-muted)]">{{ t('cred.overview.description') }}</p></div><dl class="grid gap-3 text-sm"><div v-for="entry in overviewFields(detailsTarget)" :key="entry.label" class="rounded-md border border-[var(--ui-border)] px-3 py-2.5"><dt class="text-xs text-[var(--ui-text-muted)]">{{ entry.label }}</dt><dd class="mt-1 break-words font-mono text-xs">{{ entry.value }}</dd></div></dl><UAlert v-if="detailsTarget.status_message" color="warning" variant="subtle" :description="detailsTarget.status_message" /></section>
+          <form v-else-if="detailsTab === 'Metadata'" class="space-y-4 text-sm" @submit.prevent="saveFields"><div><h3 class="font-semibold">{{ t('cred.tab.metadata') }}</h3><p class="text-xs text-[var(--ui-text-muted)]">{{ t('cred.meta.description') }}</p></div>
             <fieldset :disabled="savingFields || savingPolicy || Boolean(credentialAction)" class="space-y-4">
-            <p class="text-xs text-[var(--ui-text-muted)]">Only changed fields are saved. Leave optional text blank to clear it.</p>
-            <div class="grid gap-3 sm:grid-cols-2"><UFormField label="Prefix"><UInput v-model="fields.prefix" class="w-full" /></UFormField><UFormField label="Proxy URL"><UInput v-model="fields.proxy_url" class="w-full" placeholder="socks5://..." /></UFormField><UFormField label="Priority"><UInput v-model="fields.priority" type="number" step="1" class="w-full" /></UFormField><UFormField label="Request retries"><UInput v-model="fields.request_retry" type="number" min="0" step="1" class="w-full" placeholder="Default" /></UFormField></div>
-            <UFormField label="Weight" description="Only applies to weighted-round-robin routing. Zero excludes this credential. Unset removes the explicit weight and restores the default of 1."><div class="flex gap-2"><UInput v-model="fields.weight" :disabled="!exclusionsLoaded" type="number" step="1" max="1000000" class="w-full" placeholder="Unset (default 1)" /><AppButton type="button" size="sm" color="neutral" variant="outline" :disabled="!exclusionsLoaded" @click="fields.weight = ''">Unset</AppButton></div></UFormField>
-            <UFormField label="Note"><UTextarea v-model="fields.note" class="w-full" /></UFormField>
+            <p class="text-xs text-[var(--ui-text-muted)]">{{ t('cred.meta.hint') }}</p>
+            <div class="grid gap-3 sm:grid-cols-2"><UFormField :label="t('cred.field.prefix')"><UInput v-model="fields.prefix" class="w-full" /></UFormField><UFormField :label="t('cred.field.proxyUrl')"><UInput v-model="fields.proxy_url" class="w-full" placeholder="socks5://..." /></UFormField><UFormField :label="t('cred.field.priority')"><UInput v-model="fields.priority" type="number" step="1" class="w-full" /></UFormField><UFormField :label="t('cred.field.requestRetries')"><UInput v-model="fields.request_retry" type="number" min="0" step="1" class="w-full" :placeholder="t('common.default')" /></UFormField></div>
+            <UFormField :label="t('cred.field.weight')" :description="t('cred.meta.weightDescription')"><div class="flex gap-2"><UInput v-model="fields.weight" :disabled="!exclusionsLoaded" type="number" step="1" max="1000000" class="w-full" :placeholder="t('cred.weightUnset')" /><AppButton type="button" size="sm" color="neutral" variant="outline" :disabled="!exclusionsLoaded" @click="fields.weight = ''">{{ t('cred.meta.unset') }}</AppButton></div></UFormField>
+            <UFormField :label="t('cred.field.note')"><UTextarea v-model="fields.note" class="w-full" /></UFormField>
             <AdminCredentialExcludedModels v-if="exclusionsLoaded" :key="detailsTarget.id" v-model="excludedModels" :credential-id="detailsTarget.id" :disabled="savingFields || savingPolicy || Boolean(credentialAction)" />
-            <p v-if="exclusionsLoading" class="text-xs text-[var(--ui-text-muted)]">Reading stored exclusions…</p>
+            <p v-if="exclusionsLoading" class="text-xs text-[var(--ui-text-muted)]">{{ t('cred.meta.readingExclusions') }}</p>
             <UAlert v-if="exclusionsError" color="warning" variant="subtle" :description="exclusionsError" />
-            <AppButton v-if="!exclusionsLoaded && !exclusionsLoading" type="button" size="sm" variant="outline" @click="loadExclusions">Read exclusions</AppButton>
-            <UCheckbox v-if="['on', 'off'].includes(credentialWebsocketState(detailsTarget || {}))" v-model="fields.websockets" label="Responses WebSocket transport" />
-                        <div v-else class="flex items-center justify-between rounded-md border border-[var(--ui-border)] p-3"><div><h4 class="font-semibold">WebSocket support</h4><p class="text-xs text-[var(--ui-text-muted)]">{{ supportsWebsockets(detailsTarget) ? 'Home did not return a WebSocket setting.' : 'The current provider does not expose a WS toggle.' }}</p></div><UBadge color="neutral" variant="subtle">{{ supportsWebsockets(detailsTarget) ? 'Unknown' : 'N/A' }}</UBadge></div>
-            <UFormField v-if="supportsUsingAPI(detailsTarget)" label="xAI API mode" description="Enable using_api to use xAI API mode instead of the default transport. This is independent of the WebSocket setting."><USwitch v-model="fields.using_api" aria-label="Use xAI API mode" /></UFormField>
-            <UFormField label="Cooling override"><USelect v-model="fields.disable_cooling" :items="coolingOptions" value-key="value" label-key="label" class="w-full" /></UFormField>
-            <div class="flex items-center justify-between rounded-md border border-[var(--ui-border)] p-3"><span class="font-semibold">Enable credential</span><USwitch v-model="fields.enabled" aria-label="Enable credential" :disabled="savingFields" /></div>
+            <AppButton v-if="!exclusionsLoaded && !exclusionsLoading" type="button" size="sm" variant="outline" @click="loadExclusions">{{ t('cred.meta.readExclusions') }}</AppButton>
+            <UCheckbox v-if="['on', 'off'].includes(credentialWebsocketState(detailsTarget || {}))" v-model="fields.websockets" :label="t('cred.meta.wsTransport')" />
+                        <div v-else class="flex items-center justify-between rounded-md border border-[var(--ui-border)] p-3"><div><h4 class="font-semibold">{{ t('cred.meta.wsSupport') }}</h4><p class="text-xs text-[var(--ui-text-muted)]">{{ supportsWebsockets(detailsTarget) ? t('cred.meta.wsNotReturned') : t('cred.meta.wsNoToggle') }}</p></div><UBadge color="neutral" variant="subtle">{{ supportsWebsockets(detailsTarget) ? t('common.unknown') : t('cred.na') }}</UBadge></div>
+            <UFormField v-if="supportsUsingAPI(detailsTarget)" :label="t('cred.field.xaiApiMode')" :description="t('cred.meta.xaiDescription')"><USwitch v-model="fields.using_api" :aria-label="t('cred.meta.xaiAria')" /></UFormField>
+            <UFormField :label="t('cred.meta.coolingOverride')"><USelect v-model="fields.disable_cooling" :items="coolingOptions" value-key="value" label-key="label" class="w-full" /></UFormField>
+            <div class="flex items-center justify-between rounded-md border border-[var(--ui-border)] p-3"><span class="font-semibold">{{ t('cred.meta.enableCredential') }}</span><USwitch v-model="fields.enabled" :aria-label="t('cred.meta.enableCredential')" :disabled="savingFields" /></div>
             <AdminCredentialConcurrencyPolicy v-model:total="policyTotal" v-model:models="policyModels" class="border-t border-[var(--ui-border)] pt-4" :available="policySupported" :dirty="policyDirty" :policy="policy" :loading="loadingPolicy" :saving="savingFields || savingPolicy" :conflict="policyConflict" :error="policyError" @reload="loadPolicy" @add="addPolicyModel" @remove="policyModels.splice($event, 1)" />
             <UAlert v-if="fieldsError" color="error" variant="subtle" :description="fieldsError" />
-            <div class="flex justify-end border-t border-[var(--ui-border)] pt-3"><AppButton type="submit" size="sm" :loading="savingFields" :disabled="savingFields || savingPolicy || Boolean(credentialAction) || (!policySupported && policyDirty) || (policySupported && (loadingPolicy || !policy || policyConflict))">Save changes</AppButton></div>
+            <div class="flex justify-end border-t border-[var(--ui-border)] pt-3"><AppButton type="submit" size="sm" :loading="savingFields" :disabled="savingFields || savingPolicy || Boolean(credentialAction) || (!policySupported && policyDirty) || (policySupported && (loadingPolicy || !policy || policyConflict))">{{ t('cred.meta.saveChanges') }}</AppButton></div>
             </fieldset>
           </form>
-          <section v-else-if="detailsTab === 'Quota'" class="space-y-3 text-sm"><div><h3 class="font-semibold">Quota</h3><p class="text-xs text-[var(--ui-text-muted)]">All quota windows, collection state, and reset credits.</p></div>
+          <section v-else-if="detailsTab === 'Quota'" class="space-y-3 text-sm"><div><h3 class="font-semibold">{{ t('cred.tab.quota') }}</h3><p class="text-xs text-[var(--ui-text-muted)]">{{ t('cred.quotaTab.description') }}</p></div>
             <UAlert v-if="accountQuotaError" color="error" variant="subtle" :description="accountQuotaError" />
-            <p v-if="accountQuotaLoading" class="py-8 text-center text-[var(--ui-text-muted)]">Loading quota windows…</p>
+            <p v-if="accountQuotaLoading" class="py-8 text-center text-[var(--ui-text-muted)]">{{ t('cred.quotaTab.loading') }}</p>
             <template v-else-if="accountQuotaDetail">
-              <div class="flex flex-wrap items-center gap-2"><UBadge color="neutral" variant="subtle">{{ accountQuotaDetail.credential?.provider || detailsTarget?.provider || 'Unknown provider' }}</UBadge><UBadge :color="quotaColor(accountQuotaDetail.credential?.quota_status)" variant="subtle">{{ accountQuotaDetail.credential?.quota_status || 'unknown' }}</UBadge><UBadge color="neutral" variant="subtle">{{ accountQuotaDetail.collection?.freshness || 'never' }}</UBadge><UBadge v-if="accountQuotaDetail.collection?.status" color="neutral" variant="subtle">{{ accountQuotaDetail.collection.status }}</UBadge></div>
-              <p v-if="quotaHistorical(accountQuotaDetail.credential)" class="text-xs text-amber-500">Historical observation, not current availability</p>
-              <p v-if="accountQuotaDetail.credential?.source === 'response_header' && accountQuotaDetail.collection?.status === 'success'" class="text-xs text-[var(--ui-text-muted)]">Passive header snapshot</p>
+              <div class="flex flex-wrap items-center gap-2"><UBadge color="neutral" variant="subtle">{{ accountQuotaDetail.credential?.provider || detailsTarget?.provider || t('cred.quotaTab.unknownProvider') }}</UBadge><UBadge :color="quotaColor(accountQuotaDetail.credential?.quota_status)" variant="subtle">{{ quotaStatusLabel(accountQuotaDetail.credential?.quota_status || 'unknown') }}</UBadge><UBadge color="neutral" variant="subtle">{{ freshnessLabel(accountQuotaDetail.collection?.freshness || 'never') }}</UBadge><UBadge v-if="accountQuotaDetail.collection?.status" color="neutral" variant="subtle">{{ collectionLabel(accountQuotaDetail.collection.status) }}</UBadge></div>
+              <p v-if="quotaHistorical(accountQuotaDetail.credential)" class="text-xs text-amber-500">{{ t('quota.historical') }}</p>
+              <p v-if="accountQuotaDetail.credential?.source === 'response_header' && accountQuotaDetail.collection?.status === 'success'" class="text-xs text-[var(--ui-text-muted)]">{{ t('quota.passiveHeader') }}</p>
               <p v-if="accountQuotaDetail.credential?.plan?.name" class="font-medium">{{ accountQuotaDetail.credential.plan.name }}</p>
-              <p v-if="accountQuotaDetail.credential?.plan?.expires_at" class="text-xs text-[var(--ui-text-muted)]">Subscription ends {{ new Date(accountQuotaDetail.credential.plan.expires_at).toLocaleString() }}</p>
+              <p v-if="accountQuotaDetail.credential?.plan?.expires_at" class="text-xs text-[var(--ui-text-muted)]">{{ t('quota.subscriptionEnds', { date: formatDateTime(accountQuotaDetail.credential.plan.expires_at) }) }}</p>
               <div v-if="['xai', 'grok'].includes(accountQuotaDetail.credential?.provider)" class="space-y-2">
-                <p>On-demand: {{ xaiOnDemandState(accountQuotaDetail.credential) }}</p>
+                <p>{{ t('quota.onDemand', { state: onDemandLabel(xaiOnDemandState(accountQuotaDetail.credential)) }) }}</p>
                 <div v-if="xaiProductWindows(accountQuotaDetail.credential).length" class="space-y-2 rounded-md border border-[var(--ui-border)] p-3">
-                  <p class="font-medium">Shared product usage</p>
-                  <p class="text-xs text-[var(--ui-text-muted)]">Products share one allowance, not separate quotas.</p>
+                  <p class="font-medium">{{ t('cred.quotaTab.sharedUsage') }}</p>
+                  <p class="text-xs text-[var(--ui-text-muted)]">{{ t('quota.sharedAllowance') }}</p>
                   <div v-for="window in xaiProductWindows(accountQuotaDetail.credential)" :key="window.id">
-                    <p>{{ window.label || window.id }}: {{ quotaProductUsed(window) }}</p>
-                    <p v-if="isRetainedQuotaWindow(accountQuotaDetail.credential, window)" class="text-xs text-amber-500">Retained · observed {{ new Date(window.observed_at).toLocaleString() }}</p>
+                    <p>{{ window.label || window.id }}: {{ quotaProductUsed(window, t) }}</p>
+                    <p v-if="isRetainedQuotaWindow(accountQuotaDetail.credential, window)" class="text-xs text-amber-500">{{ t('quota.retainedObserved', { date: formatDateTime(window.observed_at) }) }}</p>
                   </div>
                 </div>
               </div>
-              <div v-for="window in accountQuotaWindows" :key="window.id" class="rounded-md border border-[var(--ui-border)] p-3"><div class="flex items-start justify-between gap-3"><p class="font-medium">{{ quotaWindowLabel(window, accountQuotaDetail.credential?.provider) }}</p><UBadge :color="quotaColor(window.status)" variant="subtle">{{ window.status }}</UBadge></div><p v-if="isRetainedQuotaWindow(accountQuotaDetail.credential, window)" class="text-xs text-amber-500">Retained · observed {{ new Date(window.observed_at).toLocaleString() }}</p><p class="mt-1 text-xs text-[var(--ui-text-muted)]">{{ quotaWindowRemaining(window) }} · Used: {{ quotaWindowAmount(window.used, window) }} · Reset: {{ window.reset_at ? new Date(window.reset_at).toLocaleString() : '—' }}</p><div v-if="quotaWindowRatio(window) !== null" class="mt-2 h-1.5 overflow-hidden rounded-full bg-[var(--ui-bg-muted)]"><div class="h-full bg-[var(--ui-primary)]" :style="{ width: `${Math.round(quotaWindowRatio(window) * 100)}%` }" /></div></div>
-              <p v-if="accountQuotaDetail.collection?.error" class="text-xs text-red-500">{{ quotaCollectionMessage(accountQuotaDetail.collection.error) }}</p><p v-if="!accountQuotaDetail.windows?.length" class="text-[var(--ui-text-muted)]">No quota windows recorded.</p>
-              <div v-if="accountQuotaDetail.reset_credits || resetCreditSupported" class="rounded-md border border-[var(--ui-border)] p-3"><p class="font-medium">Reset credits: {{ accountQuotaDetail.reset_credits?.available_count ?? '—' }} available</p><p v-if="String(accountQuotaDetail.credential?.provider).toLowerCase() === 'claude'" class="mt-1 text-xs text-[var(--ui-text-muted)]">Remaining resets in active grants, not guaranteed redemption eligibility. Home observes Claude grants only; it cannot consume them. Individual credit expiry details are not provided.</p><p v-if="accountQuotaDetail.reset_credits?.observed_at" class="text-xs text-[var(--ui-text-muted)]">Observed {{ new Date(accountQuotaDetail.reset_credits.observed_at).toLocaleString() }}</p><p v-for="(credit, index) in accountQuotaDetail.reset_credits?.credits || []" :key="index" class="mt-1 text-xs">{{ credit.status }} · Expires {{ credit.expires_at ? new Date(credit.expires_at).toLocaleString() : '—' }}</p><AppButton v-if="resetCreditSupported" size="sm" color="neutral" variant="outline" class="mt-3" :disabled="!canResetCredit || resetCreditSubmitting || Boolean(resetCreditAttempts[detailsTarget?.id])" @click="openResetCredit">Reset Codex quota with one credit</AppButton><p v-if="resetCreditDisabledReason" class="mt-2 text-xs text-[var(--ui-text-muted)]">{{ resetCreditDisabledReason }}</p></div>
+              <div v-for="window in accountQuotaWindows" :key="window.id" class="rounded-md border border-[var(--ui-border)] p-3"><div class="flex items-start justify-between gap-3"><p class="font-medium">{{ quotaWindowLabel(window, accountQuotaDetail.credential?.provider, t) }}</p><UBadge :color="quotaColor(window.status)" variant="subtle">{{ quotaStatusLabel(window.status) }}</UBadge></div><p v-if="isRetainedQuotaWindow(accountQuotaDetail.credential, window)" class="text-xs text-amber-500">{{ t('quota.retainedObserved', { date: formatDateTime(window.observed_at) }) }}</p><p class="mt-1 text-xs text-[var(--ui-text-muted)]">{{ quotaWindowRemaining(window) }} · {{ t('quota.usedAmount', { amount: quotaWindowAmount(window.used, window, intlLocale) }) }} · {{ t('quota.resetLine', { date: window.reset_at ? formatDateTime(window.reset_at) : '—' }) }}</p><div v-if="quotaWindowRatio(window) !== null" class="mt-2 h-1.5 overflow-hidden rounded-full bg-[var(--ui-bg-muted)]"><div class="h-full bg-[var(--ui-primary)]" :style="{ width: `${Math.round(quotaWindowRatio(window) * 100)}%` }" /></div></div>
+              <p v-if="accountQuotaDetail.collection?.error" class="text-xs text-red-500">{{ quotaCollectionMessage(accountQuotaDetail.collection.error, t) }}</p><p v-if="!accountQuotaDetail.windows?.length" class="text-[var(--ui-text-muted)]">{{ t('quota.noWindowsRecorded') }}</p>
+              <div v-if="accountQuotaDetail.reset_credits || resetCreditSupported" class="rounded-md border border-[var(--ui-border)] p-3"><p class="font-medium">{{ t('cred.quotaTab.resetCredits', { count: accountQuotaDetail.reset_credits?.available_count ?? '—' }) }}</p><p v-if="String(accountQuotaDetail.credential?.provider).toLowerCase() === 'claude'" class="mt-1 text-xs text-[var(--ui-text-muted)]">{{ t('cred.quotaTab.claudeNote') }}</p><p v-if="accountQuotaDetail.reset_credits?.observed_at" class="text-xs text-[var(--ui-text-muted)]">{{ t('quota.observedAt', { date: formatDateTime(accountQuotaDetail.reset_credits.observed_at) }) }}</p><p v-for="(credit, index) in accountQuotaDetail.reset_credits?.credits || []" :key="index" class="mt-1 text-xs">{{ quotaStatusLabel(credit.status) }} · {{ t('quota.expiresAt', { date: credit.expires_at ? formatDateTime(credit.expires_at) : '—' }) }}</p><AppButton v-if="resetCreditSupported" size="sm" color="neutral" variant="outline" class="mt-3" :disabled="!canResetCredit || resetCreditSubmitting || Boolean(resetCreditAttempts[detailsTarget?.id])" @click="openResetCredit">{{ t('cred.quotaTab.resetCodex') }}</AppButton><p v-if="resetCreditDisabledReason" class="mt-2 text-xs text-[var(--ui-text-muted)]">{{ resetCreditDisabledReason }}</p></div>
             </template>
             <UAlert v-if="resetCreditNotice && resetCreditNoticeCredential === detailsTarget?.id" :color="resetCreditNoticeColor" variant="subtle" :description="resetCreditNotice" />
-            <p role="status" class="text-xs text-[var(--ui-text-muted)]">{{ accountQuotaCollecting ? 'Waiting for a newer settled quota collection result…' : accountQuotaNotice || 'Collection is tracked for up to 30 polls; Home may continue after tracking ends.' }}</p>
-            <div class="flex flex-wrap justify-end gap-2 border-t border-[var(--ui-border)] pt-3"><AppButton size="sm" color="neutral" variant="outline" :loading="accountQuotaLoading" @click="refreshAccountQuota">Refresh</AppButton><AppButton size="sm" color="neutral" variant="outline" :loading="accountQuotaCollecting" @click="collectAccountQuota">Collect now</AppButton></div>
+            <p role="status" class="text-xs text-[var(--ui-text-muted)]">{{ accountQuotaCollecting ? t('cred.quotaTab.waiting') : accountQuotaNotice || t('cred.quotaTab.tracking') }}</p>
+            <div class="flex flex-wrap justify-end gap-2 border-t border-[var(--ui-border)] pt-3"><AppButton size="sm" color="neutral" variant="outline" :loading="accountQuotaLoading" @click="refreshAccountQuota">{{ t('common.refresh') }}</AppButton><AppButton size="sm" color="neutral" variant="outline" :loading="accountQuotaCollecting" @click="collectAccountQuota">{{ t('cred.quotaTab.collectNow') }}</AppButton></div>
           </section>
-          <section v-else-if="detailsTab === 'Concurrency'" class="space-y-5 text-sm"><div><h3 class="font-semibold">Concurrency</h3><p class="text-xs text-[var(--ui-text-muted)]">Policy, admitted state, and observed requests.</p></div>
+          <section v-else-if="detailsTab === 'Concurrency'" class="space-y-5 text-sm"><div><h3 class="font-semibold">{{ t('cred.tab.concurrency') }}</h3><p class="text-xs text-[var(--ui-text-muted)]">{{ t('cred.conc.description') }}</p></div>
             <UAlert v-if="policyError || concurrencyError" color="error" variant="subtle" :description="policyError || concurrencyError" />
             <AdminCredentialConcurrencyPolicy v-model:total="policyTotal" v-model:models="policyModels" :available="policySupported" :dirty="policyDirty" :policy="policy" :loading="loadingPolicy" :saving="savingFields || savingPolicy" :conflict="policyConflict" :error="policyError" show-save @reload="loadPolicy" @save="savePolicy" @add="addPolicyModel" @remove="policyModels.splice($event, 1)" />
-            <p v-if="!snapshotsSupported" class="text-[var(--ui-text-muted)]">In-flight snapshots are unavailable on this deployment.</p>
-            <section class="space-y-3 border-t border-[var(--ui-border)] pt-4"><div class="flex items-center justify-between gap-2"><div><h3 class="font-semibold">Current concurrency</h3><p class="text-xs text-[var(--ui-text-muted)]">Admitted state and observed in-flight requests.</p></div><AppButton size="sm" color="neutral" variant="outline" :loading="loadingConcurrency" @click="loadConcurrency()">Refresh</AppButton></div><div v-if="concurrencyState" class="space-y-2"><p>Admitted: <strong>{{ concurrencyState.admitted_in_flight }}</strong> / {{ concurrencyState.max_in_flight ?? '∞' }} <UBadge v-if="concurrencyState.total_saturated" color="warning" variant="subtle">Saturated</UBadge></p><p class="text-xs text-[var(--ui-text-muted)]">Remaining: {{ concurrencyState.remaining ?? 'unlimited' }} · Policy version: {{ concurrencyState.policy_version }} · Fully enforced: {{ concurrencyState.fully_enforced }}</p><div v-for="model in concurrencyState.models || []" :key="model.model" class="rounded-md border border-[var(--ui-border)] p-3"><span class="font-medium">{{ model.model }}</span> · {{ model.admitted_in_flight }} / {{ model.max_in_flight }} <UBadge v-if="model.saturated" color="warning" variant="subtle">Saturated</UBadge></div></div><p v-if="flightDetails?.stale || flightDetails?.details_truncated || flightDetails?.coverage_complete === false" class="text-xs text-amber-500">Observation may be stale or incomplete.</p><p v-if="flightDetails?.observed_at" class="text-xs text-[var(--ui-text-muted)]">Observed at {{ flightDetails.observed_at }} · {{ flightDetails.total }} request(s)</p><div v-for="request in flightDetails?.items || []" :key="request.request_id" class="rounded-md border border-[var(--ui-border)] p-3"><p class="break-all font-mono text-xs">{{ request.request_id }}</p><p>{{ request.model || 'Unknown model' }} · {{ request.request_kind || 'request' }}</p><p class="text-xs text-[var(--ui-text-muted)]">Started {{ request.started_at }}</p></div><p v-if="snapshotsSupported && !loadingConcurrency && !flightDetails?.items?.length" class="text-[var(--ui-text-muted)]">No observed requests.</p><AppButton v-if="flightDetails?.next_offset != null" color="neutral" variant="outline" :loading="loadingConcurrency" @click="loadConcurrency(flightDetails.next_offset)">Load more</AppButton></section>
+            <p v-if="!snapshotsSupported" class="text-[var(--ui-text-muted)]">{{ t('cred.conc.snapshotsUnavailable') }}</p>
+            <section class="space-y-3 border-t border-[var(--ui-border)] pt-4"><div class="flex items-center justify-between gap-2"><div><h3 class="font-semibold">{{ t('cred.conc.current') }}</h3><p class="text-xs text-[var(--ui-text-muted)]">{{ t('cred.conc.currentDescription') }}</p></div><AppButton size="sm" color="neutral" variant="outline" :loading="loadingConcurrency" @click="loadConcurrency()">{{ t('common.refresh') }}</AppButton></div><div v-if="concurrencyState" class="space-y-2"><p>{{ t('cred.conc.admitted') }} <strong>{{ concurrencyState.admitted_in_flight }}</strong> / {{ concurrencyState.max_in_flight ?? '∞' }} <UBadge v-if="concurrencyState.total_saturated" color="warning" variant="subtle">{{ t('cred.saturated') }}</UBadge></p><p class="text-xs text-[var(--ui-text-muted)]">{{ t('cred.conc.stateLine', { remaining: concurrencyState.remaining ?? t('cred.conc.unlimited'), version: concurrencyState.policy_version, enforced: concurrencyState.fully_enforced }) }}</p><div v-for="model in concurrencyState.models || []" :key="model.model" class="rounded-md border border-[var(--ui-border)] p-3"><span class="font-medium">{{ model.model }}</span> · {{ model.admitted_in_flight }} / {{ model.max_in_flight }} <UBadge v-if="model.saturated" color="warning" variant="subtle">{{ t('cred.saturated') }}</UBadge></div></div><p v-if="flightDetails?.stale || flightDetails?.details_truncated || flightDetails?.coverage_complete === false" class="text-xs text-amber-500">{{ t('cred.conc.stale') }}</p><p v-if="flightDetails?.observed_at" class="text-xs text-[var(--ui-text-muted)]">{{ t('cred.conc.observed', { at: flightDetails.observed_at, total: flightDetails.total }) }}</p><div v-for="request in flightDetails?.items || []" :key="request.request_id" class="rounded-md border border-[var(--ui-border)] p-3"><p class="break-all font-mono text-xs">{{ request.request_id }}</p><p>{{ request.model || t('cred.conc.unknownModel') }} · {{ request.request_kind || t('cred.conc.requestKind') }}</p><p class="text-xs text-[var(--ui-text-muted)]">{{ t('cred.conc.started', { at: request.started_at }) }}</p></div><p v-if="snapshotsSupported && !loadingConcurrency && !flightDetails?.items?.length" class="text-[var(--ui-text-muted)]">{{ t('cred.conc.noRequests') }}</p><AppButton v-if="flightDetails?.next_offset != null" color="neutral" variant="outline" :loading="loadingConcurrency" @click="loadConcurrency(flightDetails.next_offset)">{{ t('cred.conc.loadMore') }}</AppButton></section>
           </section>
           <section v-else-if="detailsTab === 'Models'" class="space-y-3 text-sm">
-            <div class="flex items-center justify-between gap-2"><div><h3 class="font-semibold">Models</h3><p class="text-xs text-[var(--ui-text-muted)]">Models exposed by this credential and runtime-only history.</p></div><AppButton size="sm" color="neutral" variant="outline" :loading="modelsLoading" @click="loadModels(detailsTarget, true)">Refresh</AppButton></div>
+            <div class="flex items-center justify-between gap-2"><div><h3 class="font-semibold">{{ t('cred.tab.models') }}</h3><p class="text-xs text-[var(--ui-text-muted)]">{{ t('cred.models.description') }}</p></div><AppButton size="sm" color="neutral" variant="outline" :loading="modelsLoading" @click="loadModels(detailsTarget, true)">{{ t('common.refresh') }}</AppButton></div>
             <UAlert v-if="modelsError" color="error" variant="subtle" :description="modelsError" />
             <UAlert v-if="modelStatesNotice" color="warning" variant="subtle" :description="modelStatesNotice" />
-            <p v-if="modelsLoading" class="py-8 text-center text-[var(--ui-text-muted)]">Loading models…</p>
+            <p v-if="modelsLoading" class="py-8 text-center text-[var(--ui-text-muted)]">{{ t('cred.models.loading') }}</p>
             <template v-else>
-              <div v-if="modelStates?.credential" class="space-y-2"><p class="text-xs text-[var(--ui-text-muted)]">Runtime node {{ modelStates.node?.ip }}:{{ modelStates.node?.port }} · Observed {{ modelStates.observed_at }} · State version {{ modelStates.credential.state_version }}</p><p>Status: {{ modelStates.credential.status }} · Unavailable: {{ modelStates.credential.unavailable }} · Refresh blocked: {{ modelStates.credential.refresh_blocked }}</p><p v-if="modelStates.credential.status_message">{{ modelStates.credential.status_message }}</p></div>
-              <USelect v-model="modelScope" aria-label="Model scope" :items="modelScopeOptions" value-key="value" label-key="label" class="w-full" />
+              <div v-if="modelStates?.credential" class="space-y-2"><p class="text-xs text-[var(--ui-text-muted)]">{{ t('cred.models.runtime', { ip: modelStates.node?.ip, port: modelStates.node?.port, at: modelStates.observed_at, version: modelStates.credential.state_version }) }}</p><p>{{ t('cred.models.state', { status: modelStates.credential.status, unavailable: modelStates.credential.unavailable, blocked: modelStates.credential.refresh_blocked }) }}</p><p v-if="modelStates.credential.status_message">{{ modelStates.credential.status_message }}</p></div>
+              <USelect v-model="modelScope" :aria-label="t('cred.models.scopeAria')" :items="modelScopeOptions" value-key="value" label-key="label" class="w-full" />
               <div v-for="model in scopedModelCards" :key="model.id" class="rounded-md border border-[var(--ui-border)] p-3">
                 <p class="font-medium">{{ model.display_name || model.id }}</p>
                 <p class="font-mono text-xs text-[var(--ui-text-muted)]">{{ model.id }}</p>
                 <div v-for="state in model.diagnostics" :key="JSON.stringify([state.upstream_model, state.state_key])" class="mt-2 space-y-1">
-                  <p class="font-mono text-xs">Upstream {{ state.upstream_model }} · State {{ state.state_key }}</p>
-                  <p class="text-xs text-[var(--ui-text-muted)]">{{ state.status }} · {{ state.blocked ? state.block_reason : 'Not blocked' }} · Registered: {{ state.registered }}</p>
-                  <p v-if="state.remaining_cooldown || state.next_retry_after" class="text-xs">Cooldown {{ state.remaining_cooldown || '—' }} · Retry {{ state.next_retry_after || '—' }}</p>
+                  <p class="font-mono text-xs">{{ t('cred.models.upstream', { upstream: state.upstream_model, state: state.state_key }) }}</p>
+                  <p class="text-xs text-[var(--ui-text-muted)]">{{ t('cred.models.diag', { status: state.status, block: state.blocked ? state.block_reason : t('cred.models.notBlocked'), registered: state.registered }) }}</p>
+                  <p v-if="state.remaining_cooldown || state.next_retry_after" class="text-xs">{{ t('cred.models.cooldown', { cooldown: state.remaining_cooldown || '—', retry: state.next_retry_after || '—' }) }}</p>
                   <p v-if="state.status_message || state.last_error?.message" class="text-xs">{{ state.status_message || state.last_error?.message }}</p>
                 </div>
               </div>
-              <p v-if="!scopedModelCards.length" class="py-6 text-center text-[var(--ui-text-muted)]">No models found.</p>
+              <p v-if="!scopedModelCards.length" class="py-6 text-center text-[var(--ui-text-muted)]">{{ t('cred.models.none') }}</p>
             </template>
           </section>
-          <section v-else-if="detailsTab === 'Recovery'" class="space-y-3"><h3 class="font-semibold">Credential recovery</h3><p class="text-xs text-[var(--ui-text-muted)]">OAuth refresh updates tokens. Cooldown reset clears quota cooldowns only; it does not redeem credits or clear unrelated errors.</p><UAlert v-if="actionError" color="warning" variant="subtle" :description="actionError" /><div class="flex flex-wrap gap-2"><AppButton v-if="refreshAvailable" size="sm" variant="outline" :disabled="busy || Boolean(credentialAction)" :loading="credentialAction === 'refresh'" @click="runCredentialAction('refresh')">Refresh OAuth credential</AppButton><AppButton v-if="supports('credential_cooldown_reset', false) && cooldownAvailable" size="sm" color="warning" variant="outline" :disabled="busy || Boolean(credentialAction)" :loading="credentialAction === 'cooldown'" @click="runCredentialAction('cooldown')">Reset quota cooldown</AppButton></div><p v-if="!supports('credential_cooldown_reset', false) || !cooldownAvailable" class="text-xs text-[var(--ui-text-muted)]">Cooldown reset is unavailable on this deployment.</p></section>
-          <section v-else class="space-y-3"><div><h3 class="font-semibold text-red-600 dark:text-red-400">Danger zone</h3><p class="text-xs text-[var(--ui-text-muted)]">Download a backup or permanently remove this credential.</p></div><div class="flex flex-wrap gap-2"><AppButton size="sm" color="neutral" variant="outline" @click="downloadCredential(detailsTarget)">Download credential</AppButton><AppButton size="sm" color="error" variant="outline" @click="confirmDelete(detailsTarget)">Delete credential</AppButton></div></section>
+          <section v-else-if="detailsTab === 'Recovery'" class="space-y-3"><h3 class="font-semibold">{{ t('cred.recovery.title') }}</h3><p class="text-xs text-[var(--ui-text-muted)]">{{ t('cred.recovery.description') }}</p><UAlert v-if="actionError" color="warning" variant="subtle" :description="actionError" /><div class="flex flex-wrap gap-2"><AppButton v-if="refreshAvailable" size="sm" variant="outline" :disabled="busy || Boolean(credentialAction)" :loading="credentialAction === 'refresh'" @click="runCredentialAction('refresh')">{{ t('cred.recovery.refresh') }}</AppButton><AppButton v-if="supports('credential_cooldown_reset', false) && cooldownAvailable" size="sm" color="warning" variant="outline" :disabled="busy || Boolean(credentialAction)" :loading="credentialAction === 'cooldown'" @click="runCredentialAction('cooldown')">{{ t('cred.recovery.cooldown') }}</AppButton></div><p v-if="!supports('credential_cooldown_reset', false) || !cooldownAvailable" class="text-xs text-[var(--ui-text-muted)]">{{ t('cred.recovery.cooldownUnavailable') }}</p></section>
+          <section v-else class="space-y-3"><div><h3 class="font-semibold text-red-600 dark:text-red-400">{{ t('cred.danger.title') }}</h3><p class="text-xs text-[var(--ui-text-muted)]">{{ t('cred.danger.description') }}</p></div><div class="flex flex-wrap gap-2"><AppButton size="sm" color="neutral" variant="outline" @click="downloadCredential(detailsTarget)">{{ t('cred.danger.download') }}</AppButton><AppButton size="sm" color="error" variant="outline" @click="confirmDelete(detailsTarget)">{{ t('cred.danger.delete') }}</AppButton></div></section>
         </div>
       </template>
     </USlideover>
 
-    <AppModal v-model:open="resetCreditOpen" :dismissible="false" title="Reset Codex quota" description="Confirm the credit redemption for this credential." @update:open="handleResetCreditOpen">
+    <AppModal v-model:open="resetCreditOpen" :dismissible="false" :title="t('cred.resetModal.title')" :description="t('cred.resetModal.description')" @update:open="handleResetCreditOpen">
       <template #body>
         <div class="space-y-4">
-          <UAlert color="info" variant="subtle" title="This consumes one reset credit" :description="`Resetting ${resetCreditTarget?.label || resetCreditTarget?.name || resetCreditTarget?.id || 'this credential'} uses one available credit. This action cannot be undone.`" />
+          <UAlert color="info" variant="subtle" :title="t('cred.resetModal.alertTitle')" :description="t('cred.resetModal.alert', { name: resetCreditTarget?.label || resetCreditTarget?.name || resetCreditTarget?.id || t('cred.resetModal.thisCredential') })" />
           <UAlert v-if="resetCreditError" color="error" variant="subtle" :description="resetCreditError" />
-          <div class="flex justify-end gap-2"><AppButton color="neutral" variant="ghost" :disabled="resetCreditSubmitting" @click="resetCreditOpen = false">Cancel</AppButton><AppButton color="primary" :loading="resetCreditSubmitting" :disabled="!canConfirmResetCredit" @click="redeemResetCredit">Consume one credit</AppButton></div>
+          <div class="flex justify-end gap-2"><AppButton color="neutral" variant="ghost" :disabled="resetCreditSubmitting" @click="resetCreditOpen = false">{{ t('common.cancel') }}</AppButton><AppButton color="primary" :loading="resetCreditSubmitting" :disabled="!canConfirmResetCredit" @click="redeemResetCredit">{{ t('cred.resetModal.consume') }}</AppButton></div>
         </div>
       </template>
     </AppModal>
 
-    <AppModal v-model:open="connectivityOpen" :dismissible="false" title="Test credential connectivity" description="Home sends a GET request using the selected credential for proxy selection and $TOKEN$ replacement.">
+    <AppModal v-model:open="connectivityOpen" :dismissible="false" :title="t('cred.conn.title')" :description="t('cred.conn.description')">
       <template #body>
         <form class="space-y-4" @submit.prevent="runConnectivity">
-          <UAlert color="warning" variant="subtle" title="Trusted URLs only" description="Home sends this request and can reach internal services on its network. Only test URLs you trust." />
-          <UFormField label="Credential"><UInput :model-value="connectivityTarget?.label || connectivityTarget?.name || connectivityTarget?.id" readonly class="w-full" /></UFormField>
-          <UFormField label="Absolute URL" required><UInput v-model="connectivityURL" type="url" class="w-full" placeholder="https://api.example.com/v1/models" /></UFormField>
-          <UFormField label="Authorization header"><UInput model-value="Bearer $TOKEN$" readonly class="w-full font-mono" /></UFormField>
+          <UAlert color="warning" variant="subtle" :title="t('cred.conn.trustedTitle')" :description="t('cred.conn.trusted')" />
+          <UFormField :label="t('cred.conn.credential')"><UInput :model-value="connectivityTarget?.label || connectivityTarget?.name || connectivityTarget?.id" readonly class="w-full" /></UFormField>
+          <UFormField :label="t('cred.conn.url')" required><UInput v-model="connectivityURL" type="url" class="w-full" placeholder="https://api.example.com/v1/models" /></UFormField>
+          <UFormField :label="t('cred.conn.authHeader')"><UInput model-value="Bearer $TOKEN$" readonly class="w-full font-mono" /></UFormField>
           <UAlert v-if="connectivityError" color="error" variant="subtle" :description="connectivityError" />
           <div v-if="connectivityResult" class="rounded-lg bg-[var(--ui-bg-muted)] p-4 text-sm">
             <p><strong>HTTP {{ connectivityResult.status_code }}</strong></p>
             <pre class="mt-2 max-h-64 overflow-auto whitespace-pre-wrap break-words text-xs">{{ connectivityBody }}</pre>
           </div>
-          <div class="flex justify-end gap-2"><AppButton type="button" color="neutral" variant="ghost" @click="connectivityOpen = false">Close</AppButton><AppButton type="submit" :loading="testingConnectivity">Run test</AppButton></div>
+          <div class="flex justify-end gap-2"><AppButton type="button" color="neutral" variant="ghost" @click="connectivityOpen = false">{{ t('common.close') }}</AppButton><AppButton type="submit" :loading="testingConnectivity">{{ t('cred.conn.run') }}</AppButton></div>
         </form>
       </template>
     </AppModal>
 
 
 
-    <AppModal v-model:open="bulkDeleteOpen" :dismissible="false" title="Delete selected credentials"><template #body><div class="space-y-5"><UAlert color="warning" variant="subtle" title="Delete selected credentials?" :description="`${selectedIDs.size} credential(s) will be removed. This cannot be undone.`"/><div class="flex justify-end gap-3"><AppButton color="neutral" variant="ghost" :disabled="bulkBusy" @click="bulkDeleteOpen = false">Cancel</AppButton><AppButton color="error" :loading="bulkBusy" :disabled="!selectedIDs.size" @click="bulkDelete">Delete {{ selectedIDs.size }}</AppButton></div></div></template></AppModal>
-    <AppModal v-model:open="deleteOpen" :dismissible="false" title="Delete credential"><template #body><div class="space-y-5"><UAlert color="warning" variant="subtle" title="This credential will be removed" :description="deleteTarget?.label || deleteTarget?.name || deleteTarget?.id"/><div class="flex justify-end gap-3"><AppButton color="neutral" variant="ghost" @click="deleteOpen = false">Cancel</AppButton><AppButton color="error" :loading="deleting" :disabled="bulkBusy" @click="deleteCredential">Delete</AppButton></div></div></template></AppModal>
+    <AppModal v-model:open="bulkDeleteOpen" :dismissible="false" :title="t('cred.bulkDelete.title')"><template #body><div class="space-y-5"><UAlert color="warning" variant="subtle" :title="t('cred.bulkDelete.confirm')" :description="t('cred.bulkDelete.description', { count: selectedIDs.size })"/><div class="flex justify-end gap-3"><AppButton color="neutral" variant="ghost" :disabled="bulkBusy" @click="bulkDeleteOpen = false">{{ t('common.cancel') }}</AppButton><AppButton color="error" :loading="bulkBusy" :disabled="!selectedIDs.size" @click="bulkDelete">{{ t('cred.bulkDelete.button', { count: selectedIDs.size }) }}</AppButton></div></div></template></AppModal>
+    <AppModal v-model:open="deleteOpen" :dismissible="false" :title="t('cred.delete.title')"><template #body><div class="space-y-5"><UAlert color="warning" variant="subtle" :title="t('cred.delete.confirm')" :description="deleteTarget?.label || deleteTarget?.name || deleteTarget?.id"/><div class="flex justify-end gap-3"><AppButton color="neutral" variant="ghost" @click="deleteOpen = false">{{ t('common.cancel') }}</AppButton><AppButton color="error" :loading="deleting" :disabled="bulkBusy" @click="deleteCredential">{{ t('common.delete') }}</AppButton></div></div></template></AppModal>
   </div>
 </template>
 
@@ -225,6 +225,7 @@ const props = defineProps({ attentionRequest: { type: Number, default: 0 }, sync
 const { fetchAPI, resolveUrl, token } = useApi()
 const { supports } = useCapabilities()
 const toast = useToast()
+const { t, intlLocale } = useAdminI18n()
 const value = row => row?.original ?? row
 const credentialIdentifier = item => String(item?.name || item?.auth_index || item?.id || '')
 function compactIdentifier(value, maxLength = 42) {
@@ -257,26 +258,36 @@ const detailsOpen = ref(false)
 const detailsTarget = ref(null)
 const detailsTab = ref('Overview')
 const detailSections = ['Overview', 'Metadata', 'Quota', 'Concurrency', 'Models', 'Recovery', 'Danger']
+// detailsTab keeps the English section IDs; only the displayed label is translated.
+function detailSectionLabel(section) {
+  const labels = { Overview: t('cred.tab.overview'), Metadata: t('cred.tab.metadata'), Quota: t('cred.tab.quota'), Concurrency: t('cred.tab.concurrency'), Models: t('cred.tab.models'), Recovery: t('cred.tab.recovery'), Danger: t('cred.tab.danger') }
+  return labels[section] || section
+}
 function metadataFields(item) {
   return [
-    ['Prefix', item.prefix || '—'], ['Priority', item.priority ?? '—'],
-    ['Proxy URL', item.proxy_url || 'Global default'],
-    ['In flight / limit', `${concurrency(item).in_flight || 0} / ${concurrency(item).max_in_flight ?? '∞'}`]
+    [t('cred.field.prefix'), item.prefix || '—'], [t('cred.field.priority'), item.priority ?? '—'],
+    [t('cred.field.proxyUrl'), item.proxy_url || t('cred.field.globalDefault')],
+    [t('cred.field.inFlightLimit'), `${concurrency(item).in_flight || 0} / ${concurrency(item).max_in_flight ?? '∞'}`]
   ].map(([label, value]) => ({ label, value }))
+}
+function wsStateLabel(state) {
+  const labels = { on: t('common.on'), off: t('common.off'), unknown: t('common.unknown'), unsupported: t('cred.na') }
+  return labels[state] || state
 }
 function overviewFields(item) {
   const fallback = '—'
+  const quotaStatus = quotaByID.value.get(item.id)?.quota_status
   return [
-    ['Provider', item.provider], ['Type', item.type], ['Source', item.source],
-    ['Account', item.account || item.email], ['Auth index', item.auth_index || item.id],
-    ['Prefix', item.prefix], ['Proxy URL', item.proxy_url],
-    ['Priority', item.priority], ['Weight', item.weight ?? 'Unset (default 1)'], ['Request retries', item['request-retry']],
-    ['WebSockets', credentialWebsocketState(item)],
-        ...(supportsUsingAPI(item) ? [['xAI API mode', credentialUsingAPI(item) ? 'Enabled' : 'Disabled']] : []),
-    ['Cooling', item['disable-cooling'] ? 'Disabled' : 'Enabled'],
-    ['Path', item.path], ['Size', item.size], ['Updated at', item.mod_time || item.updated_at],
-    ['Last refresh', item.last_refresh], ['Note', item.note],
-    ['Quota status', quotaByID.value.get(item.id)?.quota_status]
+    [t('cred.field.provider'), item.provider], [t('cred.field.type'), item.type], [t('cred.field.source'), item.source],
+    [t('cred.field.account'), item.account || item.email], [t('cred.field.authIndex'), item.auth_index || item.id],
+    [t('cred.field.prefix'), item.prefix], [t('cred.field.proxyUrl'), item.proxy_url],
+    [t('cred.field.priority'), item.priority], [t('cred.field.weight'), item.weight ?? t('cred.weightUnset')], [t('cred.field.requestRetries'), item['request-retry']],
+    [t('cred.field.websockets'), wsStateLabel(credentialWebsocketState(item))],
+        ...(supportsUsingAPI(item) ? [[t('cred.field.xaiApiMode'), credentialUsingAPI(item) ? t('common.enabled') : t('common.disabled')]] : []),
+    [t('cred.field.cooling'), item['disable-cooling'] ? t('common.disabled') : t('common.enabled')],
+    [t('cred.field.path'), item.path], [t('cred.field.size'), item.size], [t('cred.field.updatedAt'), item.mod_time || item.updated_at],
+    [t('cred.field.lastRefresh'), item.last_refresh], [t('cred.field.note'), item.note],
+    [t('cred.field.quotaStatus'), quotaStatus ? quotaStatusLabel(quotaStatus) : quotaStatus]
   ].map(([label, value]) => ({ label, value: value == null || value === '' ? fallback : String(value) }))
 }
 const accountQuotaTarget = computed(() => detailsTarget.value)
@@ -306,9 +317,9 @@ const canResetCredit = computed(() => resetCreditSupported.value &&
 const resetCreditDisabledReason = computed(() => {
   if (!resetCreditSupported.value) return ''
   const detail = accountQuotaDetail.value
-  if (resetCreditAttempts.value[detailsTarget.value?.id]) return 'A previous reset request may already have consumed a credit. Refresh quota before trying again.'
-  if (!detail?.reset_credits || detail.reset_credits.available_count == null) return 'Reset-credit availability has not been reported yet.'
-  if (Number(detail.reset_credits.available_count) <= 0) return 'No reset credits are currently available.'
+  if (resetCreditAttempts.value[detailsTarget.value?.id]) return t('cred.reset.previousAttempt')
+  if (!detail?.reset_credits || detail.reset_credits.available_count == null) return t('cred.reset.notReported')
+  if (Number(detail.reset_credits.available_count) <= 0) return t('cred.reset.noneAvailable')
   return ''
 })
 const canConfirmResetCredit = computed(() => !resetCreditSubmitting.value && !accountQuotaLoading.value &&
@@ -350,7 +361,7 @@ const modelStates = ref(null)
 const modelStatesNotice = ref('')
 const modelCards = computed(() => credentialModelCards(credentialModels.value, modelStates.value?.credential?.models || []))
 const modelScope = ref('all')
-const modelScopeOptions = [{ label: 'All routes and history', value: 'all' }, { label: 'Currently exposed routes', value: 'registered' }, { label: 'Runtime-only history', value: 'history' }]
+const modelScopeOptions = computed(() => [{ label: t('cred.models.scopeAll'), value: 'all' }, { label: t('cred.models.scopeRegistered'), value: 'registered' }, { label: t('cred.models.scopeHistory'), value: 'history' }])
 const scopedModelCards = computed(() => {
   const registered = new Set(credentialModels.value.map(model => model.id))
   return modelCards.value.filter(model => modelScope.value === 'all' || (modelScope.value === 'registered' ? registered.has(model.id) : !registered.has(model.id)))
@@ -368,11 +379,11 @@ onBeforeUnmount(() => { detailGeneration++; policyRequest++; concurrencyRequest+
 watch(token, () => { detailGeneration++; detailsOpen.value = false; accountQuotaNotice.value = '' }, { flush: 'sync' })
 const unavailable = error => [404, 405, 501].includes(error?.statusCode)
 const ownsDetails = (id, generation) => detailsOpen.value && detailsTarget.value?.id === id && detailGeneration === generation
-const coolingOptions = [
-  { label: 'Inherit global setting', value: 'inherit' },
-  { label: 'Enable cooling', value: 'enable' },
-  { label: 'Disable cooling', value: 'disable' }
-]
+const coolingOptions = computed(() => [
+  { label: t('cred.meta.coolingInherit'), value: 'inherit' },
+  { label: t('cred.meta.coolingEnable'), value: 'enable' },
+  { label: t('cred.meta.coolingDisable'), value: 'disable' }
+])
 const originalFields = ref({})
 const fieldsError = ref('')
 const savingFields = ref(false)
@@ -397,7 +408,7 @@ const loadingConcurrency = ref(false)
 let concurrencyRequest = 0
 const createOpen = ref(false)
 const createMode = ref('oauth')
-const createModes = [{ value: 'oauth', label: 'OAuth' }, { value: 'upload', label: 'Upload' }, { value: 'vertex', label: 'Vertex' }]
+const createModes = computed(() => [{ value: 'oauth', label: 'OAuth' }, { value: 'upload', label: t('cred.create.upload') }, { value: 'vertex', label: 'Vertex' }])
 const vertexFile = ref(null)
 const vertexResult = useWorkspaceState('admin:upstream-accounts:vertexResult', () => (null))
 const vertexLocation = ref('us-central1')
@@ -424,7 +435,7 @@ function handleCreateOpen(open) {
   if (!open) { stopOAuthPolling(); oauthSessions.value = {}; uploadResults.value = []; if (fileInput.value) fileInput.value.value = '' }
 }
 
-const columns = [{ id: 'select', header: '' }, { accessorKey: 'identity', header: 'Credential' }, { accessorKey: 'provider', header: 'Provider' }, { accessorKey: 'status', header: 'Enabled' }, { accessorKey: 'quota', header: 'Quota' }, { accessorKey: 'websockets', header: 'WS' }, { accessorKey: 'cooling', header: 'Cooling' }, { accessorKey: 'priority', header: 'Priority' }, { id: 'actions', header: 'Actions', meta: { class: { th: 'w-px whitespace-nowrap text-right', td: 'w-px whitespace-nowrap text-right' } } }]
+const columns = computed(() => [{ id: 'select', header: '' }, { accessorKey: 'identity', header: t('cred.col.credential') }, { accessorKey: 'provider', header: t('common.provider') }, { accessorKey: 'status', header: t('cred.col.enabled') }, { accessorKey: 'quota', header: t('cred.col.quota') }, { accessorKey: 'websockets', header: t('cred.col.ws') }, { accessorKey: 'cooling', header: t('cred.col.cooling') }, { accessorKey: 'priority', header: t('cred.col.priority') }, { id: 'actions', header: t('common.actions'), meta: { class: { th: 'w-px whitespace-nowrap text-right', td: 'w-px whitespace-nowrap text-right' } } }])
 
 const flightError = useWorkspaceState('admin:upstream-accounts:flightError', () => (''))
 async function loadData() {
@@ -448,7 +459,7 @@ async function loadFlight() {
   catch (error) {
     if (requestID === flightRequest && requestToken === token.value && snapshotsSupported.value) {
       if (unavailable(error)) snapshotsAvailable.value = false
-      flightError.value = unavailable(error) ? 'In-flight snapshots are unavailable on this deployment.' : message(error)
+      flightError.value = unavailable(error) ? t('cred.conc.snapshotsUnavailable') : message(error)
     }
     return { items: [] }
   }
@@ -488,16 +499,30 @@ async function loadQuotaSummary() {
 const { data: quotaSummary, pending: quotaPending, refresh: refreshQuotaSummary } = useStoreData('admin:upstream-accounts:management-account-quota', loadQuotaSummary, { lazy: true, default: () => [], watch: [credentialIDs] })
 const quotaByID = computed(() => new Map((quotaSummary.value || []).map(item => [item.credential_id, item])))
 
+function quotaStatusLabel(status) {
+  const labels = { healthy: t('quota.status.healthy'), low: t('quota.status.low'), exhausted: t('quota.status.exhausted'), unknown: t('quota.status.unknown'), error: t('quota.status.error'), unsupported: t('quota.status.unsupported'), available: t('quota.status.available') }
+  return labels[status] || status
+}
+function collectionLabel(status) {
+  const labels = { success: t('quota.collection.success'), partial: t('quota.collection.partial'), failed: t('quota.collection.failed'), collecting: t('quota.collection.collecting'), never: t('quota.collection.never') }
+  return labels[status] || status
+}
+function freshnessLabel(value) {
+  const labels = { fresh: t('quota.freshness.fresh'), stale: t('quota.freshness.stale'), never: t('quota.freshness.never'), expired: t('quota.freshness.expired') }
+  return labels[value] || value
+}
+function onDemandLabel(value) { return value === 'enabled' ? t('common.enabled') : value === 'disabled' ? t('common.disabled') : t('common.unknown') }
+function formatDateTime(value) { return new Date(value).toLocaleString(intlLocale.value) }
 function quotaColor(status) { return status === 'healthy' || status === 'available' ? 'success' : status === 'low' ? 'warning' : status === 'exhausted' || status === 'error' ? 'error' : 'neutral' }
 function quotaWindowRatio(window) {
   const ratio = Number(window.remaining_ratio)
   return window.remaining_ratio == null || !Number.isFinite(ratio) ? null : Math.max(0, Math.min(1, ratio))
 }
 function quotaWindowRemaining(window) {
-  if (window.is_unlimited) return 'Unlimited'
-  if (window.remaining != null) return `${quotaWindowAmount(window.remaining, window)}${window.limit != null ? ` / ${quotaWindowAmount(window.limit, window)}` : ''} remaining`
+  if (window.is_unlimited) return t('quota.unlimited')
+  if (window.remaining != null) return t('quota.remainingAmount', { amount: `${quotaWindowAmount(window.remaining, window, intlLocale.value)}${window.limit != null ? ` / ${quotaWindowAmount(window.limit, window, intlLocale.value)}` : ''}` })
   const ratio = quotaWindowRatio(window)
-  return ratio == null ? '—' : `${Math.round(ratio * 100)}% remaining`
+  return ratio == null ? '—' : t('quota.remainingAmount', { amount: `${Math.round(ratio * 100)}%` })
 }
 async function openAccountQuota(item) {
   await showDetails(item, 'Quota')
@@ -543,14 +568,14 @@ async function redeemResetCredit() {
     resetCreditOpen.value = false
     resetCreditNoticeCredential.value = id
     resetCreditNoticeColor.value = 'success'
-    resetCreditNotice.value = result?.outcome === 'alreadyRedeemed' ? 'This reset credit was already redeemed.' : 'Codex accepted the reset. Recollecting quota in the background.'
-    toast.add({ title: 'Reset credit request completed', description: resetCreditNotice.value, color: 'success' })
+    resetCreditNotice.value = result?.outcome === 'alreadyRedeemed' ? t('cred.resetModal.alreadyRedeemed') : t('cred.resetModal.accepted')
+    toast.add({ title: t('cred.resetModal.completed'), description: resetCreditNotice.value, color: 'success' })
     if (detailsTarget.value?.id === id) accountQuotaDetail.value = null
     await collectAccountQuota()
     if (detailsTarget.value?.id === id) await refreshAccountQuota()
   } catch (error) {
     resetCreditError.value = resetCreditAttempt.value
-      ? `${message(error)}. The request may have consumed a credit. Check Codex quota before trying again; this session will not submit a second reset for this credential.`
+      ? t('cred.resetModal.mayHaveConsumed', { error: message(error) })
       : message(error)
   } finally { resetCreditSubmitting.value = false }
 }
@@ -566,7 +591,7 @@ async function collectAccountQuota() {
   accountQuotaError.value = ''; accountQuotaNotice.value = ''
   const result = await quotaCollection.collect(id)
   if (session !== token.value || !ownsDetails(id, generation) || !result) return
-  accountQuotaNotice.value = result.completion === 'pending' ? 'Collection remains unconfirmed. Home may still be working; refresh later.' : result.completion === 'settled' ? 'A newer collection result is available. Inspect its status and any errors above.' : 'No new collection was queued.'
+  accountQuotaNotice.value = result.completion === 'pending' ? t('quota.notice.pending') : result.completion === 'settled' ? t('quota.notice.settledOne') : t('quota.notice.none')
 }
 const flightItems = computed(() => Array.isArray(flightData.value?.items) ? flightData.value.items : [])
 const flightByID = computed(() => new Map(flightItems.value.map(item => [item.credential_id, item])))
@@ -574,15 +599,15 @@ const concurrency = item => flightByID.value.get(item.id) || {}
 const enabledCount = computed(() => credentials.value.filter(item => !item.disabled && !item.unavailable).length)
 const totalInFlight = computed(() => flightItems.value.reduce((sum, item) => sum + Number(item.in_flight || 0), 0))
 const saturatedCount = computed(() => flightItems.value.filter(item => item.total_saturated || item.saturated_model_count).length)
-const providerOptions = computed(() => [{ label: 'All providers', value: ALL_FILTER }, ...[...new Set(credentials.value.map(item => item.provider).filter(Boolean))].sort().map(value => ({ label: value, value }))])
-const statusOptions = [
-  { label: 'All statuses', value: ALL_FILTER }, { label: 'Active', value: 'active' },
-  { label: 'Disabled', value: 'disabled' }, { label: 'Unavailable', value: 'unavailable' },
-  { label: 'Error', value: 'error' }
-]
-const websocketsOptions = [
-  { label: 'All WebSockets', value: ALL_FILTER }, { label: 'WebSockets on', value: 'on' }, { label: 'WebSockets off', value: 'off' }, { label: 'Setting unknown', value: 'unknown' }, { label: 'Not applicable', value: 'unsupported' }
-]
+const providerOptions = computed(() => [{ label: t('quota.allProviders'), value: ALL_FILTER }, ...[...new Set(credentials.value.map(item => item.provider).filter(Boolean))].sort().map(value => ({ label: value, value }))])
+const statusOptions = computed(() => [
+  { label: t('cred.status.all'), value: ALL_FILTER }, { label: t('cred.status.active'), value: 'active' },
+  { label: t('cred.status.disabled'), value: 'disabled' }, { label: t('cred.status.unavailable'), value: 'unavailable' },
+  { label: t('cred.status.error'), value: 'error' }
+])
+const websocketsOptions = computed(() => [
+  { label: t('cred.ws.all'), value: ALL_FILTER }, { label: t('cred.ws.on'), value: 'on' }, { label: t('cred.ws.off'), value: 'off' }, { label: t('cred.ws.unknown'), value: 'unknown' }, { label: t('cred.ws.unsupported'), value: 'unsupported' }
+])
 const needsAttention = item => isQuotaAttention(quotaByID.value.get(item.id))
 const filteredCredentials = computed(() => {
   const q = search.value.trim().toLowerCase()
@@ -639,10 +664,11 @@ async function runBulk(action, items, request) {
     for (const item of items) {
       try { await request(item); succeeded++ } catch { failed++ }
     }
-    try { await refreshData() } catch { pageError.value = 'Unable to refresh credentials after the bulk action.' }
+    try { await refreshData() } catch { pageError.value = t('cred.bulk.refreshFailed') }
+    const counts = { succeeded, failed }
     toast.add({
-      title: `${action} complete: ${succeeded} succeeded, ${failed} failed`,
-      description: pageError.value ? 'The list could not be refreshed; refresh before trying again.' : undefined,
+      title: action === 'Enable' ? t('cred.bulk.enableDone', counts) : action === 'Disable' ? t('cred.bulk.disableDone', counts) : t('cred.bulk.deleteDone', counts),
+      description: pageError.value ? t('cred.bulk.refreshHint') : undefined,
       color: failed || pageError.value ? 'warning' : 'success'
     })
   } finally {
@@ -670,11 +696,15 @@ async function setInlineField(item, field, nextValue) {
   try {
     await fetchAPI(credentialRoute('/fields'), { method: 'PATCH', body: { id: item.id, [field]: nextValue } })
     await refreshData()
-    toast.add({ title: 'Credential updated', color: 'success' })
-  } catch (error) { toast.add({ title: 'Credential update failed', description: message(error), color: 'error' }) }
+    toast.add({ title: t('cred.toast.updated'), color: 'success' })
+  } catch (error) { toast.add({ title: t('cred.toast.updateFailed'), description: message(error), color: 'error' }) }
   finally { inlineChanging.value = '' }
 }
 function credentialStatus(item) { return item.disabled ? 'disabled' : item.unavailable ? 'unavailable' : item.status || 'active' }
+function credentialStatusLabel(status) {
+  const labels = { active: t('cred.status.active'), disabled: t('cred.status.disabled'), unavailable: t('cred.status.unavailable'), error: t('cred.status.error') }
+  return labels[status] || status
+}
 function credentialColor(item) { return item.disabled ? 'neutral' : item.unavailable ? 'warning' : item.status === 'error' ? 'error' : 'success' }
 function uploadErrorCode(error) {
   const text = message(error).toLowerCase()
@@ -685,7 +715,7 @@ function uploadErrorCode(error) {
 }
 function isRetryableUpload(item) { return item.status === 'error' && ['network', 'server'].includes(item.errorCode) }
 function uploadMessage(item) {
-  const labels = { queued: 'Queued', uploading: `Uploading ${item.progress}%`, success: 'Uploaded', notJson: 'File must use .json', emptyFile: 'File is empty', invalidJson: 'Invalid JSON', unauthorized: 'Unauthorized', network: 'Network error', unsupported: 'Unsupported credential JSON', server: 'Server error' }
+  const labels = { queued: t('cred.upload.queued'), uploading: t('cred.upload.uploading', { progress: item.progress }), success: t('cred.upload.uploaded'), notJson: t('cred.upload.notJson'), emptyFile: t('cred.upload.emptyFile'), invalidJson: t('cred.upload.invalidJson'), unauthorized: t('cred.upload.unauthorized'), network: t('cred.upload.network'), unsupported: t('cred.upload.unsupported'), server: t('cred.upload.server') }
   return labels[item.status === 'error' ? item.errorCode : item.status] || item.status
 }
 function formatFileSize(size) { return size < 1024 ? `${size} B` : size < 1048576 ? `${(size / 1024).toFixed(1)} KB` : `${(size / 1048576).toFixed(1)} MB` }
@@ -739,7 +769,7 @@ async function uploadFiles(event) { const files = Array.from(event.target.files 
 async function retryUpload(item) { await runUploadItems([item], false) }
 async function retryFailedUploads() { await runUploadItems(failedUploads.value.filter(isRetryableUpload), false) }
 async function uploadDroppedFiles(event) { if (!uploadActive.value && !busy.value) await addUploadFiles(Array.from(event.dataTransfer?.files || [])) }
-async function toggleStatus(item) { changing.value = item.id; try { await fetchAPI(credentialRoute('/status'), { method: 'PATCH', body: { name: item.id, disabled: !item.disabled } }); await refreshData() } catch (error) { toast.add({ title: 'Status update failed', description: message(error), color: 'error' }) } finally { changing.value = '' } }
+async function toggleStatus(item) { changing.value = item.id; try { await fetchAPI(credentialRoute('/status'), { method: 'PATCH', body: { name: item.id, disabled: !item.disabled } }); await refreshData() } catch (error) { toast.add({ title: t('cred.toast.statusFailed'), description: message(error), color: 'error' }) } finally { changing.value = '' } }
 async function showDetails(item, section = 'Overview') {
   if (savingFields.value || savingPolicy.value || credentialAction.value) return
   detailGeneration++
@@ -789,7 +819,7 @@ async function runConnectivity() {
   const authIndex = connectivityTarget.value?.auth_index || connectivityTarget.value?.id
   const url = connectivityURL.value.trim()
   if (!authIndex || !/^https?:\/\/[^\s/]+/i.test(url)) {
-    connectivityError.value = 'Select a credential and enter an absolute HTTP or HTTPS URL.'
+    connectivityError.value = t('cred.conn.invalid')
     return
   }
   testingConnectivity.value = true
@@ -801,7 +831,7 @@ async function runConnectivity() {
       body: { auth_index: authIndex, method: 'GET', url, header: { Authorization: 'Bearer $TOKEN$', Accept: 'application/json' }, data: '' }
     })
     if (connectivityResult.value.status_code < 200 || connectivityResult.value.status_code >= 300) {
-      connectivityError.value = `Upstream returned HTTP ${connectivityResult.value.status_code ?? 'unknown'}.`
+      connectivityError.value = t('cred.conn.httpStatus', { status: connectivityResult.value.status_code ?? t('common.unknown') })
     }
   } catch (error) { connectivityError.value = message(error) }
   finally { testingConnectivity.value = false }
@@ -831,7 +861,7 @@ async function loadExclusions() {
       originalFields.value.weight = fields.weight
     }
     const models = metadata.excluded_models ?? metadata['excluded-models'] ?? []
-    if (!Array.isArray(models) || models.some(model => typeof model !== 'string')) throw new Error('Stored exclusions are not a string array. Download the credential to inspect them.')
+    if (!Array.isArray(models) || models.some(model => typeof model !== 'string')) throw new Error(t('cred.err.exclusionsShape'))
     excludedModels.value = JSON.stringify(models, null, 2)
     originalExcludedModels.value = excludedModels.value
     exclusionsLoaded.value = true
@@ -850,23 +880,23 @@ function canonicalPolicyModel(raw) {
     const base = trim(model.slice(0, suffix.index))
     if (base) model = base
   }
-  if (!model || new TextEncoder().encode(model).length > 256 || /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/u.test(model)) throw new Error('Model IDs must be valid UTF-8 and at most 256 bytes after normalization.')
+  if (!model || new TextEncoder().encode(model).length > 256 || /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/u.test(model)) throw new Error(t('cred.policy.invalidModel'))
   return model
 }
 function policyPatch() {
   if (!policySupported.value) {
-    if (policyDirty.value) throw new Error('Concurrency policy is unavailable. Unsaved limits were retained; metadata cannot be saved without them.')
+    if (policyDirty.value) throw new Error(t('cred.policy.unavailableRetained'))
     return {}
   }
-  if (loadingPolicy.value || !policy.value || policy.value.credential_id !== detailsTarget.value?.id) throw new Error('Load the credential policy before saving.')
-  if (policyConflict.value) throw new Error('Policy changed elsewhere. Reload before saving.')
+  if (loadingPolicy.value || !policy.value || policy.value.credential_id !== detailsTarget.value?.id) throw new Error(t('cred.policy.loadFirst'))
+  if (policyConflict.value) throw new Error(t('cred.policy.conflict'))
   const total = policyLimit(policyTotal.value)
   const models = Object.create(null)
   const seen = new Set()
   for (const entry of policyModels.value) {
-    if (!entry.model.trim()) throw new Error('Enter a model ID or remove the empty row.')
+    if (!entry.model.trim()) throw new Error(t('cred.policy.emptyModel'))
     const model = canonicalPolicyModel(entry.model)
-    if (seen.has(model)) throw new Error(`Duplicate model: ${model}`)
+    if (seen.has(model)) throw new Error(t('cred.policy.duplicate', { model }))
     seen.add(model)
     const limit = policyLimit(entry.limit)
     if (limit) models[model] = limit
@@ -887,10 +917,10 @@ async function saveFields() {
       try {
         body.weight = credentialWeightPatch(fields.weight, String(fields.weight).trim() === '')
 
-      } catch (error) { fieldsError.value = message(error); return }
+      } catch { fieldsError.value = t('cred.err.weight'); return }
     } else if (key === 'priority' || key === 'request_retry') {
       const raw = String(fields[key]).trim()
-      if (raw && (!/^\d+$/.test(raw) || !Number.isSafeInteger(Number(raw)))) { fieldsError.value = `${key} must be a non-negative integer.`; return }
+      if (raw && (!/^\d+$/.test(raw) || !Number.isSafeInteger(Number(raw)))) { fieldsError.value = key === 'priority' ? t('cred.err.priorityInt') : t('cred.err.retryInt'); return }
       body[key] = raw ? Number(raw) : null
     } else if (key === 'disable_cooling') body['disable-cooling'] = fields[key] === 'inherit' ? null : fields[key] === 'disable'
     else if (key === 'using_api') body.using_api = Boolean(fields[key])
@@ -900,7 +930,7 @@ async function saveFields() {
   try {
     if (exclusionsLoaded.value && excludedModels.value !== originalExcludedModels.value) {
       const models = excludedModels.value.trim() ? JSON.parse(excludedModels.value) : []
-      if (!Array.isArray(models) || models.some(model => typeof model !== 'string')) throw new Error('Excluded models must be a JSON array of strings.')
+      if (!Array.isArray(models) || models.some(model => typeof model !== 'string')) throw new Error(t('cred.err.excludedShape'))
       body.excluded_models = models
     }
     Object.assign(body, policyPatch())
@@ -920,11 +950,11 @@ async function saveFields() {
       if (body.excluded_models) { excludedModels.value = JSON.stringify(body.excluded_models, null, 2); originalExcludedModels.value = excludedModels.value }
       if (body.version != null) { policy.value = null; await loadPolicy(true) }
     }
-    toast.add({ title: 'Credential fields updated', color: 'success' })
+    toast.add({ title: t('cred.toast.fieldsUpdated'), color: 'success' })
   } catch (error) {
     if (ownsDetails(body.id, generation)) {
       policyConflict.value = error?.statusCode === 409
-      fieldsError.value = policyConflict.value ? 'Policy changed elsewhere. Reload before saving; no metadata or policy changes were applied.' : message(error)
+      fieldsError.value = policyConflict.value ? t('cred.policy.conflictSaveFields') : message(error)
     }
   }
   finally { savingFields.value = false }
@@ -940,7 +970,7 @@ async function loadPolicy(internal = false) {
   try {
     const result = await fetchAPI(`/credentials/${encodeURIComponent(id)}/concurrency-policy`)
     if (requestID !== policyRequest || !ownsDetails(id, generation)) return
-    if (result.credential_id !== id) throw new Error('Policy response belongs to a different credential.')
+    if (result.credential_id !== id) throw new Error(t('cred.policy.wrongCredential'))
     policy.value = result
     policyTotal.value = result.max_in_flight == null ? '' : String(result.max_in_flight)
     policyModels.value = Object.entries(result.max_in_flight_by_model || {}).sort(([a], [b]) => a.localeCompare(b)).map(([model, limit]) => ({ key: ++modelKey, model, limit: String(limit) }))
@@ -949,7 +979,7 @@ async function loadPolicy(internal = false) {
   } catch (error) {
     if (requestID === policyRequest && ownsDetails(id, generation)) {
       if (unavailable(error)) policyAvailable.value = false
-      policyError.value = unavailable(error) ? 'Concurrency policy is unavailable on this deployment.' : message(error)
+      policyError.value = unavailable(error) ? t('cred.policy.unavailable') : message(error)
     }
   }
   finally { if (requestID === policyRequest) loadingPolicy.value = false }
@@ -957,7 +987,7 @@ async function loadPolicy(internal = false) {
 function policyLimit(raw) {
   const text = String(raw ?? '').trim()
   if (!text) return null
-  if (!/^\d+$/.test(text) || !Number.isSafeInteger(Number(text))) throw new Error('Limits must be non-negative whole numbers.')
+  if (!/^\d+$/.test(text) || !Number.isSafeInteger(Number(text))) throw new Error(t('cred.policy.invalidLimit'))
   return Number(text) || null
 }
 async function savePolicy() {
@@ -980,12 +1010,12 @@ async function savePolicy() {
     policyModels.value = Object.entries(result.max_in_flight_by_model || {}).sort(([a], [b]) => a.localeCompare(b)).map(([model, limit]) => ({ key: ++modelKey, model, limit: String(limit) }))
     originalPolicyDraft.value = policyDraft()
     await refreshData()
-    toast.add({ title: 'Concurrency policy updated', color: 'success' })
+    toast.add({ title: t('cred.policy.updated'), color: 'success' })
   } catch (error) {
     if (requestID !== policyRequest || !ownsDetails(id, generation)) return
     if (unavailable(error)) policyAvailable.value = false
     policyConflict.value = error?.statusCode === 409
-    policyError.value = policyConflict.value ? 'Policy changed elsewhere. Reload the latest version before editing and saving again.' : message(error)
+    policyError.value = policyConflict.value ? t('cred.policy.conflictSave') : message(error)
   } finally { savingPolicy.value = false }
 }
 
@@ -1017,13 +1047,13 @@ async function loadConcurrency(offset = 0) {
   } catch (error) {
     if (requestID === concurrencyRequest && ownsDetails(id, generation)) {
       if (unavailable(error)) snapshotsAvailable.value = false
-      concurrencyError.value = unavailable(error) ? 'Concurrency snapshots are unavailable on this deployment.' : error?.statusCode === 409 ? 'Request snapshot expired. Refresh to load current requests.' : message(error)
+      concurrencyError.value = unavailable(error) ? t('cred.err.concurrencyUnavailable') : error?.statusCode === 409 ? t('cred.err.snapshotExpired') : message(error)
     }
   } finally { if (requestID === concurrencyRequest) loadingConcurrency.value = false }
 }
 async function importVertex() {
   if (importingVertex.value) return
-  if (!vertexFile.value) { vertexError.value = 'Choose a service-account JSON file.'; return }
+  if (!vertexFile.value) { vertexError.value = t('cred.err.vertexFile'); return }
   importingVertex.value = true; vertexError.value = ''
   try {
     const body = new FormData()
@@ -1032,7 +1062,7 @@ async function importVertex() {
     vertexResult.value = await fetchAPI('/oauth/import', { method: 'POST', query: { provider: 'vertex' }, body })
     vertexFile.value = null
     await refreshData()
-    toast.add({ title: 'Vertex credential imported', color: 'success' })
+    toast.add({ title: t('cred.toast.vertexImported'), color: 'success' })
   } catch (error) { vertexError.value = message(error) }
   finally { importingVertex.value = false }
 }
@@ -1052,18 +1082,18 @@ async function loadModels(item, refresh = false) {
             const result = await fetchAPI('/credentials/model-states', { query: { credential_id: item.id } })
             return { ...result, credential: (result.credentials || []).find(entry => entry.credential_id === item.id) }
           } catch (fallbackError) {
-            if (current()) modelStatesNotice.value = unavailable(fallbackError) ? 'Runtime model-state diagnostics are unavailable; showing registered models only.' : message(fallbackError)
+            if (current()) modelStatesNotice.value = unavailable(fallbackError) ? t('cred.err.modelStatesUnavailable') : message(fallbackError)
             return null
           }
         }
-        if (current()) modelStatesNotice.value = unavailable(error) ? 'Runtime model-state diagnostics are unavailable; showing registered models only.' : message(error)
+        if (current()) modelStatesNotice.value = unavailable(error) ? t('cred.err.modelStatesUnavailable') : message(error)
         return null
       })
     ])
     if (!current()) return
     credentialModels.value = normalizeCredentialModels(models.models)
     modelStates.value = states
-    if (states && !states.credential) modelStatesNotice.value = 'No runtime state is available for this credential on the current Home node.'
+    if (states && !states.credential) modelStatesNotice.value = t('cred.err.noRuntimeState')
   } catch (error) { if (current()) modelsError.value = message(error) }
   finally { if (requestID === modelsRequest) modelsLoading.value = false }
 }
@@ -1077,18 +1107,18 @@ async function runCredentialAction(action) {
     const result = action === 'refresh'
       ? await fetchAPI('/credentials/refresh', { method: 'POST', body: { auth_index: item.id } })
       : await fetchAPI(`/credentials/${encodeURIComponent(item.id)}/cooldown`, { method: 'DELETE' })
-    if (action === 'refresh' && !result.auth) throw new Error('This credential does not support OAuth refresh.')
+    if (action === 'refresh' && !result.auth) throw new Error(t('cred.err.noOAuthRefresh'))
     await refreshData()
     if (ownsDetails(item.id, generation)) {
       const updated = credentials.value.find(entry => entry.id === item.id)
       if (updated) { detailsTarget.value = updated; initializeFields(updated) }
       if (detailsTab.value === 'Models') await loadModels(detailsTarget.value)
     }
-    toast.add({ title: action === 'refresh' ? 'Credential refreshed' : result.cleared ? 'Quota cooldown cleared' : 'No quota cooldown to clear', color: 'success' })
+    toast.add({ title: action === 'refresh' ? t('cred.toast.refreshed') : result.cleared ? t('cred.toast.cooldownCleared') : t('cred.toast.noCooldown'), color: 'success' })
   } catch (error) {
     if (ownsDetails(item.id, generation)) {
       if (unavailable(error)) { if (action === 'refresh') refreshAvailable.value = false; else cooldownAvailable.value = false }
-      actionError.value = unavailable(error) ? 'This action is unavailable on this deployment.' : message(error)
+      actionError.value = unavailable(error) ? t('cred.err.actionUnavailable') : message(error)
     }
   } finally { credentialAction.value = '' }
 }
@@ -1101,26 +1131,26 @@ async function downloadCredential(item) {
     anchor.download = item.name || `${item.id}.json`
     anchor.click()
     URL.revokeObjectURL(url)
-  } catch (error) { toast.add({ title: 'Download failed', description: message(error), color: 'error' }) }
+  } catch (error) { toast.add({ title: t('cred.toast.downloadFailed'), description: message(error), color: 'error' }) }
 }
 
 function credentialRowActions(item) {
   return [
-    { id: 'view', label: 'View', ariaLabel: 'View credential details', icon: 'i-tabler-eye', onSelect: () => showDetails(item) },
-    { id: 'test', label: 'Test', ariaLabel: 'Test connectivity', icon: 'i-tabler-plug-connected', onSelect: () => openConnectivity(item) },
-    { id: 'download', label: 'Download', ariaLabel: 'Download credential', icon: 'i-tabler-download', disabled: busy.value, onSelect: () => downloadCredential(item) },
-    { id: 'delete', label: 'Delete', ariaLabel: 'Delete credential', icon: 'i-tabler-trash', destructive: true, disabled: busy.value, onSelect: () => confirmDelete(item) }
+    { id: 'view', label: t('common.view'), ariaLabel: t('cred.action.view'), icon: 'i-tabler-eye', onSelect: () => showDetails(item) },
+    { id: 'test', label: t('cred.action.test'), ariaLabel: t('cred.action.testAria'), icon: 'i-tabler-plug-connected', onSelect: () => openConnectivity(item) },
+    { id: 'download', label: t('cred.action.download'), ariaLabel: t('cred.action.downloadAria'), icon: 'i-tabler-download', disabled: busy.value, onSelect: () => downloadCredential(item) },
+    { id: 'delete', label: t('common.delete'), ariaLabel: t('cred.action.deleteAria'), icon: 'i-tabler-trash', destructive: true, disabled: busy.value, onSelect: () => confirmDelete(item) }
   ]
 }
 function confirmDelete(item) { deleteTarget.value = item; deleteOpen.value = true }
-async function deleteCredential() { if (!deleteTarget.value) return; deleting.value = true; try { await fetchAPI(`${credentialRoute('')}?id=${encodeURIComponent(deleteTarget.value.id)}`, { method: 'DELETE' }); deleteOpen.value = false; await refreshData(); toast.add({ title: 'Credential deleted', color: 'success' }) } catch (error) { toast.add({ title: 'Delete failed', description: message(error), color: 'error' }) } finally { deleting.value = false } }
+async function deleteCredential() { if (!deleteTarget.value) return; deleting.value = true; try { await fetchAPI(`${credentialRoute('')}?id=${encodeURIComponent(deleteTarget.value.id)}`, { method: 'DELETE' }); deleteOpen.value = false; await refreshData(); toast.add({ title: t('cred.toast.deleted'), color: 'success' }) } catch (error) { toast.add({ title: t('cred.toast.deleteFailed'), description: message(error), color: 'error' }) } finally { deleting.value = false } }
 async function startOAuth(provider) {
   if (startingOAuth.value) return
   startingOAuth.value = provider; oauthError.value = ''
   try {
     const result = await fetchAPI('/oauth/auth-url', { query: { provider, is_webui: true } })
     const url = result?.url || result?.auth_url
-    if (!url) throw new Error('Authorization URL was not returned.')
+    if (!url) throw new Error(t('cred.err.noAuthUrl'))
     stopOAuthPolling()
     const sessions = { ...oauthSessions.value, [provider]: { url, state: result.state || '', status: '', code: '', redirect_url: '', callback_error: '' } }
     oauthSessions.value = sessions
@@ -1128,14 +1158,14 @@ async function startOAuth(provider) {
   finally { startingOAuth.value = '' }
 }
 async function copyOAuthLink(provider) {
-  try { await navigator.clipboard.writeText(oauthSessions.value[provider].url); toast.add({ title: 'Authorization link copied', color: 'success' }) }
+  try { await navigator.clipboard.writeText(oauthSessions.value[provider].url); toast.add({ title: t('cred.toast.linkCopied'), color: 'success' }) }
   catch (error) { oauthError.value = message(error) }
 }
 function openOAuthLink(provider) { window.open(oauthSessions.value[provider].url, '_blank', 'noopener,noreferrer') }
 async function completeOAuth() {
   stopOAuthPolling()
   await refreshData()
-  toast.add({ title: 'OAuth completed', color: 'success' })
+  toast.add({ title: t('cred.toast.oauthCompleted'), color: 'success' })
   createOpen.value = false
   oauthSessions.value = {}
 }
@@ -1147,7 +1177,7 @@ async function checkOAuthStatus(provider, notify = true) {
     const result = await fetchAPI('/oauth/status', { query: { state: session.state.trim() || undefined } })
     session.status = result.status || 'unknown'; session.error = result.error || ''
     if (String(session.status).trim().toLowerCase() === 'ok') await completeOAuth()
-    else if (notify) toast.add({ title: 'OAuth status checked', color: 'neutral' })
+    else if (notify) toast.add({ title: t('cred.toast.oauthChecked'), color: 'neutral' })
   } catch (error) { if (notify) oauthError.value = message(error) }
   finally { checkingOAuth.value = '' }
 }
@@ -1163,15 +1193,15 @@ async function pollOAuth(provider, state) {
       if (session) { session.status = result.status || 'unknown'; session.error = result.error || '' }
       const status = String(result.status || 'unknown').trim().toLowerCase()
       if (status === 'ok') { await completeOAuth(); return }
-      if (status === 'error') { toast.add({ title: 'OAuth failed', description: result.error || result.status, color: 'error' }); return }
+      if (status === 'error') { toast.add({ title: t('cred.toast.oauthFailed'), description: result.error || result.status, color: 'error' }); return }
     } catch (error) {
       if (generation !== oauthGeneration) return
       failures++
-      if (failures >= 3) { toast.add({ title: 'OAuth status failed', description: message(error), color: 'error' }); return }
+      if (failures >= 3) { toast.add({ title: t('cred.toast.oauthStatusFailed'), description: message(error), color: 'error' }); return }
     }
     await new Promise(resolve => setTimeout(resolve, 2000))
   }
-  if (generation === oauthGeneration) toast.add({ title: 'OAuth polling stopped', color: 'neutral' })
+  if (generation === oauthGeneration) toast.add({ title: t('cred.toast.oauthStopped'), color: 'neutral' })
 }
 function extractOAuthCode(text) { const value = String(text || '').trim(); return value.match(/\bcode\s*[:=]\s*([^\s&]+)/i)?.[1]?.trim() || value }
 function normalizeXaiCallback(source, fallbackState) {
@@ -1200,8 +1230,8 @@ async function submitCallback(provider) {
   const state = session.state.trim()
   const errorText = session.callback_error.trim()
   try {
-    if (provider === 'xai' && !state && !/(?:^|[?&#])state=/i.test(redirectURL)) throw new Error('State is required for xAI.')
-    if ((!state && !redirectURL) || (!code && !errorText && !redirectURL)) throw new Error('Enter state or callback URL, and an authorization code, error, or callback URL.')
+    if (provider === 'xai' && !state && !/(?:^|[?&#])state=/i.test(redirectURL)) throw new Error(t('cred.err.xaiState'))
+    if ((!state && !redirectURL) || (!code && !errorText && !redirectURL)) throw new Error(t('cred.err.callbackInput'))
     if (provider === 'xai') {
       const normalized = normalizeXaiCallback(redirectURL || code, state)
       code = normalized ? '' : extractOAuthCode(code)
@@ -1209,14 +1239,14 @@ async function submitCallback(provider) {
     }
     submittingCallback.value = provider
     await fetchAPI('/oauth/callback', { method: 'POST', body: { provider, redirect_url: redirectURL, code, state, error: errorText } })
-    toast.add({ title: 'OAuth callback submitted', color: 'success' })
+    toast.add({ title: t('cred.toast.callbackSubmitted'), color: 'success' })
     let pollState = state
     if (!pollState) { const match = session.redirect_url.match(/(?:^|[?&#])state=([^&]+)/i); if (match) { try { pollState = decodeURIComponent(match[1]) } catch { pollState = match[1] } } }
     if (pollState) { session.status = 'wait'; void pollOAuth(provider, pollState) }
   } catch (error) { oauthError.value = message(error) }
   finally { submittingCallback.value = '' }
 }
-function message(error) { return error?.data?.message || error?.data?.error || error?.message || 'Unexpected request error.' }
+function message(error) { return error?.data?.message || error?.data?.error || error?.message || t('cred.err.unexpected') }
 </script>
 
 <style scoped>

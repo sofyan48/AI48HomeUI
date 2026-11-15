@@ -1,43 +1,43 @@
 <template>
   <section class="space-y-4">
-    <UAlert color="info" variant="subtle" title="Legacy usage records" description="Request events are unavailable on this Home deployment. These records use the supported usage API; exports contain redacted summaries, not raw payloads." />
+    <UAlert color="info" variant="subtle" :title="t('usage.legacy.title')" :description="t('usage.legacy.desc')" />
     <UAlert v-if="error" color="error" variant="subtle" :description="error" />
-    <UAlert v-if="!available('usage_records')" color="warning" variant="subtle" title="Usage records unavailable" />
+    <UAlert v-if="!available('usage_records')" color="warning" variant="subtle" :title="t('usage.legacy.unavailable')" />
     <AppCard>
       <form class="space-y-3" @submit.prevent="apply">
         <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <UFormField label="From"><AppDateInput v-model="filters.from" type="datetime-local" :max="filters.to" class="w-full" /></UFormField>
-          <UFormField label="To"><AppDateInput v-model="filters.to" type="datetime-local" :min="filters.from" class="w-full" /></UFormField>
-          <UFormField v-for="field in fields" :key="field.key" :label="field.label"><UInput v-model="filters[field.key]" class="w-full" /></UFormField>
-          <UFormField label="Status"><USelect v-model="filters.status" :items="statusOptions" value-key="value" label-key="label" class="w-full" /></UFormField>
-          <UFormField label="Sort"><USelect v-model="sort" :items="sortOptions" value-key="value" label-key="label" class="w-full" /></UFormField>
-          <UFormField label="Rows"><USelect v-model="limit" :items="[25, 50, 100, 200]" class="w-full" /></UFormField>
+          <UFormField :label="t('common.from')"><AppDateInput v-model="filters.from" type="datetime-local" :max="filters.to" class="w-full" /></UFormField>
+          <UFormField :label="t('common.to')"><AppDateInput v-model="filters.to" type="datetime-local" :min="filters.from" class="w-full" /></UFormField>
+          <UFormField v-for="field in fields" :key="field.key" :label="fieldLabel(field.key)"><UInput v-model="filters[field.key]" class="w-full" /></UFormField>
+          <UFormField :label="t('common.status')"><USelect v-model="filters.status" :items="statusOptions" value-key="value" label-key="label" class="w-full" /></UFormField>
+          <UFormField :label="t('requests.sort')"><USelect v-model="sort" :items="sortOptions" value-key="value" label-key="label" class="w-full" /></UFormField>
+          <UFormField :label="t('usage.rows')"><USelect v-model="limit" :items="[25, 50, 100, 200]" class="w-full" /></UFormField>
         </div>
         <div class="flex flex-wrap items-center gap-2">
-          <AppButton type="submit" :loading="loading" :disabled="!available('usage_records')">Apply filters</AppButton>
-          <AppButton color="neutral" variant="ghost" @click="reset">Reset</AppButton>
-          <USelect v-model="exportFormat" aria-label="Usage export format" :items="['csv', 'jsonl']" class="w-28" />
-          <AppButton color="neutral" variant="outline" icon="i-tabler-download" :loading="exporting" :disabled="exporting || !available('usage_export')" @click="exportRecords">Export applied filters</AppButton>
+          <AppButton type="submit" :loading="loading" :disabled="!available('usage_records')">{{ t('usage.legacy.applyFilters') }}</AppButton>
+          <AppButton color="neutral" variant="ghost" @click="reset">{{ t('common.reset') }}</AppButton>
+          <USelect v-model="exportFormat" :aria-label="t('usage.legacy.exportFormat')" :items="['csv', 'jsonl']" class="w-28" />
+          <AppButton color="neutral" variant="outline" icon="i-tabler-download" :loading="exporting" :disabled="exporting || !available('usage_export')" @click="exportRecords">{{ t('usage.legacy.export') }}</AppButton>
         </div>
-        <p class="text-xs text-[var(--ui-text-muted)]">Times use {{ timezone }}. Export includes up to 10,000 matching records across all pages.</p>
-        <p v-if="!available('usage_export')" class="text-xs text-[var(--ui-text-muted)]">Usage export is unavailable.</p>
-        <p v-if="!available('usage_record_details')" class="text-xs text-[var(--ui-text-muted)]">Usage record details are unavailable.</p>
+        <p class="text-xs text-[var(--ui-text-muted)]">{{ t('usage.legacy.timezoneHint', { timezone }) }}</p>
+        <p v-if="!available('usage_export')" class="text-xs text-[var(--ui-text-muted)]">{{ t('usage.legacy.exportUnavailable') }}</p>
+        <p v-if="!available('usage_record_details')" class="text-xs text-[var(--ui-text-muted)]">{{ t('usage.legacy.detailsUnavailable') }}</p>
       </form>
     </AppCard>
     <AppCard :ui="{ body: 'p-0' }">
       <AppTable :columns="columns" :data="items" :loading="loading" :number-offset="(page - 1) * limit" class="min-w-[960px]">
         <template #request-cell="{ row }"><p class="font-mono text-xs">{{ value(row).request_id || value(row).id }}</p><p class="text-xs text-[var(--ui-text-muted)]">{{ date(value(row).timestamp) }}</p></template>
-        <template #model-cell="{ row }"><p>{{ value(row).model || 'Unknown model' }}</p><p class="text-xs text-[var(--ui-text-muted)]">{{ value(row).provider || 'Unknown provider' }} · {{ value(row).endpoint }}</p></template>
-        <template #status-cell="{ row }"><UBadge :color="value(row).failed ? 'error' : 'success'" variant="subtle">{{ value(row).status || (value(row).failed ? 'Failed' : 'Success') }}</UBadge></template>
+        <template #model-cell="{ row }"><p>{{ value(row).model || t('requests.unknownModel') }}</p><p class="text-xs text-[var(--ui-text-muted)]">{{ value(row).provider || t('usage.legacy.unknownProvider') }} · {{ value(row).endpoint }}</p></template>
+        <template #status-cell="{ row }"><UBadge :color="value(row).failed ? 'error' : 'success'" variant="subtle">{{ value(row).status || (value(row).failed ? t('common.failed') : t('common.success')) }}</UBadge></template>
         <template #tokens-cell="{ row }">{{ number(value(row).tokens?.total_tokens) }}</template>
         <template #latency-cell="{ row }">{{ value(row).performance?.latency_ms == null ? '—' : `${number(value(row).performance.latency_ms)} ms` }}</template>
         <template #cost-cell="{ row }">{{ value(row).billing?.amount ?? '—' }} {{ value(row).billing?.currency || '' }}</template>
-        <template #actions-cell="{ row }"><AdminTableAction v-if="available('usage_record_details')" action="view" label="View usage record" @click="openDetail(value(row))" /></template>
-        <template #empty><p class="py-10 text-center text-sm text-[var(--ui-text-muted)]">No usage records found for the applied filters.</p></template>
+        <template #actions-cell="{ row }"><AdminTableAction v-if="available('usage_record_details')" action="view" :label="t('usage.legacy.view')" @click="openDetail(value(row))" /></template>
+        <template #empty><p class="py-10 text-center text-sm text-[var(--ui-text-muted)]">{{ t('usage.legacy.empty') }}</p></template>
       </AppTable>
       <div class="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--ui-border)] px-4 py-3">
-        <span class="text-xs text-[var(--ui-text-muted)]">Page {{ page }} of {{ pages }} · {{ number(total) }} records</span>
-        <div class="flex gap-2"><AppButton size="sm" color="neutral" variant="outline" :disabled="loading || page <= 1" @click="page--">Previous</AppButton><AppButton size="sm" color="neutral" variant="outline" :disabled="loading || page >= pages" @click="page++">Next</AppButton></div>
+        <span class="text-xs text-[var(--ui-text-muted)]">{{ t('usage.legacy.pageSummary', { page, total: pages, count: number(total) }) }}</span>
+        <div class="flex gap-2"><AppButton size="sm" color="neutral" variant="outline" :disabled="loading || page <= 1" @click="page--">{{ t('common.previous') }}</AppButton><AppButton size="sm" color="neutral" variant="outline" :disabled="loading || page >= pages" @click="page++">{{ t('common.next') }}</AppButton></div>
       </div>
     </AppCard>
     <AdminRequestRecordDetail v-model:open="detailOpen" :detail="detail" :loading="detailLoading" :downloading="downloading" :download-error="downloadError" @download="downloadLog" />
@@ -49,6 +49,7 @@ import { dateRangeError } from '~/composables/dateRange'
 import { useDataSync } from '~/composables/useDataSync'
 const { fetchAPI, token } = useApi()
 const { supports } = useCapabilities()
+const { t, intlLocale } = useAdminI18n()
 const unavailable = ref<string[]>([])
 const available = (feature: string) => supports(feature) && !unavailable.value.includes(feature)
 const fields = [
@@ -58,16 +59,32 @@ const fields = [
   { key: 'credential_id', label: 'Credential ID' }, { key: 'endpoint', label: 'Endpoint' },
   { key: 'home_ip', label: 'Home IP' }, { key: 'cpa_node', label: 'CPA node' }
 ]
+function fieldLabel(key: string) {
+  switch (key) {
+    case 'search': return t('common.search')
+    case 'request_id': return t('requests.col.requestId')
+    case 'provider': return t('common.provider')
+    case 'model': return t('common.model')
+    case 'user': return t('common.user')
+    case 'client_key': return t('usage.clientKey')
+    case 'credential_id': return t('usage.credentialId')
+    case 'endpoint': return t('usage.endpoint')
+    case 'home_ip': return t('usage.homeIp')
+    case 'cpa_node': return t('usage.cpaNode')
+    default: return key
+  }
+}
 const defaults = (): Record<string, string> => ({ from: '', to: '', status: '__all__', ...Object.fromEntries(fields.map(field => [field.key, ''])) })
 const filters = ref(defaults()), applied = ref(defaults())
 const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
 const sort = ref('timestamp_desc'), limit = ref(50), page = ref(1)
-const sortOptions = [
-  ['Newest first', 'timestamp_desc'], ['Oldest first', 'timestamp_asc'], ['Most tokens', 'tokens_desc'], ['Fewest tokens', 'tokens_asc'],
-  ['Highest cost', 'cost_desc'], ['Lowest cost', 'cost_asc'], ['Highest latency', 'latency_desc'], ['Lowest latency', 'latency_asc'], ['Failures first', 'failed_first']
-].map(([label, value]) => ({ label, value }))
-const statusOptions = [{ label: 'All statuses', value: '__all__' }, { label: 'Success', value: 'success' }, { label: 'Failed', value: 'failed' }]
-const columns = ['request', 'model', 'status', 'tokens', 'latency', 'cost', 'actions'].map(key => ({ accessorKey: key, header: key === 'actions' ? '' : key[0]!.toUpperCase() + key.slice(1) }))
+const sortOptions = computed(() => [
+  [t('requests.sort.newest'), 'timestamp_desc'], [t('requests.sort.oldest'), 'timestamp_asc'], [t('requests.sort.mostTokens'), 'tokens_desc'], [t('requests.sort.fewestTokens'), 'tokens_asc'],
+  [t('requests.sort.highestCost'), 'cost_desc'], [t('requests.sort.lowestCost'), 'cost_asc'], [t('requests.sort.highestLatency'), 'latency_desc'], [t('requests.sort.lowestLatency'), 'latency_asc'], [t('requests.sort.failuresFirst'), 'failed_first']
+].map(([label, value]) => ({ label, value })))
+const statusOptions = computed(() => [{ label: t('usage.allStatuses'), value: '__all__' }, { label: t('common.success'), value: 'success' }, { label: t('common.failed'), value: 'failed' }])
+const columnHeaders = (): Record<string, string> => ({ request: t('requests.detail.groupRequest'), model: t('common.model'), status: t('common.status'), tokens: t('common.tokens'), latency: t('requests.col.latency'), cost: t('usage.col.cost'), actions: '' })
+const columns = computed(() => ['request', 'model', 'status', 'tokens', 'latency', 'cost', 'actions'].map(key => ({ accessorKey: key, header: columnHeaders()[key] })))
 const response = ref<any>(null), loading = ref(false), error = ref('')
 const items = computed(() => response.value?.items || [])
 const total = computed(() => Number(response.value?.total) || 0)
@@ -77,8 +94,8 @@ const detailOpen = ref(false), detailLoading = ref(false), detail = ref<any>(nul
 const downloading = ref(false), downloadError = ref('')
 let controller = new AbortController(), version = 0, detailVersion = 0, generation = 0, disposed = false
 const value = (row: any) => row?.original || row
-const number = (input: unknown) => new Intl.NumberFormat().format(Number(input) || 0)
-const date = (input: string) => input ? new Date(input).toLocaleString() : '—'
+const number = (input: unknown) => new Intl.NumberFormat(intlLocale.value).format(Number(input) || 0)
+const date = (input: string) => input ? new Date(input).toLocaleString(intlLocale.value) : '—'
 function query(paginated = true) {
   const result: Record<string, string | number> = { timezone, sort: sort.value }
   for (const [key, input] of Object.entries(applied.value)) {
@@ -90,7 +107,7 @@ function query(paginated = true) {
 }
 function failure(cause: any, feature: string) {
   if ([404, 405, 501].includes(cause?.statusCode)) { unavailable.value = [...new Set([...unavailable.value, feature])]; return }
-  error.value = cause?.message || 'Unable to load usage records.'
+  error.value = cause?.message || t('usage.legacy.loadFailed')
 }
 async function load() {
   if (!available('usage_records') || disposed) return
@@ -104,7 +121,7 @@ async function load() {
   } catch (cause) { if (!disposed && current === version) failure(cause, 'usage_records') }
   finally { if (!disposed && current === version) loading.value = false }
 }
-function apply() { const invalid = dateRangeError(filters.value.from, filters.value.to, 'datetime-local'); if (invalid) { error.value = invalid; return }; applied.value = { ...filters.value }; if (page.value !== 1) page.value = 1; else void load() }
+function apply() { const invalid = dateRangeError(filters.value.from, filters.value.to, 'datetime-local'); if (invalid) { error.value = invalid.startsWith('Enter a valid date and time') ? t('usage.dateTimeInvalid') : invalid.startsWith('Start must be') ? t('usage.rangeInverted') : invalid; return }; applied.value = { ...filters.value }; if (page.value !== 1) page.value = 1; else void load() }
 function reset() { filters.value = defaults(); apply() }
 async function openDetail(record: any) {
   const current = ++detailVersion
@@ -137,7 +154,7 @@ async function downloadLog(url: string, requestId: string) {
   const current = generation
   downloading.value = true; downloadError.value = ''
   try { const blob = await fetchAPI<Blob>(url, { responseType: 'blob', signal: controller.signal }); if (!disposed && current === generation) save(blob, `${requestId || 'request'}.log`) }
-  catch (cause: any) { if (!disposed && current === generation) downloadError.value = cause?.message || 'Unable to download request log.' }
+  catch (cause: any) { if (!disposed && current === generation) downloadError.value = cause?.message || t('usage.legacy.downloadFailed') }
   finally { if (!disposed && current === generation) downloading.value = false }
 }
 watch([sort, limit], () => { if (page.value !== 1) page.value = 1; else void load() })

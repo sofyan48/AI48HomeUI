@@ -1,5 +1,5 @@
 <template>
-  <div class="relative h-12 w-full overflow-hidden" :aria-label="label" role="img">
+  <div class="relative h-12 w-full overflow-hidden" :aria-label="label || t('shared.sparkline.trend')" role="img">
     <svg viewBox="0 0 160 48" preserveAspectRatio="none" class="size-full" aria-hidden="true">
       <defs>
         <linearGradient :id="gradientId" x1="0" y1="0" x2="0" y2="1">
@@ -20,8 +20,9 @@ const props = withDefaults(defineProps<{
   label?: string
 }>(), {
   values: () => [],
-  label: 'Trend'
+  label: ''
 })
+const { t } = useAdminI18n()
 
 const gradientId = useId().replace(/:/g, '')
 const normalized = computed(() => props.values.map(value => Number(value) || 0))

@@ -56,8 +56,28 @@ const props = withDefaults(defineProps<{
 
 defineEmits<{ click: [event: MouseEvent] }>()
 
+const { t } = useAdminI18n()
+const actionLabel = (action: Action) => {
+  switch (action) {
+    case 'view': return t('common.view')
+    case 'edit': return t('common.edit')
+    case 'copy': return t('common.copy')
+    case 'duplicate': return t('shared.action.duplicate')
+    case 'test': return t('shared.action.test')
+    case 'refresh': return t('common.refresh')
+    case 'download': return t('shared.action.download')
+    case 'remove': return t('common.remove')
+    case 'delete': return t('common.delete')
+    case 'add': return t('common.add')
+    case 'upload': return t('shared.action.upload')
+    case 'retry': return t('common.retry')
+    case 'details': return t('common.details')
+    default: return `${String(action).charAt(0).toUpperCase()}${String(action).slice(1)}`
+  }
+}
+
 const resolvedIcon = computed(() => props.icon || icons[props.action])
 // Keep contextual labels available without spending their full length in every row.
-const text = computed(() => props.text || `${props.action.charAt(0).toUpperCase()}${props.action.slice(1)}`)
+const text = computed(() => props.text || actionLabel(props.action))
 const label = computed(() => props.label || text.value)
 </script>

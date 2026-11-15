@@ -4,26 +4,26 @@
       v-if="summaryError"
       color="warning"
       variant="subtle"
-      title="Upstream summary unavailable"
+      :title="t('upstream.summaryUnavailable')"
       :description="summaryError"
     />
-    <section class="fleet" aria-label="Upstream fleet" :aria-busy="summaryPending && !accounts.length">
+    <section class="fleet" :aria-label="t('upstream.fleetLabel')" :aria-busy="summaryPending && !accounts.length">
       <div class="fleet__card">
         <span class="fleet__icon" aria-hidden="true"><UIcon name="i-tabler-user-shield" class="size-4" /></span>
         <div class="min-w-0 flex-1">
           <div class="flex items-baseline justify-between gap-2">
-            <span class="truncate text-xs font-medium text-[var(--ui-text-muted)]">Accounts</span>
-            <span class="shrink-0 text-[11px] tabular-nums text-[var(--ui-text-muted)]">{{ accounts.length ? Math.round((activeAccounts / accounts.length) * 100) : 0 }}% dispatchable</span>
+            <span class="truncate text-xs font-medium text-[var(--ui-text-muted)]">{{ t('upstream.accounts') }}</span>
+            <span class="shrink-0 text-[11px] tabular-nums text-[var(--ui-text-muted)]">{{ t('upstream.dispatchable', { percent: accounts.length ? Math.round((activeAccounts / accounts.length) * 100) : 0 }) }}</span>
           </div>
           <div class="flex min-w-0 items-baseline gap-3">
             <span class="fleet__count">{{ summaryPending && !accounts.length ? '—' : accounts.length }}</span>
             <span class="flex min-w-0 flex-wrap gap-x-2.5 text-[11px] text-[var(--ui-text-muted)]">
-              <span class="inline-flex items-center gap-1"><span class="size-1.5 rounded-full bg-emerald-500" />{{ activeAccounts }} active</span>
-              <span v-if="unavailableAccounts" class="inline-flex items-center gap-1"><span class="size-1.5 rounded-full bg-amber-500" />{{ unavailableAccounts }} unavailable</span>
-              <span class="inline-flex items-center gap-1"><span class="size-1.5 rounded-full bg-zinc-400" />{{ disabledAccounts }} disabled</span>
+              <span class="inline-flex items-center gap-1"><span class="size-1.5 rounded-full bg-emerald-500" />{{ t('upstream.countActive', { count: activeAccounts }) }}</span>
+              <span v-if="unavailableAccounts" class="inline-flex items-center gap-1"><span class="size-1.5 rounded-full bg-amber-500" />{{ t('upstream.countUnavailable', { count: unavailableAccounts }) }}</span>
+              <span class="inline-flex items-center gap-1"><span class="size-1.5 rounded-full bg-zinc-400" />{{ t('upstream.countDisabled', { count: disabledAccounts }) }}</span>
             </span>
           </div>
-          <div class="fleet__bar" role="img" :aria-label="`${activeAccounts} active, ${unavailableAccounts} unavailable, ${disabledAccounts} disabled`">
+          <div class="fleet__bar" role="img" :aria-label="t('upstream.fleetBar', { active: activeAccounts, unavailable: unavailableAccounts, disabled: disabledAccounts })">
             <span class="bg-emerald-500" :style="{ flexGrow: activeAccounts }" />
             <span class="bg-amber-500" :style="{ flexGrow: unavailableAccounts }" />
             <span class="bg-zinc-400 dark:bg-zinc-600" :style="{ flexGrow: disabledAccounts }" />
@@ -31,7 +31,7 @@
         </div>
       </div>
       <AdminStatGrid
-        label="Upstream details"
+        :label="t('upstream.details')"
         :items="summaryCards.slice(1)"
         :columns="3"
         :loading="summaryPending && !accounts.length"
@@ -42,7 +42,7 @@
     <AppPanelTabs
       :model-value="tab"
       :items="upstreamTabs"
-      label="Upstream"
+      :label="t('upstream.tabsLabel')"
       @update:model-value="selectTab"
     />
     <AdminUpstreamAccounts
@@ -79,6 +79,7 @@ watch(
 const router = useRouter();
 const { fetchAPI, token } = useApi();
 const toast = useToast();
+const { t } = useAdminI18n();
 const tab = computed(() =>
   route.query.credential
     ? "accounts"
@@ -86,10 +87,10 @@ const tab = computed(() =>
       ? "providers"
       : "accounts",
 );
-const upstreamTabs = [
-  { label: "Accounts", value: "accounts", icon: "i-tabler-user-shield" },
-  { label: "Provider keys", value: "providers", icon: "i-tabler-key" },
-];
+const upstreamTabs = computed(() => [
+  { label: t('upstream.accounts'), value: "accounts", icon: "i-tabler-user-shield" },
+  { label: t('upstream.providerKeys'), value: "providers", icon: "i-tabler-key" },
+]);
 const summaryError = useWorkspaceState('admin:upstream:summaryError', () => (""));
 const quotaError = useWorkspaceState('admin:upstream:quotaError', () => (""));
 const syncing = useWorkspaceState('admin:upstream:syncing', () => (false));
@@ -114,7 +115,7 @@ async function loadSummary() {
     ...providerRoutes.map((name) => fetchAPI(`/config/api-keys/${name}`)),
   ]);
   if (auth.status === "rejected")
-    summaryError.value = auth.reason?.message || "Could not load accounts.";
+    summaryError.value = auth.reason?.message || t('upstream.accountsLoadFailed');
   const authData = auth.status === "fulfilled" ? auth.value : null;
   const accounts = Array.isArray(authData)
     ? authData
@@ -141,7 +142,7 @@ async function loadSummary() {
   if (providers.some((result) => result.status === "rejected"))
     summaryError.value = [
       summaryError.value,
-      "Some provider groups could not be loaded.",
+      t('upstream.groupsLoadFailed'),
     ]
       .filter(Boolean)
       .join(" ");
@@ -176,7 +177,7 @@ async function loadSummaryQuota() {
     }
     return quota;
   } catch (error) {
-    quotaError.value = error?.message || "Quota snapshots unavailable.";
+    quotaError.value = error?.message || t('upstream.quotaUnavailable');
     return [];
   }
 }
@@ -216,12 +217,12 @@ const attentionCount = computed(
 const summaryCards = computed(() => [
   {
     key: "accounts",
-    label: "Accounts",
+    label: t('upstream.accounts'),
     value: accounts.value.length,
     detail: [
-      `${activeAccounts.value} active`,
-      `${disabledAccounts.value} disabled`,
-      unavailableAccounts.value ? `${unavailableAccounts.value} unavailable` : "",
+      t('upstream.countActive', { count: activeAccounts.value }),
+      t('upstream.countDisabled', { count: disabledAccounts.value }),
+      unavailableAccounts.value ? t('upstream.countUnavailable', { count: unavailableAccounts.value }) : "",
     ].filter(Boolean).join(" · "),
     icon: "i-tabler-user-shield",
     tone: "violet",
@@ -229,28 +230,28 @@ const summaryCards = computed(() => [
   },
   {
     key: "providers",
-    label: "Provider keys",
+    label: t('upstream.providerKeys'),
     value: providerKeyCount.value,
-    detail: providerGroups.value || "No entries",
+    detail: providerGroups.value || t('upstream.noEntries'),
     icon: "i-tabler-key",
     tone: "blue",
   },
   {
     key: "attention",
-    label: "Needs attention",
+    label: t('upstream.needsAttention'),
     value: quotaError.value ? "—" : attentionCount.value,
-    detail: quotaError.value ? "Quota snapshots unavailable" : "Quota status or stale collection",
+    detail: quotaError.value ? t('upstream.quotaUnavailableShort') : t('upstream.attentionDetail'),
     icon: "i-tabler-alert-triangle",
     tone: "amber",
     action: true,
-    ariaLabel: "Show accounts needing attention",
+    ariaLabel: t('upstream.attentionAria'),
     warning: Boolean(attentionCount.value && !quotaError.value),
   },
   {
     key: "websockets",
     label: "WebSockets",
     value: accounts.value.filter((item) => item.websockets).length,
-    detail: "Accounts with WebSockets on",
+    detail: t('upstream.websocketsDetail'),
     icon: "i-tabler-plug-connected",
     tone: "emerald",
   },
@@ -278,8 +279,8 @@ async function syncData() {
   } catch (error) {
     if (session !== token.value) return;
     toast.add({
-      title: "Sync failed",
-      description: error?.message || "Could not queue quota collection.",
+      title: t('upstream.syncFailed'),
+      description: error?.message || t('upstream.syncFailedDetail'),
       color: "error",
     });
   } finally {

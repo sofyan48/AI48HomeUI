@@ -6,7 +6,7 @@
       class="relative h-[9.875rem] w-full select-none overflow-hidden rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-primary sm:h-[11.5rem]"
       role="group"
       tabindex="0"
-      aria-label="Token usage over time. Use the left and right arrow keys to inspect buckets."
+      :aria-label="t('usage.chart.label')"
       @keydown="onKeydown"
       @pointerleave="activeIndex = null"
     >
@@ -75,13 +75,13 @@
       >
         <p class="font-semibold text-[var(--ui-text-highlighted)]">{{ formatBucket(activeEntry.point.bucket_start) }}</p>
         <div class="mt-3 flex items-center justify-between gap-4 text-sm">
-          <span class="font-semibold">Total</span>
+          <span class="font-semibold">{{ t('common.total') }}</span>
           <span class="font-semibold tabular-nums">{{ compact(activeEntry.total) }}</span>
         </div>
         <p class="mt-1 text-sm text-[var(--ui-text-muted)]">{{ overlayName }}: {{ overlayValue(activeEntry.overlay) }}</p>
 
         <div class="mt-3 border-t border-[var(--ui-border)] pt-3">
-          <div class="flex items-center justify-between gap-4 text-sm font-semibold"><span>Input composition</span><span class="tabular-nums">{{ compact(activeEntry.inputTotal) }}</span></div>
+          <div class="flex items-center justify-between gap-4 text-sm font-semibold"><span>{{ t('usage.chart.inputComposition') }}</span><span class="tabular-nums">{{ compact(activeEntry.inputTotal) }}</span></div>
           <div v-for="item in activeEntry.input" :key="item.key" class="mt-2 flex items-center gap-2 text-sm">
             <span class="size-2.5 shrink-0 rounded-full" :style="{ backgroundColor: item.color }" />
             <span class="min-w-0 flex-1">{{ item.label }}</span>
@@ -90,7 +90,7 @@
         </div>
 
         <div class="mt-3 border-t border-[var(--ui-border)] pt-3">
-          <div class="flex items-center justify-between gap-4 text-sm font-semibold"><span>Output composition</span><span class="tabular-nums">{{ compact(activeEntry.outputTotal) }}</span></div>
+          <div class="flex items-center justify-between gap-4 text-sm font-semibold"><span>{{ t('usage.chart.outputComposition') }}</span><span class="tabular-nums">{{ compact(activeEntry.outputTotal) }}</span></div>
           <div v-for="item in activeEntry.output" :key="item.key" class="mt-2 flex items-center gap-2 text-sm">
             <span class="size-2.5 shrink-0 rounded-full" :style="{ backgroundColor: item.color }" />
             <span class="min-w-0 flex-1">{{ item.label }}</span>
@@ -104,7 +104,7 @@
         </div>
       </div>
     </div>
-    <div v-else class="flex h-80 items-center justify-center text-sm text-[var(--ui-text-muted)]">No canonical token trend is available.</div>
+    <div v-else class="flex h-80 items-center justify-center text-sm text-[var(--ui-text-muted)]">{{ t('usage.chart.empty') }}</div>
   </div>
 </template>
 
@@ -128,6 +128,7 @@ const props = withDefaults(defineProps<{
   overlayType: 'requests'
 })
 
+const { t, intlLocale } = useAdminI18n()
 const width = 1000
 const height = 360
 const plot = { left: 66, right: 930, top: 20, bottom: 310, width: 864, height: 290 }
@@ -142,13 +143,24 @@ const colors = {
   unclassified: '#a1a1aa'
 }
 const definitions = [
-  { key: 'uncached', label: 'Uncached input', color: colors.uncached, group: 'input' },
-  { key: 'cacheRead', label: 'Cache read', color: colors.cacheRead, group: 'input' },
-  { key: 'cacheWrite', label: 'Cache write', color: colors.cacheWrite, group: 'input' },
-  { key: 'output', label: 'Regular output', color: colors.output, group: 'output' },
-  { key: 'reasoning', label: 'Reasoning', color: colors.reasoning, group: 'output' },
-  { key: 'unclassified', label: 'Unclassified', color: colors.unclassified, group: 'other' }
+  { key: 'uncached', color: colors.uncached, group: 'input' },
+  { key: 'cacheRead', color: colors.cacheRead, group: 'input' },
+  { key: 'cacheWrite', color: colors.cacheWrite, group: 'input' },
+  { key: 'output', color: colors.output, group: 'output' },
+  { key: 'reasoning', color: colors.reasoning, group: 'output' },
+  { key: 'unclassified', color: colors.unclassified, group: 'other' }
 ] as const
+// Labels resolve at render time so the tooltip follows the selected language.
+function seriesLabel(key: typeof definitions[number]['key']) {
+  switch (key) {
+    case 'uncached': return t('usage.tok.uncachedInput')
+    case 'cacheRead': return t('usage.tok.cacheRead')
+    case 'cacheWrite': return t('usage.tok.cacheWrite')
+    case 'output': return t('usage.tok.regularOutput')
+    case 'reasoning': return t('usage.tok.reasoning')
+    default: return t('usage.tok.unclassified')
+  }
+}
 
 function pointValues(point: TokenPoint) {
   const breakdown = point.token_breakdown || {}
@@ -182,10 +194,10 @@ const entries = computed(() => sampled.value.map(({ point, index: sourceIndex },
     const value = values[definition.key]
     const segmentHeight = value / tokenMaximum.value * plot.height
     cumulative += segmentHeight
-    return { ...definition, value, height: segmentHeight, y: plot.bottom - cumulative }
+    return { ...definition, label: seriesLabel(definition.key), value, height: segmentHeight, y: plot.bottom - cumulative }
   }).filter(segment => segment.value > 0)
-  const input = definitions.filter(item => item.group === 'input').map(item => ({ ...item, value: values[item.key] }))
-  const output = definitions.filter(item => item.group === 'output').map(item => ({ ...item, value: values[item.key] }))
+  const input = definitions.filter(item => item.group === 'input').map(item => ({ ...item, label: seriesLabel(item.key), value: values[item.key] }))
+  const output = definitions.filter(item => item.group === 'output').map(item => ({ ...item, label: seriesLabel(item.key), value: values[item.key] }))
   return {
     key: point.bucket_start || sourceIndex,
     point,
@@ -195,14 +207,14 @@ const entries = computed(() => sampled.value.map(({ point, index: sourceIndex },
     output,
     inputTotal: input.reduce((sum, item) => sum + item.value, 0),
     outputTotal: output.reduce((sum, item) => sum + item.value, 0),
-    unclassified: { ...definitions[5], value: values.unclassified },
+    unclassified: { ...definitions[5], label: seriesLabel('unclassified'), value: values.unclassified },
     overlay: Math.max(0, Number(props.overlay[sourceIndex]) || 0),
     index
   }
 }))
 const overlayPath = computed(() => entries.value.map((entry, index) => `${index ? 'L' : 'M'} ${centerX(index).toFixed(2)} ${overlayY(entry.overlay).toFixed(2)}`).join(' '))
 const activeEntry = computed(() => activeIndex.value == null ? null : entries.value[activeIndex.value] || null)
-const overlayName = computed(() => props.overlayType === 'spend' ? 'Spend' : 'Requests')
+const overlayName = computed(() => props.overlayType === 'spend' ? t('usage.spend') : t('common.requests'))
 const tokenTicks = computed(() => axisTicks(tokenMaximum.value).map(value => ({ value, y: plot.bottom - value / tokenMaximum.value * plot.height })))
 const overlayTicks = computed(() => axisTicks(overlayMaximum.value).map(value => ({ value, y: plot.bottom - value / overlayMaximum.value * plot.height })))
 const xLabels = computed(() => {
@@ -222,23 +234,23 @@ function axisTicks(maximum: number) {
   return [0, 0.25, 0.5, 0.75, 1].map(factor => maximum * factor)
 }
 function compact(value: number) {
-  return new Intl.NumberFormat(undefined, { notation: 'compact', maximumFractionDigits: 1 }).format(Number(value) || 0)
+  return new Intl.NumberFormat(intlLocale.value, { notation: 'compact', maximumFractionDigits: 1 }).format(Number(value) || 0)
 }
 function overlayLabel(value: number) {
   return props.overlayType === 'spend'
-    ? new Intl.NumberFormat(undefined, { notation: 'compact', maximumFractionDigits: 1 }).format(value)
-    : new Intl.NumberFormat(undefined, { notation: 'compact', maximumFractionDigits: 0 }).format(value)
+    ? new Intl.NumberFormat(intlLocale.value, { notation: 'compact', maximumFractionDigits: 1 }).format(value)
+    : new Intl.NumberFormat(intlLocale.value, { notation: 'compact', maximumFractionDigits: 0 }).format(value)
 }
 function overlayValue(value: number) {
   return props.overlayType === 'spend'
-    ? new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 }).format(value)
-    : new Intl.NumberFormat().format(value)
+    ? new Intl.NumberFormat(intlLocale.value, { minimumFractionDigits: 2, maximumFractionDigits: 6 }).format(value)
+    : new Intl.NumberFormat(intlLocale.value).format(value)
 }
 function formatBucket(value?: string, short = false) {
-  if (!value) return 'Unknown time'
+  if (!value) return t('usage.chart.unknownTime')
   const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return 'Unknown time'
-  return new Intl.DateTimeFormat(undefined, short
+  if (Number.isNaN(date.getTime())) return t('usage.chart.unknownTime')
+  return new Intl.DateTimeFormat(intlLocale.value, short
     ? { month: 'short', day: 'numeric', hour: 'numeric' }
     : { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(date)
 }

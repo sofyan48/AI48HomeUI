@@ -2,57 +2,57 @@
   <section class="space-y-4">
     <div class="flex items-center gap-3 border-t border-[var(--ui-border)] pt-5">
       <span class="flex size-8 items-center justify-center rounded-lg bg-[var(--admin-selected)] text-[var(--ui-primary)]" aria-hidden="true"><UIcon name="i-tabler-chart-dots-3" class="size-4" /></span>
-      <div><h2 class="text-base font-semibold">Advanced usage insights</h2><p class="text-xs text-[var(--ui-text-muted)]">Load deeper rankings and realtime snapshots on demand.</p></div>
+      <div><h2 class="text-base font-semibold">{{ t('usage.insights.title') }}</h2><p class="text-xs text-[var(--ui-text-muted)]">{{ t('usage.insights.desc') }}</p></div>
     </div>
-    <UAlert v-if="capabilityError" color="warning" variant="subtle" title="Capabilities unavailable" description="Optional usage endpoints will be checked when requested." />
-    <UAlert v-if="unavailableFeatures.length" color="warning" variant="subtle" title="Some usage features are unavailable" :description="unavailableFeatures.join(', ')" />
+    <UAlert v-if="capabilityError" color="warning" variant="subtle" :title="t('usage.capsUnavailable')" :description="t('usage.insights.capsDesc')" />
+    <UAlert v-if="unavailableFeatures.length" color="warning" variant="subtle" :title="t('usage.insights.someUnavailable')" :description="unavailableFeatures.join(', ')" />
     <UAlert v-if="error" color="error" variant="subtle" :description="error" />
     <div class="app-surface flex flex-wrap items-center gap-3 px-3 py-2.5">
       <USelect v-model="groupBy" :items="['model', 'provider', 'user', 'client_key', 'credential', 'endpoint', 'home_ip']" class="w-44" />
       <USelect v-model="metric" :items="['request_count', 'total_tokens', 'total_amount', 'failed_count', 'avg_latency_ms', 'p95_latency_ms']" class="w-48" />
-      <AppButton :loading="loading" :disabled="loading || !canLoadInsights" @click="refresh">Load insights</AppButton>
-      <span class="basis-full text-xs text-[var(--ui-text-muted)] xl:basis-auto xl:flex-1">Overview and insights support date, provider, model, credential type, endpoint, and Home IP filters; without dates aggregates default to 24 hours. Realtime uses the last 15 minutes.</span>
+      <AppButton :loading="loading" :disabled="loading || !canLoadInsights" @click="refresh">{{ t('usage.insights.load') }}</AppButton>
+      <span class="basis-full text-xs text-[var(--ui-text-muted)] xl:basis-auto xl:flex-1">{{ t('usage.insights.hint') }}</span>
     </div>
     <div class="grid gap-4 xl:grid-cols-2">
       <AppCard v-if="available('usage_aggregates')">
-        <template #header><h3 class="font-semibold">Ranking by {{ groupBy }}</h3></template>
+        <template #header><h3 class="font-semibold">{{ t('usage.insights.rankingBy', { group: groupBy }) }}</h3></template>
         <div v-for="item in aggregates?.items || []" :key="JSON.stringify(item)" class="flex justify-between gap-3 border-b border-[var(--ui-border)] py-2 text-sm">
-          <span class="truncate">{{ item.label || item.name || item.id || item.key || 'Unknown' }}</span>
+          <span class="truncate">{{ item.label || item.name || item.id || item.key || t('common.unknown') }}</span>
           <span class="font-mono">{{ item[metric] ?? item.value ?? 0 }}</span>
         </div>
-        <p v-if="!aggregates?.items?.length" class="text-sm text-[var(--ui-text-muted)]">No ranking data.</p>
+        <p v-if="!aggregates?.items?.length" class="text-sm text-[var(--ui-text-muted)]">{{ t('usage.noRanking') }}</p>
       </AppCard>
       <AppCard v-if="available('usage_realtime')">
-        <template #header><h3 class="font-semibold">Realtime snapshot (last 15 minutes)</h3></template>
+        <template #header><h3 class="font-semibold">{{ t('usage.insights.realtime') }}</h3></template>
         <div v-if="realtime" class="space-y-4 text-sm">
-          <p class="text-xs text-[var(--ui-text-muted)]">Grouped by {{ realtime.group_by }} · Updated {{ new Date(realtime.updated_at).toLocaleString() }}</p>
+          <p class="text-xs text-[var(--ui-text-muted)]">{{ t('usage.insights.groupedUpdated', { group: realtime.group_by, time: new Date(realtime.updated_at).toLocaleString(intlLocale) }) }}</p>
           <div v-if="latestVelocity" class="grid grid-cols-3 gap-2">
-            <div><p class="text-[var(--ui-text-muted)]">Requests/min</p><p class="font-semibold">{{ latestVelocity.rpm }}</p></div>
-            <div><p class="text-[var(--ui-text-muted)]">Tokens/min</p><p class="font-semibold">{{ latestVelocity.tpm }}</p></div>
-            <div><p class="text-[var(--ui-text-muted)]">Error rate</p><p class="font-semibold">{{ (latestVelocity.error_rate * 100).toFixed(1) }}%</p></div>
+            <div><p class="text-[var(--ui-text-muted)]">{{ t('usage.insights.rpm') }}</p><p class="font-semibold">{{ latestVelocity.rpm }}</p></div>
+            <div><p class="text-[var(--ui-text-muted)]">{{ t('usage.insights.tpm') }}</p><p class="font-semibold">{{ latestVelocity.tpm }}</p></div>
+            <div><p class="text-[var(--ui-text-muted)]">{{ t('usage.insights.errorRate') }}</p><p class="font-semibold">{{ (latestVelocity.error_rate * 100).toFixed(1) }}%</p></div>
           </div>
-          <p v-else class="text-[var(--ui-text-muted)]">No request velocity yet.</p>
+          <p v-else class="text-[var(--ui-text-muted)]">{{ t('usage.insights.noVelocity') }}</p>
           <div v-if="realtime.current_usage?.length">
-            <p class="font-medium">Current usage</p>
+            <p class="font-medium">{{ t('usage.insights.currentUsage') }}</p>
             <div v-for="item in realtime.current_usage" :key="item.id" class="flex justify-between gap-2 border-b border-[var(--ui-border)] py-1">
-              <span class="truncate">{{ item.label || item.id }}</span><span>{{ item.request_count }} requests</span>
+              <span class="truncate">{{ item.label || item.id }}</span><span>{{ t('usage.requestCount', { count: item.request_count }) }}</span>
             </div>
           </div>
           <div v-if="realtime.latency_distribution?.length">
-            <p class="font-medium">Latency distribution</p>
+            <p class="font-medium">{{ t('usage.insights.latencyDist') }}</p>
             <div v-for="bucket in realtime.latency_distribution" :key="bucket.bucket" class="flex justify-between gap-2 py-1">
-              <span>{{ bucket.bucket }}</span><span>{{ bucket.request_count }} requests</span>
+              <span>{{ bucket.bucket }}</span><span>{{ t('usage.requestCount', { count: bucket.request_count }) }}</span>
             </div>
           </div>
         </div>
-        <p v-else class="text-sm text-[var(--ui-text-muted)]">Load insights to see realtime usage.</p>
+        <p v-else class="text-sm text-[var(--ui-text-muted)]">{{ t('usage.insights.loadHint') }}</p>
       </AppCard>
-      <AppCard v-for="health in healthSections" :key="health.label">
-        <template #header><h3 class="font-semibold">{{ health.label }} health</h3></template>
+      <AppCard v-for="health in healthSections" :key="health.feature">
+        <template #header><h3 class="font-semibold">{{ health.label }}</h3></template>
         <div v-for="item in health.items" :key="item.id" class="flex items-center justify-between gap-3 border-b border-[var(--ui-border)] py-2 text-sm">
           <span>{{ item.label || item.id }}</span><UBadge :color="item.status === 'healthy' ? 'success' : 'warning'" variant="subtle">{{ item.status }}</UBadge>
         </div>
-        <p v-if="!health.items.length" class="text-sm text-[var(--ui-text-muted)]">No health data available.</p>
+        <p v-if="!health.items.length" class="text-sm text-[var(--ui-text-muted)]">{{ t('usage.insights.noHealth') }}</p>
       </AppCard>
     </div>
   </section>
@@ -61,15 +61,16 @@
 <script setup lang="ts">
 import { useWorkspaceState } from '~/composables/useWorkspaceState'
 const props = defineProps<{ commonQuery: string }>()
+const { t, intlLocale } = useAdminI18n()
 const { fetchAPI, token } = useApi()
 const { supports, error: capabilityError, refreshCapabilities } = useCapabilities()
 const unavailable = ref<string[]>([])
-const featureLabels: Record<string, string> = {
-  usage_aggregates: 'Rankings', usage_realtime: 'Realtime', usage_provider_health: 'Provider health',
-  usage_credential_health: 'Credential health'
-}
+const featureLabels = computed<Record<string, string>>(() => ({
+  usage_aggregates: t('usage.insights.rankings'), usage_realtime: t('usage.insights.realtimeFeature'), usage_provider_health: t('usage.insights.providerHealth'),
+  usage_credential_health: t('usage.insights.credentialHealth')
+}))
 const available = (feature: string) => supports(feature) && !unavailable.value.includes(feature)
-const unavailableFeatures = computed(() => Object.entries(featureLabels).filter(([feature]) => !available(feature)).map(([, label]) => label))
+const unavailableFeatures = computed(() => Object.entries(featureLabels.value).filter(([feature]) => !available(feature)).map(([, label]) => label))
 const canLoadInsights = computed(() => ['usage_aggregates', 'usage_realtime', 'usage_provider_health', 'usage_credential_health'].some(available))
 let controller = new AbortController()
 let generation = 0
@@ -99,8 +100,8 @@ const credentialHealth = useWorkspaceState<any>('admin:usage-insights:credential
 const latestVelocity = computed(() => realtime.value?.velocity?.at(-1))
 const realtimeGroupBy = computed(() => ['model', 'provider', 'client_key', 'credential'].includes(groupBy.value) ? groupBy.value : 'model')
 const healthSections = computed(() => [
-  { feature: 'usage_provider_health', label: 'Provider', items: providerHealth.value?.items || [] },
-  { feature: 'usage_credential_health', label: 'Credential', items: credentialHealth.value?.items || [] }
+  { feature: 'usage_provider_health', label: t('usage.insights.providerHealth'), items: providerHealth.value?.items || [] },
+  { feature: 'usage_credential_health', label: t('usage.insights.credentialHealth'), items: credentialHealth.value?.items || [] }
 ].filter(section => available(section.feature)))
 function invalidate() {
   generation++
@@ -133,7 +134,7 @@ async function refresh() {
     realtime.value = snapshot
     providerHealth.value = providers
     credentialHealth.value = credentials
-  } catch (cause: any) { if (!disposed && current === generation) error.value = cause?.message || 'Unable to load usage insights.' }
+  } catch (cause: any) { if (!disposed && current === generation) error.value = cause?.message || t('usage.insights.loadFailed') }
   finally { if (!disposed && current === generation) loading.value = false }
 }
 </script>
