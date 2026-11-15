@@ -108,8 +108,8 @@ Keep the root-level source layout used by this repository; do not move it into a
 
 - `bun run build:embedded` clears `NUXT_PUBLIC_API_URL`, runs static generation, then invokes `scripts/build-embedded.mjs`.
 - The packaging script recreates `dist/`, copies hashed Nuxt assets and fonts, and rewrites `/_nuxt/`, `/_fonts/`, and favicon URLs to `/assets/` paths.
-- The output includes `dist/index.html`, `dist/management.html`, `dist/user.html`, and `dist/assets/`.
-- Home embeds these files through `internal/managementasset`. Admin entry points are `/management.html` and `/admin/*`; user entry points are `/user.html` and `/app/*`.
+- The output includes `dist/index.html`, `dist/management.html`, `dist/user.html`, and `dist/assets/`. These HTML filenames are internal embedded build artifacts, not the recommended browser entry points.
+- Home embeds these files through `internal/managementasset`. Admin entry points are `/admin` and `/admin/*`; user entry points are `/app` and `/app/*`. Use `/admin/connect` for administrator connection and `/app/login` for user login.
 - With sibling repositories, the integration command is:
 
 ```bash
