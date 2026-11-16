@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import PortalBadge from '~/components/app/general/PortalBadge.vue'
 import AdminUsageTokenChart from '~/components/admin/usage/UsageTokenChart.vue'
 import { useUsagePage } from '~/composables/usage/useUsagePage'
 import { tokenQualityColor } from '~/composables/usage/format'
@@ -20,7 +21,7 @@ const { qualityLabel, formatAmount, formatCompactNumber } = format
               <div class="inline-flex rounded-lg bg-[var(--ui-bg-muted)] p-1" role="group" :aria-label="t('usage.chartOverlay')">
                 <AppButton v-for="option in chartOverlayOptions" :key="option.value" size="sm" color="neutral" :variant="chartOverlay === option.value ? 'solid' : 'ghost'" @click="chartOverlay = option.value">{{ option.label }}</AppButton>
               </div>
-              <UBadge v-if="overviewTokenBreakdown" :color="tokenQualityColor(overviewTokenBreakdown.quality)" variant="subtle">{{ qualityLabel(overviewTokenBreakdown.quality) }}</UBadge>
+              <PortalBadge v-if="overviewTokenBreakdown" :color="tokenQualityColor(overviewTokenBreakdown.quality)" variant="subtle">{{ qualityLabel(overviewTokenBreakdown.quality) }}</PortalBadge>
             </div>
           </div>
           <div class="flex flex-wrap gap-1.5">

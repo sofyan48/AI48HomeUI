@@ -4,13 +4,13 @@
       <template v-if="overview">
         <section class="ledger" :aria-label="t('billing.overview.summaryLabel')">
           <div class="ledger__total">
-            <p class="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--ui-text-muted)]"><UIcon name="i-tabler-receipt" class="size-3.5" />{{ t('billing.overview.chargedInRange') }}</p>
+            <p class="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--ui-text-muted)]"><AppIcon name="i-tabler-receipt" class="size-3.5" />{{ t('billing.overview.chargedInRange') }}</p>
             <p class="ledger__amount">{{ financeMetrics[0].value }}</p>
             <p class="font-mono text-[11px] text-[var(--ui-text-muted)]">{{ overviewRange.from || t('billing.overview.allTime') }} → {{ overviewRange.to || t('billing.overview.now') }} · {{ overviewRange.timezone || savedReportTimezone }}</p>
           </div>
           <dl class="ledger__lines">
             <div v-for="metric in financeMetrics.slice(1)" :key="metric.label" class="ledger__line">
-              <dt class="inline-flex items-center gap-2 text-sm text-[var(--ui-text-toned)]"><UIcon :name="metric.icon" class="size-4" :class="metric.tone === 'emerald' ? 'text-emerald-500' : metric.tone === 'amber' ? 'text-amber-500' : 'text-blue-500'" />{{ metric.label }}</dt>
+              <dt class="inline-flex items-center gap-2 text-sm text-[var(--ui-text-toned)]"><AppIcon :name="metric.icon" class="size-4" :class="metric.tone === 'emerald' ? 'text-emerald-500' : metric.tone === 'amber' ? 'text-amber-500' : 'text-blue-500'" />{{ metric.label }}</dt>
               <span class="ledger__dots" aria-hidden="true" />
               <dd class="font-mono text-sm font-semibold tabular-nums text-[var(--ui-text-highlighted)]" :title="metric.value">{{ metric.tone === 'emerald' ? '+' : metric.tone === 'amber' ? '−' : '' }}{{ metric.value }}</dd>
             </div>
@@ -64,7 +64,7 @@
           </section>
         </div>
       </template>
-      <div v-else-if="overviewLoading" class="grid gap-4"><USkeleton class="h-32 w-full" /><USkeleton class="h-72 w-full" /></div>
+      <div v-else-if="overviewLoading" class="grid gap-4"><PortalSkeleton class="h-32 w-full" /><PortalSkeleton class="h-72 w-full" /></div>
       <p v-else-if="!pageError" class="py-12 text-center text-sm text-[var(--ui-text-muted)]">{{ t('billing.overview.empty') }}</p>
 </template>
 <style scoped>
@@ -98,6 +98,8 @@
 </style>
 
 <script setup lang="ts">
+import PortalSkeleton from '~/components/app/general/PortalSkeleton.vue'
+import AppIcon from '~/components/AppIcon.vue'
 import { useBillingWorkspace } from "~/composables/billing/useBillingWorkspace"
 const { t, overviewFilters, overviewPreset, rangeOptions, userSearchOptions, providerSearchOptions, modelSearchOptions, overviewLoading, selectRange, applyOverviewFilters, resetOverviewFilters, overview, financeMetrics, overviewRange, savedReportTimezone, usageMetrics, dailyTrend, trendWidth, formatCredits, formatNumber, topUsers, rankingGroups, share, pageError } = useBillingWorkspace()
 </script>

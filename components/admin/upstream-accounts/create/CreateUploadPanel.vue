@@ -1,6 +1,6 @@
 <template>
   <div class="space-y-4">
-    <button type="button" class="w-full rounded-lg border border-dashed border-[var(--ui-border)] p-6 text-center disabled:opacity-50" :disabled="uploadActive || busy" @click="fileInput?.click()" @dragenter.prevent @dragover.prevent @dragleave.prevent @drop.prevent.stop="uploadDroppedFiles"><UIcon name="i-tabler-upload" class="mx-auto mb-2 size-6" /><p class="text-sm">{{ t('cred.upload.drop') }}</p></button>
+    <button type="button" class="w-full rounded-lg border border-dashed border-[var(--ui-border)] p-6 text-center disabled:opacity-50" :disabled="uploadActive || busy" @click="fileInput?.click()" @dragenter.prevent @dragover.prevent @dragleave.prevent @drop.prevent.stop="uploadDroppedFiles"><AppIcon name="i-tabler-upload" class="mx-auto mb-2 size-6" /><p class="text-sm">{{ t('cred.upload.drop') }}</p></button>
     <p v-if="uploadResults.length" class="text-xs text-[var(--ui-text-muted)]">{{ uploadActive ? t('cred.upload.progress', { done: uploadResults.filter(item => ['success', 'error'].includes(item.status)).length, total: uploadResults.length }) : t('cred.upload.summary', { succeeded: uploadResults.filter(item => item.status === 'success').length, failed: failedUploads.length }) }}</p>
     <div v-for="(result, index) in uploadResults" :key="result.id" class="rounded-md border border-[var(--ui-border)] p-3 text-sm">
       <div class="flex items-start justify-between gap-2">
@@ -14,6 +14,7 @@
 </template>
 
 <script setup lang="ts">
+import AppIcon from '~/components/AppIcon.vue'
 import { useUpstreamAccounts } from '~/composables/upstream-accounts/useUpstreamAccounts'
 
 const {

@@ -13,7 +13,7 @@
     @submit="submit"
   >
     <p class="text-sm">{{ t('users.userLabel') }} <span class="font-semibold">{{ user?.username }}</span></p>
-    <UAlert
+    <PortalAlert
       v-if="!accessGroupsSupported"
       color="warning"
       variant="subtle"
@@ -34,6 +34,7 @@
 </template>
 
 <script setup lang="ts">
+import PortalAlert from '~/components/app/general/PortalAlert.vue'
 import { computed, ref } from 'vue'
 import UsersScopePicker from './UsersScopePicker.vue'
 import { useUsersWorkspace } from '~/composables/users/useUsersWorkspace'

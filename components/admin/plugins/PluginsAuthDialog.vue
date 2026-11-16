@@ -8,31 +8,31 @@
             ><template #body
                 ><form class="space-y-4" @submit.prevent="saveAuth">
                     <div class="grid gap-4 sm:grid-cols-2">
-                        <UFormField :label="t('common.name')" required
-                            ><UInput
+                        <AdminField :label="t('common.name')" required
+                            ><AdminInput
                                 v-model="authForm.name"
-                                class="w-full" /></UFormField
-                        ><UFormField :label="t('plugins.auth.urlMatch')" required
-                            ><UInput
+                                class="w-full" /></AdminField
+                        ><AdminField :label="t('plugins.auth.urlMatch')" required
+                            ><AdminInput
                                 v-model="authForm.match"
                                 class="w-full"
                                 placeholder="https://github.com/owner/"
-                        /></UFormField>
+                        /></AdminField>
                     </div>
                     <div class="grid gap-4 sm:grid-cols-2">
-                        <UFormField :label="t('plugins.auth.authType')" required
-                            ><USelect
+                        <AdminField :label="t('plugins.auth.authType')" required
+                            ><AdminSelect
                                 v-model="authForm.auth_type"
                                 :items="authTypes"
                                 value-key="value"
                                 label-key="label"
                                 class="w-full"
-                        /></UFormField>
+                        /></AdminField>
                     </div>
                     <fieldset class="space-y-2">
                         <legend class="text-sm font-medium">{{ t('plugins.auth.applyTo') }}</legend>
                         <div class="flex flex-wrap gap-4">
-                            <UCheckbox
+                            <AdminCheckbox
                                 v-for="scope in authScopes"
                                 :key="scope"
                                 :model-value="authForm.apply_to.includes(scope)"
@@ -44,14 +44,14 @@
                             {{ t('plugins.auth.applyToHint') }}
                         </p>
                     </fieldset>
-                    <UFormField
+                    <AdminField
                         v-if="
                             ['bearer', 'github-token'].includes(
                                 authForm.auth_type,
                             )
                         "
                         :label="t('plugins.auth.token')"
-                        ><UInput
+                        ><AdminInput
                             v-model="authForm.token"
                             type="password"
                             class="w-full"
@@ -60,17 +60,17 @@
                                     ? t('plugins.auth.keepExisting')
                                     : ''
                             "
-                    /></UFormField>
+                    /></AdminField>
                     <div
                         v-if="authForm.auth_type === 'basic'"
                         class="grid gap-4 sm:grid-cols-2"
                     >
-                        <UFormField :label="t('plugins.auth.username')"
-                            ><UInput
+                        <AdminField :label="t('plugins.auth.username')"
+                            ><AdminInput
                                 v-model="authForm.username"
-                                class="w-full" /></UFormField
-                        ><UFormField :label="t('plugins.auth.password')"
-                            ><UInput
+                                class="w-full" /></AdminField
+                        ><AdminField :label="t('plugins.auth.password')"
+                            ><AdminInput
                                 v-model="authForm.password"
                                 type="password"
                                 class="w-full"
@@ -79,18 +79,18 @@
                                         ? t('plugins.auth.keepExisting')
                                         : ''
                                 "
-                        /></UFormField>
+                        /></AdminField>
                     </div>
                     <div
                         v-if="authForm.auth_type === 'header'"
                         class="grid gap-4 sm:grid-cols-2"
                     >
-                        <UFormField :label="t('plugins.auth.headerName')"
-                            ><UInput
+                        <AdminField :label="t('plugins.auth.headerName')"
+                            ><AdminInput
                                 v-model="authForm.header_name"
-                                class="w-full" /></UFormField
-                        ><UFormField :label="t('plugins.auth.headerValue')"
-                            ><UInput
+                                class="w-full" /></AdminField
+                        ><AdminField :label="t('plugins.auth.headerValue')"
+                            ><AdminInput
                                 v-model="authForm.header_value"
                                 type="password"
                                 class="w-full"
@@ -99,12 +99,12 @@
                                         ? t('plugins.auth.keepExisting')
                                         : ''
                                 "
-                        /></UFormField>
+                        /></AdminField>
                     </div>
-                    <UCheckbox
+                    <AdminCheckbox
                         v-model="authForm.enabled"
                         :label="t('common.enabled')"
-                    /><UAlert
+                    /><PortalAlert
                         v-if="authError"
                         color="error"
                         variant="subtle"
@@ -128,6 +128,11 @@
 </template>
 
 <script setup lang="ts">
+import AdminField from '~/components/admin/general/controls/AdminField.vue'
+import AdminInput from '~/components/admin/general/controls/AdminInput.vue'
+import AdminSelect from '~/components/admin/general/controls/AdminSelect.vue'
+import AdminCheckbox from '~/components/admin/general/controls/AdminCheckbox.vue'
+import PortalAlert from '~/components/app/general/PortalAlert.vue'
 import { usePluginsWorkspace } from "~/composables/plugins/usePluginsWorkspace"
 const { t, authOpen, editingAuth, saveAuth, authForm, authTypes, authScopes, scopeLabel, toggleScope, authError, savingAuth } = usePluginsWorkspace();
 </script>

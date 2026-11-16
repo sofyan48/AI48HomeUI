@@ -1,5 +1,6 @@
 import { computed, type Ref } from 'vue'
-import { useColorMode, useRouter } from '#imports'
+import { useRouter } from '#imports'
+import { useColorMode } from '~/composables/useColorMode'
 import { useConsoleLocale } from '~/composables/useConsoleLocale'
 import type { NavigationSection } from '~/composables/layout/useAdminNavigation'
 
@@ -21,6 +22,7 @@ export function useAdminCommands(options: AdminCommandOptions) {
   const { t: tc } = useConsoleLocale()
   const router = useRouter()
   const colorMode = useColorMode()
+  const { setPreference } = colorMode
   const { commandOpen } = options
 
   return computed(() => [
@@ -49,7 +51,7 @@ export function useAdminCommands(options: AdminCommandOptions) {
           { label: tc('shell.lightTheme'), value: 'light', icon: 'i-tabler-sun' },
           { label: tc('shell.darkTheme'), value: 'dark', icon: 'i-tabler-moon' },
           { label: tc('shell.systemTheme'), value: 'system', icon: 'i-tabler-device-desktop' }
-        ].map(theme => ({ label: theme.label, icon: theme.icon, onSelect: () => { colorMode.preference = theme.value; commandOpen.value = false } })),
+        ].map(theme => ({ label: theme.label, icon: theme.icon, onSelect: () => { setPreference(theme.value as 'light' | 'dark' | 'system'); commandOpen.value = false } })),
         { label: tc('shell.disconnect'), icon: 'i-tabler-plug-off', disabled: !options.token.value, onSelect: () => { commandOpen.value = false; options.disconnect() } }
       ]
     }

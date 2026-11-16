@@ -1,7 +1,7 @@
 <template>
   <section class="members" :aria-label="t('users.summaryAria')" :aria-busy="loading && !users.length">
     <div class="members__lead">
-      <span class="members__icon" aria-hidden="true"><UIcon name="i-tabler-users" class="size-4" /></span>
+      <span class="members__icon" aria-hidden="true"><AppIcon name="i-tabler-users" class="size-4" /></span>
       <div class="min-w-0">
         <p class="members__count">{{ loading && !users.length ? '—' : compactNumber(liveUsers.length) }}<span> {{ t('users.membersSuffix') }}</span></p>
         <p class="truncate text-[11px] text-[var(--ui-text-muted)]">
@@ -29,6 +29,7 @@
 </template>
 
 <script setup lang="ts">
+import AppIcon from '~/components/AppIcon.vue'
 import { computed } from 'vue'
 import { useUsersWorkspace } from '~/composables/users/useUsersWorkspace'
 import { useUserSegments } from '~/composables/users/useUserSegments'

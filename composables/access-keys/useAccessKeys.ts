@@ -1,5 +1,5 @@
 import { computed, inject, provide, ref, type InjectionKey } from 'vue'
-import { useToast } from '#imports'
+import { useAdminToast } from '~/composables/admin-feedback/useAdminToast'
 import { useAdminI18n } from '~/composables/useAdminI18n'
 import { useApi } from '~/composables/useApi'
 import { useCapabilities } from '~/composables/useCapabilities'
@@ -27,7 +27,7 @@ export type AccessKeySheetMode = 'detail' | 'create' | 'edit'
 function createAccessKeys() {
   const { fetchAPI, fetchRaw } = useApi()
   const { supports } = useCapabilities()
-  const toast = useToast()
+  const toast = useAdminToast()
   const { t } = useAdminI18n()
 
   const loading = useWorkspaceState('admin:access-keys:loading', () => (false))

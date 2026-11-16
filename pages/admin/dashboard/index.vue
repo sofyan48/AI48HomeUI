@@ -1,10 +1,10 @@
 <template>
   <div class="space-y-4">
-    <UAlert v-if="loadError" color="error" variant="subtle" :title="t('dashboard.loadErrorTitle')" :description="loadError">
+    <PortalAlert v-if="loadError" color="error" variant="subtle" :title="t('dashboard.loadErrorTitle')" :description="loadError">
       <template #actions>
         <AppButton color="neutral" variant="outline" size="sm" @click="refreshDashboard">{{ t('common.retry') }}</AppButton>
       </template>
-    </UAlert>
+    </PortalAlert>
 
     <div v-if="snapshot && !loadError" class="grid grid-cols-1 gap-4 lg:grid-cols-12">
       <DashboardHero class="lg:col-span-5" />
@@ -45,6 +45,7 @@
 </template>
 
 <script setup lang="ts">
+import PortalAlert from '~/components/app/general/PortalAlert.vue'
 import AdminDashboardTokenTrend from '~/components/admin/dashboard/DashboardTokenTrend.vue'
 import AdminDashboardRequestHealth from '~/components/admin/dashboard/DashboardRequestHealth.vue'
 import { computed, onMounted } from 'vue'

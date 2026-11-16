@@ -1,29 +1,44 @@
 <template>
-  <UModal v-model:open="open" :title="t('shared.connection.title')" :description="t('shared.connection.description')" :dismissible="!pending" :close="!pending" :ui="{ content: 'sm:max-w-lg' }">
-    <template #body>
-      <form class="space-y-5" :aria-busy="pending" @submit.prevent="connect">
-        <div class="space-y-1">
+  <Dialog v-model:open="open">
+    <DialogContent
+      class="w-full max-w-lg"
+      :show-close-button="!pending"
+      @escape-key-down="preventDismiss"
+      @interact-outside="preventDismiss"
+      @pointer-down-outside="preventDismiss"
+    >
+      <DialogHeader>
+        <DialogTitle>{{ t('shared.connection.title') }}</DialogTitle>
+        <DialogDescription>{{ t('shared.connection.description') }}</DialogDescription>
+      </DialogHeader>
+      <form class="flex flex-col gap-5" :aria-busy="pending" @submit.prevent="connect">
+        <div class="flex flex-col gap-1">
           <p role="status" class="text-sm font-medium">{{ pending ? tc('connection.checking') : statusLabel }}</p>
-          <p class="break-all text-xs text-[var(--ui-text-muted)]">{{ apiBase }}</p>
+          <p class="break-all text-xs text-muted-foreground">{{ apiBase }}</p>
         </div>
-        <UAlert v-if="errorMessage || capabilitiesError" color="error" variant="subtle" :title="tc('connection.failed')" :description="errorMessage || capabilitiesError || undefined" />
-        <UFormField :label="tc('connect.key')" required>
-          <UInput v-model="key" type="password" autocomplete="current-password" :placeholder="tc('connect.keyPlaceholder')" icon="i-tabler-key" class="w-full" :disabled="pending" autofocus />
-        </UFormField>
-        <UCheckbox v-model="remember" :label="tc('connect.remember')" :disabled="pending" />
-        <p class="text-xs leading-5 text-[var(--ui-text-muted)]">{{ t('shared.connection.privacy') }}</p>
+        <PortalAlert v-if="errorMessage || capabilitiesError" color="error" variant="subtle" :title="tc('connection.failed')" :description="errorMessage || capabilitiesError || undefined" />
+        <AdminField :label="tc('connect.key')" required>
+          <AdminInput v-model="key" type="password" autocomplete="current-password" :placeholder="tc('connect.keyPlaceholder')" icon="i-tabler-key" class="w-full" :disabled="pending" autofocus :ui="{ leading: 'pl-3 pr-1.5', base: 'pl-2' }" />
+        </AdminField>
+        <AdminCheckbox v-model="remember" :label="tc('connect.remember')" :disabled="pending" />
+        <p class="text-xs leading-5 text-muted-foreground">{{ t('shared.connection.privacy') }}</p>
         <div class="flex flex-col gap-2 sm:flex-row sm:justify-end">
           <AppButton v-if="token" type="button" color="error" variant="soft" :disabled="pending" @click="disconnect">{{ tc('shell.disconnect') }}</AppButton>
           <AppButton type="button" color="neutral" variant="ghost" :disabled="pending" @click="open = false">{{ t('common.cancel') }}</AppButton>
           <AppButton type="submit" :loading="pending" :disabled="pending || !key.trim()">{{ t('shared.connection.submit') }}</AppButton>
         </div>
       </form>
-    </template>
-  </UModal>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
+import PortalAlert from '~/components/app/general/PortalAlert.vue'
+import AdminField from '~/components/admin/general/controls/AdminField.vue'
+import AdminInput from '~/components/admin/general/controls/AdminInput.vue'
+import AdminCheckbox from '~/components/admin/general/controls/AdminCheckbox.vue'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '~/components/ui/dialog'
 import { useManagementSessionStore } from '~/stores/managementSession'
 import { useConsoleLocale } from '~/composables/useConsoleLocale'
 
@@ -48,6 +63,10 @@ watch(open, (value) => {
 
 onBeforeUnmount(() => controller?.abort())
 
+function preventDismiss(event: Event) {
+  if (pending.value) event.preventDefault()
+}
+
 async function connect() {
   const candidate = key.value.trim()
   if (!candidate || pending.value) return
@@ -57,7 +76,6 @@ async function connect() {
   const signal = controller.signal
   const previousToken = token.value
   try {
-    // Keep the active session intact until the candidate key has been validated.
     await fetchAPI('/capabilities', { token: candidate, signal })
     if (signal.aborted || token.value !== previousToken) return
     const cookieOptions = {

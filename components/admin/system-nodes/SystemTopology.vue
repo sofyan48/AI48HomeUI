@@ -2,7 +2,7 @@
   <section class="grid w-full gap-4">
     <AppCard v-if="loading && !loaded" class="min-h-36">
       <div class="flex min-h-28 items-center justify-center text-[var(--ui-text-muted)]">
-        <UIcon name="i-tabler-loader-2" class="mr-2 size-5 animate-spin" /> {{ t('system.loading') }}
+        <AppIcon name="i-tabler-loader-2" class="mr-2 size-5 animate-spin" /> {{ t('system.loading') }}
       </div>
     </AppCard>
 
@@ -10,7 +10,7 @@
       <div class="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
         <div class="flex min-w-0 gap-4">
           <div class="flex size-11 shrink-0 items-center justify-center rounded-md border border-red-500/30 bg-red-500/10 text-red-600">
-            <UIcon name="i-tabler-alert-triangle" class="size-5" />
+            <AppIcon name="i-tabler-alert-triangle" class="size-5" />
           </div>
           <div>
             <h2 class="text-lg font-semibold">{{ t('system.fatalTitle') }}</h2>
@@ -27,12 +27,12 @@
           <div class="flex flex-wrap items-center gap-2">
             <span class="console__led" aria-hidden="true" />
             <span class="font-mono text-[11px] uppercase tracking-[0.14em] text-zinc-400">{{ t('system.runtimeTag', { runtime: runtimeLabel }) }}</span>
-            <UBadge :color="verdictColor" variant="subtle" size="sm">{{ verdict.badge }}</UBadge>
+            <PortalBadge :color="verdictColor" variant="subtle" size="sm">{{ verdict.badge }}</PortalBadge>
           </div>
           <h2 class="console__title">{{ verdict.title }}</h2>
           <p class="max-w-3xl text-sm leading-6 text-zinc-400">{{ verdict.description }}</p>
           <div class="mt-4 flex flex-wrap gap-2">
-            <span v-for="fact in verdictFacts" :key="fact.label" class="console__fact" :class="fact.tone === 'success' ? 'console__fact--ok' : 'console__fact--warn'"><UIcon :name="fact.tone === 'success' ? 'i-tabler-circle-check' : 'i-tabler-alert-circle'" class="size-3.5" />{{ fact.label }}</span>
+            <span v-for="fact in verdictFacts" :key="fact.label" class="console__fact" :class="fact.tone === 'success' ? 'console__fact--ok' : 'console__fact--warn'"><AppIcon :name="fact.tone === 'success' ? 'i-tabler-circle-check' : 'i-tabler-alert-circle'" class="size-3.5" />{{ fact.label }}</span>
           </div>
         </div>
         <div class="console__side">
@@ -47,13 +47,13 @@
         </div>
       </section>
 
-      <UAlert v-if="issues.length" color="warning" variant="subtle" icon="i-tabler-alert-triangle" :title="t('system.issuesTitle')">
+      <PortalAlert v-if="issues.length" color="warning" variant="subtle" icon="i-tabler-alert-triangle" :title="t('system.issuesTitle')">
         <template #description>
           <div class="mt-2 grid gap-1">
             <p v-for="issue in issues" :key="`${issue.scope}:${issue.message}`"><strong>{{ scopeLabel(issue.scope) }}</strong> · {{ issue.message || t('system.requestFailed') }}</p>
           </div>
         </template>
-      </UAlert>
+      </PortalAlert>
 
       <AdminStatGrid :label="t('system.summaryAria')" :items="summaryStats" :columns="6" />
 
@@ -62,7 +62,7 @@
           <div class="min-w-0">
             <div class="flex flex-wrap items-center gap-2">
               <h2 class="text-base font-semibold">{{ t('system.topology.title') }}</h2>
-              <UBadge :color="nodesSupported ? 'info' : 'warning'" variant="subtle">{{ topologySourceLabel }}</UBadge>
+              <PortalBadge :color="nodesSupported ? 'info' : 'warning'" variant="subtle">{{ topologySourceLabel }}</PortalBadge>
             </div>
             <p class="mt-1 text-xs leading-5 text-[var(--ui-text-muted)]">{{ topologyDescription }}</p>
           </div>
@@ -74,8 +74,8 @@
           <div v-else-if="!homeGroups.length" class="rounded-md border border-dashed p-8 text-center text-sm text-[var(--ui-text-muted)]">{{ t('system.topology.noRecords') }}</div>
           <div v-else class="grid gap-3">
             <div class="flex flex-wrap gap-2">
-              <UBadge color="info" variant="subtle">{{ homeGroups.length }} Home</UBadge>
-              <UBadge color="neutral" variant="subtle">{{ nodes.length }} CPA</UBadge>
+              <PortalBadge color="info" variant="subtle">{{ homeGroups.length }} Home</PortalBadge>
+              <PortalBadge color="neutral" variant="subtle">{{ nodes.length }} CPA</PortalBadge>
             </div>
 
             <section v-for="group in homeGroups" :key="group.id" class="overflow-hidden rounded-md border border-[var(--ui-border)] bg-[var(--ui-bg-muted)]/20">
@@ -86,10 +86,10 @@
                     <p class="mt-1 truncate font-mono text-sm">{{ group.unknown ? t('system.topology.unknownHome') : group.label }}</p>
                   </div>
                   <div class="flex flex-wrap gap-2 lg:justify-end">
-                    <UBadge v-if="group.unknown" color="warning" variant="subtle">{{ t('system.topology.partialData') }}</UBadge>
-                    <UBadge :color="roleColor(group.role)" variant="subtle">{{ roleLabel(group.role) }}</UBadge>
-                    <UBadge :color="healthColor(group.health)" variant="subtle">{{ healthLabel(group.health) }}</UBadge>
-                    <UBadge :color="group.cpaCount > 0 && group.healthyCpaCount === group.cpaCount ? 'success' : 'warning'" variant="subtle">{{ t('system.topology.healthyCount', { healthy: group.healthyCpaCount, total: group.cpaCount }) }}</UBadge>
+                    <PortalBadge v-if="group.unknown" color="warning" variant="subtle">{{ t('system.topology.partialData') }}</PortalBadge>
+                    <PortalBadge :color="roleColor(group.role)" variant="subtle">{{ roleLabel(group.role) }}</PortalBadge>
+                    <PortalBadge :color="healthColor(group.health)" variant="subtle">{{ healthLabel(group.health) }}</PortalBadge>
+                    <PortalBadge :color="group.cpaCount > 0 && group.healthyCpaCount === group.cpaCount ? 'success' : 'warning'" variant="subtle">{{ t('system.topology.healthyCount', { healthy: group.healthyCpaCount, total: group.cpaCount }) }}</PortalBadge>
                   </div>
                 </div>
                 <div class="mt-3 grid gap-x-4 gap-y-2 sm:grid-cols-2 lg:grid-cols-5">
@@ -110,7 +110,7 @@
                     <div class="mt-1 flex min-w-0 flex-wrap items-center gap-2">
                       <p class="truncate text-sm" :class="node.node_name ? 'font-medium' : 'font-mono'">{{ node.node_name || node.ip || t('system.topology.unknownNode') }}</p>
                       <AppButton v-if="node.node_id" color="neutral" variant="ghost" size="xs" icon="i-tabler-pencil" :aria-label="t('system.topology.renameAria', { name: node.node_name || node.ip || t('system.topology.node') })" @click="openRename(node)" />
-                      <UBadge :color="healthColor(nodeHealth(node))" variant="subtle">{{ healthLabel(nodeHealth(node)) }}</UBadge>
+                      <PortalBadge :color="healthColor(nodeHealth(node))" variant="subtle">{{ healthLabel(nodeHealth(node)) }}</PortalBadge>
                     </div>
                     <p v-if="node.node_name" class="mt-1 truncate font-mono text-xs text-[var(--ui-text-muted)]">{{ node.ip || t('system.na') }}</p>
                   </div>
@@ -121,7 +121,7 @@
                     <InfoField :label="t('system.topology.clients')" :value="String(node.client_count ?? 0)" />
                   </div>
                   <div class="flex items-center lg:justify-self-end">
-                    <UBadge :color="pluginReportColor(node.plugin_report_state)" variant="subtle">{{ pluginReportLabel(node.plugin_report_state) }}</UBadge>
+                    <PortalBadge :color="pluginReportColor(node.plugin_report_state)" variant="subtle">{{ pluginReportLabel(node.plugin_report_state) }}</PortalBadge>
                   </div>
                 </div>
               </div>
@@ -153,24 +153,24 @@
           </div>
         </div>
         <div class="flex shrink-0 flex-wrap items-center gap-2">
-          <span class="inline-flex items-center gap-1.5 rounded-full bg-[var(--ui-bg-muted)] px-2.5 py-1 font-mono text-[11px] text-[var(--ui-text-muted)]"><UIcon name="i-tabler-tag" class="size-3.5" aria-hidden="true" />{{ currentVersion }}</span>
+          <span class="inline-flex items-center gap-1.5 rounded-full bg-[var(--ui-bg-muted)] px-2.5 py-1 font-mono text-[11px] text-[var(--ui-text-muted)]"><AppIcon name="i-tabler-tag" class="size-3.5" aria-hidden="true" />{{ currentVersion }}</span>
           <AppButton to="https://github.com/router-for-me/CLIProxyAPIHome" target="_blank" rel="noopener noreferrer" size="sm" color="neutral" variant="outline" icon="i-tabler-brand-github" trailing-icon="i-tabler-external-link">{{ t('system.credits.original') }}</AppButton>
         </div>
       </section>
 
-      <USlideover v-model:open="diagnosticsOpen" :title="t('system.diag.title')" :description="t('system.diag.description')" :ui="{ content: 'sm:max-w-xl' }">
+      <AppModal v-model:open="diagnosticsOpen" :title="t('system.diag.title')" :description="t('system.diag.description')" :ui="{ content: 'sm:max-w-xl' }">
         <template #body>
           <div class="space-y-4">
-            <UAlert color="warning" variant="subtle" icon="i-tabler-shield-exclamation" :title="t('system.diag.warningTitle')" :description="t('system.diag.warningDesc')" />
+            <PortalAlert color="warning" variant="subtle" icon="i-tabler-shield-exclamation" :title="t('system.diag.warningTitle')" :description="t('system.diag.warningDesc')" />
             <form class="space-y-4" @submit.prevent="runDiagnostic">
               <div class="grid gap-3 sm:grid-cols-[120px_minmax(0,1fr)]">
-                <UFormField :label="t('system.diag.method')"><USelect v-model="diagnostic.method" :items="methods" class="w-full" /></UFormField>
-                <UFormField :label="t('system.diag.targetUrl')" required><UInput v-model="diagnostic.url" placeholder="https://api.example.com/v1/ping" class="w-full" /></UFormField>
+                <AdminField :label="t('system.diag.method')"><AdminSelect v-model="diagnostic.method" :items="methods" class="w-full" /></AdminField>
+                <AdminField :label="t('system.diag.targetUrl')" required><AdminInput v-model="diagnostic.url" placeholder="https://api.example.com/v1/ping" class="w-full" /></AdminField>
               </div>
-              <UFormField :label="t('system.diag.credentialIndex')"><UInput v-model="diagnostic.authIndex" :placeholder="t('system.diag.credentialIndexPlaceholder')" class="w-full" /></UFormField>
-              <UFormField :label="t('system.diag.headers')"><UTextarea v-model="diagnostic.headers" :rows="6" class="w-full font-mono text-xs" /></UFormField>
-              <UFormField :label="t('system.diag.body')"><UTextarea v-model="diagnostic.data" :rows="6" :placeholder="t('system.diag.bodyPlaceholder')" class="w-full font-mono text-xs" /></UFormField>
-              <UAlert v-if="diagnosticError" color="error" variant="subtle" :description="diagnosticError" />
+              <AdminField :label="t('system.diag.credentialIndex')"><AdminInput v-model="diagnostic.authIndex" :placeholder="t('system.diag.credentialIndexPlaceholder')" class="w-full" /></AdminField>
+              <AdminField :label="t('system.diag.headers')"><AdminTextarea v-model="diagnostic.headers" :rows="6" class="w-full font-mono text-xs" /></AdminField>
+              <AdminField :label="t('system.diag.body')"><AdminTextarea v-model="diagnostic.data" :rows="6" :placeholder="t('system.diag.bodyPlaceholder')" class="w-full font-mono text-xs" /></AdminField>
+              <PortalAlert v-if="diagnosticError" color="error" variant="subtle" :description="diagnosticError" />
               <AppButton type="submit" icon="i-tabler-player-play" :loading="diagnosticLoading">{{ t('system.diag.send') }}</AppButton>
             </form>
             <div v-if="diagnosticResult" class="rounded-md border border-[var(--ui-border)] p-3">
@@ -179,7 +179,7 @@
             </div>
           </div>
         </template>
-      </USlideover>
+      </AppModal>
 
       <AppModal v-model:open="enrollmentOpen" :title="t('system.enroll.title')" :description="enrollment ? t('system.enroll.descResult') : t('system.enroll.descForm')">
         <template #body>
@@ -190,10 +190,10 @@
             <div class="flex justify-end"><AppButton icon="i-tabler-copy" @click="copyJWT">{{ t('system.enroll.copy') }}</AppButton></div>
           </div>
           <form v-else class="space-y-4" @submit.prevent="generateEnrollment">
-            <UFormField :label="t('system.enroll.nodeName')" :hint="t('system.enroll.nodeNameHint')">
-              <UInput v-model="nodeName" maxlength="128" :placeholder="t('system.enroll.nodeNamePlaceholder')" class="w-full" />
-            </UFormField>
-            <UAlert v-if="enrollmentError" color="error" variant="subtle" :description="enrollmentError" />
+            <AdminField :label="t('system.enroll.nodeName')" :hint="t('system.enroll.nodeNameHint')">
+              <AdminInput v-model="nodeName" maxlength="128" :placeholder="t('system.enroll.nodeNamePlaceholder')" class="w-full" />
+            </AdminField>
+            <PortalAlert v-if="enrollmentError" color="error" variant="subtle" :description="enrollmentError" />
             <div class="flex justify-end"><AppButton type="submit" :loading="generating">{{ t('system.enroll.generate') }}</AppButton></div>
           </form>
         </template>
@@ -202,10 +202,10 @@
       <AppModal v-model:open="renameOpen" :title="t('system.rename.title')" :description="t('system.rename.description')">
         <template #body>
           <form class="space-y-4" @submit.prevent="saveRename">
-            <UFormField :label="t('system.enroll.nodeName')" :hint="t('system.rename.hint')">
-              <UInput v-model="renameValue" maxlength="128" :placeholder="t('system.enroll.nodeNamePlaceholder')" class="w-full" />
-            </UFormField>
-            <UAlert v-if="renameError" color="error" variant="subtle" :description="renameError" />
+            <AdminField :label="t('system.enroll.nodeName')" :hint="t('system.rename.hint')">
+              <AdminInput v-model="renameValue" maxlength="128" :placeholder="t('system.enroll.nodeNamePlaceholder')" class="w-full" />
+            </AdminField>
+            <PortalAlert v-if="renameError" color="error" variant="subtle" :description="renameError" />
             <div class="flex justify-end gap-2">
               <AppButton type="button" color="neutral" variant="outline" :disabled="renaming" @click="closeRename">{{ t('common.cancel') }}</AppButton>
               <AppButton type="submit" :loading="renaming">{{ t('system.rename.save') }}</AppButton>
@@ -218,9 +218,17 @@
 </template>
 
 <script setup lang="ts">
+import AdminField from '~/components/admin/general/controls/AdminField.vue'
+import AdminInput from '~/components/admin/general/controls/AdminInput.vue'
+import AdminSelect from '~/components/admin/general/controls/AdminSelect.vue'
+import AdminTextarea from '~/components/admin/general/controls/AdminTextarea.vue'
+import PortalAlert from '~/components/app/general/PortalAlert.vue'
+import PortalBadge from '~/components/app/general/PortalBadge.vue'
+import AppIcon from '~/components/AppIcon.vue'
+import AppModal from '~/components/AppModal.vue'
 import AdminStatGrid from '~/components/admin/general/StatGrid.vue'
 import { useWorkspaceState } from '~/composables/useWorkspaceState'
-import { useDataSync } from '~/composables/useDataSync'
+import { useDataSync } from '~/composables/useDataSync'; import { useAdminToast } from '~/composables/admin-feedback/useAdminToast'
 import { normalizeTopologyConfig } from '~/composables/systemTopologyConfig'
 const InfoField = defineComponent({
   props: { label: { type: String, required: true }, value: { type: String, required: true } },
@@ -234,7 +242,7 @@ const ConfigSignals = defineComponent({
 
 const { fetchAPI, apiBase } = useApi()
 const { capabilities, serverInfo, supports, refreshCapabilities } = useCapabilities()
-const toast = useToast()
+const toast = useAdminToast()
 const { t, intlLocale } = useAdminI18n()
 
 const topology = useWorkspaceState<any>('admin:system-topology:topology', () => (null))
@@ -486,8 +494,6 @@ onMounted(refreshSystem)
 .console__fact { display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.25rem 0.625rem; border-radius: 9999px; font-size: 0.6875rem; font-weight: 500; }
 .console__fact--ok { background: rgb(16 185 129 / 14%); color: var(--color-emerald-300); }
 .console__fact--warn { background: rgb(245 158 11 / 14%); color: var(--color-amber-300); }
-.console__side { display: grid; gap: 0.75rem; }
-.console__kv { padding: 0.375rem 0.625rem; border: 1px solid rgb(255 255 255 / 8%); border-radius: 0.5rem; background: rgb(255 255 255 / 4%); }
-.console__kv dt { color: var(--color-zinc-500); }
-.console__kv dd { color: var(--color-zinc-200); }
+.console__side { display: grid; gap: 0.75rem; } .console__kv { padding: 0.375rem 0.625rem; border: 1px solid rgb(255 255 255 / 8%); border-radius: 0.5rem; background: rgb(255 255 255 / 4%); }
+.console__kv :is(dt, dd) { color: var(--color-zinc-500); }
 </style>

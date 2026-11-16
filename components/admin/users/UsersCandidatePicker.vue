@@ -1,7 +1,7 @@
 <template>
   <div class="grid gap-2">
     <p class="text-sm font-medium">{{ kind === 'credential' ? t('users.accountCredential') : t('common.model') }}</p>
-    <UInput
+    <AdminInput
       :model-value="search"
       icon="i-tabler-search"
       :disabled="mutating || pending"
@@ -29,7 +29,7 @@
       <span class="text-xs text-[var(--ui-text-muted)]">{{ kind === 'credential' ? t('users.credentialsSelected', { count: selected.length }) : t('users.modelsSelected', { count: selected.length }) }}</span>
     </div>
     <div v-if="pending" class="grid gap-2 rounded-md border border-[var(--ui-border)] p-2">
-      <USkeleton v-for="row in 3" :key="row" class="h-14" />
+      <PortalSkeleton v-for="row in 3" :key="row" class="h-14" />
     </div>
     <div v-else-if="errorMessage" class="rounded-md border border-red-300 bg-red-50 px-3 py-3 dark:border-red-900 dark:bg-red-950">
       <p class="text-sm text-red-700 dark:text-red-300">{{ errorMessage }}</p>
@@ -54,11 +54,11 @@
           :key="item.id"
           :class="['flex min-w-0 items-start gap-3 rounded-md px-3 py-2.5 text-left transition-colors', selected.includes(item.value) ? 'bg-[var(--ui-primary)]/10 ring-1 ring-[var(--ui-primary)]/35' : 'hover:bg-[var(--ui-bg-muted)]', (mutating || item.disabled) ? 'cursor-not-allowed opacity-55' : '']"
         >
-          <UCheckbox class="mt-0.5" :model-value="selected.includes(item.value)" :disabled="mutating || item.disabled" @update:model-value="toggle(item.value)" />
+          <AdminCheckbox class="mt-0.5" :model-value="selected.includes(item.value)" :disabled="mutating || item.disabled" @update:model-value="toggle(item.value)" />
           <span class="min-w-0 flex-1">
             <span class="flex flex-wrap items-center gap-1.5">
               <span class="truncate text-sm font-medium">{{ item.label }}</span>
-              <UBadge v-for="badge in item.badges" :key="badge" :color="badge === 'Available' || badge === 'Bound' ? 'success' : 'neutral'" variant="subtle" size="sm">{{ badgeLabel(badge) }}</UBadge>
+              <PortalBadge v-for="badge in item.badges" :key="badge" :color="badge === 'Available' || badge === 'Bound' ? 'success' : 'neutral'" variant="subtle" size="sm">{{ badgeLabel(badge) }}</PortalBadge>
             </span>
             <span class="mt-1 block truncate font-mono text-xs text-[var(--ui-text-muted)]">{{ item.description }}</span>
           </span>
@@ -70,6 +70,10 @@
 </template>
 
 <script>
+import AdminInput from '~/components/admin/general/controls/AdminInput.vue'
+import AdminCheckbox from '~/components/admin/general/controls/AdminCheckbox.vue'
+import PortalBadge from '~/components/app/general/PortalBadge.vue'
+import PortalSkeleton from '~/components/app/general/PortalSkeleton.vue'
 import { useAdminI18n } from '~/composables/useAdminI18n'
 
 export default {

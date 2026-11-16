@@ -3,7 +3,7 @@
     <template #header>
       <div class="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
         <div class="flex items-center gap-2.5">
-          <UIcon name="i-tabler-activity-heartbeat" class="size-5 text-[var(--ui-text-muted)]" />
+          <AppIcon name="i-tabler-activity-heartbeat" class="size-5 text-[var(--ui-text-muted)]" />
           <h2 id="request-health-title" class="text-lg font-semibold text-[var(--ui-text-highlighted)]">{{ t('dashboard.health.cardTitle') }}</h2>
         </div>
         <p class="text-sm text-[var(--ui-text-muted)]">
@@ -56,6 +56,7 @@
 </template>
 
 <script setup lang="ts">
+import AppIcon from '~/components/AppIcon.vue'
 interface ActivityEntry {
   bucket_start?: string
   bucket_end?: string

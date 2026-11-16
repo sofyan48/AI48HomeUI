@@ -23,7 +23,7 @@
 
         <div class="mt-10 grid max-w-xl grid-cols-2 gap-4">
           <div v-for="item in highlights" :key="item.title" class="rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-bg-elevated)]/70 p-4 backdrop-blur">
-            <span class="mb-3 flex size-9 items-center justify-center rounded-lg bg-primary-500/10 text-primary-500"><UIcon :name="item.icon" class="size-5" /></span>
+            <span class="mb-3 flex size-9 items-center justify-center rounded-lg bg-primary-500/10 text-primary-500"><AppIcon :name="item.icon" class="size-5" /></span>
             <p class="font-medium text-[var(--ui-text-highlighted)]">{{ item.title }}</p>
             <p class="mt-1 text-sm text-[var(--ui-text-muted)]">{{ item.description }}</p>
           </div>
@@ -42,7 +42,7 @@
         </template>
 
         <form class="space-y-5" @submit.prevent="handleLogin">
-          <UAlert
+          <PortalAlert
             v-if="errorMessage"
             color="error"
             variant="subtle"
@@ -51,10 +51,10 @@
             :description="localizedErrorMessage"
           />
 
-          <UAlert color="info" variant="subtle" :title="t('connect.endpoint')" :description="apiBase" />
+          <PortalAlert color="info" variant="subtle" :title="t('connect.endpoint')" :description="apiBase" />
 
-          <UFormField :label="t('connect.key')" required>
-            <UInput
+          <AdminField :label="t('connect.key')" required>
+            <AdminInput
               v-model="token"
               :type="keyVisible ? 'text' : 'password'"
               autocomplete="current-password"
@@ -69,10 +69,10 @@
               <template #trailing>
                 <AppButton type="button" size="xs" color="neutral" variant="ghost" :icon="keyVisible ? 'i-tabler-eye-off' : 'i-tabler-eye'" :aria-label="keyVisible ? t('connect.hideKey') : t('connect.showKey')" :title="keyVisible ? t('connect.hideKey') : t('connect.showKey')" :aria-pressed="keyVisible" :disabled="loading" @click="keyVisible = !keyVisible" />
               </template>
-            </UInput>
-          </UFormField>
+            </AdminInput>
+          </AdminField>
 
-          <UCheckbox v-model="remember" :label="t('connect.remember')" />
+          <AdminCheckbox v-model="remember" :label="t('connect.remember')" />
 
           <AppButton type="submit" color="primary" size="lg" block :loading="loading" :disabled="!token.trim()">
             {{ t('connect.submit') }}
@@ -88,6 +88,11 @@
 </template>
 
 <script setup lang="ts">
+import AppIcon from '~/components/AppIcon.vue'
+import PortalAlert from '~/components/app/general/PortalAlert.vue'
+import AdminField from '~/components/admin/general/controls/AdminField.vue'
+import AdminInput from '~/components/admin/general/controls/AdminInput.vue'
+import AdminCheckbox from '~/components/admin/general/controls/AdminCheckbox.vue'
 import { useWorkspaceState } from '~/composables/useWorkspaceState'
 import { useConsoleLocale } from '~/composables/useConsoleLocale'
 import { storeToRefs } from 'pinia'

@@ -1,4 +1,5 @@
 import { usePortalI18n } from '~/composables/usePortalI18n'
+import { usePortalToast } from '~/composables/portal/usePortalToast'
 
 export function errorMessage(error: any, fallback: string) { return error?.data?.message || error?.data?.error || error?.message || fallback }
 
@@ -25,7 +26,7 @@ export function useWorkspaceFormat() {
 }
 
 export function useWorkspaceClipboard() {
-  const toast = useToast()
+  const toast = usePortalToast()
   const { t } = usePortalI18n()
   return async function copyText(value: string, title: string) {
     try {

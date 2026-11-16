@@ -1,17 +1,32 @@
 <template>
-  <UCard v-bind="$attrs" :class="userCard ? ['user-card', { 'user-card--tinted': tinted, 'user-card--emerald': accent === 'emerald' }] : 'admin-card'">
-    <template v-for="(_, name) in $slots" #[name]="slotProps">
-      <slot :name="name" v-bind="slotProps || {}" />
-    </template>
-  </UCard>
+  <Card v-bind="$attrs" data-slot="root" :class="cn('gap-0 overflow-hidden rounded-lg py-0 shadow-none', userCard ? ['user-card', { 'user-card--tinted': tinted, 'user-card--emerald': accent === 'emerald' }] : 'admin-card', ui?.root)">
+    <CardHeader v-if="$slots.header" data-slot="header" :class="cn('block border-b px-4 py-3.5 sm:px-5 [.border-b]:pb-3.5', ui?.header)">
+      <slot name="header" :ui="slotUi" />
+    </CardHeader>
+    <CardContent data-slot="body" :class="cn('p-4 sm:p-5', ui?.body)">
+      <slot :ui="slotUi" />
+    </CardContent>
+    <CardFooter v-if="$slots.footer" data-slot="footer" :class="cn('block border-t px-4 py-3 sm:px-5', ui?.footer)">
+      <slot name="footer" :ui="slotUi" />
+    </CardFooter>
+  </Card>
 </template>
 
 <script setup lang="ts">
+import { computed, inject, provide } from 'vue'
+import { cn } from 'cn'
+import type { HTMLAttributes } from 'vue'
+import { Card, CardContent, CardFooter, CardHeader } from '~/components/ui/card'
+
 defineOptions({ inheritAttrs: false })
-defineProps<{
+const props = defineProps<{
   tinted?: boolean
   accent?: 'neutral' | 'emerald'
+  ui?: Partial<Record<'root' | 'header' | 'body' | 'footer', HTMLAttributes['class']>>
 }>()
+const slotUi = computed(() => Object.fromEntries(['root', 'header', 'body', 'footer'].map(name => [
+  name, (options?: { class?: HTMLAttributes['class'] }) => cn(props.ui?.[name as keyof NonNullable<typeof props.ui>], options?.class),
+])))
 const userCard = inject(Symbol.for('cliproxy-user-card'), false)
 provide(Symbol.for('cliproxy-app-card'), true)
 </script>

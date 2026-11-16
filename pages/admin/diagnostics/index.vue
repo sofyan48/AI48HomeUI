@@ -5,20 +5,20 @@
     <section v-if="activeView === 'console'" class="space-y-4" role="tabpanel">
       <AppCard :ui="{ body: 'p-3 sm:p-3' }">
         <div class="flex flex-wrap items-end gap-3">
-          <UFormField :label="t('diag.window')">
-            <USelect v-model="windowSeconds" :items="windowOptions" value-key="value" label-key="label" class="w-40" :disabled="loadingConsole" @update:model-value="refreshConsole" />
-          </UFormField>
-          <UFormField :label="t('diag.grouping')">
-            <USelect v-model="groupBy" :items="['model', 'provider', 'client_key', 'credential']" class="w-40" :disabled="loadingConsole" @update:model-value="refreshConsole" />
-          </UFormField>
+          <AdminField :label="t('diag.window')">
+            <AdminSelect v-model="windowSeconds" :items="windowOptions" value-key="value" label-key="label" class="w-40" :disabled="loadingConsole" @update:model-value="refreshConsole" />
+          </AdminField>
+          <AdminField :label="t('diag.grouping')">
+            <AdminSelect v-model="groupBy" :items="['model', 'provider', 'client_key', 'credential']" class="w-40" :disabled="loadingConsole" @update:model-value="refreshConsole" />
+          </AdminField>
           <div class="ml-auto flex flex-wrap items-center gap-3">
-            <label class="flex items-center gap-2 text-sm"><USwitch v-model="autoRefresh" :aria-label="t('diag.autoRefreshLabel')" />{{ t('diag.autoRefresh') }}</label>
+            <label class="flex items-center gap-2 text-sm"><AdminSwitch v-model="autoRefresh" :aria-label="t('diag.autoRefreshLabel')" />{{ t('diag.autoRefresh') }}</label>
             <span v-if="lastUpdated" class="text-xs text-[var(--ui-text-muted)]" role="status">{{ t('diag.updated', { time: formatTime(lastUpdated) }) }}</span>
             <AppButton icon="i-tabler-refresh" :loading="loadingConsole" @click="refreshConsole">{{ t('common.refresh') }}</AppButton>
           </div>
         </div>
       </AppCard>
-      <UAlert v-if="consoleError" color="error" variant="subtle" :title="t('diag.someFailed')" :description="consoleError" />
+      <PortalAlert v-if="consoleError" color="error" variant="subtle" :title="t('diag.someFailed')" :description="consoleError" />
       <section class="pulse" :aria-label="t('diag.summaryLabel')" :aria-busy="loadingConsole && !overview">
         <div class="pulse__head">
           <div class="flex min-w-0 items-center gap-3">
@@ -88,7 +88,7 @@
               <span class="min-w-0 flex-1 truncate text-xs text-[var(--ui-text-muted)]">{{ formatTime(point.bucket_start) }}</span>
               <span class="tabular-nums">{{ t('diag.req', { count: number(point.request_count) }) }}</span>
               <span class="w-14 text-right text-xs tabular-nums text-[var(--ui-text-muted)]">{{ percent(point.error_rate) }}</span>
-              <UBadge :color="healthColor(point.status)" variant="subtle" size="sm">{{ healthLabel(point.status) }}</UBadge>
+              <PortalBadge :color="healthColor(point.status)" variant="subtle" size="sm">{{ healthLabel(point.status) }}</PortalBadge>
             </li>
           </ol>
           <p v-else class="px-4 py-8 text-center text-sm text-[var(--ui-text-muted)]">{{ t('diag.noActivity') }}</p>
@@ -108,7 +108,7 @@
                 <span class="size-2 shrink-0 rounded-full" :class="healthDot(item.status)" aria-hidden="true" />
                 <span class="min-w-0 flex-1 truncate font-medium" :title="item.label || item.id">{{ item.label || item.id }}</span>
                 <span class="shrink-0 text-xs tabular-nums text-[var(--ui-text-muted)]">{{ t('diag.errP95', { rate: percent(item.recent_error_rate), latency: milliseconds(item.p95_latency_ms) }) }}</span>
-                <UBadge :color="healthColor(item.status)" variant="subtle" size="sm">{{ healthLabel(item.status) }}</UBadge>
+                <PortalBadge :color="healthColor(item.status)" variant="subtle" size="sm">{{ healthLabel(item.status) }}</PortalBadge>
               </div>
               <p class="mt-0.5 pl-4 text-xs text-[var(--ui-text-muted)]">{{ item.provider || item.credential_type || '—' }} · {{ t('diag.successFailed', { success: number(item.recent_success_count), failed: number(item.recent_failed_count) }) }}<template v-if="item.next_retry_at"> · {{ t('diag.retry', { time: formatTime(item.next_retry_at) }) }}</template></p>
               <p v-if="item.last_error_message" class="mt-0.5 break-words pl-4 text-xs text-[var(--ui-error)]">{{ t('diag.lastError', { status: item.last_error_status ? ` (${item.last_error_status})` : '', message: item.last_error_message, time: formatTime(item.last_error_at) }) }}</p>
@@ -120,7 +120,7 @@
 
       <AdminDataPanel :title="t('diag.logs')" :description="t('diag.logsDesc', { count: number(logs?.total) })">
         <template #actions>
-          <form class="flex w-full gap-2 sm:w-auto" @submit.prevent="applyLogSearch"><UInput v-model="logSearch" icon="i-tabler-search" :placeholder="t('diag.logSearchPlaceholder')" :aria-label="t('diag.logSearchLabel')" class="w-full sm:w-72" /><AppButton type="submit" color="neutral" variant="outline" :disabled="loadingConsole">{{ t('common.search') }}</AppButton></form>
+          <form class="flex w-full gap-2 sm:w-auto" @submit.prevent="applyLogSearch"><AdminInput v-model="logSearch" icon="i-tabler-search" :placeholder="t('diag.logSearchPlaceholder')" :aria-label="t('diag.logSearchLabel')" class="w-full sm:w-72" /><AppButton type="submit" color="neutral" variant="outline" :disabled="loadingConsole">{{ t('common.search') }}</AppButton></form>
         </template>
         <AppTable native><table class="min-w-[42rem] text-left"><thead><tr><th class="app-table-number-head">{{ t('usage.col.no') }}</th><th>{{ t('requests.detail.groupRequest') }}</th><th>{{ t('diag.col.providerModel') }}</th><th>{{ t('usage.detail.home') }}</th><th>{{ t('diag.col.file') }}</th><th>{{ t('common.status') }}</th><th class="w-px text-right">{{ t('common.actions') }}</th></tr></thead><tbody>
           <tr v-for="(item, index) in logItems" :key="item.id"><td class="app-table-number-cell"><span class="app-table-number">{{ (logPage - 1) * logPageSize + index + 1 }}</span></td><td><div>{{ formatTime(item.timestamp) }}</div><div class="font-mono text-xs">{{ item.request_id || '—' }}</div></td><td>{{ item.provider || '—' }} / {{ item.model || '—' }}</td><td>{{ item.home_ip || '—' }}{{ item.home_port ? `:${item.home_port}` : '' }}</td><td class="font-mono text-xs">{{ item.file_name || t('diag.remoteUnavailable') }}</td><td>{{ item.status }}</td><td><div class="flex justify-end"><AdminTableAction action="download" :label="t('requests.downloadLog')" :disabled="!item.download_url" :loading="downloadingId === item.id" @click="downloadLog(item)" /></div></td></tr>
@@ -134,31 +134,31 @@
 
     <section v-else class="space-y-4" role="tabpanel">
     <p class="text-sm text-[var(--ui-text-muted)]">{{ t('diag.sender.intro') }}</p>
-    <UAlert color="warning" variant="subtle" icon="i-tabler-shield-exclamation" :title="t('diag.sender.warnTitle')" :description="t('diag.sender.warnDesc')" />
-    <UAlert v-if="errorMessage" color="error" variant="subtle" icon="i-tabler-alert-circle" :title="t('diag.sender.failed')" :description="errorMessage" />
+    <PortalAlert color="warning" variant="subtle" icon="i-tabler-shield-exclamation" :title="t('diag.sender.warnTitle')" :description="t('diag.sender.warnDesc')" />
+    <PortalAlert v-if="errorMessage" color="error" variant="subtle" icon="i-tabler-alert-circle" :title="t('diag.sender.failed')" :description="errorMessage" />
 
     <div class="grid gap-4 xl:grid-cols-2">
       <AppCard>
         <template #header><h2 class="font-semibold">{{ t('diag.sender.request') }}</h2></template>
         <form class="space-y-4" @submit.prevent="sendRequest">
           <div class="grid gap-4 sm:grid-cols-[10rem_1fr]">
-            <UFormField :label="t('diag.sender.method')">
-              <USelect v-model="form.method" :items="methods" class="w-full" />
-            </UFormField>
-            <UFormField :label="t('diag.sender.url')" required>
-              <UInput v-model="form.url" type="url" placeholder="https://api.example.com/v1/models" class="w-full" />
-            </UFormField>
+            <AdminField :label="t('diag.sender.method')">
+              <AdminSelect v-model="form.method" :items="methods" class="w-full" />
+            </AdminField>
+            <AdminField :label="t('diag.sender.url')" required>
+              <AdminInput v-model="form.url" type="url" placeholder="https://api.example.com/v1/models" class="w-full" />
+            </AdminField>
           </div>
-          <UFormField :label="t('usage.credential')">
-            <USelectMenu :model-value="form.auth_index || noCredentialValue" @update:model-value="form.auth_index = $event === noCredentialValue ? '' : $event" :items="credentialOptions" value-key="value" label-key="label" class="w-full" :search-input="{ placeholder: t('diag.sender.searchCredentials') }" />
+          <AdminField :label="t('usage.credential')">
+            <AdminSelectMenu :model-value="form.auth_index || noCredentialValue" @update:model-value="form.auth_index = $event === noCredentialValue ? '' : $event" :items="credentialOptions" value-key="value" label-key="label" class="w-full" :search-input="{ placeholder: t('diag.sender.searchCredentials') }" />
             <template #hint>{{ t('diag.sender.tokenHintBefore') }} <code>$TOKEN$</code>.</template>
-          </UFormField>
-          <UFormField :label="t('diag.sender.headers')">
-            <UTextarea v-model="form.headers" :rows="8" class="w-full font-mono text-xs" spellcheck="false" />
-          </UFormField>
-          <UFormField :label="t('diag.sender.body')">
-            <UTextarea v-model="form.data" :rows="10" class="w-full font-mono text-xs" spellcheck="false" />
-          </UFormField>
+          </AdminField>
+          <AdminField :label="t('diag.sender.headers')">
+            <AdminTextarea v-model="form.headers" :rows="8" class="w-full font-mono text-xs" spellcheck="false" />
+          </AdminField>
+          <AdminField :label="t('diag.sender.body')">
+            <AdminTextarea v-model="form.data" :rows="10" class="w-full font-mono text-xs" spellcheck="false" />
+          </AdminField>
           <div class="flex justify-end">
             <AppButton type="submit" icon="i-tabler-send" :loading="sending">{{ t('diag.sender.send') }}</AppButton>
           </div>
@@ -169,7 +169,7 @@
         <template #header>
           <div class="flex items-center justify-between gap-3">
             <h2 class="font-semibold">{{ t('diag.sender.response') }}</h2>
-            <UBadge v-if="result" :color="statusColor(result.status_code)" variant="subtle">HTTP {{ result.status_code }}</UBadge>
+            <PortalBadge v-if="result" :color="statusColor(result.status_code)" variant="subtle">HTTP {{ result.status_code }}</PortalBadge>
           </div>
         </template>
         <div v-if="result" class="space-y-4">
@@ -186,7 +186,7 @@
           </div>
         </div>
         <div v-else class="flex min-h-48 flex-col items-center justify-center text-center text-[var(--ui-text-muted)]">
-          <UIcon name="i-tabler-terminal-2" class="size-10" />
+          <AppIcon name="i-tabler-terminal-2" class="size-10" />
           <p class="mt-3 text-sm">{{ t('diag.sender.empty') }}</p>
         </div>
       </AppCard>
@@ -196,13 +196,23 @@
 </template>
 
 <script setup>
+import AdminField from '~/components/admin/general/controls/AdminField.vue'
+import AdminSelectMenu from '~/components/admin/general/controls/AdminSelectMenu.vue'
+import AdminInput from '~/components/admin/general/controls/AdminInput.vue'
+import AdminSelect from '~/components/admin/general/controls/AdminSelect.vue'
+import AdminTextarea from '~/components/admin/general/controls/AdminTextarea.vue'
+import AdminSwitch from '~/components/admin/general/controls/AdminSwitch.vue'
+import PortalAlert from '~/components/app/general/PortalAlert.vue'
+import PortalBadge from '~/components/app/general/PortalBadge.vue'
+import AppIcon from '~/components/AppIcon.vue'
 import AdminStatGrid from '~/components/admin/general/StatGrid.vue'
 import AdminDataPanel from '~/components/admin/general/DataPanel.vue'
 import AdminTableAction from '~/components/admin/general/TableAction.vue'
 import { useWorkspaceState } from '~/composables/useWorkspaceState'
 import { useDataSync } from '~/composables/useDataSync'
 const { fetchAPI } = useApi()
-const toast = useToast()
+import { useAdminToast } from '~/composables/admin-feedback/useAdminToast'
+const toast = useAdminToast()
 const { t, intlLocale } = useAdminI18n()
 const views = computed(() => [{ value: 'console', label: t('diag.view.console') }, { value: 'sender', label: t('diag.view.sender') }])
 const activeView = ref('console')

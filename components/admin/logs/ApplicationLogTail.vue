@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import PortalBadge from '~/components/app/general/PortalBadge.vue'
 import AdminTableAction from '~/components/admin/general/TableAction.vue'
 import { computed, nextTick, ref, watch } from 'vue'
 
@@ -52,7 +53,7 @@ const onScroll = () => {
       <div v-for="row in chronologicalRows" :key="String(row.id)" class="border-b border-[var(--ui-border)] p-3 last:border-0">
         <div class="mb-1 flex flex-wrap items-center gap-2 text-xs text-[var(--ui-text-muted)]">
           <span>{{ row.timestamp }}</span>
-          <UBadge color="neutral" variant="subtle" size="sm">{{ row.level || t('common.unknown') }}</UBadge>
+          <PortalBadge color="neutral" variant="subtle" size="sm">{{ row.level || t('common.unknown') }}</PortalBadge>
           <span>{{ row.home_ip || t('logs.unknownHome') }} · {{ row.request_id || t('logs.noRequestId') }}</span>
           <AdminTableAction action="view" :label="t('logs.viewLogDetails')" @click="emit('detail', row)" />
         </div>

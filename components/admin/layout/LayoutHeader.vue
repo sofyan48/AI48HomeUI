@@ -3,11 +3,11 @@
     <div class="flex min-w-0 flex-1 items-center gap-2">
       <AppButton class="shrink-0 lg:hidden" icon="i-tabler-menu-2" color="neutral" variant="ghost" :aria-label="tc('shell.openNavigation')" aria-controls="management-sidebar" :aria-expanded="mobileOpen" @click="emit('openMobile')" />
 
-      <span v-if="pageIcon" class="admin-page-glyph hidden sm:flex" aria-hidden="true"><UIcon :name="pageIcon" class="size-[1.125rem]" /></span>
+      <span v-if="pageIcon" class="admin-page-glyph hidden sm:flex" aria-hidden="true"><AppIcon :name="pageIcon" /></span>
       <div class="min-w-0 leading-tight">
         <nav :aria-label="t('shared.breadcrumb')" class="hidden items-center gap-1 text-[11px] font-medium text-[var(--ui-text-muted)] sm:flex">
           <span>AI48Hub</span>
-          <template v-if="section"><UIcon name="i-tabler-slash" class="size-3 text-[var(--ui-text-dimmed)]" aria-hidden="true" /><span class="truncate">{{ section }}</span></template>
+          <template v-if="section"><AppIcon name="i-tabler-slash" class="size-3 text-[var(--ui-text-dimmed)]" aria-hidden="true" /><span class="truncate">{{ section }}</span></template>
         </nav>
         <p class="admin-page-title truncate" :title="subtitle || undefined" aria-current="page">{{ title }}</p>
       </div>
@@ -15,7 +15,7 @@
 
     <div class="flex shrink-0 items-center gap-2">
       <button type="button" class="admin-search hidden md:flex" :aria-label="tc('shell.search')" aria-haspopup="dialog" @click="emit('openCommands')">
-        <UIcon name="i-tabler-search" class="size-4 shrink-0" aria-hidden="true" />
+        <AppIcon name="i-tabler-search" class="size-4 shrink-0" aria-hidden="true" />
         <span class="min-w-0 flex-1 truncate text-left">{{ tc('shell.search') }}</span>
         <kbd>⌘K</kbd>
       </button>
@@ -42,6 +42,7 @@
 </template>
 
 <script setup lang="ts">
+import AppIcon from '~/components/AppIcon.vue'
 import { useAdminI18n } from '~/composables/useAdminI18n'
 import { useConsoleLocale } from '~/composables/useConsoleLocale'
 

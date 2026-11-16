@@ -1,6 +1,6 @@
 <template>
     <div class="space-y-4">
-        <UAlert
+        <PortalAlert
             v-if="pageError"
             color="error"
             variant="subtle"
@@ -37,6 +37,7 @@
 </template>
 
 <script setup lang="ts">
+import PortalAlert from '~/components/app/general/PortalAlert.vue'
 import AdminPluginConfigEditor from '~/components/admin/plugins/PluginConfigEditor.vue'
 import PluginsSummary from '~/components/admin/plugins/PluginsSummary.vue'
 import PluginsOperation from '~/components/admin/plugins/PluginsOperation.vue'

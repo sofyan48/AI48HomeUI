@@ -1,5 +1,5 @@
 import { computed, inject, provide, ref, type InjectionKey } from 'vue'
-import { useToast } from '#imports'
+import { useAdminToast } from '~/composables/admin-feedback/useAdminToast'
 import { useAdminI18n } from '~/composables/useAdminI18n'
 import { useApi } from '~/composables/useApi'
 import { useCapabilities } from '~/composables/useCapabilities'
@@ -19,7 +19,7 @@ function createUsersWorkspace() {
   // The users API returns loosely shaped JSON, so callers read fields defensively.
   const fetchAPI = <T = any>(path: string, options?: Parameters<typeof api.fetchAPI>[1]) => api.fetchAPI<T>(path, options)
   const { supports, refreshCapabilities, error: capabilitiesError } = useCapabilities()
-  const toast = useToast()
+  const toast = useAdminToast()
   const { t, intlLocale } = useAdminI18n()
 
   const loading = useWorkspaceState('admin:users:loading', () => false)

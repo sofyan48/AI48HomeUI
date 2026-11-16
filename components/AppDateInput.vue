@@ -1,6 +1,6 @@
 <template>
   <div class="min-w-0">
-    <UInput
+    <AdminInput
       v-bind="$attrs"
       :model-value="modelValue"
       type="text"
@@ -15,7 +15,7 @@
     />
     <div class="mt-2 min-w-0 max-w-full">
       <label :for="pickerId" class="mb-1 block text-xs text-[var(--ui-text-muted)]">{{ type === 'date' ? t('shared.date.chooseDate') : t('shared.date.chooseDateTime') }}</label>
-      <UInput
+      <AdminInput
         :id="pickerId"
         :type="type"
         :model-value="pickerValue"
@@ -35,6 +35,7 @@
 </template>
 
 <script setup lang="ts">
+import AdminInput from '~/components/admin/general/controls/AdminInput.vue'
 import { dateInputBounds, dateRangeError, sanitizeDateInput, type DateInputType } from '~/composables/dateRange'
 
 defineOptions({ inheritAttrs: false })

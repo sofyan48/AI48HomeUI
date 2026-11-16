@@ -33,9 +33,9 @@
         <span class="font-mono text-xs">{{ formatHost(rowValue(row).home_ip, rowValue(row).home_port) }}</span>
       </template>
       <template #available-cell="{ row }">
-        <UBadge :color="rowValue(row).available ? 'success' : 'neutral'" variant="subtle" size="sm">
+        <PortalBadge :color="rowValue(row).available ? 'success' : 'neutral'" variant="subtle" size="sm">
           {{ rowValue(row).available ? t('logs.available') : t('logs.unavailable') }}
-        </UBadge>
+        </PortalBadge>
       </template>
       <template #actions-cell="{ row }">
         <div class="flex justify-end">
@@ -55,6 +55,7 @@
 </template>
 
 <script setup lang="ts">
+import PortalBadge from '~/components/app/general/PortalBadge.vue'
 import AdminTableAction from '~/components/admin/general/TableAction.vue'
 import LogsEmptyState from '~/components/admin/logs/LogsEmptyState.vue'
 import LogsTablePager from '~/components/admin/logs/LogsTablePager.vue'

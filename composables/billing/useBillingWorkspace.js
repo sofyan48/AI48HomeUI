@@ -4,7 +4,8 @@ import { useDataSync } from '~/composables/useDataSync'
 import { billingModelCandidates } from '~/composables/billingModelCandidates'
 import { normalizeBillingSettings, billingSettingsPayload } from '~/composables/billingPreferences'
 import { computed, ref, provide, inject, onMounted } from 'vue'
-import { useApi, useAdminI18n, useToast } from '#imports'
+import { useApi, useAdminI18n } from '#imports'
+import { useAdminToast } from '~/composables/admin-feedback/useAdminToast'
 import { useBillingPresentation } from '~/composables/billing/useBillingPresentation'
 
 const billingWorkspaceKey = Symbol('billingWorkspace')
@@ -19,7 +20,7 @@ export function provideBillingWorkspace() {
 const { fetchAPI } = useApi()
 const { t, intlLocale } = useAdminI18n()
 const allOptionValue = '__all__'
-const toast = useToast()
+const toast = useAdminToast()
 const pageSizeOptions = [50, 100, 200].map(value => ({ label: String(value), value }))
 const rangeOptions = computed(() => [
   { label: t('common.today'), value: 'today' }, { label: t('common.last7d'), value: '7d' },

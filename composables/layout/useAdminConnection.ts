@@ -1,6 +1,6 @@
 import { computed, ref } from 'vue'
 import { storeToRefs } from 'pinia'
-import { useToast } from '#imports'
+import { useAdminToast } from '~/composables/admin-feedback/useAdminToast'
 import { useApi } from '~/composables/useApi'
 import { useCapabilities } from '~/composables/useCapabilities'
 import { useConsoleLocale } from '~/composables/useConsoleLocale'
@@ -27,7 +27,7 @@ export function useAdminConnection() {
   } = useCapabilities()
   const workspace = useWorkspaceStore()
   const managementConfig = useManagementConfigStore()
-  const toast = useToast()
+  const toast = useAdminToast()
 
   const connectionStatus = computed<ConnectionStatus>(() => {
     if (!token.value) return { label: tc('connection.disconnected'), dot: 'bg-[var(--ui-text-dimmed)]' }

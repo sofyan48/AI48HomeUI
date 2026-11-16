@@ -1,0 +1,38 @@
+@import "tw-animate-css";
+
+/* Bridge both workspaces during migration; the existing theme remains the palette owner. */
+@theme inline {
+  --color-background: var(--ui-bg);
+  --color-foreground: var(--ui-text-highlighted);
+  --color-card: var(--ui-bg);
+  --color-card-foreground: var(--ui-text);
+  --color-popover: var(--ui-bg);
+  --color-popover-foreground: var(--ui-text);
+  --color-primary: var(--ui-primary);
+  --color-primary-foreground: var(--ui-text-inverted);
+  --color-secondary: var(--ui-bg-elevated);
+  --color-secondary-foreground: var(--ui-text-highlighted);
+  --color-muted: var(--ui-bg-muted);
+  --color-muted-foreground: var(--ui-text-muted);
+  --color-accent: var(--ui-bg-accented);
+  --color-accent-foreground: var(--ui-text-highlighted);
+  --color-destructive: var(--ui-error);
+  --color-border: var(--ui-border);
+  --color-input: var(--ui-border-accented);
+  --color-ring: var(--ring, var(--ui-primary));
+}
+
+/* Grouped controls: the group is the visible control, the inner field stays transparent.
+   Workspace-wide input rules (background, radius, min-height, hover, focus outline) must not
+   paint a second box inside the group, so they are reset here regardless of cascade layer. */
+[data-slot="input-group"] > [data-slot="input-group-control"] {
+  min-height: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+[data-slot="input-group"] {
+  background-color: var(--admin-control-bg, transparent);
+}

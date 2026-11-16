@@ -1,5 +1,6 @@
 import { inject, provide, type InjectionKey } from 'vue'
-import { useApi, useAdminI18n, useToast } from '#imports'
+import { useApi, useAdminI18n } from '#imports'
+import { useAdminToast } from '~/composables/admin-feedback/useAdminToast'
 import { useProviderList } from './useProviderList'
 import { useProviderEditorState } from './useProviderEditorState'
 import { useModelDiscovery } from './useModelDiscovery'
@@ -19,7 +20,7 @@ type ProvidersEmit = (event: 'changed') => void
  */
 function createUpstreamProvidersWorkspace(props: ProvidersProps, emit: ProvidersEmit) {
   const { fetchAPI } = useApi()
-  const toast = useToast()
+  const toast = useAdminToast()
   const { t } = useAdminI18n()
   const list = useProviderList({ t, fetchAPI, props })
   const editor = useProviderEditorState({ t, selectedProviderRoute: list.selectedProviderRoute })

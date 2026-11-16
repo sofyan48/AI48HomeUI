@@ -2,10 +2,10 @@
   <AppCard class="catalog-panel catalog-model min-w-0" :ui="{ body: 'flex h-full flex-col p-5 sm:p-6' }">
     <div class="flex items-start justify-between gap-2">
       <div class="catalog-icon flex size-10 shrink-0 items-center justify-center rounded-xl">
-        <UIcon :name="modelLogoIcon(model)" class="size-6" aria-hidden="true" />
+        <AppIcon :name="modelLogoIcon(model)" class="size-6" aria-hidden="true" />
       </div>
-      <UBadge v-if="model.accessible === true" color="success" variant="subtle" size="sm">{{ t('models.badge.included') }}</UBadge>
-      <UBadge v-else-if="model.accessible === false" color="neutral" variant="subtle" size="sm">{{ t('models.badge.notIncluded') }}</UBadge>
+      <PortalBadge v-if="model.accessible === true" color="success" variant="subtle" size="sm">{{ t('models.badge.included') }}</PortalBadge>
+      <PortalBadge v-else-if="model.accessible === false" color="neutral" variant="subtle" size="sm">{{ t('models.badge.notIncluded') }}</PortalBadge>
     </div>
     <div class="mt-3 min-w-0">
       <AppButton color="neutral" variant="link" class="max-w-full justify-start whitespace-normal text-left" aria-haspopup="dialog" @click="openDetails(model, $event)">{{ model.display_name || model.id }}</AppButton>
@@ -16,13 +16,13 @@
       </div>
     </div>
     <div v-if="capabilityLabels(model).length" class="mt-3 flex flex-wrap gap-1.5">
-      <UBadge v-for="label in capabilityLabels(model)" :key="label" color="neutral" variant="soft" size="sm" class="rounded-full">{{ label }}</UBadge>
+      <PortalBadge v-for="label in capabilityLabels(model)" :key="label" color="neutral" variant="soft" size="sm" class="rounded-full">{{ label }}</PortalBadge>
     </div>
     <div class="catalog-price mt-auto flex items-center justify-between gap-3 pt-4">
       <div class="min-w-0 space-y-1">
         <template v-if="pricingEntryPoint(model.pricing)">
           <p class="text-sm font-medium leading-6">{{ t('models.price.from', { input: price(pricingEntryPoint(model.pricing)?.input), output: price(pricingEntryPoint(model.pricing)?.output) }) }}</p>
-          <UBadge v-if="(pricingEntryPoint(model.pricing)?.maxRungCount || 0) > 1" color="info" variant="subtle" size="sm">{{ t('models.price.tiered', { count: pricingEntryPoint(model.pricing)?.maxRungCount }) }}</UBadge>
+          <PortalBadge v-if="(pricingEntryPoint(model.pricing)?.maxRungCount || 0) > 1" color="info" variant="subtle" size="sm">{{ t('models.price.tiered', { count: pricingEntryPoint(model.pricing)?.maxRungCount }) }}</PortalBadge>
           <p v-if="pricingEntryPoint(model.pricing)?.hasFormula" class="text-xs text-[var(--ui-text-muted)]">{{ t('models.price.formula') }}</p>
           <p class="text-xs text-[var(--ui-text-muted)]">{{ t('models.price.openingNote') }}</p>
           <AppButton color="primary" variant="link" size="sm" icon="i-tabler-receipt" @click="openDetails(model, $event, 'pricing')">{{ t('models.price.complete') }}<span v-if="pricingEntryPoint(model.pricing)?.toolPrices.length"> · {{ t('models.price.toolRates', { count: pricingEntryPoint(model.pricing)?.toolPrices.length }) }}</span></AppButton>
@@ -35,6 +35,8 @@
 </template>
 
 <script setup lang="ts">
+import AppIcon from '~/components/AppIcon.vue'
+import PortalBadge from '~/components/app/general/PortalBadge.vue'
 import { usePortalI18n } from '~/composables/usePortalI18n'
 import { pricingEntryPoint, type CatalogModel } from '~/composables/userModelCatalog'
 import { modelLogoIcon } from '~/composables/models/catalog'

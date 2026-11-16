@@ -109,7 +109,11 @@ Keep the root-level source layout used by this repository; do not move it into a
 - Use `~/` imports for project source and `#imports` where the existing store/composable pattern requires Nuxt helpers.
 - Match the formatting of the file being edited; avoid unrelated quote, semicolon, indentation, or component-order rewrites.
 - Prefer existing `App*` primitives and feature components over adding parallel abstractions or dependencies.
-- Use Nuxt UI 4 APIs, Tailwind 4 utilities, shared theme tokens such as `--ui-*`, and existing component slot configuration. Do not introduce a second UI framework.
+- The approved shadcn-vue migration is in progress: `AppButton`, `AppCard`, and `AppModal` use source-owned primitives in `components/ui/`. Keep their existing consumer contracts. Use `shadcn-nuxt` with the `Shadcn` prefix or explicit imports to avoid Nuxt UI name collisions.
+- `/app` renders source-owned shadcn components, local Tabler SVG icons (`AppIcon`), and Sonner notifications (`usePortalToast`). Its provider is `PortalProvider`; do not introduce Nuxt UI renderers, `UIcon`, or `useToast()` into the portal dependency graph. Theme/language controls and mobile navigation use portal shadcn components.
+- Admin and `/app` consumers render source-owned shadcn components, local Tabler SVG icons (`AppIcon`), and Sonner notifications (`useAdminToast`/`usePortalToast`). Admin controls are explicit adapters under `components/admin/general/controls/`; shared tables use source-owned shadcn table primitives. Do not introduce Nuxt UI renderers, `UIcon`, or `useToast()` into either workspace.
+- `AdminUiProvider` supplies ConfigProvider, TooltipProvider, Sonner, and the admin form-loading bridge; `UApp` is not mounted. `@nuxt/ui` is not part of this project; do not reintroduce it. `shadcn-nuxt` remains only for source-owned shadcn-vue component integration.
+- Use Tailwind 4 and semantic shadcn tokens bridged to the existing `--ui-*` palette in `assets/shadcn.css`. Read `.agents/skills/shadcn-vue/SKILL.md` before changing shadcn components; preserve light/dark themes and slot overrides.
 - Preserve responsive layouts, light/dark themes, compact workspace density, and mobile navigation behavior.
 - Provide loading, empty, unsupported, error, and mutation feedback states where applicable. Prevent duplicate submissions for pending actions.
 - Keep icon-only controls accessible with labels, and preserve keyboard/focus and modal behavior.

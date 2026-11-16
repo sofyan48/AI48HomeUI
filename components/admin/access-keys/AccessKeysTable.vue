@@ -1,7 +1,7 @@
 <template>
   <AdminTablePanel :title="t('keys.title')" :description="t('keys.countOf', { shown: filteredResources.length, total: resources.length })">
     <template #actions>
-      <UInput v-model="search" icon="i-tabler-search" :placeholder="t('keys.searchPlaceholder')" :aria-label="t('keys.searchAria')" class="w-full sm:w-72" />
+      <AdminInput v-model="search" icon="i-tabler-search" :placeholder="t('keys.searchPlaceholder')" :aria-label="t('keys.searchAria')" class="w-full sm:w-72" />
       <AccessKeyReplaceList @replaced="emit('replaced')" />
       <AppButton icon="i-tabler-plus" @click="emit('create')">{{ t('keys.new') }}</AppButton>
     </template>
@@ -16,10 +16,10 @@
     </template>
     <AppTable :columns="columns" :data="filteredResources" :loading="loading" class="access-keys-table min-w-[980px]">
       <template #select-header>
-        <UCheckbox :model-value="allFilteredSelected" :indeterminate="someFilteredSelected" :disabled="loading || bulkDeleting || !filteredResources.length" :aria-label="t('keys.selectAllAria')" @update:model-value="toggleAllFiltered(Boolean($event))" />
+        <AdminCheckbox :model-value="allFilteredSelected" :indeterminate="someFilteredSelected" :disabled="loading || bulkDeleting || !filteredResources.length" :aria-label="t('keys.selectAllAria')" @update:model-value="toggleAllFiltered(Boolean($event))" />
       </template>
       <template #select-cell="{ row }">
-        <UCheckbox :model-value="selectedIDs.has(rowValue(row).id)" :disabled="bulkDeleting" :aria-label="t('keys.selectOneAria', { name: resourceSummary(rowValue(row)) })" @update:model-value="toggleSelected(rowValue(row), Boolean($event))" />
+        <AdminCheckbox :model-value="selectedIDs.has(rowValue(row).id)" :disabled="bulkDeleting" :aria-label="t('keys.selectOneAria', { name: resourceSummary(rowValue(row)) })" @update:model-value="toggleSelected(rowValue(row), Boolean($event))" />
       </template>
       <template #number-cell="{ row }">
         <span class="app-table-number">{{ rowValue(row).index + 1 }}</span>
@@ -27,9 +27,12 @@
       <template #identity-header>
         <div class="flex items-center gap-1.5">
           <span>{{ t('keys.colIdentity') }}</span>
-          <UTooltip :text="t('keys.identityTooltip')">
-            <UIcon name="i-tabler-info-circle" class="size-4 text-[var(--ui-text-muted)]" />
-          </UTooltip>
+          <Tooltip>
+            <TooltipTrigger as-child>
+              <AppIcon name="i-tabler-info-circle" class="size-4 text-[var(--ui-text-muted)]" />
+            </TooltipTrigger>
+            <TooltipContent>{{ t('keys.identityTooltip') }}</TooltipContent>
+          </Tooltip>
         </div>
       </template>
       <template #identity-cell="{ row }">
@@ -62,7 +65,7 @@
       </template>
       <template #length-cell="{ row }">{{ rowValue(row).length }}</template>
       <template #status-cell>
-        <UBadge color="success" variant="subtle"><UIcon name="i-tabler-circle-check" class="mr-1 size-3" />{{ t('keys.accepted') }}</UBadge>
+        <PortalBadge color="success" variant="subtle"><AppIcon name="i-tabler-circle-check" class="mr-1 size-3" />{{ t('keys.accepted') }}</PortalBadge>
       </template>
       <template #actions-cell="{ row }">
         <AdminRowActions :actions="rowActions(rowValue(row))" :menu-label="t('keys.menuLabel', { name: resourceSummary(rowValue(row)) })" />
@@ -75,6 +78,11 @@
 </template>
 
 <script setup lang="ts">
+import AdminInput from '~/components/admin/general/controls/AdminInput.vue'
+import AdminCheckbox from '~/components/admin/general/controls/AdminCheckbox.vue'
+import PortalBadge from '~/components/app/general/PortalBadge.vue'
+import AppIcon from '~/components/AppIcon.vue'
+import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip'
 import AdminTablePanel from '~/components/admin/general/TablePanel.vue'
 import AdminRowActions from '~/components/admin/general/RowActions.vue'
 import AccessKeyReplaceList from './ReplaceList.vue'

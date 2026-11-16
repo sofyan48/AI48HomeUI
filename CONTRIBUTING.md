@@ -30,6 +30,24 @@ Do not place Vue files directly in `components/admin/`. Feature components belon
 
 Every feature gets its own page directory, for example `pages/admin/dashboard/index.vue` → `components/admin/dashboard/` + `composables/dashboard/`. User pages use `pages/app/<feature>/index.vue`; nested routes use the same pattern, such as `pages/admin/routing/channels/index.vue`. Only the legitimate workspace route indexes remain at `pages/admin/index.vue` and `pages/app/index.vue`; do not invent general pages. Moving a route shell must preserve its URL, metadata, and imports. Don't create a global `utils/` folder; helpers live next to the feature that uses them.
 
+## shadcn-vue migration
+
+The migration is incremental, not a completed removal of Nuxt UI. `AppButton`, `AppCard`, and `AppModal` now render the source-owned shadcn-vue Button, Card, and Sheet families in `components/ui/`. Their compatibility APIs preserve existing feature consumers. `AppFormModal` and `AppConfirmModal` inherit the Sheet implementation through `AppModal`.
+
+- Configuration: `components.json`; Nuxt registration: `shadcn-nuxt` with a `Shadcn` prefix. Prefer explicit imports from `~/components/ui/<component>`.
+- Theme: `assets/shadcn.css` bridges semantic shadcn tokens to the existing admin/portal palette. Keep both workspaces and dark mode working.
+- Official agent skill: `.agents/skills/shadcn-vue/`; provenance: `skills-lock.json`. It is the Vue skill from `unovue/shadcn-vue`, not the React skill.
+- Add components with `bunx --bun shadcn-vue@latest add <component>`. Review generated source and declare its direct dependencies. Do not overwrite customized primitives without reviewing the diff.
+- `/app` pages and feature components use portal-only adapters in `components/app/general/`: shadcn inputs/input groups, fields, checkboxes, native selects, alerts, badges, skeletons, pagination, and tables. Select updates preserve numeric values; form labels and error descriptions are linked to controls. Portal tables preserve cell slots and page-offset numbering without changing the admin table.
+- Portal model details and limit-reset confirmation use `AppModal` (a right-side Sheet). The reset confirmation is no longer a centered Nuxt modal; its pending dismissal locks remain.
+- `/app` uses `PortalProvider` (Reka ConfigProvider and shadcn Sonner), shadcn Popover/ToggleGroup theme and language controls, and a modal Sheet for mobile navigation. Portal notifications, including model-copy feedback, use `usePortalToast()` with Sonner. Icons use local, statically mapped Tabler SVG components through `AppIcon`; portal progress and empty states use shadcn primitives.
+- `app.vue` selects the provider by workspace. `UApp` is only mounted in the lazy admin provider. The admin-only form-loading bridge preserves nested `UForm` loading behavior without importing Nuxt UI from shared buttons.
+- Admin and `/app` now use source-owned shadcn/Reka controls, tables, menus, overlays, tooltips, alerts, badges, skeletons, icons, and Sonner notifications. Admin form adapters live under `components/admin/general/controls/`; the shared `AppTable` uses source-owned table primitives and TanStack state.
+- `app.vue` selects the provider by workspace. `UApp` is no longer mounted in the admin provider; `AdminUiProvider` supplies ConfigProvider, TooltipProvider, Sonner, and the admin button/form bridge. The Nuxt UI module and global CSS/palette bridge remain installed only as a compatibility/build dependency while the legacy app config and any external integrations are retired safely.
+- Do not reintroduce Nuxt UI renderers, `UIcon`, or `useToast()` into admin or portal consumers. Use `AppIcon`, `useAdminToast()`, or `usePortalToast()` instead.
+- Do not rename routes, change API contracts, or replace workspace state as part of component migration.
+- Run `bun run test`; `scripts/shadcn-migration.test.ts` covers SFC compilation and lightweight renderer regressions. These do not replace browser checks for focus restoration, overlays, responsive layout, and visual appearance.
+
 ## Base components
 
 Use these before writing markup by hand:

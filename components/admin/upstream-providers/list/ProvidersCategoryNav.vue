@@ -22,7 +22,7 @@
           </span>
           </span>
         </span>
-        <UIcon v-if="categoryStats[category.value]?.disabled" name="i-tabler-alert-triangle" class="size-4 shrink-0 text-[var(--ui-warning)]" :aria-label="t('upstream.providers.disabledEntries', { count: categoryStats[category.value].disabled })" />
+        <AppIcon v-if="categoryStats[category.value]?.disabled" name="i-tabler-alert-triangle" class="size-4 shrink-0 text-[var(--ui-warning)]" :aria-label="t('upstream.providers.disabledEntries', { count: categoryStats[category.value].disabled })" />
         <span v-else class="shrink-0 rounded-full bg-[var(--ui-bg-muted)] px-2 py-0.5 text-xs tabular-nums" :aria-label="categoryStats[category.value] ? t('upstream.providers.entriesCount', { count: categoryStats[category.value].total }) : t('upstream.providers.countsUnavailable')">{{ categoryStats[category.value]?.total ?? '—' }}</span>
       </button>
       </nav>
@@ -31,6 +31,7 @@
 </template>
 
 <script setup>
+import AppIcon from '~/components/AppIcon.vue'
 import { useUpstreamProvidersWorkspace } from '~/composables/upstream-providers/useUpstreamProvidersWorkspace'
 
 const { t, providerCategories, categoryLabel, categoryStats, selectedProviderRoute, providerEditorOpen, deleteOpen } = useUpstreamProvidersWorkspace()

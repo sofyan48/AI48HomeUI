@@ -5,23 +5,23 @@
       :ui="{ content: 'sm:max-w-3xl' }"
       ><template #body
         ><form class="space-y-4" @submit.prevent="savePayloadEditor">
-          <UFormField :label="t('config.payload.models')" required
-            ><UTextarea
+          <AdminField :label="t('config.payload.models')" required
+            ><AdminTextarea
               v-model="payloadEditor.models"
               :rows="8"
-              class="font-mono text-xs" /></UFormField
-          ><UFormField
+              class="font-mono text-xs" /></AdminField
+          ><AdminField
             :label="
               payloadEditMode === 'filter'
                 ? t('config.payload.filterParams')
                 : t('config.payload.params')
             "
             required
-            ><UTextarea
+            ><AdminTextarea
               v-model="payloadEditor.params"
               :rows="10"
-              class="font-mono text-xs" /></UFormField
-          ><UAlert
+              class="font-mono text-xs" /></AdminField
+          ><PortalAlert
             v-if="payloadEditorError"
             color="error"
             variant="subtle"
@@ -42,6 +42,9 @@
 </template>
 
 <script setup lang="ts">
+import AdminField from '~/components/admin/general/controls/AdminField.vue'
+import AdminTextarea from '~/components/admin/general/controls/AdminTextarea.vue'
+import PortalAlert from '~/components/app/general/PortalAlert.vue'
 import { useConfigWorkspace } from '~/composables/config/useConfigWorkspace'
 const {
   t, payloadEditorOpen, payloadEditIndex, savePayloadEditor,

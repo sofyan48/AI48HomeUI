@@ -1,23 +1,23 @@
 <template>
   <div class="mx-auto max-w-md py-16 text-center">
     <AppCard>
-      <UIcon v-if="verifying" name="i-tabler-refresh" class="mx-auto size-14 animate-spin text-primary-500" />
-      <UIcon v-else-if="verified" name="i-tabler-circle-check" class="mx-auto size-14 text-emerald-500" />
-      <UIcon v-else-if="invalidToken" name="i-tabler-clock-x" class="mx-auto size-14 text-amber-500" />
-      <UIcon v-else-if="failed || !verificationToken" name="i-tabler-alert-circle" class="mx-auto size-14 text-rose-500" />
-      <UIcon v-else name="i-tabler-mail" class="mx-auto size-14 text-primary-500" />
+      <AppIcon v-if="verifying" name="i-tabler-refresh" class="mx-auto size-14 animate-spin text-primary-500" />
+      <AppIcon v-else-if="verified" name="i-tabler-circle-check" class="mx-auto size-14 text-emerald-500" />
+      <AppIcon v-else-if="invalidToken" name="i-tabler-clock-x" class="mx-auto size-14 text-amber-500" />
+      <AppIcon v-else-if="failed || !verificationToken" name="i-tabler-alert-circle" class="mx-auto size-14 text-rose-500" />
+      <AppIcon v-else name="i-tabler-mail" class="mx-auto size-14 text-primary-500" />
 
       <h1 class="mt-5 text-2xl font-bold">{{ title }}</h1>
       <p class="mt-2 text-sm text-[var(--ui-text-muted)]">{{ message }}</p>
 
       <div v-if="ready" class="mt-6 space-y-3">
-        <UAlert color="info" variant="subtle" :title="t('verify.confirmTitle')" :description="t('verify.confirmDesc')" />
-        <UCheckbox v-model="confirmed" :label="t('verify.checkbox')" />
+        <PortalAlert color="info" variant="subtle" :title="t('verify.confirmTitle')" :description="t('verify.confirmDesc')" />
+        <PortalCheckbox v-model="confirmed" :label="t('verify.checkbox')" />
         <AppButton color="primary" block :disabled="!confirmed" :loading="verifying" @click="verifyEmail">{{ t('verify.confirmButton') }}</AppButton>
         <AppButton :to="returnRoute" color="neutral" variant="ghost" block>{{ t('common.cancel') }}</AppButton>
       </div>
       <div v-else-if="invalidToken" class="mt-6 space-y-3">
-        <UAlert color="warning" variant="subtle" :title="t('verify.invalidTitle')" :description="t('verify.invalidDesc')" />
+        <PortalAlert color="warning" variant="subtle" :title="t('verify.invalidTitle')" :description="t('verify.invalidDesc')" />
         <AppButton :to="returnRoute" color="primary" block>{{ authenticated ? t('verify.openWorkspace') : t('verify.goToSignIn') }}</AppButton>
       </div>
       <AppButton v-else-if="!verifying" :to="returnRoute" color="primary" block class="mt-6">{{ authenticated ? t('verify.openWorkspace') : t('verify.goToSignIn') }}</AppButton>
@@ -26,6 +26,9 @@
 </template>
 
 <script setup lang="ts">
+import AppIcon from '~/components/AppIcon.vue'
+import PortalAlert from '~/components/app/general/PortalAlert.vue'
+import PortalCheckbox from '~/components/app/general/PortalCheckbox.vue'
 import { useWorkspaceState } from '~/composables/useWorkspaceState'
 definePageMeta({ layout: 'app' })
 const { t } = usePortalI18n()

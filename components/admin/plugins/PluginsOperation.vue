@@ -1,5 +1,5 @@
 <template>
-        <UAlert
+        <PortalAlert
             v-if="operation"
             :color="operation.error ? 'error' : 'info'"
             variant="subtle"
@@ -57,6 +57,7 @@
 </template>
 
 <script setup lang="ts">
+import PortalAlert from '~/components/app/general/PortalAlert.vue'
 import { usePluginsWorkspace } from "~/composables/plugins/usePluginsWorkspace"
 const { t, operation } = usePluginsWorkspace();
 </script>

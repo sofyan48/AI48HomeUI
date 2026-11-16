@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import PortalAlert from '~/components/app/general/PortalAlert.vue'
 import AdminUsageLegacyRecords from '~/components/admin/usage/UsageLegacyRecords.vue'
 import AdminRequestRecords from '~/components/admin/usage/RequestRecords.vue'
 import AdminUsageInsights from '~/components/admin/usage/UsageInsights.vue'
@@ -32,7 +33,7 @@ const { t, activeView, usageTabs, setView, legacyRecords, capabilitiesReady, err
         {{ errorMessage }}
       </div>
 
-      <UAlert v-if="!supports('usage_overview')" color="warning" variant="subtle" :title="t('usage.overviewUnavailable')" />
+      <PortalAlert v-if="!supports('usage_overview')" color="warning" variant="subtle" :title="t('usage.overviewUnavailable')" />
       <UsageFilters />
       <UsageSummary />
       <UsageCharts />
