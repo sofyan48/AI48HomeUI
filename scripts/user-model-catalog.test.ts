@@ -109,12 +109,22 @@ describe('user model catalog parity', () => {
     expect(pricingMessage({ id: 'm', accessible: true }, true)).toContain('does not mean free')
   })
 
-  test('the catalog page compiles with the Vue SFC compiler', () => {
-    const filename = new URL('../pages/app/models/index.vue', import.meta.url).pathname
-    const { descriptor, errors } = parse(readFileSync(filename, 'utf8'), { filename })
-    expect(errors).toEqual([])
-    const script = compileScript(descriptor, { id: 'user-model-catalog' })
-    const template = compileTemplate({ source: descriptor.template!.content, filename, id: 'user-model-catalog', compilerOptions: { bindingMetadata: script.bindings } })
-    expect(template.errors).toEqual([])
-  })
+  const catalogSfcs = [
+    '../pages/app/models/index.vue',
+    '../components/app/models/ModelsAlerts.vue',
+    '../components/app/models/ModelsFilters.vue',
+    '../components/app/models/ModelsGrid.vue',
+    '../components/app/models/ModelsCard.vue',
+    '../components/app/models/ModelsDetailDrawer.vue'
+  ]
+  for (const path of catalogSfcs) {
+    test(`${path.slice(3)} compiles with the Vue SFC compiler`, () => {
+      const filename = new URL(path, import.meta.url).pathname
+      const { descriptor, errors } = parse(readFileSync(filename, 'utf8'), { filename })
+      expect(errors).toEqual([])
+      const script = compileScript(descriptor, { id: 'user-model-catalog' })
+      const template = compileTemplate({ source: descriptor.template!.content, filename, id: 'user-model-catalog', compilerOptions: { bindingMetadata: script.bindings } })
+      expect(template.errors).toEqual([])
+    })
+  }
 })

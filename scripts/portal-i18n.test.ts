@@ -24,6 +24,13 @@ function vueFiles(dir: string): string[] {
 const portalFiles = ['layouts/app.vue', ...vueFiles('pages/app'), ...vueFiles('components/app')]
 
 describe('user portal i18n', () => {
+  test('recursive discovery covers the workspace index and every app feature route', () => {
+    const routes = portalFiles.filter(file => file.startsWith('pages/app/'))
+    expect(routes).toHaveLength(12)
+    expect(routes).toContain('pages/app/index.vue')
+    expect(routes).toContain('pages/app/models/index.vue')
+    expect(routes.every(file => file.endsWith('/index.vue'))).toBe(true)
+  })
   test('area keys do not collide', () => {
     const seen = new Map<string, string>()
     for (const [area, messages] of Object.entries(areas)) {

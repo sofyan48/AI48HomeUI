@@ -47,15 +47,13 @@
       </AppCard>
     </div>
   </div>
-  <UsersEmptyState v-else :icon="kind === 'channel' ? 'i-tabler-layout-grid' : 'i-tabler-cube'" :text="kind === 'channel' ? t('users.noCredentialScopes') : t('users.noModelScopes')" />
+  <AppEmptyState v-else :icon="kind === 'channel' ? 'i-tabler-layout-grid' : 'i-tabler-cube'" :text="kind === 'channel' ? t('users.noCredentialScopes') : t('users.noModelScopes')" />
 </template>
 
 <script>
-import UsersEmptyState from './UsersEmptyState.vue'
 import { useAdminI18n } from '~/composables/useAdminI18n'
 
 export default {
-  components: { UsersEmptyState },
   props: ['kind', 'groups', 'details', 'channelGroups', 'channelBindingsSupported'],
   emits: ['edit', 'delete', 'add', 'delete-detail'],
   setup() {

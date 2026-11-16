@@ -1,3 +1,0 @@
-<template>
-  <AdminSystemTopology />
-</template>

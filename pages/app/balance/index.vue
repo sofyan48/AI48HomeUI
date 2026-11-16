@@ -68,6 +68,7 @@
 </template>
 
 <script setup lang="ts">
+import AppUserWorkspace from '~/components/app/workspace/UserWorkspace.vue'
 import { useWorkspaceState } from '~/composables/useWorkspaceState'
 import type { BillingBalanceRecord, BillingOverview, BillingRechargeRequest } from '~/composables/useUserApi'
 

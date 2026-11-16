@@ -131,6 +131,8 @@
 </template>
 
 <script setup lang="ts">
+import AdminDataPanel from '~/components/admin/general/DataPanel.vue'
+import AdminTableAction from '~/components/admin/general/TableAction.vue'
 import { useWorkspaceState } from '~/composables/useWorkspaceState'
 import { useDataSync } from '~/composables/useDataSync'
 interface ProxyPool {

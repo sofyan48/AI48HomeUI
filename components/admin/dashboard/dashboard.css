@@ -1,0 +1,29 @@
+/* Styles shared by several dashboard sections. Imported once by pages/admin/dashboard.vue. */
+.dashboard-tone--violet { --dashboard-accent: var(--color-violet-500); }
+.dashboard-tone--blue { --dashboard-accent: var(--color-blue-500); }
+.dashboard-tone--emerald { --dashboard-accent: var(--color-emerald-500); }
+.dashboard-tone--amber { --dashboard-accent: var(--color-amber-500); }
+
+.dashboard-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  border: 1px solid var(--ui-border);
+  border-radius: 9999px;
+  background: color-mix(in oklch, var(--admin-panel-bg, var(--ui-bg)) 70%, transparent);
+  color: var(--ui-text-muted);
+}
+
+.dashboard-metric-icon {
+  display: flex;
+  width: 2.125rem;
+  height: 2.125rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.625rem;
+  background: color-mix(in oklch, var(--dashboard-accent, var(--ui-primary)) 13%, transparent);
+  color: var(--dashboard-accent, var(--ui-primary));
+}
+.dashboard-metric-icon--sm { width: 1.875rem; height: 1.875rem; border-radius: 0.5rem; }
