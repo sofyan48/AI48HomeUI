@@ -381,7 +381,7 @@ button[aria-expanded="true"] > svg {
 }
 
 /* Shared user surfaces: every page panel uses the same radius, border, and elevation. */
-:is(.logs-panel, .catalog-panel, .profile-panel, .settings-panel, .finance-panel, .balance-panel, .dashboard-panel, .balance-topup, .balance-hero) {
+:is(.logs-panel, .playground-panel, .catalog-panel, .profile-panel, .settings-panel, .finance-panel, .balance-panel, .dashboard-panel, .balance-topup, .balance-hero) {
   border: 1px solid var(--user-panel-border) !important;
   border-radius: var(--user-panel-radius) !important;
   background-color: var(--user-panel-bg);

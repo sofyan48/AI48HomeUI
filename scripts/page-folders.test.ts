@@ -19,7 +19,7 @@ const adminFeatures = [
 ]
 const appFeatures = [
   'api-keys', 'balance', 'forgot-password', 'login', 'logs', 'models',
-  'profile', 'register', 'reset-password', 'settings', 'verify-email',
+  'playground', 'profile', 'register', 'reset-password', 'settings', 'verify-email',
 ]
 const expectedRoutes = [
   '/admin', ...adminFeatures.map(feature => `/admin/${feature}`),
@@ -29,10 +29,10 @@ const expectedRoutes = [
 const routeFor = (file: string) => file.replace(/^pages/, '').replace(/\/index\.vue$/, '').replace(/\.vue$/, '')
 
 describe('feature page folders', () => {
-  test('all 33 public URLs remain unique and unchanged', () => {
+  test('all 34 public URLs remain unique and unchanged', () => {
     const routes = pages().map(routeFor)
     expect(routes.sort()).toEqual(expectedRoutes)
-    expect(new Set(routes).size).toBe(33)
+    expect(new Set(routes).size).toBe(34)
   })
 
   test('every feature uses index.vue without inventing general pages', () => {
