@@ -123,7 +123,7 @@ const copyText = useWorkspaceClipboard()
         </div>
       </template>
       <dl class="dashboard-usage-strip" :aria-busy="billingLoading">
-        <div v-for="(metric, index) in dashboardUsageMetrics" :key="metric.label" class="dashboard-usage-item" :class="`dashboard-metric--${index}`">
+        <div v-for="metric in dashboardUsageMetrics" :key="metric.label" class="dashboard-usage-item">
           <dt class="flex items-center gap-2 text-xs font-medium text-[var(--ui-text-muted)]"><UIcon :name="metric.icon" class="size-4 dashboard-usage-icon" aria-hidden="true" />{{ metric.label }}</dt>
           <dd class="mt-1.5 break-words text-2xl font-bold tabular-nums tracking-tight text-[var(--ui-text-highlighted)]">{{ billingLoading ? '—' : metric.value }}</dd>
         </div>
@@ -149,7 +149,7 @@ const copyText = useWorkspaceClipboard()
   gap: 0.75rem;
   padding-block: 0.25rem;
 }
-.dashboard-greeting h1 { font-size: clamp(1.5rem, 2.4vw, 2rem); line-height: 1.2; letter-spacing: -0.03em; }
+.dashboard-greeting h1 { font-size: 1.5rem; font-weight: 600; line-height: 1.35; letter-spacing: -0.015em; }
 .dashboard-connect,
 .dashboard-credits {
   position: relative;
@@ -157,15 +157,12 @@ const copyText = useWorkspaceClipboard()
   flex-direction: column;
   overflow: hidden;
   padding: 1.25rem;
-  border-radius: 1.25rem;
+  border-radius: var(--user-panel-radius);
   box-shadow: var(--user-panel-shadow);
 }
 .dashboard-connect {
-  border: 1px solid color-mix(in oklch, var(--brand-from) 24%, var(--user-panel-border));
-  background:
-    radial-gradient(ellipse 60% 70% at 100% 0%, color-mix(in oklch, var(--brand-to) 11%, transparent), transparent 70%),
-    radial-gradient(ellipse 50% 60% at 0% 0%, color-mix(in oklch, var(--brand-from) 9%, transparent), transparent 70%),
-    var(--user-panel-bg);
+  border: 1px solid var(--user-panel-border);
+  background: var(--user-panel-bg);
 }
 .dashboard-connect-icon {
   display: flex;
@@ -173,10 +170,9 @@ const copyText = useWorkspaceClipboard()
   height: 2.5rem;
   align-items: center;
   justify-content: center;
-  border-radius: 0.75rem;
-  background: var(--brand-gradient);
-  color: white;
-  box-shadow: 0 6px 16px -6px color-mix(in oklch, var(--brand-from) 60%, transparent);
+  border-radius: 0.375rem;
+  background: var(--user-inset-bg);
+  color: var(--ui-text-muted);
 }
 .dashboard-steps { display: grid; gap: 0.25rem; }
 .dashboard-step {
@@ -219,13 +215,13 @@ const copyText = useWorkspaceClipboard()
   gap: 0.5rem;
   padding: 0.375rem 0.375rem 0.375rem 0.75rem;
   border: 1px solid var(--ui-border);
-  border-radius: 0.75rem;
+  border-radius: 0.375rem;
   background: var(--user-inset-bg);
 }
 .user-dashboard .dashboard-primary-action {
-  background: var(--brand-gradient);
-  color: white;
-  box-shadow: 0 6px 18px -6px color-mix(in oklch, var(--brand-from) 60%, transparent);
+  background: var(--ui-primary);
+  color: var(--ui-text-inverted);
+  box-shadow: none;
 }
 .user-dashboard .dashboard-primary-action:hover { filter: brightness(1.06); }
 .dashboard-code {
@@ -237,11 +233,8 @@ const copyText = useWorkspaceClipboard()
 .dashboard-code :deep(.dashboard-code-copy) { color: var(--color-zinc-400); }
 .dashboard-code :deep(.dashboard-code-copy:hover) { background: var(--color-zinc-800); color: white; }
 .dashboard-credits {
-  --dashboard-accent: var(--ui-success);
-  border: 1px solid color-mix(in oklch, var(--dashboard-accent) 24%, var(--user-panel-border));
-  background:
-    radial-gradient(ellipse 90% 45% at 100% 0%, color-mix(in oklch, var(--dashboard-accent) 13%, transparent), transparent 70%),
-    var(--user-panel-bg);
+  border: 1px solid var(--user-panel-border);
+  background: var(--user-panel-bg);
 }
 .dashboard-balance-icon {
   display: flex;
@@ -249,22 +242,20 @@ const copyText = useWorkspaceClipboard()
   height: 1.75rem;
   align-items: center;
   justify-content: center;
-  border-radius: 9999px;
-  background: color-mix(in oklch, var(--dashboard-accent) 15%, transparent);
-  color: var(--dashboard-accent);
+  border-radius: 0.375rem;
+  background: var(--user-inset-bg);
+  color: var(--ui-text-muted);
 }
-.dashboard-balance-value { font-size: clamp(2rem, 3vw, 2.5rem); line-height: 1.1; }
+.dashboard-balance-value { font-size: 2rem; font-weight: 600; line-height: 1.2; }
 .dashboard-limit-list { display: grid; gap: 0.5rem; }
 .dashboard-limit {
-  padding: 0.75rem 0.875rem;
-  border: 1px solid var(--ui-border);
-  border-radius: 0.875rem;
-  background: var(--user-inset-bg);
+  padding-block: 0.75rem;
+  border-top: 1px solid var(--ui-border);
 }
 .dashboard-credits :deep(.limit-reset) { margin-top: 1rem; padding-block: 1rem 0; border-top: 1px solid var(--ui-border); }
 .user-dashboard .dashboard-icon {
-  color: var(--dashboard-accent);
-  background: color-mix(in oklch, var(--dashboard-accent) 13%, transparent);
+  color: var(--ui-text-muted);
+  background: var(--user-inset-bg);
 }
 .user-dashboard .dashboard-panel :deep([data-slot="header"]) { border-bottom: 0; padding-bottom: 0.25rem; }
 .user-dashboard .dashboard-panel h2 { font-size: 0.9375rem; letter-spacing: -0.01em; }
@@ -273,17 +264,13 @@ const copyText = useWorkspaceClipboard()
   grid-template-columns: repeat(2, minmax(0, 1fr));
   overflow: hidden;
   border: 1px solid var(--ui-border);
-  border-radius: 0.875rem;
-  background: var(--user-inset-bg);
+  border-radius: 0.375rem;
+  background: var(--user-panel-bg);
 }
 .dashboard-usage-item { padding: 0.875rem 1rem; }
 .dashboard-usage-item:nth-child(odd) { border-right: 1px solid var(--ui-border); }
 .dashboard-usage-item:nth-child(-n + 2) { border-bottom: 1px solid var(--ui-border); }
-.dashboard-usage-icon { color: var(--dashboard-accent); }
-.dashboard-metric--0 { --dashboard-accent: var(--ui-primary); }
-.dashboard-metric--1 { --dashboard-accent: var(--color-blue-500); }
-.dashboard-metric--2 { --dashboard-accent: var(--color-emerald-500); }
-.dashboard-metric--3 { --dashboard-accent: var(--color-amber-500); }
+.dashboard-usage-icon { color: var(--ui-text-muted); }
 @media (min-width: 768px) {
   .dashboard-usage-strip { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .dashboard-usage-item { border-bottom: 0 !important; }

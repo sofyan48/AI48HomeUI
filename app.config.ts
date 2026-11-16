@@ -6,7 +6,7 @@ export default defineAppConfig({
     },
     card: {
       slots: {
-        root: "rounded-2xl overflow-hidden bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 shadow-[0_1px_2px_rgba(24,24,27,0.04),0_8px_24px_-12px_rgba(24,24,27,0.10)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.3)] ring-0",
+        root: "rounded-lg overflow-hidden bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-none ring-0",
         header: "px-4 py-3.5 sm:px-5 border-b border-zinc-100 dark:border-zinc-800",
         body: "p-4 sm:p-5",
         footer: "px-4 py-3 sm:px-5 border-t border-zinc-100 dark:border-zinc-800",

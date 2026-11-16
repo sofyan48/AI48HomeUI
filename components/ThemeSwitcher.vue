@@ -8,7 +8,8 @@
       :title="t('shared.theme.label', { name: themeLabel })"
     />
     <template #content>
-      <div class="grid min-w-40 gap-1 p-1.5">
+      <div class="grid w-72 max-w-[calc(100vw-2rem)] gap-1 p-2">
+        <p class="px-2 py-1 text-xs font-medium text-muted">{{ t('shared.theme.mode') }}</p>
         <AppButton
           v-for="option in options"
           :key="option.value"
@@ -16,16 +17,40 @@
           :variant="colorMode.preference === option.value ? 'soft' : 'ghost'"
           :icon="option.icon"
           class="justify-start"
+          :aria-pressed="colorMode.preference === option.value"
           @click="setTheme(option.value)"
         >
           {{ option.label }}
         </AppButton>
+        <fieldset class="mt-2 border-t border-default px-2 pt-3 pb-1">
+          <legend class="sr-only">{{ t('shared.theme.accent') }}</legend>
+          <p class="mb-2 text-xs font-medium text-muted">{{ t('shared.theme.accent') }}</p>
+          <div class="grid grid-cols-5 gap-2">
+            <button
+              v-for="option in colors"
+              :key="option"
+              type="button"
+              class="flex size-8 items-center justify-center rounded-md border border-default focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              :style="{ backgroundColor: `var(--color-${option}-600)` }"
+              :aria-label="t('shared.theme.color', { name: colorName(option) })"
+              :aria-pressed="color === option"
+              :title="colorName(option)"
+              @click="setColor(option)"
+            >
+              <UIcon v-if="color === option" name="i-tabler-check" class="size-4 text-white" aria-hidden="true" />
+            </button>
+          </div>
+        </fieldset>
       </div>
     </template>
   </UPopover>
 </template>
 
 <script setup lang="ts">
+import { useThemeColor } from '~/composables/layout/useThemeColor'
+
+const { color, colors, setColor } = useThemeColor()
+const colorName = (value: string) => value.charAt(0).toUpperCase() + value.slice(1)
 const colorMode = useColorMode()
 const { t } = useAdminI18n()
 const options = computed(() => [

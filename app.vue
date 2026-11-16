@@ -11,7 +11,9 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
 import { useManagementSessionStore } from '~/stores/managementSession'
+import { useThemeColorHead } from '~/composables/layout/useThemeColor'
 
+useThemeColorHead()
 const route = useRoute()
 // Document scope also covers Nuxt UI overlays teleported outside the shell.
 useHead(() => {

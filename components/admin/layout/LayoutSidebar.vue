@@ -58,7 +58,7 @@ defineExpose({ element })
 <style scoped>
 /* Rail always uses a dark ink palette, in light and dark themes. */
 .admin-rail {
-  --ui-primary: var(--color-violet-300);
+  --ui-primary: var(--ui-color-primary-300, var(--color-violet-300));
   --ui-bg: var(--admin-rail-bg);
   --ui-bg-elevated: rgb(255 255 255 / 6%);
   --ui-bg-muted: rgb(255 255 255 / 4%);
@@ -71,38 +71,32 @@ defineExpose({ element })
   --ui-border: rgb(255 255 255 / 8%);
   --ui-hover: rgb(255 255 255 / 7%);
   color: var(--ui-text);
-  background:
-    radial-gradient(18rem 14rem at 0% 0%, color-mix(in oklch, var(--color-violet-500) 28%, transparent), transparent 70%),
-    radial-gradient(16rem 12rem at 100% 100%, color-mix(in oklch, var(--color-fuchsia-500) 16%, transparent), transparent 70%),
-    var(--admin-rail-bg) !important;
+  background: var(--admin-rail-bg) !important;
   border: 1px solid rgb(255 255 255 / 6%) !important;
   color-scheme: dark;
 }
 @media (min-width: 64rem) {
   .admin-rail {
-    border-radius: 1.375rem !important;
-    box-shadow: 0 24px 48px -24px rgb(24 12 48 / 55%) !important;
+    border-radius: 0.5rem !important;
+    box-shadow: none !important;
   }
 }
 .admin-rail__divider {
   height: 1px;
   margin-inline: 1rem;
-  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 12%), transparent);
+  background: var(--ui-border);
 }
 .admin-wordmark {
   font-size: 1.0625rem;
-  font-weight: 800;
-  letter-spacing: -0.03em;
+  font-weight: 600;
+  letter-spacing: -0.015em;
   color: var(--ui-text-highlighted);
 }
 .admin-brand-accent {
-  background: linear-gradient(90deg, var(--color-violet-300), var(--color-fuchsia-300));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--ui-text-highlighted);
 }
 .admin-brand:focus-visible {
-  outline: 2px solid var(--color-violet-300);
+  outline: 2px solid var(--ui-primary);
   outline-offset: 2px;
 }
 </style>
