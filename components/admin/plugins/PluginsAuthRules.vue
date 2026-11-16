@@ -77,6 +77,7 @@
 </template>
 
 <script setup lang="ts">
+import AdminTableAction from '~/components/admin/general/TableAction.vue'
 import { usePluginsWorkspace } from "~/composables/plugins/usePluginsWorkspace"
 const { t, openAuthCreate, authColumns, authRules, value, scopeLabel, openAuthEdit, deleteAuth } = usePluginsWorkspace();
 </script>

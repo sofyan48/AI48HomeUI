@@ -81,7 +81,7 @@ async function loadWorkspace(preserveDraft = false) {
   pageError.value = "";
   try {
     const [config, yaml] = await Promise.all([
-      fetchAPI("/config"),
+      fetchAPI("/config") as Promise<ConfigDraft>,
       fetchAPI("/config.yaml", { responseType: "text" }),
     ]);
     configSnapshot.value = config;
@@ -144,7 +144,7 @@ async function saveWorkspace() {
     }
     saveNeedsReload.value = Boolean(pageError.value);
     if (result.failed) {
-      const error = result.error;
+      const error = result.error as any;
       const detail = error?.data?.message || error?.data?.error || error?.message || t('config.save.requestFailed');
       const refreshError = pageError.value;
       pageError.value = t('config.save.partial', {

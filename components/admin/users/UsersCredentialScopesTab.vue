@@ -20,6 +20,7 @@
 </template>
 
 <script setup lang="ts">
+import AdminDataPanel from '~/components/admin/general/DataPanel.vue'
 import { computed } from 'vue'
 import UsersGroupCards from './UsersGroupCards.vue'
 import UsersUnsupportedScopes from './UsersUnsupportedScopes.vue'

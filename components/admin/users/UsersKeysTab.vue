@@ -34,6 +34,8 @@
 </template>
 
 <script setup lang="ts">
+import AdminTablePanel from '~/components/admin/general/TablePanel.vue'
+import AdminTableAction from '~/components/admin/general/TableAction.vue'
 import { computed } from 'vue'
 import { useUsersWorkspace } from '~/composables/users/useUsersWorkspace'
 import { maskKey, type AnyRecord } from '~/composables/users/common'

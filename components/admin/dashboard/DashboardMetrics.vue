@@ -25,6 +25,7 @@
 </template>
 
 <script setup lang="ts">
+import AdminUsageSparkline from '~/components/admin/general/UsageSparkline.vue'
 import { computed } from 'vue'
 import { useDashboard } from '~/composables/dashboard/useDashboard'
 import { useDashboardFormat } from '~/composables/dashboard/format'

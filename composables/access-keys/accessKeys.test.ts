@@ -162,7 +162,7 @@ describe('access key API compatibility', () => {
 })
 
 const components = readdirSync(new URL('../../components/admin/access-keys/', import.meta.url)).filter(name => name.endsWith('.vue')).map(name => `components/admin/access-keys/${name}`)
-for (const path of ['pages/admin/access-keys.vue', ...components]) {
+for (const path of ['pages/admin/access-keys/index.vue', ...components]) {
   test(`${path} compiles`, () => {
     const { descriptor, errors } = parse(source(path), { filename: path })
     expect(errors).toEqual([])
@@ -172,7 +172,7 @@ for (const path of ['pages/admin/access-keys.vue', ...components]) {
   })
 }
 test('single workspace owner, thin page, responsive disposal and unchanged sync lifecycle', () => {
-  const page = source('pages/admin/access-keys.vue')
+  const page = source('pages/admin/access-keys/index.vue')
   expect(page.match(/= provideAccessKeys\(\)/g)).toHaveLength(1)
   expect(page).toContain("useDataSync('admin:access-keys:sync', syncData)")
   expect(page).toContain('await syncData()')

@@ -41,12 +41,13 @@ bun run build:embedded      # Generate and package the embedded SPA into dist/
 - `app.config.ts`: shared Nuxt UI colors, component slots, and defaults.
 - `assets/main.css`: Tailwind/Nuxt UI imports, theme variables, and shared workbench/user styling.
 - `pages/admin/`: management workspace for dashboards, upstream providers/accounts, credentials, routing, users, billing, configuration, diagnostics, logs, and usage.
+- Route shells belong in `pages/admin/<feature>/index.vue` or `pages/app/<feature>/index.vue`, including nested features such as `pages/admin/routing/channels/index.vue`. Keep `pages/admin/index.vue` and `pages/app/index.vue` as workspace route indexes; do not invent a general page folder. Folder moves must preserve URL routes and page metadata.
 - `pages/app/`: user workspace and public account flows, including login, registration, password recovery, email verification, model catalog, API keys, balance, profile, and settings.
 - `layouts/default.vue`: admin shell, navigation, connection state, capabilities, and synchronization controls.
 - `layouts/app.vue`: user shell, public/authenticated route handling, navigation, and session integration.
 - `components/App*.vue`: shared base components for buttons, cards, tables, panels, modals (`AppFormModal`, `AppConfirmModal`), empty states, summary rows, and synchronization.
-- Each large page has its own folders: `components/admin/<page>/` for sections/dialogs and `composables/<page>/` for state and helpers (e.g. `pages/admin/users.vue` → `components/admin/users/` + `composables/users/`). Do not add a global `utils/` folder.
-- Keep source files under 500 lines; `scripts/file-size.test.ts` enforces this with a shrink-only allowlist for legacy files. Follow the split pattern in `CONTRIBUTING.md` (reference: `pages/admin/users.vue`).
+- Each large page has its own folders: `components/admin/<page>/` for sections/dialogs and `composables/<page>/` for state and helpers (e.g. `pages/admin/users/index.vue` → `components/admin/users/` + `composables/users/`). Do not add a global `utils/` folder.
+- Keep source files under 500 lines; `scripts/file-size.test.ts` enforces this with a shrink-only allowlist for legacy files. Follow the split pattern in `CONTRIBUTING.md` (reference: `pages/admin/users/index.vue`).
 - `components/admin/`: admin-specific components, including configuration and user-management subdirectories.
 - `components/app/`: user-specific components.
 - `composables/`: API wrappers, capability access, workspace refs, asynchronous data loading, synchronization, and upstream quota helpers.

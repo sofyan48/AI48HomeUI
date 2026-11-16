@@ -75,6 +75,8 @@
 </template>
 
 <script setup lang="ts">
+import AdminTablePanel from '~/components/admin/general/TablePanel.vue'
+import AdminRowActions from '~/components/admin/general/RowActions.vue'
 import AccessKeyReplaceList from './ReplaceList.vue'
 import { useAccessKeys } from '~/composables/access-keys/useAccessKeys'
 import type { AccessKeyResource } from '~/composables/access-keys/normalize'

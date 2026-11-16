@@ -39,7 +39,7 @@ export function buildDraft(config: ConfigDraft, yamlRoot: ConfigDraft): ConfigDr
   return {
     // Read shared settings from YAML so omitted/null, false and empty strings stay distinct.
     ...Object.fromEntries(sharedConfigFields.map(field => {
-      const value = field.path.reduce((node, part) => node?.[part], yamlRoot) ?? null;
+      const value = (field.path as string[]).reduce((node: any, part: string) => node?.[part], yamlRoot) ?? null;
       return [field.key, isConfigJsonField(field.type) && value !== null ? JSON.stringify(value, null, 2) : value];
     })),
     debug: Boolean(logs.debug),

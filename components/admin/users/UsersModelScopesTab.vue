@@ -83,6 +83,8 @@
 </template>
 
 <script setup lang="ts">
+import AdminDataPanel from '~/components/admin/general/DataPanel.vue'
+import AdminTableAction from '~/components/admin/general/TableAction.vue'
 import { computed, ref, watch } from 'vue'
 import UsersUnsupportedScopes from './UsersUnsupportedScopes.vue'
 import { useUsersWorkspace } from '~/composables/users/useUsersWorkspace'

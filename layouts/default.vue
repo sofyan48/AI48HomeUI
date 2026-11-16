@@ -54,6 +54,8 @@
 </template>
 
 <script setup lang="ts">
+import AdminCommandPalette from '~/components/admin/layout/CommandPalette.vue'
+import AdminConnectionDialog from '~/components/admin/layout/ConnectionDialog.vue'
 import LayoutSidebar from '~/components/admin/layout/LayoutSidebar.vue'
 import LayoutHeader from '~/components/admin/layout/LayoutHeader.vue'
 import { useConsoleLocale } from '~/composables/useConsoleLocale'

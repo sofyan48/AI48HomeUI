@@ -208,7 +208,7 @@ describe('extracted config workspace', () => {
   })
 
   test('page owns one workspace and all extracted files stay below 500 lines', () => {
-    const page = readFileSync(new URL('../pages/admin/config.vue', import.meta.url), 'utf8')
+    const page = readFileSync(new URL('../pages/admin/config/index.vue', import.meta.url), 'utf8')
     expect(page.match(/= provideConfigWorkspace\(\)/g)).toHaveLength(1)
     expect(page).not.toContain('fetchAPI(')
     expect(page.split('\n').length).toBeLessThan(100)
@@ -222,7 +222,7 @@ describe('extracted config workspace', () => {
 })
 
 describe('config Vue compilation', () => {
-  for (const relative of ['../pages/admin/config.vue', ...readdirSync(new URL('../components/admin/config/', import.meta.url)).filter(name => name.endsWith('.vue')).map(name => `../components/admin/config/${name}`)]) {
+  for (const relative of ['../pages/admin/config/index.vue', ...readdirSync(new URL('../components/admin/config/', import.meta.url)).filter(name => name.endsWith('.vue')).map(name => `../components/admin/config/${name}`)]) {
     test(relative, () => {
       const source = readFileSync(new URL(relative, import.meta.url), 'utf8')
       const { descriptor, errors } = parse(source)

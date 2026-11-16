@@ -106,6 +106,7 @@
 </template>
 
 <script setup lang="ts">
+import AdminTablePanel from '~/components/admin/general/TablePanel.vue'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import UsersResetAllowanceCell from './UsersResetAllowanceCell.vue'
 import UsersRowActions from './UsersRowActions.vue'

@@ -205,12 +205,12 @@ function addPayloadRule(mode: string) {
   payloadEditorOpen.value = true;
 }
 function editPayload(mode: string, index: number) {
-  const rule = payloadDraft[mode][index];
+  const rule = payloadDraft[mode]?.[index];
   payloadEditMode.value = mode;
   payloadEditIndex.value = index;
-  payloadEditor.models = JSON.stringify(rule.models || [], null, 2);
+  payloadEditor.models = JSON.stringify(rule?.models || [], null, 2);
   payloadEditor.params = JSON.stringify(
-    rule.params ?? (mode === "filter" ? [] : {}),
+    rule?.params ?? (mode === "filter" ? [] : {}),
     null,
     2,
   );
@@ -218,11 +218,14 @@ function editPayload(mode: string, index: number) {
   payloadEditorOpen.value = true;
 }
 function duplicatePayload(mode: string, index: number) {
-  payloadDraft[mode].push(structuredClone(toRaw(payloadDraft[mode][index])));
+  const rules = payloadDraft[mode];
+  const rule = rules?.[index];
+  if (!rules || !rule) return;
+  rules.push(structuredClone(toRaw(rule)));
   syncSpecialDrafts();
 }
 function removePayload(mode: string, index: number) {
-  payloadDraft[mode].splice(index, 1);
+  payloadDraft[mode]?.splice(index, 1);
   syncSpecialDrafts();
 }
 function savePayloadEditor() {
@@ -242,9 +245,9 @@ function savePayloadEditor() {
     )
       throw new Error(t('config.payload.errorParams'));
     const rule = { models, params };
-    if (payloadEditIndex.value < 0)
-      payloadDraft[payloadEditMode.value].push(rule);
-    else payloadDraft[payloadEditMode.value][payloadEditIndex.value] = rule;
+    const rules = (payloadDraft[payloadEditMode.value] ??= []);
+    if (payloadEditIndex.value < 0) rules.push(rule);
+    else rules[payloadEditIndex.value] = rule;
     syncSpecialDrafts();
     payloadEditorOpen.value = false;
   } catch (error: any) {

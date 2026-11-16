@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
-import vm from 'node:vm'
+
 import { test } from 'node:test'
-import { ref, computed, watch } from 'vue'
+import { ref } from 'vue'
 import { parse, compileScript, compileTemplate } from '@vue/compiler-sfc'
 import { mergeLogRows, useApplicationLogTail } from '../composables/useApplicationLogTail.js'
+import { useApplicationLogs } from '../composables/logs/useApplicationLogs.js'
 
 const row = (id, timestamp = id) => ({ id, timestamp: new Date(timestamp * 1000).toISOString(), line: `line ${id}` })
 const snapshot = (logs, total = logs.length, anchor_id = 999) => ({ logs, total, anchor_id, search: 'needle' })
@@ -105,26 +106,27 @@ test('bounded pending buffer signals truncation and keeps reader rows unchanged'
   assert.equal(f.tail.truncated.value, true)
 })
 
-const pageFile = new URL('../pages/admin/logs.vue', import.meta.url)
+// Application-log state lives in composables/logs/useApplicationLogs.js; the page provides it via provideLogsPage().
 function pageFixture() {
-  const { descriptor } = parse(fs.readFileSync(pageFile, 'utf8'))
   let respond = async () => snapshot([row(2), row(1)], 10)
   const calls = []
-  const context = vm.createContext({
-    ref, computed, watch, URLSearchParams, AbortController, Intl, Date,
-    useApplicationLogTail,
-    useAdminI18n: () => ({ t: key => key, intlLocale: ref('en'), locale: ref('en') }),
-    useApi: () => ({ token: ref('test'), fetchAPI: async (url, options) => {
+  const activeView = ref('events')
+  const logs = useApplicationLogs({
+    fetchAPI: async (url, options) => {
       calls.push({ query: new URL(url, 'http://home').searchParams, ...options })
       return respond()
-    } }),
+    },
+    t: key => key,
     useWorkspaceState: (_, initial) => ref(initial()),
-    useDataSync: () => {}, onMounted: () => {}, onBeforeUnmount: () => {},
-    setInterval, clearInterval,
+    pageSize: ref(50),
+    activeView,
+    errorMessage: ref(''),
   })
-  const script = descriptor.scriptSetup.content.replace(/^import .*$/gm, '')
-  vm.runInContext(`${script}\nglobalThis.page = { activeView, applicationMode, applicationResponse, applicationAnchorId, applicationPage, applicationFilters, appliedApplicationFilters, applicationCursorExpired, applicationSearchUnsupported, tail, loadApplicationLogs, changeApplicationPage, changeApplicationMode, restartApplicationLogs, pollApplicationTail, loadOlderApplicationTail, resetApplicationPagination };`, context)
-  return { page: context.page, calls, respond: fn => { respond = fn } }
+  const page = { activeView, ...logs }
+  for (const name of ['activeView', 'applicationMode', 'applicationResponse', 'applicationAnchorId', 'applicationPage', 'applicationFilters', 'appliedApplicationFilters', 'applicationCursorExpired', 'applicationSearchUnsupported', 'tail', 'loadApplicationLogs', 'changeApplicationPage', 'changeApplicationMode', 'restartApplicationLogs', 'pollApplicationTail', 'loadOlderApplicationTail', 'resetApplicationPagination']) {
+    assert.ok(page[name], `useApplicationLogs exposes ${name}`)
+  }
+  return { page, calls, respond: fn => { respond = fn } }
 }
 
 test('an initially empty tail uses the later server ceiling when records arrive', async () => {
@@ -186,7 +188,21 @@ test('page generation guard rejects stale responses after reset', async () => {
   assert.equal(f.calls[0].signal.aborted, true)
 })
 
-for (const file of ['pages/admin/logs.vue', 'components/admin/ApplicationLogTail.vue']) {
+for (const file of [
+  'pages/admin/logs/index.vue',
+  'components/admin/logs/ApplicationLogTail.vue',
+  'components/admin/logs/LogsAlerts.vue',
+  'components/admin/logs/LogsEmptyState.vue',
+  'components/admin/logs/LogsErrorLogsCard.vue',
+  'components/admin/logs/LogsTablePager.vue',
+  'components/admin/logs/filters/LogsFilterBar.vue',
+  'components/admin/logs/request/LogsEventsCard.vue',
+  'components/admin/logs/request/LogsRequestLogsCard.vue',
+  'components/admin/logs/request/LogsEventDetailDialog.vue',
+  'components/admin/logs/application/LogsApplicationCard.vue',
+  'components/admin/logs/application/LogsApplicationDetailDialog.vue',
+  'components/admin/logs/application/LogsClearDialog.vue',
+]) {
   test(`${file}: SFC script and template compile`, () => {
     const { descriptor, errors } = parse(fs.readFileSync(new URL(`../${file}`, import.meta.url), 'utf8'))
     assert.deepEqual(errors, [])

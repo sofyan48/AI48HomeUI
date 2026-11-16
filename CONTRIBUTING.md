@@ -26,7 +26,9 @@ bun run build   # slow: full production build, run before opening a PR
 | Feature logic | `composables/<page>/` | State, API loading and the page's helpers (formatters, API-shape normalisers) | Templates |
 | Base component | `components/App*.vue` | Generic UI building blocks with no feature knowledge | Feature-specific API calls or i18n keys |
 
-Every page gets its own folder pair, for example `pages/admin/dashboard.vue` → `components/admin/dashboard/` + `composables/dashboard/`. Don't create a global `utils/` folder; helpers live next to the feature that uses them.
+Do not place Vue files directly in `components/admin/`. Feature components belong in `components/admin/<feature>/`; reusable admin-only primitives belong in `components/admin/general/`. Root-level `components/App*.vue` base components remain unchanged. Import moved components explicitly in each consumer to preserve template aliases (for example, `import AdminDataPanel from '~/components/admin/general/DataPanel.vue'`); Nuxt's automatic names include folder prefixes.
+
+Every feature gets its own page directory, for example `pages/admin/dashboard/index.vue` → `components/admin/dashboard/` + `composables/dashboard/`. User pages use `pages/app/<feature>/index.vue`; nested routes use the same pattern, such as `pages/admin/routing/channels/index.vue`. Only the legitimate workspace route indexes remain at `pages/admin/index.vue` and `pages/app/index.vue`; do not invent general pages. Moving a route shell must preserve its URL, metadata, and imports. Don't create a global `utils/` folder; helpers live next to the feature that uses them.
 
 ## Base components
 
@@ -59,10 +61,10 @@ Example:
 
 ## Splitting a large page: the users page pattern
 
-`pages/admin/users.vue` used to be 3214 lines. It is now a ~110-line shell, and it is the reference for splitting other pages:
+`pages/admin/users/index.vue` used to be 3214 lines. It is now a ~110-line shell, and it is the reference for splitting other pages:
 
 ```
-pages/admin/users.vue                      shell: alerts, tabs, dialogs, events
+pages/admin/users/index.vue                shell: alerts, tabs, dialogs, events
 composables/users/useUsersWorkspace.ts     shared state + helpers, provided once by the page
 composables/users/useUserSegments.ts       status segment counts and filter
 composables/users/useBindingCandidates.ts  credential/model candidate loading

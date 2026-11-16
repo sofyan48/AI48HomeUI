@@ -1,6 +1,6 @@
-import { configParitySections } from '~/composables/configParity'
+import { configParitySections, type ConfigSection } from '~/composables/configParity'
 
-export const sharedConfigSections = [
+export const sharedConfigSections: ConfigSection[] = [
   ...configParitySections,
   {
     id: "session-streaming", title: "Session routing and streaming", description: "Session-sticky routing and downstream response keepalives. Unset settings retain backend defaults.",
@@ -36,7 +36,8 @@ export const sharedConfigSections = [
         ["Arch", "arch", "Architecture", "Verified native architecture is preserved unless device-profile stabilization is enabled."],
         ["Timeout", "timeout", "Timeout header", "Claude timeout header fallback, not a proxy request timeout."],
         ["Timezone", "timezone", "Timezone", "Fallback IANA timezone for cloaked currentDate; credential JSON timezone takes priority."],
-      ].map(([suffix, name, label, description]) => ({ key: `claudeHeader${suffix}`, path: ["upstream", "claude", "header-defaults", name], label, description, type: "text" })),
+      ].map(([suffix, name, label, description]) => ({ key: `claudeHeader${suffix}`, path: ["upstream", "claude", "header-defaults", name!], label: label!, description: description!, type: "text" })),
+
       { key: "claudeHeaderStabilizeDeviceProfile", path: ["upstream", "claude", "header-defaults", "stabilize-device-profile"], label: "Stabilize device profile", type: "boolean", description: "Pin OS/architecture and cached profiles to the configured software baseline. Unset retains the backend fallback; explicit false disables pinning." },
       { key: "claudeServerSideFallback", path: ["upstream", "claude", "server-side-fallback"], label: "Server-side refusal fallback", type: "boolean", description: "Inject Anthropic server-side refusal fallbacks on cloaked requests that do not specify fallbacks. Translated responses report the serving model. Default: false." },
       { key: "claudeSessionDatePinDays", path: ["upstream", "claude", "session-date-pin-days"], label: "Session date pin (days)", type: "number", description: "Days to keep the cloaked currentDate pin per session in CPA in-memory mode. Default 7; 0 uses the continuity-scoped pin. Ignored with Home KV." },

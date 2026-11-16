@@ -67,7 +67,7 @@ describe('plugin install trust and payloads', () => {
 
 test('plugins feature state retains a single page-scoped owner and polling lifecycle', () => {
   const workspace = source('composables/plugins/usePluginsWorkspace.ts')
-  const page = source('pages/admin/plugins.vue')
+  const page = source('pages/admin/plugins/index.vue')
   expect(page.match(/providePluginsWorkspace\(\)/g)).toHaveLength(1)
   for (const feature of ['usePluginsData', 'usePluginReports', 'usePluginAuth', 'usePluginActions', 'usePluginCatalog']) {
     expect(workspace.match(new RegExp(`${feature}\\(`, 'g'))).toHaveLength(1)
@@ -82,31 +82,32 @@ test('plugins feature state retains a single page-scoped owner and polling lifec
   expect(reports).toContain('const pollInterval = 5000;')
   expect(reports).toContain('if (generation !== pollGeneration || document.hidden) return;')
   expect(reports).toContain('onUnmounted(() => {\n    pollGeneration++;\n    clearTimeout(pollTimer);\n    document.removeEventListener("visibilitychange", onVisibilityChange);')
-  for (const path of pluginComponents) {
+  for (const path of pluginComponents.filter(path => !path.endsWith('/PluginConfigEditor.vue'))) {
     const component = source(path)
     expect(component).toContain('usePluginsWorkspace()')
     expect(component).not.toContain('useWorkspaceState(')
     expect(component).not.toContain('providePluginsWorkspace(')
   }
-  for (const path of ['pages/admin/plugins.vue', ...pluginComponents, ...readdirSync(new URL('../composables/plugins/', import.meta.url)).map(path => `composables/plugins/${path}`)]) {
+  for (const path of ['pages/admin/plugins/index.vue', ...pluginComponents, ...readdirSync(new URL('../composables/plugins/', import.meta.url)).map(path => `composables/plugins/${path}`)]) {
     expect(source(path).split('\n').length).toBeLessThan(500)
   }
 })
 
 test('Meta discovery uses official default and never enables Meta WebSockets', () => {
-  const script = source('components/admin/UpstreamProviders.vue')
-  const expression = script.slice(script.indexOf('const defaultDiscoveryURL ='), script.indexOf('const editorError ='))
+  const script = source('composables/upstream-providers/useModelDiscovery.js')
+  const expression = script.slice(script.indexOf('const defaultDiscoveryURL ='), script.indexOf('async function discoverModels('))
   for (const [base, expected] of [['', 'https://api.meta.ai/v1/models'], ['https://custom/v1/', 'https://custom/v1/models'], ['https://custom/v1/models', 'https://custom/v1/models']]) {
     const result = new Function('computed', 'providerForm', 'selectedProviderRoute', `${expression}; return defaultDiscoveryURL`)((fn: () => string) => fn(), { value: { 'base-url': base } }, { value: 'meta-api-key' })
     expect(result).toBe(expected)
   }
-  expect(script).toContain("const supportsWebsockets = computed(() => ['codex-api-key', 'xai-api-key']")
+  expect(source('composables/upstream-providers/useProviderEditorState.js')).toContain("const supportsWebsockets = computed(() => ['codex-api-key', 'xai-api-key']")
   expect(source('locales/admin/upstream.ts')).toContain('Signing is automatic on supported direct upstreams')
 })
 
 const pluginComponents = readdirSync(new URL('../components/admin/plugins/', import.meta.url)).filter(path => path.endsWith('.vue')).map(path => `components/admin/plugins/${path}`)
+const upstreamProviderComponents = readdirSync(new URL('../components/admin/upstream-providers/', import.meta.url), { recursive: true, encoding: 'utf8' }).filter(path => path.endsWith('.vue')).map(path => `components/admin/upstream-providers/${path}`).sort()
 
-for (const path of ['pages/admin/plugins.vue', ...pluginComponents, 'components/admin/UpstreamProviders.vue', 'components/admin/SystemTopology.vue']) {
+for (const path of ['pages/admin/plugins/index.vue', ...pluginComponents, ...upstreamProviderComponents, 'components/admin/system-nodes/SystemTopology.vue']) {
   test(`${path} compiles as a Vue SFC`, () => {
     const { descriptor, errors } = parse(source(path), { filename: path })
     expect(errors).toEqual([])

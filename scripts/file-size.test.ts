@@ -11,21 +11,7 @@ const sourceExtensions = /\.(vue|ts|js|mjs)$/
 // Files that are allowed to exceed the limit. Each entry is a ceiling, not a target:
 // shrink it (or delete it) when the file gets smaller, never raise it.
 // Data-only files (translations) are exempt because they are flat key/value lists.
-const allowlist: Record<string, number> = {
-
-
-
-  'components/app/UserWorkspace.vue': 1259,
-  'components/admin/UpstreamAccounts.vue': 1257,
-
-  'components/admin/UpstreamProviders.vue': 1101,
-  'pages/admin/logs.vue': 1022,
-  'pages/admin/billing.vue': 789,
-  'pages/admin/usage.vue': 673,
-
-  'components/admin/BillingPriceImport.vue': 593,
-  'pages/app/models/index.vue': 533
-}
+const allowlist: Record<string, number> = {}
 const exempt = (file: string) => file.startsWith('locales/') || /\.test\.(ts|mjs)$/.test(file)
 
 function walk(dir: string): string[] {
