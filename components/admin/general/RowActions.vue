@@ -1,7 +1,8 @@
 <template>
   <div v-if="visibleActions.length" class="inline-flex items-center justify-end gap-1 whitespace-nowrap" @click.stop>
-    <UTooltip v-for="action in inlineActions" :key="action.id" :text="action.label" :delay-duration="250">
-      <AppButton
+    <Tooltip v-for="action in inlineActions" :key="action.id">
+      <TooltipTrigger as-child>
+        <AppButton
         type="button"
         size="xs"
         variant="ghost"
@@ -13,29 +14,38 @@
         :ui="buttonUI"
         @click="selectAction(action)"
       />
-    </UTooltip>
-    <UDropdownMenu
-      v-if="overflowActions.length"
-      :items="menuItems"
-      :content="{ align: 'end' }"
-      :ui="{ content: 'max-h-[var(--reka-dropdown-menu-content-available-height)] overflow-y-auto', item: 'min-h-10 sm:min-h-0' }"
-    >
-      <AppButton
-        type="button"
-        size="xs"
-        color="neutral"
-        variant="ghost"
-        icon="i-tabler-dots-vertical"
-        :aria-label="t('shared.rowActions.moreFor', { name: menuLabel })"
-        :title="t('common.moreActions')"
-        :ui="buttonUI"
-      />
-    </UDropdownMenu>
+      </TooltipTrigger>
+      <TooltipContent>{{ action.label }}</TooltipContent>
+    </Tooltip>
+    <DropdownMenu v-if="overflowActions.length">
+      <DropdownMenuTrigger as-child>
+        <AppButton
+          type="button"
+          size="xs"
+          color="neutral"
+          variant="ghost"
+          icon="i-tabler-dots-vertical"
+          :aria-label="t('shared.rowActions.moreFor', { name: menuLabel })"
+          :title="t('common.moreActions')"
+          :ui="buttonUI"
+        />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" class="max-h-[var(--reka-dropdown-menu-content-available-height)] overflow-y-auto">
+        <DropdownMenuItem v-for="item in menuItems" :key="item.label" :disabled="item.disabled" :variant="item.color === 'error' ? 'destructive' : 'default'" class="min-h-10 sm:min-h-0" @select="item.onSelect">
+          <AppIcon :name="item.icon" />
+          <span>{{ item.label }}</span>
+          <AppIcon v-if="item.loading" name="i-tabler-loader-2" class="ml-auto animate-spin" />
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, onScopeDispose, ref } from 'vue'
+import AppIcon from '~/components/AppIcon.vue'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/components/ui/dropdown-menu'
+import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip'
 
 type RowAction = {
   id: string

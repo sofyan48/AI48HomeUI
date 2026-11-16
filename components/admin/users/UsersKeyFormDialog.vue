@@ -11,11 +11,11 @@
     divided
     @submit="submit"
   >
-    <UFormField :label="t('users.keyValue')">
-      <UInput v-model="form.api_key" class="w-full font-mono text-xs" :disabled="saving || !!editingKey" />
-    </UFormField>
-    <UFormField :label="t('users.owner')" :hint="ownerUnavailable ? t('users.ownerUnavailableHint') : undefined">
-      <USelectMenu
+    <AdminField :label="t('users.keyValue')">
+      <AdminInput v-model="form.api_key" class="w-full font-mono text-xs" :disabled="saving || !!editingKey" />
+    </AdminField>
+    <AdminField :label="t('users.owner')" :hint="ownerUnavailable ? t('users.ownerUnavailableHint') : undefined">
+      <AdminSelectMenu
         v-model="form.user_id"
         :items="ownerOptions"
         value-key="value"
@@ -23,7 +23,7 @@
         class="w-full"
         :search-input="{ placeholder: t('users.searchUsersEllipsis') }"
       />
-    </UFormField>
+    </AdminField>
     <div class="grid gap-4">
       <UsersScopePicker
         :title="t('users.credentialScope')"
@@ -45,6 +45,9 @@
 </template>
 
 <script setup lang="ts">
+import AdminField from '~/components/admin/general/controls/AdminField.vue'
+import AdminSelectMenu from '~/components/admin/general/controls/AdminSelectMenu.vue'
+import AdminInput from '~/components/admin/general/controls/AdminInput.vue'
 import { computed, ref } from 'vue'
 import UsersScopePicker from './UsersScopePicker.vue'
 import { changedUsersKeyBindings, usersKeyOwnerOptions } from '~/composables/usersKeyBindings'

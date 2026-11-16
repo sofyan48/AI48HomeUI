@@ -9,7 +9,7 @@
         </div>
       </template>
       <div class="divide-y divide-[var(--ui-border-muted)]">
-        <UFormField
+        <AdminField
           v-for="field in section.fields"
           :key="field.key"
           :label="field.label"
@@ -18,7 +18,7 @@
           class="px-1 py-3"
         >
           <p class="mb-2 break-all font-mono text-xs text-[var(--ui-text-muted)]">{{ field.path.join('.') }}</p>
-          <USelect
+          <AdminSelect
             v-if="field.type === 'boolean'"
             :model-value="draft[field.key] == null ? 'default' : draft[field.key] === true ? 'true' : 'false'"
             :items="booleanOptions"
@@ -28,7 +28,7 @@
             @update:model-value="updateField(field.key, $event === 'default' ? null : $event === 'true')"
           />
           <div v-else class="flex flex-col gap-2 sm:flex-row">
-            <USelect
+            <AdminSelect
               :model-value="draft[field.key] == null ? 'default' : 'configured'"
               :items="textOptions"
               :disabled="loading"
@@ -36,7 +36,7 @@
               class="w-full sm:w-48"
               @update:model-value="updateField(field.key, $event === 'default' ? null : field.type === 'number' ? 0 : isConfigJsonField(field.type) ? emptyConfigJson(field.type) : field.type === 'image-mode' ? false : field.type === 'choice' ? field.options?.[0]?.value ?? '' : '')"
             />
-            <UTextarea
+            <AdminTextarea
               v-if="isConfigJsonField(field.type) && draft[field.key] != null"
               :model-value="String(draft[field.key])"
               :disabled="loading"
@@ -46,7 +46,7 @@
               spellcheck="false"
               @update:model-value="updateField(field.key, String($event ?? ''))"
             />
-            <USelect
+            <AdminSelect
               v-else-if="field.type === 'image-mode' && draft[field.key] != null"
               :model-value="String(draft[field.key])"
               :items="imageOptions"
@@ -55,7 +55,7 @@
               class="min-w-0 flex-1"
               @update:model-value="updateField(field.key, $event === 'true' ? true : $event === 'false' ? false : $event)"
             />
-            <USelect
+            <AdminSelect
               v-else-if="field.type === 'choice' && draft[field.key] != null"
               :model-value="String(draft[field.key])"
               :items="field.options || []"
@@ -64,7 +64,7 @@
               class="min-w-0 flex-1"
               @update:model-value="updateField(field.key, String($event ?? ''))"
             />
-            <UInput
+            <AdminInput
               v-else-if="draft[field.key] != null"
               :model-value="String(draft[field.key])"
               :disabled="loading"
@@ -77,13 +77,17 @@
               @update:model-value="updateField(field.key, field.type === 'number' && $event !== '' && $event != null ? Number($event) : String($event ?? ''))"
             />
           </div>
-        </UFormField>
+        </AdminField>
       </div>
     </AppCard>
   </div>
 </template>
 
 <script setup lang="ts">
+import AdminField from '~/components/admin/general/controls/AdminField.vue'
+import AdminInput from '~/components/admin/general/controls/AdminInput.vue'
+import AdminSelect from '~/components/admin/general/controls/AdminSelect.vue'
+import AdminTextarea from '~/components/admin/general/controls/AdminTextarea.vue'
 import { emptyConfigJson, isConfigJsonField } from '~/composables/configParity'
 
 const { t } = useAdminI18n()

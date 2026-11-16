@@ -1,13 +1,24 @@
 <template>
   <div class="flex items-center justify-end gap-1">
     <AppButton size="xs" color="neutral" variant="ghost" icon="i-tabler-eye" :aria-label="t('users.viewUserNamed', { name: user.username })" :title="t('users.viewUser')" @click="$emit('view')" />
-    <UDropdownMenu :items="items">
-      <AppButton size="xs" color="neutral" variant="ghost" icon="i-tabler-dots-vertical" :aria-label="t('users.actionsFor', { name: user.username })" :title="t('users.userActions')" />
-    </UDropdownMenu>
+    <DropdownMenu>
+      <DropdownMenuTrigger as-child>
+        <AppButton size="xs" color="neutral" variant="ghost" icon="i-tabler-dots-vertical" :aria-label="t('users.actionsFor', { name: user.username })" :title="t('users.userActions')" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem v-for="item in items" :key="item.label" :disabled="item.disabled" :variant="item.color === 'error' ? 'destructive' : 'default'" @select="item.onSelect">
+          <AppIcon :name="item.icon" />
+          {{ item.label }}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   </div>
 </template>
 
 <script setup lang="ts">
+import AppIcon from '~/components/AppIcon.vue'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/components/ui/dropdown-menu'
+
 const props = defineProps<{
   user: { username: string; deleted_at?: string; approval_pending?: boolean; pending_topup?: unknown }
   operable: boolean

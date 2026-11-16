@@ -17,7 +17,7 @@
                     >{{ t('plugins.reports.refresh') }}</AppButton
                 >
             </div>
-            <UAlert
+            <PortalAlert
                 v-if="nodesError"
                 class="mt-3"
                 color="error"
@@ -56,15 +56,15 @@
                             v-if="node.node_name && node.node_id"
                             class="text-xs text-[var(--ui-text-muted)]"
                             >{{ node.node_id }}</span
-                        ><UBadge
+                        ><PortalBadge
                             :color="reportColor(node.plugin_report_state)"
                             variant="subtle"
-                            >{{ reportLabel(node.plugin_report_state) }}</UBadge
-                        ><UBadge
+                            >{{ reportLabel(node.plugin_report_state) }}</PortalBadge
+                        ><PortalBadge
                             v-if="!node.healthy"
                             color="warning"
                             variant="subtle"
-                            >{{ t('plugins.reports.nodeUnhealthy') }}</UBadge
+                            >{{ t('plugins.reports.nodeUnhealthy') }}</PortalBadge
                         >
                     </div>
                     <div
@@ -110,6 +110,8 @@
 </template>
 
 <script setup lang="ts">
+import PortalAlert from '~/components/app/general/PortalAlert.vue'
+import PortalBadge from '~/components/app/general/PortalBadge.vue'
 import { usePluginsWorkspace } from "~/composables/plugins/usePluginsWorkspace"
 const { t, nodesLoading, startNodePolling, nodesError, nodesResponse, activeNodes, reportColor, reportLabel, pollExpired } = usePluginsWorkspace();
 </script>

@@ -9,14 +9,14 @@
         </div>
       <template v-if="preview">
         <div class="flex flex-wrap gap-2">
-          <UBadge color="neutral" variant="subtle">{{ t('billing.import.rowsBadge', { count: preview.rows?.length || 0 }) }}</UBadge>
-          <UBadge color="success" variant="subtle">{{ t('billing.import.applicableBadge', { count: changedRows }) }}</UBadge>
-          <UBadge color="warning" variant="subtle">{{ t('billing.import.reviewBadge', { count: reviewRows }) }}</UBadge>
-          <UBadge color="primary" variant="subtle">{{ t('billing.import.selectedBadge', { count: selected.length }) }}</UBadge>
+          <PortalBadge color="neutral" variant="subtle">{{ t('billing.import.rowsBadge', { count: preview.rows?.length || 0 }) }}</PortalBadge>
+          <PortalBadge color="success" variant="subtle">{{ t('billing.import.applicableBadge', { count: changedRows }) }}</PortalBadge>
+          <PortalBadge color="warning" variant="subtle">{{ t('billing.import.reviewBadge', { count: reviewRows }) }}</PortalBadge>
+          <PortalBadge color="primary" variant="subtle">{{ t('billing.import.selectedBadge', { count: selected.length }) }}</PortalBadge>
         </div>
         <p class="text-xs text-[var(--ui-text-muted)]">{{ t('billing.import.expires', { date: preview.expires_at ? formatDate(preview.expires_at) : t('common.unknown') }) }}</p>
         <p class="break-all text-xs text-[var(--ui-text-muted)]">{{ t('billing.import.sourceMeta', { url: preview.source_url, date: formatDate(preview.source_fetched_at), version: preview.source_version }) }}</p>
-        <UAlert v-if="checkingUpdates" :color="changedRows || reviewRows ? 'info' : 'success'" variant="subtle" :title="changedRows ? t('billing.import.changedTitle', { count: changedRows }) : reviewRows ? t('billing.import.reviewRequiredTitle') : t('billing.import.noChangesTitle')" :description="t('billing.import.updatesDescription', { count: reviewRows })" />
+        <PortalAlert v-if="checkingUpdates" :color="changedRows || reviewRows ? 'info' : 'success'" variant="subtle" :title="changedRows ? t('billing.import.changedTitle', { count: changedRows }) : reviewRows ? t('billing.import.reviewRequiredTitle') : t('billing.import.noChangesTitle')" :description="t('billing.import.updatesDescription', { count: reviewRows })" />
         <p v-if="!preview.rows?.length" class="text-sm text-[var(--ui-text-muted)]">{{ t('billing.import.noRows') }}</p>
         <p v-else-if="!changedRows && !checkingUpdates" class="text-sm text-[var(--ui-text-muted)]">{{ t('billing.import.noApplicable') }}</p>
         <div class="max-h-[28rem] overflow-auto rounded-lg border border-[var(--ui-border)]">
@@ -27,7 +27,7 @@
               <tr v-for="row in preview.rows || []" :key="row.row_key" class="border-t border-[var(--ui-border)] align-top">
                 <td class="p-3"><input v-model="selected" type="checkbox" :value="row.row_key" :aria-label="t('billing.import.selectRow', { key: row.row_key })" :disabled="applying || !selectable(row)" class="accent-[var(--ui-primary)]" /></td>
                 <td class="min-w-48 p-3"><p class="break-all font-medium">{{ row.model || row.row_key }}</p><p class="break-all text-xs text-[var(--ui-text-muted)]">{{ row.row_key }}</p><p v-if="row.matched_model" class="mt-1 break-all text-xs">{{ row.matched_provider }}/{{ row.matched_model }} · ×{{ row.multiplier }}</p></td>
-                <td class="p-3"><UBadge :color="selectable(row) ? 'success' : 'neutral'" variant="subtle">{{ checkingUpdates && row.action === 'update_sync' && !pricesChanged(row) ? t('billing.import.action.unchanged') : actionLabel(row.action) }}</UBadge><p v-for="(reason, index) in row.reasons || []" :key="index" class="mt-1 text-xs text-[var(--ui-text-muted)]">{{ reason.message || reason.code }}</p></td>
+                <td class="p-3"><PortalBadge :color="selectable(row) ? 'success' : 'neutral'" variant="subtle">{{ checkingUpdates && row.action === 'update_sync' && !pricesChanged(row) ? t('billing.import.action.unchanged') : actionLabel(row.action) }}</PortalBadge><p v-for="(reason, index) in row.reasons || []" :key="index" class="mt-1 text-xs text-[var(--ui-text-muted)]">{{ reason.message || reason.code }}</p></td>
                 <td class="min-w-64 p-3">
                   <dl v-if="row.write_rule" class="space-y-1 text-xs"><div v-for="field in writeFields" :key="field.key" class="flex justify-between gap-3"><dt class="text-[var(--ui-text-muted)]">{{ field.label }}</dt><dd class="font-mono">{{ (field.cost ? row.final?.[field.cost] : row.write_rule[field.key]) ?? '—' }}</dd></div></dl>
                   <p v-else class="text-xs text-[var(--ui-text-muted)]">{{ t('billing.import.noWriteRule') }}</p>
@@ -44,6 +44,8 @@
 
 </template>
 <script setup lang="ts">
+import PortalAlert from '~/components/app/general/PortalAlert.vue'
+import PortalBadge from '~/components/app/general/PortalBadge.vue'
 import { useBillingPriceImport } from "~/composables/billing/useBillingPriceImport"
 const { t, preview, busy, exportPreview, loading, pendingApply, importUnavailable, validationError, previewPrices, targetSet, changedRows, reviewRows, selected, formatDate, checkingUpdates, applying, selectable, pricesChanged, actionLabel, writeFields, rowMultipliers, setRowMultiplier } = useBillingPriceImport()
 </script>

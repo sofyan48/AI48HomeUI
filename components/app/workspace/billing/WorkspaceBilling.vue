@@ -1,4 +1,10 @@
 <script setup lang="ts">
+import AppIcon from '~/components/AppIcon.vue'
+import PortalTable from '~/components/app/general/PortalTable.vue'
+import PortalInput from '~/components/app/general/PortalInput.vue'
+import PortalField from '~/components/app/general/PortalField.vue'
+import PortalSelect from '~/components/app/general/PortalSelect.vue'
+import PortalAlert from '~/components/app/general/PortalAlert.vue'
 import { usePortalI18n } from '~/composables/usePortalI18n'
 import { dashboardMetricIcons, rowValue, useWorkspaceBilling } from '~/composables/workspace/useWorkspaceBilling'
 import { useWorkspaceFormat } from '~/composables/workspace/common'
@@ -11,29 +17,29 @@ const { charges, chargesTotal, billingLoading, billingError, rangeOptions, pageS
 <template>
   <section class="workspace-finance space-y-5" aria-labelledby="billing-title">
     <AppCard class="finance-panel finance-usage" :ui="{ body: 'space-y-5' }">
-      <template #header><div class="flex items-center gap-3"><span class="finance-icon flex size-9 shrink-0 items-center justify-center rounded-xl"><UIcon name="i-tabler-chart-bar" class="size-5" aria-hidden="true" /></span><div><h2 id="billing-title" class="text-sm font-semibold">{{ t('ws.billing.title') }}</h2><p class="mt-0.5 text-xs text-[var(--ui-text-muted)]">{{ t('ws.billing.subtitle') }}</p></div></div></template>
+      <template #header><div class="flex items-center gap-3"><span class="finance-icon flex size-9 shrink-0 items-center justify-center rounded-xl"><AppIcon name="i-tabler-chart-bar" class="size-5" aria-hidden="true" /></span><div><h2 id="billing-title" class="text-sm font-semibold">{{ t('ws.billing.title') }}</h2><p class="mt-0.5 text-xs text-[var(--ui-text-muted)]">{{ t('ws.billing.subtitle') }}</p></div></div></template>
       <form class="billing-range flex flex-wrap items-end gap-3" @submit.prevent="applyBillingRange">
-        <UFormField :label="t('ws.dashboard.timeRange')">
-          <USelect v-model="rangePreset" :items="rangeOptions" value-key="value" label-key="label" class="w-44" @update:model-value="selectRange" />
-        </UFormField>
+        <PortalField :label="t('ws.dashboard.timeRange')">
+          <PortalSelect v-model="rangePreset" :items="rangeOptions" value-key="value" label-key="label" class="w-44" @update:model-value="selectRange" />
+        </PortalField>
         <template v-if="rangePreset === 'custom'">
-          <UFormField :label="t('ws.dashboard.fromUtc')"><UInput v-model="rangeFrom" type="date" /></UFormField>
-          <UFormField :label="t('ws.dashboard.toUtc')"><UInput v-model="rangeTo" type="date" /></UFormField>
+          <PortalField :label="t('ws.dashboard.fromUtc')"><PortalInput v-model="rangeFrom" type="date" /></PortalField>
+          <PortalField :label="t('ws.dashboard.toUtc')"><PortalInput v-model="rangeTo" type="date" /></PortalField>
           <AppButton type="submit" :loading="billingLoading">{{ t('ws.billing.applyRange') }}</AppButton>
         </template>
         <AppButton type="button" class="ml-auto shrink-0 rounded-full" color="neutral" variant="ghost" icon="i-tabler-refresh" :loading="billingLoading" @click="loadBilling">{{ t('common.refresh') }}</AppButton>
       </form>
-      <UAlert v-if="billingError" class="mt-4" color="error" variant="subtle" :title="t('ws.billing.error')" :description="billingError" />
+      <PortalAlert v-if="billingError" class="mt-4" color="error" variant="subtle" :title="t('ws.billing.error')" :description="billingError" />
 
       <div class="billing-stat-strip grid min-w-0 grid-cols-2 gap-5 lg:grid-cols-4" :aria-label="t('ws.billing.summaryAria')" :aria-busy="billingLoading">
         <div v-for="(metric, index) in billingMetrics" :key="metric.label" class="billing-stat min-w-0" :class="{ 'billing-stat--featured': index === 0 }">
-          <p class="flex items-center gap-2 text-sm text-[var(--ui-text-muted)]"><UIcon :name="dashboardMetricIcons[index]" class="size-4 billing-stat-icon" aria-hidden="true" />{{ metric.label }}</p>
+          <p class="flex items-center gap-2 text-sm text-[var(--ui-text-muted)]"><AppIcon :name="dashboardMetricIcons[index]" class="size-4 billing-stat-icon" aria-hidden="true" />{{ metric.label }}</p>
           <p class="mt-2 break-words text-3xl font-semibold tracking-tight tabular-nums text-[var(--ui-text-highlighted)]">{{ billingLoading ? '—' : metric.value }}</p>
           <p class="mt-2 text-xs leading-relaxed text-[var(--ui-text-muted)]">{{ metric.detail }}</p>
         </div>
       </div>
       <details class="billing-models">
-        <summary class="flex cursor-pointer items-center gap-3 text-sm font-medium"><UIcon name="i-tabler-stack-2" class="size-4 text-[var(--ui-text-muted)]" aria-hidden="true" /><span>{{ t('ws.billing.modelBreakdown') }}</span><UIcon name="i-tabler-chevron-down" class="billing-model-chevron ml-auto size-4 text-[var(--ui-text-muted)]" aria-hidden="true" /></summary>
+        <summary class="flex cursor-pointer items-center gap-3 text-sm font-medium"><AppIcon name="i-tabler-stack-2" class="size-4 text-[var(--ui-text-muted)]" aria-hidden="true" /><span>{{ t('ws.billing.modelBreakdown') }}</span><AppIcon name="i-tabler-chevron-down" class="billing-model-chevron ml-auto size-4 text-[var(--ui-text-muted)]" aria-hidden="true" /></summary>
         <div v-if="topModels.length" class="space-y-4">
           <div v-for="(model, index) in topModels" :key="model.id || model.label" class="flex items-center justify-between gap-4">
             <div class="min-w-0">
@@ -52,16 +58,16 @@ const { charges, chargesTotal, billingLoading, billingError, rangeOptions, pageS
         <template #header>
           <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h3 class="flex items-center gap-2 text-sm font-semibold"><UIcon name="i-tabler-receipt" class="size-4 text-[var(--ui-primary)]" aria-hidden="true" /> {{ t('ws.billing.recentCharges') }}</h3>
+              <h3 class="flex items-center gap-2 text-sm font-semibold"><AppIcon name="i-tabler-receipt" class="size-4 text-[var(--ui-primary)]" aria-hidden="true" /> {{ t('ws.billing.recentCharges') }}</h3>
               <p class="text-xs text-[var(--ui-text-muted)]">{{ t('ws.billing.matchingRecords', { count: formatNumber(chargesTotal) }) }}</p>
             </div>
-            <UFormField :label="t('ws.billing.rowsPerPage')">
-              <USelect v-model="chargePageSize" :items="pageSizeOptions" value-key="value" label-key="label" class="w-28" @update:model-value="changePageSize" />
-            </UFormField>
+            <PortalField :label="t('ws.billing.rowsPerPage')">
+              <PortalSelect v-model="chargePageSize" :items="pageSizeOptions" value-key="value" label-key="label" class="w-28" @update:model-value="changePageSize" />
+            </PortalField>
           </div>
         </template>
         <div class="min-h-64 overflow-x-auto">
-          <AppTable :data="charges" :columns="chargeColumns" :loading="billingLoading" :empty="t('ws.billing.noCharges')" class="min-w-[800px]">
+          <PortalTable :data="charges" :columns="chargeColumns" :loading="billingLoading" :empty="t('ws.billing.noCharges')" class="min-w-[800px]">
             <template #created_at-cell="{ row }"><span class="whitespace-nowrap text-sm">{{ formatDate(rowValue(row).created_at) }}</span></template>
             <template #provider-cell="{ row }"><span class="text-sm">{{ rowValue(row).provider || '—' }}</span></template>
             <template #model-cell="{ row }"><span class="text-sm font-medium">{{ rowValue(row).model || '—' }}</span></template>
@@ -69,7 +75,7 @@ const { charges, chargesTotal, billingLoading, billingError, rangeOptions, pageS
             <template #output_tokens-cell="{ row }"><span class="tabular-nums">{{ formatNumber(rowValue(row).output_tokens) }}</span></template>
             <template #amount-cell="{ row }"><span class="font-mono font-semibold tabular-nums text-[var(--ui-text-highlighted)]">−{{ formatCredits(Math.abs(Number(rowValue(row).amount) || 0)) }}</span></template>
             <template #balance_after-cell="{ row }"><span class="font-mono">{{ formatCredits(rowValue(row).balance_after) }}</span></template>
-          </AppTable>
+          </PortalTable>
         </div>
         <template #footer>
           <div class="flex flex-wrap items-center justify-between gap-3 text-sm">

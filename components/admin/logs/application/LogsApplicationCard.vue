@@ -28,9 +28,9 @@
         </div>
       </template>
       <template #level-cell="{ row }">
-        <UBadge :color="levelColor(rowValue(row).level)" variant="subtle" size="sm">
+        <PortalBadge :color="levelColor(rowValue(row).level)" variant="subtle" size="sm">
           {{ rowValue(row).level || t('common.unknown') }}
-        </UBadge>
+        </PortalBadge>
       </template>
       <template #line-cell="{ row }">
         <p class="max-w-3xl whitespace-pre-wrap break-words font-mono text-xs">{{ rowValue(row).line || '—' }}</p>
@@ -54,6 +54,7 @@
 </template>
 
 <script setup lang="ts">
+import PortalBadge from '~/components/app/general/PortalBadge.vue'
 import AdminTableAction from '~/components/admin/general/TableAction.vue'
 import ApplicationLogTail from '~/components/admin/logs/ApplicationLogTail.vue'
 import LogsEmptyState from '~/components/admin/logs/LogsEmptyState.vue'

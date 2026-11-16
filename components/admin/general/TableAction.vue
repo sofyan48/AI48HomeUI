@@ -1,6 +1,7 @@
 <template>
-  <UTooltip :text="label" :delay-duration="250">
-    <span class="inline-flex" :tabindex="disabled ? 0 : undefined">
+  <Tooltip>
+    <TooltipTrigger as-child>
+      <span class="inline-flex" :tabindex="disabled ? 0 : undefined">
       <AppButton
         type="button"
         size="xs"
@@ -14,11 +15,15 @@
         class="admin-table-action shrink-0 whitespace-nowrap"
         @click="$emit('click', $event)"
       />
-    </span>
-  </UTooltip>
+      </span>
+    </TooltipTrigger>
+    <TooltipContent>{{ label }}</TooltipContent>
+  </Tooltip>
 </template>
 
 <script setup lang="ts">
+import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip'
+
 const icons = {
   view: 'i-tabler-eye',
   edit: 'i-tabler-pencil',

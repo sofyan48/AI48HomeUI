@@ -7,44 +7,51 @@
       </template>
 
       <div v-if="capabilityState === 'loading'" class="space-y-4 py-4 text-center">
-        <UIcon name="i-tabler-refresh" class="mx-auto size-10 animate-spin text-primary-500" />
+        <AppIcon name="i-tabler-refresh" class="mx-auto size-10 animate-spin text-primary-500" />
         <p class="text-sm text-[var(--ui-text-muted)]">{{ t('forgot.checking') }}</p>
       </div>
 
       <div v-else-if="capabilityState === 'failure'" class="space-y-5">
-        <UAlert color="error" variant="subtle" :title="t('forgot.checkFailed')" :description="capabilityError || t('forgot.contactError')" />
+        <PortalAlert color="error" variant="subtle" :title="t('forgot.checkFailed')" :description="capabilityError || t('forgot.contactError')" />
         <AppButton color="primary" block :loading="capabilityLoading" @click="checkCapabilities">{{ t('forgot.tryAgain') }}</AppButton>
         <AppButton to="/app/login" color="neutral" variant="ghost" block>{{ t('auth.backToSignIn') }}</AppButton>
       </div>
 
       <div v-else-if="capabilityState === 'unsupported'" class="space-y-5">
-        <UAlert color="warning" variant="subtle" :title="t('forgot.unsupportedTitle')" :description="t('forgot.unsupportedDesc')" />
+        <PortalAlert color="warning" variant="subtle" :title="t('forgot.unsupportedTitle')" :description="t('forgot.unsupportedDesc')" />
         <AppButton to="/app/login" color="primary" block>{{ t('auth.backToSignIn') }}</AppButton>
       </div>
 
       <div v-else-if="capabilityState === 'disabled'" class="space-y-5">
-        <UAlert color="warning" variant="subtle" :title="t('forgot.disabledTitle')" :description="t('forgot.disabledDesc')" />
+        <PortalAlert color="warning" variant="subtle" :title="t('forgot.disabledTitle')" :description="t('forgot.disabledDesc')" />
         <AppButton to="/app/login" color="primary" block>{{ t('auth.backToSignIn') }}</AppButton>
       </div>
 
       <div v-else-if="sent" class="space-y-5 text-center">
-        <div class="mx-auto flex size-14 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-500"><UIcon name="i-tabler-mail" class="size-7" /></div>
+        <div class="mx-auto flex size-14 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-500"><AppIcon name="i-tabler-mail" class="size-7" /></div>
         <p class="text-sm text-[var(--ui-text-muted)]">{{ acceptedMessage }}</p>
         <AppButton color="neutral" variant="outline" block @click="requestAnother">{{ t('forgot.anotherRequest') }}</AppButton>
         <AppButton to="/app/login" color="primary" block>{{ t('forgot.returnToSignIn') }}</AppButton>
       </div>
 
-      <form v-else class="space-y-5" @submit.prevent="submit">
-        <UAlert v-if="error" color="error" variant="subtle" :title="t('forgot.requestFailed')" :description="error" />
-        <UFormField :label="t('auth.email')" required><UInput v-model="email" class="w-full" type="email" autocomplete="email" icon="i-tabler-mail" /></UFormField>
-        <AppButton type="submit" color="primary" block :loading="loading">{{ t('forgot.send') }}</AppButton>
-        <AppButton to="/app/login" color="neutral" variant="ghost" block>{{ t('auth.backToSignIn') }}</AppButton>
+      <form v-else @submit.prevent="submit">
+        <FieldGroup class="gap-5">
+          <PortalAlert v-if="error" color="error" variant="subtle" :title="t('forgot.requestFailed')" :description="error" />
+          <PortalField :label="t('auth.email')" required><PortalInput v-model="email" class="w-full" type="email" autocomplete="email" icon="i-tabler-mail" /></PortalField>
+          <AppButton type="submit" color="primary" block :loading="loading">{{ t('forgot.send') }}</AppButton>
+          <AppButton to="/app/login" color="neutral" variant="ghost" block>{{ t('auth.backToSignIn') }}</AppButton>
+        </FieldGroup>
       </form>
     </AppCard>
   </div>
 </template>
 
 <script setup lang="ts">
+import AppIcon from '~/components/AppIcon.vue'
+import PortalAlert from '~/components/app/general/PortalAlert.vue'
+import PortalField from '~/components/app/general/PortalField.vue'
+import PortalInput from '~/components/app/general/PortalInput.vue'
+import { FieldGroup } from '~/components/ui/field'
 import { useWorkspaceState } from '~/composables/useWorkspaceState'
 definePageMeta({ layout: 'app' })
 const { t } = usePortalI18n()

@@ -10,15 +10,15 @@
     divided
     @submit="submit"
   >
-    <UFormField :label="t('users.username')" :error="fieldError('username')">
-      <UInput v-model="form.username" class="w-full" placeholder="user@example.com" :disabled="saving || !!editingUser" />
+    <AdminField :label="t('users.username')" :error="fieldError('username')">
+      <AdminInput v-model="form.username" class="w-full" placeholder="user@example.com" :disabled="saving || !!editingUser" />
       <p v-if="editingUser" class="mt-1 text-xs text-[var(--ui-text-muted)]">{{ t('users.usernameLocked') }}</p>
-    </UFormField>
-    <UFormField :label="editingUser ? t('users.newPasswordOptional') : t('users.initialPassword')">
-      <UInput v-model="form.password" type="password" class="w-full" :placeholder="t('users.passwordPlaceholder')" :disabled="saving" />
-    </UFormField>
-    <UFormField :label="t('users.credits')">
-      <UInput
+    </AdminField>
+    <AdminField :label="editingUser ? t('users.newPasswordOptional') : t('users.initialPassword')">
+      <AdminInput v-model="form.password" type="password" class="w-full" :placeholder="t('users.passwordPlaceholder')" :disabled="saving" />
+    </AdminField>
+    <AdminField :label="t('users.credits')">
+      <AdminInput
         v-model="form.credits"
         type="text"
         inputmode="decimal"
@@ -28,7 +28,7 @@
       <p class="mt-1 text-xs text-[var(--ui-text-muted)]">
         {{ periodLimitsSupported && form.credits_unlimited ? t('users.unlimitedOnHint') : t('users.creditsHint') }}
       </p>
-    </UFormField>
+    </AdminField>
 
     <UsersPeriodLimitsFields v-if="periodLimitsSupported" :form="form" :disabled="saving" />
     <div v-else class="rounded-md border border-dashed border-[var(--ui-border)] px-3 py-2.5 text-xs text-[var(--ui-text-muted)]">
@@ -38,6 +38,8 @@
 </template>
 
 <script setup lang="ts">
+import AdminField from '~/components/admin/general/controls/AdminField.vue'
+import AdminInput from '~/components/admin/general/controls/AdminInput.vue'
 import { ref } from 'vue'
 import UsersPeriodLimitsFields from './UsersPeriodLimitsFields.vue'
 import { useUsersWorkspace } from '~/composables/users/useUsersWorkspace'

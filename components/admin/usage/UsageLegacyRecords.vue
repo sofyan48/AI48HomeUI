@@ -1,22 +1,22 @@
 <template>
   <section class="space-y-4">
-    <UAlert color="info" variant="subtle" :title="t('usage.legacy.title')" :description="t('usage.legacy.desc')" />
-    <UAlert v-if="error" color="error" variant="subtle" :description="error" />
-    <UAlert v-if="!available('usage_records')" color="warning" variant="subtle" :title="t('usage.legacy.unavailable')" />
+    <PortalAlert color="info" variant="subtle" :title="t('usage.legacy.title')" :description="t('usage.legacy.desc')" />
+    <PortalAlert v-if="error" color="error" variant="subtle" :description="error" />
+    <PortalAlert v-if="!available('usage_records')" color="warning" variant="subtle" :title="t('usage.legacy.unavailable')" />
     <AppCard>
       <form class="space-y-3" @submit.prevent="apply">
         <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <UFormField :label="t('common.from')"><AppDateInput v-model="filters.from" type="datetime-local" :max="filters.to" class="w-full" /></UFormField>
-          <UFormField :label="t('common.to')"><AppDateInput v-model="filters.to" type="datetime-local" :min="filters.from" class="w-full" /></UFormField>
-          <UFormField v-for="field in fields" :key="field.key" :label="fieldLabel(field.key)"><UInput v-model="filters[field.key]" class="w-full" /></UFormField>
-          <UFormField :label="t('common.status')"><USelect v-model="filters.status" :items="statusOptions" value-key="value" label-key="label" class="w-full" /></UFormField>
-          <UFormField :label="t('requests.sort')"><USelect v-model="sort" :items="sortOptions" value-key="value" label-key="label" class="w-full" /></UFormField>
-          <UFormField :label="t('usage.rows')"><USelect v-model="limit" :items="[25, 50, 100, 200]" class="w-full" /></UFormField>
+          <AdminField :label="t('common.from')"><AppDateInput v-model="filters.from" type="datetime-local" :max="filters.to" class="w-full" /></AdminField>
+          <AdminField :label="t('common.to')"><AppDateInput v-model="filters.to" type="datetime-local" :min="filters.from" class="w-full" /></AdminField>
+          <AdminField v-for="field in fields" :key="field.key" :label="fieldLabel(field.key)"><AdminInput v-model="filters[field.key]" class="w-full" /></AdminField>
+          <AdminField :label="t('common.status')"><AdminSelect v-model="filters.status" :items="statusOptions" value-key="value" label-key="label" class="w-full" /></AdminField>
+          <AdminField :label="t('requests.sort')"><AdminSelect v-model="sort" :items="sortOptions" value-key="value" label-key="label" class="w-full" /></AdminField>
+          <AdminField :label="t('usage.rows')"><AdminSelect v-model="limit" :items="[25, 50, 100, 200]" class="w-full" /></AdminField>
         </div>
         <div class="flex flex-wrap items-center gap-2">
           <AppButton type="submit" :loading="loading" :disabled="!available('usage_records')">{{ t('usage.legacy.applyFilters') }}</AppButton>
           <AppButton color="neutral" variant="ghost" @click="reset">{{ t('common.reset') }}</AppButton>
-          <USelect v-model="exportFormat" :aria-label="t('usage.legacy.exportFormat')" :items="['csv', 'jsonl']" class="w-28" />
+          <AdminSelect v-model="exportFormat" :aria-label="t('usage.legacy.exportFormat')" :items="['csv', 'jsonl']" class="w-28" />
           <AppButton color="neutral" variant="outline" icon="i-tabler-download" :loading="exporting" :disabled="exporting || !available('usage_export')" @click="exportRecords">{{ t('usage.legacy.export') }}</AppButton>
         </div>
         <p class="text-xs text-[var(--ui-text-muted)]">{{ t('usage.legacy.timezoneHint', { timezone }) }}</p>
@@ -28,7 +28,7 @@
       <AppTable :columns="columns" :data="items" :loading="loading" :number-offset="(page - 1) * limit" class="min-w-[960px]">
         <template #request-cell="{ row }"><p class="font-mono text-xs">{{ value(row).request_id || value(row).id }}</p><p class="text-xs text-[var(--ui-text-muted)]">{{ date(value(row).timestamp) }}</p></template>
         <template #model-cell="{ row }"><p>{{ value(row).model || t('requests.unknownModel') }}</p><p class="text-xs text-[var(--ui-text-muted)]">{{ value(row).provider || t('usage.legacy.unknownProvider') }} · {{ value(row).endpoint }}</p></template>
-        <template #status-cell="{ row }"><UBadge :color="value(row).failed ? 'error' : 'success'" variant="subtle">{{ value(row).status || (value(row).failed ? t('common.failed') : t('common.success')) }}</UBadge></template>
+        <template #status-cell="{ row }"><PortalBadge :color="value(row).failed ? 'error' : 'success'" variant="subtle">{{ value(row).status || (value(row).failed ? t('common.failed') : t('common.success')) }}</PortalBadge></template>
         <template #tokens-cell="{ row }">{{ number(value(row).tokens?.total_tokens) }}</template>
         <template #latency-cell="{ row }">{{ value(row).performance?.latency_ms == null ? '—' : `${number(value(row).performance.latency_ms)} ms` }}</template>
         <template #cost-cell="{ row }">{{ value(row).billing?.amount ?? '—' }} {{ value(row).billing?.currency || '' }}</template>
@@ -45,6 +45,11 @@
 </template>
 
 <script setup lang="ts">
+import AdminField from '~/components/admin/general/controls/AdminField.vue'
+import AdminInput from '~/components/admin/general/controls/AdminInput.vue'
+import AdminSelect from '~/components/admin/general/controls/AdminSelect.vue'
+import PortalAlert from '~/components/app/general/PortalAlert.vue'
+import PortalBadge from '~/components/app/general/PortalBadge.vue'
 import AdminTableAction from '~/components/admin/general/TableAction.vue'
 import AdminRequestRecordDetail from '~/components/admin/usage/RequestRecordDetail.vue'
 import { dateRangeError } from '~/composables/dateRange'

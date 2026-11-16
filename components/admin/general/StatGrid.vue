@@ -11,11 +11,11 @@
       :class="[`kpi--${item.tone || 'violet'}`, { 'kpi--interactive': item.to || item.action, 'kpi--warning': item.warning }]"
       @click="item.action && !item.to ? emit('select', item.key || item.label) : undefined"
     >
-      <span class="kpi__icon" aria-hidden="true"><UIcon :name="item.icon || 'i-tabler-chart-dots'" class="size-4" /></span>
+      <span class="kpi__icon" aria-hidden="true"><AppIcon :name="item.icon || 'i-tabler-chart-dots'" class="size-4" /></span>
 
       <span class="min-w-0 flex-1">
         <span class="kpi__label">{{ item.label }}</span>
-        <USkeleton v-if="loading" class="mt-1 h-5 w-16 rounded" />
+        <PortalSkeleton v-if="loading" class="mt-1 h-5 w-16 rounded" />
         <span v-else class="kpi__value" :class="isTextValue(item.value) ? 'kpi__value--text' : ''" :title="String(item.value)">{{ item.value }}</span>
         <span v-if="item.detail" class="kpi__detail" :title="item.detail">
           <span v-if="item.warning" class="kpi__pulse" aria-hidden="true" />{{ item.detail }}
@@ -28,12 +28,14 @@
 
       <!-- Trend sits beside the value so it never adds height. -->
       <AdminUsageSparkline v-if="item.points?.length" :values="item.points" :label="t('shared.stats.trend', { label: item.label })" class="kpi__spark" />
-      <UIcon v-else-if="item.to || item.action" name="i-tabler-chevron-right" class="kpi__go size-4" aria-hidden="true" />
+      <AppIcon v-else-if="item.to || item.action" name="i-tabler-chevron-right" class="kpi__go size-4" aria-hidden="true" />
     </component>
   </section>
 </template>
 
 <script setup lang="ts">
+import PortalSkeleton from '~/components/app/general/PortalSkeleton.vue'
+import AppIcon from '~/components/AppIcon.vue'
 import AdminUsageSparkline from '~/components/admin/general/UsageSparkline.vue'
 import { NuxtLink } from '#components'
 

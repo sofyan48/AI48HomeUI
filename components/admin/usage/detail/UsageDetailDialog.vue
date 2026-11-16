@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import PortalBadge from '~/components/app/general/PortalBadge.vue'
 import { useUsagePage } from '~/composables/usage/useUsagePage'
 import { formatHost, tokenQualityColor } from '~/composables/usage/format'
 
@@ -38,7 +39,7 @@ const { formatDateTime, formatMilliseconds, formatTPS, formatNumber, formatAmoun
         </div>
 
         <div v-if="selectedDetail.record?.token_breakdown" class="rounded-lg border border-[var(--ui-border)] p-4">
-          <div class="flex items-center justify-between gap-3"><p class="text-sm font-semibold">{{ t('usage.detail.tokenAccounting') }}</p><UBadge :color="tokenQualityColor(selectedDetail.record.token_breakdown.quality)" variant="subtle">{{ qualityLabel(selectedDetail.record.token_breakdown.quality) }}</UBadge></div>
+          <div class="flex items-center justify-between gap-3"><p class="text-sm font-semibold">{{ t('usage.detail.tokenAccounting') }}</p><PortalBadge :color="tokenQualityColor(selectedDetail.record.token_breakdown.quality)" variant="subtle">{{ qualityLabel(selectedDetail.record.token_breakdown.quality) }}</PortalBadge></div>
           <div class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <DetailItem :label="t('usage.tok.inputUncached')" :value="formatNumber(selectedDetail.record.token_breakdown.input?.uncached_tokens)" />
             <DetailItem :label="t('usage.tok.cacheRead')" :value="formatNumber(selectedDetail.record.token_breakdown.input?.cache_read_tokens)" />

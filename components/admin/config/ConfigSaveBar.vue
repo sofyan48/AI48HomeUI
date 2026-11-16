@@ -6,17 +6,17 @@
       }"
     >
       <div class="flex flex-wrap items-center gap-2">
-        <UBadge color="neutral" variant="subtle"
-          >{{ t('config.footer.runtime', { mode: runtimeMode }) }}</UBadge
+        <PortalBadge color="neutral" variant="subtle"
+          >{{ t('config.footer.runtime', { mode: runtimeMode }) }}</PortalBadge
         >
-        <UBadge color="neutral" variant="subtle"
-          >{{ t('config.footer.updated', { time: updatedLabel }) }}</UBadge
+        <PortalBadge color="neutral" variant="subtle"
+          >{{ t('config.footer.updated', { time: updatedLabel }) }}</PortalBadge
         >
-        <UBadge :color="dirtyCount ? 'warning' : 'neutral'" variant="subtle">{{
+        <PortalBadge :color="dirtyCount ? 'warning' : 'neutral'" variant="subtle">{{
           dirtyCount ? t('config.footer.changes', { count: dirtyCount }) : t('config.footer.noChanges')
-        }}</UBadge>
-        <UBadge v-if="validationCount" color="warning" variant="subtle"
-          >{{ t('config.footer.attention', { count: validationCount }) }}</UBadge
+        }}</PortalBadge>
+        <PortalBadge v-if="validationCount" color="warning" variant="subtle"
+          >{{ t('config.footer.attention', { count: validationCount }) }}</PortalBadge
         >
       </div>
       <div class="flex flex-wrap gap-2">
@@ -49,6 +49,7 @@
 </template>
 
 <script setup lang="ts">
+import PortalBadge from '~/components/app/general/PortalBadge.vue'
 import AdminConfigYamlReplacement from './ConfigYamlReplacement.vue'
 import { useConfigWorkspace } from '~/composables/config/useConfigWorkspace'
 const {

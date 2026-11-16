@@ -1,17 +1,17 @@
 <template>
-  <USlideover v-model:open="detailOpen" @after:enter="focusPricing" :title="selectedModel?.display_name || selectedModel?.id || t('models.detailTitle')" :description="selectedModel?.id" :ui="{ content: 'sm:max-w-xl' }">
+  <AppModal v-model:open="detailOpen" @after:enter="focusPricing" :title="selectedModel?.display_name || selectedModel?.id || t('models.detailTitle')" :description="selectedModel?.id" :ui="{ content: 'sm:max-w-xl' }">
     <template #body>
       <div v-if="selectedModel" class="catalog-details space-y-5 text-sm">
         <div class="flex items-center gap-3">
           <div class="catalog-icon flex size-12 shrink-0 items-center justify-center rounded-xl">
-            <UIcon :name="modelLogoIcon(selectedModel)" class="size-7" aria-hidden="true" />
+            <AppIcon :name="modelLogoIcon(selectedModel)" class="size-7" aria-hidden="true" />
           </div>
           <div class="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-2">
             <code class="min-w-0 flex-1 break-all text-xs">{{ selectedModel.id }}</code>
             <AppButton color="neutral" variant="outline" size="xs" icon="i-tabler-copy" @click="copyModelId(selectedModel.id)">{{ t('models.copyId') }}</AppButton>
           </div>
         </div>
-        <div v-if="capabilityLabels(selectedModel).length" class="flex flex-wrap gap-2"><UBadge v-for="label in capabilityLabels(selectedModel)" :key="label" color="primary" variant="subtle" class="rounded-full">{{ label }}</UBadge></div>
+        <div v-if="capabilityLabels(selectedModel).length" class="flex flex-wrap gap-2"><PortalBadge v-for="label in capabilityLabels(selectedModel)" :key="label" color="primary" variant="subtle" class="rounded-full">{{ label }}</PortalBadge></div>
         <p class="leading-relaxed text-[var(--ui-text-muted)]">{{ selectedModel.description || t('models.noDescription') }}</p>
         <dl class="grid gap-3 sm:grid-cols-2">
           <div v-for="item in modelFacts(selectedModel)" :key="item.label" class="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] p-3"><dt class="text-xs text-[var(--ui-text-muted)]">{{ item.label }}</dt><dd class="mt-1 break-words font-medium">{{ item.value }}</dd></div>
@@ -56,7 +56,7 @@
             <div v-for="offer in selectedModel.pricing.providers" :key="offer.provider" class="min-w-0 space-y-3">
               <h4 class="break-all font-mono font-semibold">{{ offer.provider }}</h4>
               <div v-for="tier in offer.tiers" :key="tier.service_tier" class="min-w-0 space-y-2">
-                <p class="flex flex-wrap items-center gap-2">{{ t('models.pricing.serviceTier') }} <code>{{ tier.service_tier }}</code><UBadge v-if="tier.is_default" color="neutral" variant="subtle" size="sm">{{ t('models.pricing.default') }}</UBadge></p>
+                <p class="flex flex-wrap items-center gap-2">{{ t('models.pricing.serviceTier') }} <code>{{ tier.service_tier }}</code><PortalBadge v-if="tier.is_default" color="neutral" variant="subtle" size="sm">{{ t('models.pricing.default') }}</PortalBadge></p>
                 <p v-if="!tier.rungs.length" class="text-[var(--ui-text-muted)]">{{ t('models.pricing.noRungs') }}</p>
                 <div v-for="(rung, rungIndex) in tier.rungs" :key="`${rung.min_input_tokens}:${rungIndex}`" class="min-w-0 rounded-lg border border-[var(--ui-border)] p-3">
                   <p class="mb-3 text-xs font-medium">{{ rung.min_input_tokens > 0 ? t('models.pricing.fromInputTokens', { count: rung.min_input_tokens.toLocaleString(intlLocale) }) : t('models.pricing.baseRung') }}</p>
@@ -78,10 +78,13 @@
         </section>
       </div>
     </template>
-  </USlideover>
+  </AppModal>
 </template>
 
 <script setup lang="ts">
+import AppIcon from '~/components/AppIcon.vue'
+import AppModal from '~/components/AppModal.vue'
+import PortalBadge from '~/components/app/general/PortalBadge.vue'
 import { nextTick, ref, watch } from 'vue'
 import { usePortalI18n } from '~/composables/usePortalI18n'
 import { rungPriceComponents } from '~/composables/userModelCatalog'

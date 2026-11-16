@@ -29,13 +29,14 @@
       </li>
     </ol>
     <div v-else class="flex min-h-36 flex-col items-center justify-center gap-2 text-center text-[0.8125rem] text-[var(--ui-text-dimmed)]">
-      <UIcon :name="emptyIcon" class="size-6" aria-hidden="true" />
+      <AppIcon :name="emptyIcon" class="size-6" aria-hidden="true" />
       <p>{{ emptyText }}</p>
     </div>
   </AppCard>
 </template>
 
 <script setup lang="ts">
+import AppIcon from '~/components/AppIcon.vue'
 import { useDashboardFormat } from '~/composables/dashboard/format'
 
 // Top-3 ranking card used for client keys and models.

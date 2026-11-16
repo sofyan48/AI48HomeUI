@@ -1,35 +1,35 @@
 <template>
-  <USlideover v-model:open="detailOpen" :title="detailTitle" :description="detailDescription" :ui="{ content: 'sm:max-w-xl' }" @update:open="handleDetailOpen">
+  <AppModal v-model:open="detailOpen" :title="detailTitle" :description="detailDescription" :ui="{ content: 'sm:max-w-xl' }" @update:open="handleDetailOpen">
     <template #body>
       <form v-if="sheetMode === 'create' || sheetMode === 'edit'" class="grid gap-4" @submit.prevent="submitKey">
         <p v-if="sheetMode === 'create'" class="text-xs font-semibold uppercase tracking-wide text-[var(--ui-text-muted)]">{{ t('keys.createHeading') }}</p>
-        <UFormField v-if="supportsDisplayNames" :label="t('keys.displayName')" :hint="t('keys.displayNameHint')" :error="displayNameError">
-          <UInput v-model="form.displayName" class="w-full" :placeholder="t('keys.displayNamePlaceholder')" :disabled="submitting" @input="displayNameError = ''" />
-        </UFormField>
-        <UFormField :label="t('keys.keyValue')" required :error="keyValueError">
+        <AdminField v-if="supportsDisplayNames" :label="t('keys.displayName')" :hint="t('keys.displayNameHint')" :error="displayNameError">
+          <AdminInput v-model="form.displayName" class="w-full" :placeholder="t('keys.displayNamePlaceholder')" :disabled="submitting" @input="displayNameError = ''" />
+        </AdminField>
+        <AdminField :label="t('keys.keyValue')" required :error="keyValueError">
           <div class="flex gap-2">
-            <UInput v-model="form.value" :type="formSecretVisible ? 'text' : 'password'" class="min-w-0 flex-1 font-mono" autocomplete="off" :disabled="submitting" @input="keyValueError = ''" />
+            <AdminInput v-model="form.value" :type="formSecretVisible ? 'text' : 'password'" class="min-w-0 flex-1 font-mono" autocomplete="off" :disabled="submitting" @input="keyValueError = ''" />
             <AppButton type="button" color="neutral" variant="outline" :icon="formSecretVisible ? 'i-tabler-eye-off' : 'i-tabler-eye'" :aria-label="formSecretVisible ? t('keys.hide') : t('keys.reveal')" @click="formSecretVisible = !formSecretVisible" />
           </div>
-        </UFormField>
+        </AdminField>
         <AppButton type="button" color="neutral" variant="outline" icon="i-tabler-sparkles" :disabled="submitting" @click="generateKey">{{ t('keys.generate') }}</AppButton>
-        <UFormField v-if="supports('users', true)" :label="t('keys.owner')" :hint="ownerUnavailable ? t('keys.ownerUnavailableHint') : undefined">
-          <USelect :model-value="form.userId == null ? 'unassigned' : String(form.userId)" :items="ownerOptions" class="w-full" :disabled="submitting" @update:model-value="setFormOwner" />
-        </UFormField>
+        <AdminField v-if="supports('users', true)" :label="t('keys.owner')" :hint="ownerUnavailable ? t('keys.ownerUnavailableHint') : undefined">
+          <AdminSelect :model-value="form.userId == null ? 'unassigned' : String(form.userId)" :items="ownerOptions" class="w-full" :disabled="submitting" @update:model-value="setFormOwner" />
+        </AdminField>
         <template v-if="supports('access_groups', true)">
           <p v-if="supplementalError" role="status" class="text-sm text-[var(--ui-text-muted)]">{{ t('keys.supplementalError') }}</p>
-          <UFormField :label="t('keys.credentialScope')" :hint="t('keys.credentialScopeHint')">
+          <AdminField :label="t('keys.credentialScope')" :hint="t('keys.credentialScopeHint')">
             <div class="grid gap-2">
-              <UCheckbox v-for="group in scopeOptions(channelGroups, form.channelGroupIds)" :key="group.id" :model-value="form.channelGroupIds.includes(group.id)" :label="group.label" :disabled="submitting" @update:model-value="toggleFormGroup('channelGroupIds', group.id, $event)" />
+              <AdminCheckbox v-for="group in scopeOptions(channelGroups, form.channelGroupIds)" :key="group.id" :model-value="form.channelGroupIds.includes(group.id)" :label="group.label" :disabled="submitting" @update:model-value="toggleFormGroup('channelGroupIds', group.id, $event)" />
               <p v-if="!scopeOptions(channelGroups, form.channelGroupIds).length" class="text-sm text-[var(--ui-text-muted)]">{{ t('keys.noCredentialGroups') }}</p>
             </div>
-          </UFormField>
-          <UFormField :label="t('keys.modelScope')" :hint="t('keys.modelScopeHint')">
+          </AdminField>
+          <AdminField :label="t('keys.modelScope')" :hint="t('keys.modelScopeHint')">
             <div class="grid gap-2">
-              <UCheckbox v-for="group in scopeOptions(modelGroups, form.modelGroupIds)" :key="group.id" :model-value="form.modelGroupIds.includes(group.id)" :label="group.label" :disabled="submitting" @update:model-value="toggleFormGroup('modelGroupIds', group.id, $event)" />
+              <AdminCheckbox v-for="group in scopeOptions(modelGroups, form.modelGroupIds)" :key="group.id" :model-value="form.modelGroupIds.includes(group.id)" :label="group.label" :disabled="submitting" @update:model-value="toggleFormGroup('modelGroupIds', group.id, $event)" />
               <p v-if="!scopeOptions(modelGroups, form.modelGroupIds).length" class="text-sm text-[var(--ui-text-muted)]">{{ t('keys.noModelGroups') }}</p>
             </div>
-          </UFormField>
+          </AdminField>
           <p class="text-xs text-[var(--ui-text-muted)]">{{ t('keys.scopeNote') }}</p>
         </template>
         <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
@@ -82,10 +82,15 @@
         </div>
       </div>
     </template>
-  </USlideover>
+  </AppModal>
 </template>
 
 <script setup lang="ts">
+import AppModal from '~/components/AppModal.vue'
+import AdminField from '~/components/admin/general/controls/AdminField.vue'
+import AdminInput from '~/components/admin/general/controls/AdminInput.vue'
+import AdminSelect from '~/components/admin/general/controls/AdminSelect.vue'
+import AdminCheckbox from '~/components/admin/general/controls/AdminCheckbox.vue'
 import { useAccessKeys } from '~/composables/access-keys/useAccessKeys'
 import type { useAccessKeySheet } from '~/composables/access-keys/useAccessKeySheet'
 import type { AccessKeyResource } from '~/composables/access-keys/normalize'

@@ -1,7 +1,7 @@
 <template>
   <AdminTablePanel :title="t('users.clientKeys')" :description="t('users.keysCount', { shown: filteredKeys.length, total: keys.length })">
     <template #actions>
-      <UInput v-model="search" icon="i-tabler-search" :placeholder="t('users.searchKeysPlaceholder')" :aria-label="t('users.searchKeys')" class="w-full sm:w-72" />
+      <AdminInput v-model="search" icon="i-tabler-search" :placeholder="t('users.searchKeysPlaceholder')" :aria-label="t('users.searchKeys')" class="w-full sm:w-72" />
       <AppButton icon="i-tabler-plus" @click="emit('create')">{{ t('users.newKey') }}</AppButton>
     </template>
     <AppTable :columns="columns" :data="filteredKeys" :loading="loading" class="min-w-0">
@@ -34,6 +34,7 @@
 </template>
 
 <script setup lang="ts">
+import AdminInput from '~/components/admin/general/controls/AdminInput.vue'
 import AdminTablePanel from '~/components/admin/general/TablePanel.vue'
 import AdminTableAction from '~/components/admin/general/TableAction.vue'
 import { computed } from 'vue'

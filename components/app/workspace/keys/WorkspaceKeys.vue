@@ -1,4 +1,9 @@
 <script setup lang="ts">
+import AppIcon from '~/components/AppIcon.vue'
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '~/components/ui/empty'
+import PortalInput from '~/components/app/general/PortalInput.vue'
+import PortalField from '~/components/app/general/PortalField.vue'
+import PortalSkeleton from '~/components/app/general/PortalSkeleton.vue'
 import { usePortalI18n } from '~/composables/usePortalI18n'
 import { useWorkspaceKeys } from '~/composables/workspace/useWorkspaceKeys'
 import { maskKey } from '~/composables/workspace/keys'
@@ -13,23 +18,23 @@ const { keys, keySearch, filteredKeys, keysLoading, openKeyForm, confirmKeyDelet
   <section class="workspace-finance workspace-keys space-y-5" aria-labelledby="keys-title">
     <AppCard class="finance-panel keys-panel">
       <div class="flex flex-wrap items-end gap-4">
-        <UFormField :label="t('ws.keys.search')" class="min-w-0 flex-1">
-          <UInput v-model="keySearch" icon="i-tabler-search" :placeholder="t('ws.keys.searchPlaceholder')" :aria-label="t('ws.keys.searchAria')" size="lg" class="w-full" />
-        </UFormField>
+        <PortalField :label="t('ws.keys.search')" class="min-w-0 flex-1">
+          <PortalInput v-model="keySearch" icon="i-tabler-search" :placeholder="t('ws.keys.searchPlaceholder')" :aria-label="t('ws.keys.searchAria')" size="lg" class="w-full" />
+        </PortalField>
         <AppButton icon="i-tabler-plus" size="lg" class="shrink-0 rounded-full" @click="openKeyForm()">{{ t('ws.keys.create') }}</AppButton>
       </div>
       <p class="mt-4 text-xs leading-relaxed text-[var(--ui-text-muted)]">{{ t('ws.keys.hint') }}</p>
     </AppCard>
     <div class="flex flex-wrap items-center justify-between gap-2">
-      <h2 id="keys-title" class="flex items-center gap-2 text-sm font-semibold"><UIcon name="i-tabler-key" class="size-4 text-[var(--ui-text-muted)]" aria-hidden="true" /> {{ t('ws.keys.yourKeys') }}</h2>
+      <h2 id="keys-title" class="flex items-center gap-2 text-sm font-semibold"><AppIcon name="i-tabler-key" class="size-4 text-[var(--ui-text-muted)]" aria-hidden="true" /> {{ t('ws.keys.yourKeys') }}</h2>
       <span class="rounded-full bg-[var(--ui-bg-muted)] px-3 py-1 text-xs tabular-nums text-[var(--ui-text-muted)]">{{ keysLoading ? t('ws.keys.countLoading') : t('ws.keys.count', { shown: filteredKeys.length, total: keys.length }) }}</span>
     </div>
     <div v-if="keysLoading" class="grid gap-5 sm:grid-cols-2 xl:grid-cols-3" :aria-label="t('ws.keys.loadingAria')" aria-busy="true">
-      <USkeleton v-for="index in 3" :key="index" class="h-56 rounded-3xl" />
+      <PortalSkeleton v-for="index in 3" :key="index" class="h-56 rounded-3xl" />
     </div>
     <div v-else-if="filteredKeys.length" class="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
       <AppCard v-for="key in filteredKeys" :key="key.api_key" class="finance-panel key-card min-w-0" :ui="{ body: 'flex h-full flex-col p-5 sm:p-6' }">
-        <span class="finance-icon flex size-10 items-center justify-center rounded-full"><UIcon name="i-tabler-key" class="size-5" aria-hidden="true" /></span>
+        <span class="finance-icon flex size-10 items-center justify-center rounded-full"><AppIcon name="i-tabler-key" class="size-5" aria-hidden="true" /></span>
         <h3 class="mt-3 break-words text-base font-semibold tracking-tight text-[var(--ui-text-highlighted)]">{{ key.display_name || t('ws.keys.unnamed') }}</h3>
         <div class="mt-1 flex min-w-0 items-center gap-2">
           <code class="min-w-0 break-all text-xs text-[var(--ui-text-muted)]">{{ maskKey(key.api_key) }}</code>
@@ -45,12 +50,16 @@ const { keys, keySearch, filteredKeys, keysLoading, openKeyForm, confirmKeyDelet
         </div>
       </AppCard>
     </div>
-    <div v-else class="flex flex-col items-center px-5 py-12 text-center">
-      <span class="finance-icon mb-4 flex size-12 items-center justify-center rounded-2xl"><UIcon :name="keys.length ? 'i-tabler-search' : 'i-tabler-key'" class="size-6" aria-hidden="true" /></span>
-      <h2 class="text-sm font-semibold">{{ keys.length ? t('ws.keys.noMatch') : t('ws.keys.emptyTitle') }}</h2>
-      <p class="mt-2 max-w-sm text-sm text-[var(--ui-text-muted)]">{{ keys.length ? t('ws.keys.noMatchDetail') : t('ws.keys.emptyDetail') }}</p>
-      <AppButton v-if="keys.length" class="mt-5 rounded-full" color="neutral" variant="soft" size="sm" @click="keySearch = ''">{{ t('ws.keys.clearSearch') }}</AppButton>
-    </div>
+    <Empty v-else class="gap-5 px-5 py-12 md:px-5">
+      <EmptyHeader>
+        <EmptyMedia variant="icon" class="finance-icon mb-2 size-12 rounded-2xl"><AppIcon :name="keys.length ? 'i-tabler-search' : 'i-tabler-key'" aria-hidden="true" /></EmptyMedia>
+        <EmptyTitle class="text-sm font-semibold">{{ keys.length ? t('ws.keys.noMatch') : t('ws.keys.emptyTitle') }}</EmptyTitle>
+        <EmptyDescription>{{ keys.length ? t('ws.keys.noMatchDetail') : t('ws.keys.emptyDetail') }}</EmptyDescription>
+      </EmptyHeader>
+      <EmptyContent v-if="keys.length">
+        <AppButton class="rounded-full" color="neutral" variant="soft" size="sm" @click="keySearch = ''">{{ t('ws.keys.clearSearch') }}</AppButton>
+      </EmptyContent>
+    </Empty>
   </section>
 </template>
 

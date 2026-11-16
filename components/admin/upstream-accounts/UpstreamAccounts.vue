@@ -2,8 +2,8 @@
   <div class="space-y-4">
     <input ref="fileInput" type="file" accept="application/json,.json" multiple class="hidden" @change="uploadFiles">
 
-    <UAlert v-if="pageError" color="error" variant="subtle" icon="i-tabler-alert-triangle" :title="t('cred.loadFailed')" :description="pageError" />
-    <UAlert v-if="flightError" color="warning" variant="subtle" icon="i-tabler-alert-triangle" :title="t('cred.flightUnavailable')" :description="flightError" />
+    <PortalAlert v-if="pageError" color="error" variant="subtle" icon="i-tabler-alert-triangle" :title="t('cred.loadFailed')" :description="pageError" />
+    <PortalAlert v-if="flightError" color="warning" variant="subtle" icon="i-tabler-alert-triangle" :title="t('cred.flightUnavailable')" :description="flightError" />
 
     <AccountsListPanel />
     <CreateAccountDialog />
@@ -15,6 +15,7 @@
 </template>
 
 <script setup lang="ts">
+import PortalAlert from '~/components/app/general/PortalAlert.vue'
 import { provideUpstreamAccounts } from '~/composables/upstream-accounts/useUpstreamAccounts'
 import AccountsListPanel from '~/components/admin/upstream-accounts/list/AccountsListPanel.vue'
 import CreateAccountDialog from '~/components/admin/upstream-accounts/create/CreateAccountDialog.vue'

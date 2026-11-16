@@ -1,13 +1,14 @@
 import { inject, provide, ref, type InjectionKey } from 'vue'
 import { useUserApi } from '~/composables/useUserApi'
 import { usePortalI18n } from '~/composables/usePortalI18n'
+import { usePortalToast } from '~/composables/portal/usePortalToast'
 import { useWorkspaceState } from '~/composables/useWorkspaceState'
 import { errorMessage } from './common'
 
 type TOTPSetup = { secret: string; otp_auth_url?: string; issuer?: string; enabled?: boolean }
 function createWorkspaceTOTP() {
   const { t } = usePortalI18n()
-  const toast = useToast()
+  const toast = usePortalToast()
   const { fetchAPI, loadCurrentUser } = useUserApi()
   const totpSetup = useWorkspaceState<TOTPSetup | null>('user:workspace:totp-setup', () => null)
   const totpCode = ref('')

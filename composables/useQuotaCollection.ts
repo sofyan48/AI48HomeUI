@@ -1,5 +1,6 @@
 import { computed, onScopeDispose, ref, watch } from 'vue'
 import { useNuxtApp } from '#imports'
+import { useAdminToast } from '~/composables/admin-feedback/useAdminToast'
 import { useApi } from '~/composables/useApi'
 import { useCapabilities } from '~/composables/useCapabilities'
 import { normalizeQuotaEntries, normalizeQuotaDetail, quotaCollectionMessage, quotaCollectionSettled, type QuotaCollectionEntry } from '~/composables/upstreamQuota'
@@ -15,7 +16,7 @@ export function useQuotaCollection() {
   const state = scopes.get(app)!
   const { fetchAPI, token, resolveUrl } = useApi()
   const { supports } = useCapabilities()
-  const toast = useToast()
+  const toast = useAdminToast()
   const controllers = new Set<AbortController>()
   let generation = 0
   let disposed = false

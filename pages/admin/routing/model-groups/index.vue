@@ -3,7 +3,7 @@
     <AppCard :ui="{ body: 'p-3 sm:p-3' }">
       <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div class="flex min-w-0 items-start gap-3">
-          <span class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[var(--admin-selected)] text-[var(--ui-primary)]" aria-hidden="true"><UIcon name="i-tabler-layout-grid" class="size-4.5" /></span>
+          <span class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[var(--admin-selected)] text-[var(--ui-primary)]" aria-hidden="true"><AppIcon name="i-tabler-layout-grid" class="size-4.5" /></span>
           <div class="min-w-0">
             <p class="text-sm text-[var(--ui-text-muted)]">{{ t('groups.intro') }}</p>
             <div class="mt-1.5 flex flex-wrap gap-1.5 text-xs" :aria-label="t('routing.groupSummary')">
@@ -14,14 +14,14 @@
           </div>
         </div>
         <div class="flex flex-wrap items-center gap-2">
-          <UInput v-model="search" icon="i-tabler-search" :placeholder="t('groups.searchPlaceholder')" :aria-label="t('groups.searchLabel')" class="w-full sm:w-64" />
+          <AdminInput v-model="search" icon="i-tabler-search" :placeholder="t('groups.searchPlaceholder')" :aria-label="t('groups.searchLabel')" class="w-full sm:w-64" />
           <AppButton color="neutral" variant="outline" icon="i-tabler-refresh" :loading="pending" :aria-label="t('common.refresh')" @click="refreshWorkspace" />
           <AppButton color="primary" icon="i-tabler-plus" @click="openCreateGroup">{{ t('groups.newGroup') }}</AppButton>
         </div>
       </div>
     </AppCard>
 
-    <UAlert v-if="pageError" color="error" variant="subtle" icon="i-tabler-alert-triangle" :title="t('groups.loadFailed')" :description="pageError" />
+    <PortalAlert v-if="pageError" color="error" variant="subtle" icon="i-tabler-alert-triangle" :title="t('groups.loadFailed')" :description="pageError" />
 
     <div class="grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.6fr)]">
       <AppCard :ui="{ body: 'p-0' }">
@@ -39,7 +39,7 @@
             </button>
           </template>
           <template #status-cell="{ row }">
-            <UBadge :color="rowValue(row).disabled ? 'error' : 'success'" variant="subtle" size="sm">{{ rowValue(row).disabled ? t('common.disabled') : t('common.active') }}</UBadge>
+            <PortalBadge :color="rowValue(row).disabled ? 'error' : 'success'" variant="subtle" size="sm">{{ rowValue(row).disabled ? t('common.disabled') : t('common.active') }}</PortalBadge>
           </template>
           <template #actions-cell="{ row }">
             <div class="flex justify-end gap-1">
@@ -59,7 +59,7 @@
             <div>
               <div class="flex items-center gap-2">
                 <p class="text-base font-semibold">{{ selectedGroup.group_name }}</p>
-                <UBadge :color="selectedGroup.disabled ? 'error' : 'success'" variant="subtle" size="sm">{{ selectedGroup.disabled ? t('common.disabled') : t('common.active') }}</UBadge>
+                <PortalBadge :color="selectedGroup.disabled ? 'error' : 'success'" variant="subtle" size="sm">{{ selectedGroup.disabled ? t('common.disabled') : t('common.active') }}</PortalBadge>
               </div>
               <p class="mt-1 text-xs text-[var(--ui-text-muted)]">{{ details.length === 1 ? t('groups.bindingCountOne', { count: details.length }) : t('groups.bindingCountOther', { count: details.length }) }}</p>
             </div>
@@ -75,7 +75,7 @@
           </template>
           <template #channels-cell="{ row }">
             <div v-if="rowValue(row).channels?.length" class="flex max-w-md flex-wrap gap-1">
-              <UBadge v-for="id in rowValue(row).channels" :key="id" color="primary" variant="subtle" size="sm">{{ channelName(id) }}</UBadge>
+              <PortalBadge v-for="id in rowValue(row).channels" :key="id" color="primary" variant="subtle" size="sm">{{ channelName(id) }}</PortalBadge>
             </div>
             <span v-else class="text-sm text-[var(--ui-text-muted)]">{{ t('groups.inheritScope') }}</span>
           </template>
@@ -87,7 +87,7 @@
           </template>
           <template #empty>
             <div class="flex flex-col items-center px-6 py-8 text-center">
-              <UIcon name="i-tabler-box" class="mb-3 size-8 text-[var(--ui-text-muted)]" />
+              <AppIcon name="i-tabler-box" class="mb-3 size-8 text-[var(--ui-text-muted)]" />
               <p class="font-medium">{{ t('groups.noModels') }}</p>
               <p class="mt-1 text-sm text-[var(--ui-text-muted)]">{{ t('groups.noModelsHint') }}</p>
             </div>
@@ -96,7 +96,7 @@
       </AppCard>
 
       <div v-else class="flex min-h-40 flex-col items-center justify-center rounded-[var(--admin-panel-radius)] border border-dashed border-[var(--admin-panel-border)] bg-[var(--admin-panel-bg)]/60 p-8 text-center">
-        <UIcon name="i-tabler-layout-grid" class="mb-3 size-8 text-[var(--ui-text-muted)]" />
+        <AppIcon name="i-tabler-layout-grid" class="mb-3 size-8 text-[var(--ui-text-muted)]" />
         <p class="font-medium">{{ t('groups.selectGroup') }}</p>
         <p class="mt-1 text-sm text-[var(--ui-text-muted)]">{{ t('groups.selectGroupHint') }}</p>
       </div>
@@ -105,19 +105,19 @@
     <AppModal v-model:open="groupFormOpen" :title="editingGroup ? t('groups.editGroupTitle') : t('groups.createGroupTitle')" :description="t('groups.groupFormDescription')">
       <template #body>
         <form class="space-y-5" @submit.prevent="submitGroup">
-          <UAlert v-if="formError" color="error" variant="subtle" icon="i-tabler-alert-circle" :title="t('groups.saveGroupFailed')" :description="formError" />
-          <UFormField :label="t('routing.groupName')" required>
-            <UInput v-model="groupForm.group_name" class="w-full" placeholder="premium-models" autofocus />
-          </UFormField>
-          <UFormField :label="t('common.status')">
+          <PortalAlert v-if="formError" color="error" variant="subtle" icon="i-tabler-alert-circle" :title="t('groups.saveGroupFailed')" :description="formError" />
+          <AdminField :label="t('routing.groupName')" required>
+            <AdminInput v-model="groupForm.group_name" class="w-full" placeholder="premium-models" autofocus />
+          </AdminField>
+          <AdminField :label="t('common.status')">
             <div class="flex items-center gap-3 rounded-lg border border-[var(--ui-border)] p-3">
-              <USwitch v-model="groupForm.enabled" />
+              <AdminSwitch v-model="groupForm.enabled" />
               <div>
                 <p class="text-sm font-medium">{{ groupForm.enabled ? t('common.active') : t('common.disabled') }}</p>
                 <p class="text-xs text-[var(--ui-text-muted)]">{{ t('groups.disabledHint') }}</p>
               </div>
             </div>
-          </UFormField>
+          </AdminField>
           <div class="flex justify-end gap-3 border-t border-[var(--ui-border)] pt-4">
             <AppButton color="neutral" variant="ghost" type="button" @click="groupFormOpen = false">{{ t('common.cancel') }}</AppButton>
             <AppButton color="primary" type="submit" :loading="submitting">{{ editingGroup ? t('routing.saveChanges') : t('routing.createGroup') }}</AppButton>
@@ -129,19 +129,19 @@
     <AppModal v-model:open="detailFormOpen" :title="editingDetail ? t('groups.editBindingTitle') : t('groups.addBindingTitle')" :description="t('groups.bindingFormDescription')">
       <template #body>
         <form class="space-y-5" @submit.prevent="submitDetail">
-          <UAlert v-if="formError" color="error" variant="subtle" icon="i-tabler-alert-circle" :title="t('groups.saveBindingFailed')" :description="formError" />
-          <UFormField :label="t('groups.catalogModel')" :hint="t('common.optional')">
-            <USelectMenu v-model="detailForm.suggested_model_id" :items="modelOptions" value-key="value" label-key="label" class="w-full" :placeholder="t('groups.searchCatalog')" :search-input="{ placeholder: t('groups.searchCatalogInput') }" @update:model-value="applyModelSuggestion" />
-          </UFormField>
-          <UFormField :label="t('groups.modelId')" required>
-            <UInput v-model="detailForm.model_id" class="w-full font-mono" placeholder="gpt-5.5" autofocus />
+          <PortalAlert v-if="formError" color="error" variant="subtle" icon="i-tabler-alert-circle" :title="t('groups.saveBindingFailed')" :description="formError" />
+          <AdminField :label="t('groups.catalogModel')" :hint="t('common.optional')">
+            <AdminSelectMenu v-model="detailForm.suggested_model_id" :items="modelOptions" value-key="value" label-key="label" class="w-full" :placeholder="t('groups.searchCatalog')" :search-input="{ placeholder: t('groups.searchCatalogInput') }" @update:model-value="applyModelSuggestion" />
+          </AdminField>
+          <AdminField :label="t('groups.modelId')" required>
+            <AdminInput v-model="detailForm.model_id" class="w-full font-mono" placeholder="gpt-5.5" autofocus />
             <p class="mt-1 text-xs text-[var(--ui-text-muted)]">{{ t('groups.modelIdHint') }}</p>
-          </UFormField>
+          </AdminField>
           <fieldset class="rounded-lg border border-[var(--ui-border)] p-4">
             <legend class="px-1 text-sm font-medium">{{ t('groups.allowedChannels') }}</legend>
             <p class="mb-3 text-xs text-[var(--ui-text-muted)]">{{ t('groups.allowedChannelsHint') }}</p>
             <div v-if="channels.length" class="max-h-56 space-y-2 overflow-auto pr-1">
-              <UCheckbox
+              <AdminCheckbox
                 v-for="channel in channels"
                 :key="channel.id"
                 :model-value="detailForm.channels.includes(channel.id)"
@@ -162,7 +162,7 @@
     <AppModal v-model:open="deleteOpen" :title="deleteKind === 'group' ? t('groups.deleteGroupTitle') : t('groups.removeBindingTitle')" :description="t('routing.softDeleteDescription')">
       <template #body>
         <div class="space-y-5">
-          <UAlert color="warning" variant="subtle" icon="i-tabler-alert-triangle" :title="t('routing.confirmDeletion')" :description="deleteDescription" />
+          <PortalAlert color="warning" variant="subtle" icon="i-tabler-alert-triangle" :title="t('routing.confirmDeletion')" :description="deleteDescription" />
           <div class="flex justify-end gap-3">
             <AppButton color="neutral" variant="ghost" @click="deleteOpen = false">{{ t('common.cancel') }}</AppButton>
             <AppButton color="error" :loading="deleting" @click="performDelete">{{ t('common.delete') }}</AppButton>
@@ -174,12 +174,21 @@
 </template>
 
 <script setup>
+import AdminField from '~/components/admin/general/controls/AdminField.vue'
+import AdminSelectMenu from '~/components/admin/general/controls/AdminSelectMenu.vue'
+import AdminInput from '~/components/admin/general/controls/AdminInput.vue'
+import AdminCheckbox from '~/components/admin/general/controls/AdminCheckbox.vue'
+import AdminSwitch from '~/components/admin/general/controls/AdminSwitch.vue'
+import PortalAlert from '~/components/app/general/PortalAlert.vue'
+import PortalBadge from '~/components/app/general/PortalBadge.vue'
+import AppIcon from '~/components/AppIcon.vue'
 import AdminTableAction from '~/components/admin/general/TableAction.vue'
 import { useWorkspaceState } from '~/composables/useWorkspaceState'
 import { useStoreData } from '~/composables/useStoreData'
 const { fetchAPI } = useApi()
 const { t } = useAdminI18n()
-const toast = useToast()
+import { useAdminToast } from '~/composables/admin-feedback/useAdminToast'
+const toast = useAdminToast()
 const rowValue = (row) => row?.original ?? row
 const search = ref('')
 const pageError = useWorkspaceState('admin:routing:model-groups:pageError', () => (''))

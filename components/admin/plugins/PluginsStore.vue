@@ -1,6 +1,6 @@
 <template>
         <section class="space-y-4">
-            <UAlert
+            <PortalAlert
                 v-if="storeResponse && !storeResponse.plugins_enabled"
                 color="warning"
                 variant="subtle"
@@ -8,26 +8,26 @@
                 :description="t('plugins.globallyDisabledStore')"
             />
             <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                <UInput
+                <AdminInput
                     v-model="storeSearch"
                     icon="i-tabler-search"
                     :placeholder="t('plugins.store.searchPlaceholder')"
                     class="w-full"
-                /><USelect
+                /><AdminSelect
                     v-model="sourceFilter"
                     :items="sourceOptions"
                     value-key="value"
                     label-key="label"
                     :aria-label="t('plugins.store.sourceAria')"
                     class="w-full"
-                /><USelect
+                /><AdminSelect
                     v-model="statusFilter"
                     :items="statusOptions"
                     value-key="value"
                     label-key="label"
                     :aria-label="t('plugins.store.statusAria')"
                     class="w-full"
-                /><USelect
+                /><AdminSelect
                     v-model="installFilter"
                     :items="installOptions"
                     value-key="value"
@@ -55,7 +55,7 @@
                     ></span
                 >
             </div>
-            <UAlert
+            <PortalAlert
                 v-for="failure in storeResponse?.source_errors || []"
                 :key="failure.source_id"
                 color="warning"
@@ -74,11 +74,11 @@
                                     <p class="font-semibold">
                                         {{ plugin.name || plugin.id }}
                                     </p>
-                                    <UBadge
+                                    <PortalBadge
                                         v-if="plugin.update_available"
                                         color="warning"
                                         variant="subtle"
-                                        >{{ t('plugins.badge.update') }}</UBadge
+                                        >{{ t('plugins.badge.update') }}</PortalBadge
                                     >
                                 </div>
                                 <p
@@ -89,7 +89,7 @@
                                     {{ plugin.source_name || plugin.source_id }}
                                 </p>
                             </div>
-                            <UBadge
+                            <PortalBadge
                                 :color="
                                     plugin.installed ? 'success' : 'neutral'
                                 "
@@ -98,7 +98,7 @@
                                     plugin.installed
                                         ? t('plugins.badge.installedVersion', { version: plugin.installed_version })
                                         : plugin.install_type
-                                }}</UBadge
+                                }}</PortalBadge
                             >
                         </div>
                         <p
@@ -109,19 +109,19 @@
                             }}
                         </p>
                         <div class="mt-4 flex flex-wrap gap-1">
-                            <UBadge
+                            <PortalBadge
                                 v-for="tag in plugin.tags || []"
                                 :key="tag"
                                 color="neutral"
                                 variant="subtle"
                                 size="sm"
-                                >{{ tag }}</UBadge
-                            ><UBadge
+                                >{{ tag }}</PortalBadge
+                            ><PortalBadge
                                 v-if="plugin.auth_required"
                                 color="warning"
                                 variant="subtle"
                                 size="sm"
-                                >{{ t('plugins.badge.authRequired') }}</UBadge
+                                >{{ t('plugins.badge.authRequired') }}</PortalBadge
                             >
                         </div>
                         <div
@@ -176,7 +176,7 @@
                             </div>
                         </div>
                         <div v-if="plugin.installed || plugin.configured" class="mt-3 flex flex-wrap items-center gap-3">
-                            <USwitch
+                            <AdminSwitch
                                 :model-value="plugin.enabled === true"
                                 :label="t('plugins.enableNamed', { name: plugin.name || plugin.id })"
                                 :loading="busyPlugin === plugin.id"
@@ -191,7 +191,7 @@
                                 :disabled="!!busyPlugin || configOpen"
                                 @click="openPluginConfig(plugin)"
                             >{{ t('plugins.configure') }}</AppButton>
-                            <UAlert
+                            <PortalAlert
                                 v-if="pluginMutationError?.id === plugin.id"
                                 color="error"
                                 variant="subtle"
@@ -267,6 +267,11 @@
 </template>
 
 <script setup lang="ts">
+import AdminInput from '~/components/admin/general/controls/AdminInput.vue'
+import AdminSelect from '~/components/admin/general/controls/AdminSelect.vue'
+import AdminSwitch from '~/components/admin/general/controls/AdminSwitch.vue'
+import PortalAlert from '~/components/app/general/PortalAlert.vue'
+import PortalBadge from '~/components/app/general/PortalBadge.vue'
 import { usePluginsWorkspace } from "~/composables/plugins/usePluginsWorkspace"
 const { t, storeResponse, storeSearch, sourceFilter, sourceOptions, statusFilter, statusOptions, installFilter, installOptions, filteredStore, store, selectedStore, busyPlugin, uninstall, install, configOpen, togglePlugin, openPluginConfig, pluginMutationError, yesNo, safeURL } = usePluginsWorkspace();
 </script>

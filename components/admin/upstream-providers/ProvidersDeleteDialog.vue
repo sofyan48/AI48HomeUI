@@ -2,7 +2,7 @@
   <AppModal v-model:open="deleteOpen" :title="t('upstream.providers.deleteTitle')">
     <template #body>
       <div class="space-y-5">
-        <UAlert
+        <PortalAlert
           color="warning"
           variant="subtle"
           icon="i-tabler-alert-triangle"
@@ -19,6 +19,7 @@
 </template>
 
 <script setup>
+import PortalAlert from '~/components/app/general/PortalAlert.vue'
 import { useUpstreamProvidersWorkspace } from '~/composables/upstream-providers/useUpstreamProvidersWorkspace'
 
 const { t, deleteOpen, deleteDescription, deleting, performDelete } = useUpstreamProvidersWorkspace()

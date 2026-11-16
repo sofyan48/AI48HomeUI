@@ -1,6 +1,6 @@
 <template>
   <div class="space-y-4">
-    <UAlert
+    <PortalAlert
       v-if="summaryError"
       color="warning"
       variant="subtle"
@@ -9,7 +9,7 @@
     />
     <section class="fleet" :aria-label="t('upstream.fleetLabel')" :aria-busy="summaryPending && !accounts.length">
       <div class="fleet__card">
-        <span class="fleet__icon" aria-hidden="true"><UIcon name="i-tabler-user-shield" class="size-4" /></span>
+        <span class="fleet__icon" aria-hidden="true"><AppIcon name="i-tabler-user-shield" class="size-4" /></span>
         <div class="min-w-0 flex-1">
           <div class="flex items-baseline justify-between gap-2">
             <span class="truncate text-xs font-medium text-[var(--ui-text-muted)]">{{ t('upstream.accounts') }}</span>
@@ -60,6 +60,8 @@
 </template>
 
 <script setup>
+import PortalAlert from '~/components/app/general/PortalAlert.vue'
+import AppIcon from '~/components/AppIcon.vue'
 import AdminStatGrid from '~/components/admin/general/StatGrid.vue'
 import AdminUpstreamAccounts from '~/components/admin/upstream-accounts/UpstreamAccounts.vue'
 import AdminUpstreamProviders from '~/components/admin/upstream-providers/UpstreamProviders.vue'
@@ -81,7 +83,8 @@ watch(
 );
 const router = useRouter();
 const { fetchAPI, token } = useApi();
-const toast = useToast();
+import { useAdminToast } from '~/composables/admin-feedback/useAdminToast'
+const toast = useAdminToast();
 const { t } = useAdminI18n();
 const tab = computed(() =>
   route.query.credential

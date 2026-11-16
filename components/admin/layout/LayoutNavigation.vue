@@ -17,9 +17,9 @@
           :title="collapsed ? item.label : undefined"
           @click="emit('navigate')"
         >
-          <span class="admin-rail__glyph" aria-hidden="true"><UIcon :name="item.icon" class="size-[1.0625rem]" /></span>
+          <span class="admin-rail__glyph" aria-hidden="true"><AppIcon :name="item.icon" /></span>
           <span class="min-w-0 flex-1 truncate" :class="collapsed ? 'lg:hidden' : ''">{{ item.label }}</span>
-          <UIcon v-if="isActive(item)" name="i-tabler-chevron-right" class="size-3.5 shrink-0 opacity-70" :class="collapsed ? 'lg:hidden' : ''" aria-hidden="true" />
+          <AppIcon v-if="isActive(item)" name="i-tabler-chevron-right" class="size-3.5 shrink-0 opacity-70" :class="collapsed ? 'lg:hidden' : ''" aria-hidden="true" />
         </NuxtLink>
       </div>
     </div>
@@ -27,6 +27,7 @@
 </template>
 
 <script setup lang="ts">
+import AppIcon from '~/components/AppIcon.vue'
 import { useConsoleLocale } from '~/composables/useConsoleLocale'
 import type { NavigationItem, NavigationSection } from '~/composables/layout/useAdminNavigation'
 

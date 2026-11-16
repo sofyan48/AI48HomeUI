@@ -10,20 +10,25 @@
     @submit="submit"
   >
         <p class="text-sm text-[var(--ui-text-muted)]">{{ t('users.resetAllowanceIntro') }}</p>
-        <UFormField :label="t('users.mode')"><USelect v-model="mode" :items="modes" value-key="value" label-key="label" :disabled="saving" class="w-full" /></UFormField>
-        <UFormField :label="mode === 'monthly' ? t('users.resetsPerMonth') : t('users.numberOfResets')"><UInput v-model="amount" type="number" min="0" step="1" :disabled="saving" class="w-full" /></UFormField>
-        <UFormField v-if="mode === 'one_time'" :label="t('users.expiresAtOptional')" :description="t('users.localTimezoneHint')"><UInput v-model="expiresAt" type="datetime-local" :disabled="saving" class="w-full" /></UFormField>
+        <AdminField :label="t('users.mode')"><AdminSelect v-model="mode" :items="modes" value-key="value" label-key="label" :disabled="saving" class="w-full" /></AdminField>
+        <AdminField :label="mode === 'monthly' ? t('users.resetsPerMonth') : t('users.numberOfResets')"><AdminInput v-model="amount" type="number" min="0" step="1" :disabled="saving" class="w-full" /></AdminField>
+        <AdminField v-if="mode === 'one_time'" :label="t('users.expiresAtOptional')" :description="t('users.localTimezoneHint')"><AdminInput v-model="expiresAt" type="datetime-local" :disabled="saving" class="w-full" /></AdminField>
         <p class="text-xs text-[var(--ui-text-muted)]">{{ mode === 'monthly' ? t('users.monthlyRenewHint') : t('users.oneTimeHint') }}</p>
-        <UAlert color="warning" variant="subtle" :description="t('users.allowanceReplaceWarning')" />
+        <PortalAlert color="warning" variant="subtle" :description="t('users.allowanceReplaceWarning')" />
   </AppFormModal>
 </template>
 
 <script setup lang="ts">
+import AdminField from '~/components/admin/general/controls/AdminField.vue'
+import AdminInput from '~/components/admin/general/controls/AdminInput.vue'
+import AdminSelect from '~/components/admin/general/controls/AdminSelect.vue'
+import PortalAlert from '~/components/app/general/PortalAlert.vue'
 const open = defineModel<boolean>('open', { default: false })
 const props = defineProps<{ user: any }>()
 const emit = defineEmits<{ saved: [] }>()
 const { fetchAPI } = useApi()
-const toast = useToast()
+import { useAdminToast } from '~/composables/admin-feedback/useAdminToast'
+const toast = useAdminToast()
 const { t } = useAdminI18n()
 const mode = ref('one_time')
 const amount = ref('0')

@@ -1,8 +1,8 @@
 <template>
   <section class="grid gap-4">
-    <UAlert v-if="capabilitiesError" color="warning" variant="subtle" :title="t('users.capabilityFailed')" :description="capabilitiesError" />
-    <UAlert v-if="pageErrors.length" color="warning" variant="subtle" :title="t('users.partialLoadFailed')" :description="pageErrors.join(' · ')" />
-    <UAlert v-if="!usersSupported" color="info" variant="subtle" :title="t('users.unsupportedTitle')" :description="t('users.unsupportedDescription')" />
+    <PortalAlert v-if="capabilitiesError" color="warning" variant="subtle" :title="t('users.capabilityFailed')" :description="capabilitiesError" />
+    <PortalAlert v-if="pageErrors.length" color="warning" variant="subtle" :title="t('users.partialLoadFailed')" :description="pageErrors.join(' · ')" />
+    <PortalAlert v-if="!usersSupported" color="info" variant="subtle" :title="t('users.unsupportedTitle')" :description="t('users.unsupportedDescription')" />
 
     <template v-else>
       <UsersMembersSummary />
@@ -57,6 +57,7 @@
 </template>
 
 <script setup lang="ts">
+import PortalAlert from '~/components/app/general/PortalAlert.vue'
 import { computed, ref } from 'vue'
 import { useDataSync } from '~/composables/useDataSync'
 import { provideUsersWorkspace } from '~/composables/users/useUsersWorkspace'

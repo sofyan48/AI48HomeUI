@@ -1,17 +1,17 @@
 <template>
   <div class="balance-workspace min-w-0 space-y-6">
-    <UAlert v-if="pageError" color="error" variant="subtle" :title="t('balance.loadError')" :description="pageError" />
+    <PortalAlert v-if="pageError" color="error" variant="subtle" :title="t('balance.loadError')" :description="pageError" />
 
     <div class="balance-wallet-grid">
     <section class="balance-hero min-w-0" aria-labelledby="balance-title">
       <div class="min-w-0">
-        <p class="flex items-center gap-2 text-xs font-medium text-[var(--ui-text-muted)]"><UIcon name="i-tabler-wallet" class="size-4 text-[var(--ui-success)]" aria-hidden="true" /> {{ t('balance.accountCredits') }}</p>
+        <p class="flex items-center gap-2 text-xs font-medium text-[var(--ui-text-muted)]"><AppIcon name="i-tabler-wallet" class="size-4 text-[var(--ui-success)]" aria-hidden="true" /> {{ t('balance.accountCredits') }}</p>
         <h1 id="balance-title" class="mt-2 text-xl font-semibold tracking-tight text-[var(--ui-text-highlighted)]">{{ t('balance.title') }}</h1>
 
       </div>
       <dl class="balance-totals min-w-0" :aria-busy="loading">
         <div v-for="(metric, index) in metrics" :key="metric.label" class="balance-summary min-w-0">
-          <dt class="flex items-center gap-2 text-xs font-medium text-[var(--ui-text-muted)]"><UIcon :name="index === 0 ? 'i-tabler-wallet' : 'i-tabler-arrow-down-left'" class="size-4 text-[var(--ui-success)]" aria-hidden="true" />{{ metric.label }}</dt>
+          <dt class="flex items-center gap-2 text-xs font-medium text-[var(--ui-text-muted)]"><AppIcon :name="index === 0 ? 'i-tabler-wallet' : 'i-tabler-arrow-down-left'" class="size-4 text-[var(--ui-success)]" aria-hidden="true" />{{ metric.label }}</dt>
           <dd class="mt-3 break-words text-3xl font-semibold tracking-tight tabular-nums text-[var(--ui-text-highlighted)]">{{ loading ? '—' : metric.value }}<span class="ml-1 text-xs font-normal tracking-normal text-[var(--ui-text-muted)]">{{ t('balance.creditsUnit') }}</span></dd>
           <dd class="mt-2 text-xs text-[var(--ui-text-muted)]">{{ metric.detail }}</dd>
         </div>
@@ -19,24 +19,24 @@
     </section>
 
     <section class="balance-topup min-w-0" aria-labelledby="topup-title">
-      <h2 id="topup-title" class="flex items-center gap-2.5 text-lg font-semibold tracking-tight"><span class="balance-icon flex size-8 items-center justify-center rounded-lg"><UIcon name="i-tabler-circle-plus" class="size-4" aria-hidden="true" /></span>{{ t('balance.addCredits') }}</h2>
+      <h2 id="topup-title" class="flex items-center gap-2.5 text-lg font-semibold tracking-tight"><span class="balance-icon flex size-8 items-center justify-center rounded-lg"><AppIcon name="i-tabler-circle-plus" class="size-4" aria-hidden="true" /></span>{{ t('balance.addCredits') }}</h2>
       <p class="mt-2 mb-6 text-sm leading-relaxed text-[var(--ui-text-muted)]">{{ topupApprovalEnabled ? t('balance.topupHintApproval') : t('balance.topupHint') }}</p>
       <div class="min-w-0 space-y-3">
 
         <form class="space-y-4" @submit.prevent="recharge">
-          <UAlert v-if="pendingTopup" color="warning" variant="subtle" icon="i-tabler-clock" :title="t('balance.pendingTitle')" :description="t('balance.pendingDescription', { amount: formatCredits(pendingTopup.amount) })" />
+          <PortalAlert v-if="pendingTopup" color="warning" variant="subtle" icon="i-tabler-clock" :title="t('balance.pendingTitle')" :description="t('balance.pendingDescription', { amount: formatCredits(pendingTopup.amount) })" />
 
-          <UAlert v-if="rechargeError" color="error" variant="subtle" :title="t('balance.rechargeFailed')" :description="rechargeError" />
+          <PortalAlert v-if="rechargeError" color="error" variant="subtle" :title="t('balance.rechargeFailed')" :description="rechargeError" />
 
-          <UFormField :label="t('balance.amountLabel')" required>
+          <PortalField :label="t('balance.amountLabel')" required>
             <div class="flex flex-col gap-4">
-              <UInput v-model="amount" type="number" min="0" step="any" :placeholder="t('balance.amountPlaceholder')" size="xl" class="w-full" :disabled="saving || loading || !requestStateLoaded || !!pendingTopup" required />
+              <PortalInput v-model="amount" type="number" min="0" step="any" :placeholder="t('balance.amountPlaceholder')" size="xl" class="w-full" :disabled="saving || loading || !requestStateLoaded || !!pendingTopup" required />
               <div class="flex flex-wrap gap-2" role="group" :aria-label="t('balance.quickAmounts')">
                 <button v-for="preset in amountPresets" :key="preset" type="button" class="balance-preset" :class="{ 'balance-preset--active': Number(amount) === preset }" :disabled="saving || loading || !requestStateLoaded || !!pendingTopup" @click="amount = String(preset)">{{ formatCredits(preset) }}</button>
               </div>
               <AppButton type="submit" icon="i-tabler-plus" size="lg" class="justify-center rounded-full" :loading="saving" :disabled="!validAmount || !token || loading || !requestStateLoaded || !!pendingTopup">{{ topupApprovalEnabled ? t('balance.requestTopup') : t('balance.topup') }} {{ validAmount ? formatCredits(Number(amount)) : '' }}</AppButton>
             </div>
-          </UFormField>
+          </PortalField>
           <AppButton v-if="pendingTopup || !requestStateLoaded" type="button" color="neutral" variant="outline" icon="i-tabler-refresh" :loading="loading" :disabled="saving" @click="refresh">{{ t('balance.refreshStatus') }}</AppButton>
         </form>
       </div>
@@ -47,18 +47,18 @@
       <AppCard class="balance-panel flex min-w-0 flex-col overflow-hidden" :ui="{ header: 'min-h-24', body: 'flex-1 p-0' }">
       <template #header>
               <div class="flex flex-wrap items-center justify-between gap-3">
-                <div><h2 class="flex items-center gap-2 text-sm font-semibold"><UIcon name="i-tabler-history" class="size-4 text-[var(--ui-primary)]" aria-hidden="true" /> {{ t('balance.historyTitle') }}</h2><p class="text-xs text-[var(--ui-text-muted)]">{{ t('balance.historyCount', { count: formatNumber(recordsTotal) }) }}</p></div>
-                <UFormField :label="t('balance.rowsPerPage')"><USelect v-model="pageSize" :items="pageSizeOptions" value-key="value" label-key="label" class="w-28" :disabled="busy" @update:model-value="changeRecordPageSize" /></UFormField>
+                <div><h2 class="flex items-center gap-2 text-sm font-semibold"><AppIcon name="i-tabler-history" class="size-4 text-[var(--ui-primary)]" aria-hidden="true" /> {{ t('balance.historyTitle') }}</h2><p class="text-xs text-[var(--ui-text-muted)]">{{ t('balance.historyCount', { count: formatNumber(recordsTotal) }) }}</p></div>
+                <PortalField :label="t('balance.rowsPerPage')"><PortalSelect v-model="pageSize" :items="pageSizeOptions" value-key="value" label-key="label" class="w-28" :disabled="busy" @update:model-value="changeRecordPageSize" /></PortalField>
               </div>
             </template>
       <div class="min-h-64 overflow-x-auto">
-        <AppTable :data="records" :columns="recordColumns" :loading="loading || recordsLoading" :number-offset="(recordPage - 1) * pageSize" :empty="t('balance.empty')" class="min-w-[720px]">
+        <PortalTable :data="records" :columns="recordColumns" :loading="loading || recordsLoading" :number-offset="(recordPage - 1) * pageSize" :empty="t('balance.empty')" class="min-w-[720px]">
           <template #created_at-cell="{ row }">{{ formatDate(balanceRow(row).created_at) }}</template>
-          <template #type-cell="{ row }"><UBadge :color="balanceRow(row).type === 'recharge' ? 'success' : 'warning'" variant="subtle">{{ typeLabel(balanceRow(row).type) }}</UBadge></template>
+          <template #type-cell="{ row }"><PortalBadge :color="balanceRow(row).type === 'recharge' ? 'success' : 'warning'" variant="subtle">{{ typeLabel(balanceRow(row).type) }}</PortalBadge></template>
           <template #amount-cell="{ row }"><span class="font-mono font-semibold">{{ balanceRow(row).type === 'recharge' ? '+' : '−' }}{{ formatCredits(balanceRow(row).amount) }}</span></template>
           <template #balance_before-cell="{ row }">{{ formatCredits(balanceRow(row).balance_before) }}</template>
           <template #balance_after-cell="{ row }">{{ formatCredits(balanceRow(row).balance_after) }}</template>
-        </AppTable>
+        </PortalTable>
       </div>
       <template #footer><div class="flex flex-wrap items-center justify-between gap-3 text-sm"><span class="text-[var(--ui-text-muted)]">{{ t('balance.showing', { start: recordRangeStart, end: recordRangeEnd, total: formatNumber(recordsTotal) }) }}</span><div class="flex items-center gap-2"><AppButton size="sm" color="neutral" variant="outline" :disabled="recordPage <= 1 || busy" @click="changeRecordPage(-1)">{{ t('balance.previous') }}</AppButton><span>{{ t('balance.pageOf', { page: recordPage, pages: recordPages }) }}</span><AppButton size="sm" color="neutral" variant="outline" :disabled="recordPage >= recordPages || busy" @click="changeRecordPage(1)">{{ t('balance.next') }}</AppButton></div></div></template>
       </AppCard>
@@ -68,8 +68,16 @@
 </template>
 
 <script setup lang="ts">
+import AppIcon from '~/components/AppIcon.vue'
+import PortalTable from '~/components/app/general/PortalTable.vue'
+import PortalAlert from '~/components/app/general/PortalAlert.vue'
+import PortalBadge from '~/components/app/general/PortalBadge.vue'
+import PortalField from '~/components/app/general/PortalField.vue'
+import PortalInput from '~/components/app/general/PortalInput.vue'
+import PortalSelect from '~/components/app/general/PortalSelect.vue'
 import AppUserWorkspace from '~/components/app/workspace/UserWorkspace.vue'
 import { useWorkspaceState } from '~/composables/useWorkspaceState'
+import { usePortalToast } from '~/composables/portal/usePortalToast'
 import type { BillingBalanceRecord, BillingOverview, BillingRechargeRequest } from '~/composables/useUserApi'
 
 definePageMeta({ layout: 'app' })
@@ -84,7 +92,7 @@ const recordsLoading = useWorkspaceState('user:balance:records-loading', () => f
 const busy = computed(() => loading.value || saving.value || recordsLoading.value)
 const pageError = useWorkspaceState('user:balance:page-error', () => '')
 const rechargeError = useWorkspaceState('user:balance:recharge-error', () => '')
-const toast = useToast()
+const toast = usePortalToast()
 const amount = ref('')
 const amountPresets = [10, 50, 100, 500]
 const validAmount = computed(() => Number.isFinite(Number(amount.value)) && Number(amount.value) > 0)

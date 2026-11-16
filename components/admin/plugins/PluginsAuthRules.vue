@@ -18,9 +18,9 @@
                         </div></template
                     ><template #type-cell="{ row }"
                         ><div>
-                            <UBadge color="neutral" variant="subtle">{{
+                            <PortalBadge color="neutral" variant="subtle">{{
                                 value(row).auth_type
-                            }}</UBadge>
+                            }}</PortalBadge>
                             <p
                                 v-if="value(row).header_name"
                                 class="mt-1 text-xs text-[var(--ui-text-muted)]"
@@ -30,13 +30,13 @@
                         </div></template
                     ><template #scope-cell="{ row }"
                         ><div class="flex flex-wrap gap-1">
-                            <UBadge
+                            <PortalBadge
                                 v-for="scope in value(row).apply_to || []"
                                 :key="scope"
                                 color="info"
                                 variant="subtle"
                                 size="sm"
-                                >{{ scopeLabel(scope) }}</UBadge
+                                >{{ scopeLabel(scope) }}</PortalBadge
                             ><span
                                 v-if="!value(row).apply_to?.length"
                                 class="text-sm text-[var(--ui-text-muted)]"
@@ -44,12 +44,12 @@
                             >
                         </div></template
                     ><template #status-cell="{ row }"
-                        ><UBadge
+                        ><PortalBadge
                             :color="value(row).enabled ? 'success' : 'neutral'"
                             variant="subtle"
                             >{{
                                 value(row).enabled ? t('plugins.badge.enabled') : t('plugins.badge.disabled')
-                            }}</UBadge
+                            }}</PortalBadge
                         ></template
                     ><template #actions-cell="{ row }"
                         ><div class="flex justify-end gap-1">
@@ -77,6 +77,7 @@
 </template>
 
 <script setup lang="ts">
+import PortalBadge from '~/components/app/general/PortalBadge.vue'
 import AdminTableAction from '~/components/admin/general/TableAction.vue'
 import { usePluginsWorkspace } from "~/composables/plugins/usePluginsWorkspace"
 const { t, openAuthCreate, authColumns, authRules, value, scopeLabel, openAuthEdit, deleteAuth } = usePluginsWorkspace();

@@ -2,7 +2,7 @@
   <section v-if="supported" class="limit-reset" :aria-label="t('ws.reset.aria')" :aria-busy="loading">
     <div class="flex flex-wrap items-center justify-between gap-3">
       <div class="min-w-0">
-        <h3 class="flex items-center gap-2 text-xs font-medium"><UIcon name="i-tabler-refresh" class="size-4 text-primary" aria-hidden="true" /> {{ t('ws.reset.available', { count: loading ? '…' : loadError ? '—' : allowance?.available ?? '—' }) }}</h3>
+        <h3 class="flex items-center gap-2 text-xs font-medium"><AppIcon name="i-tabler-refresh" class="size-4 text-primary" aria-hidden="true" /> {{ t('ws.reset.available', { count: loading ? '…' : loadError ? '—' : allowance?.available ?? '—' }) }}</h3>
         <p v-if="allowance && allowance.available > 0" class="mt-1 text-xs leading-relaxed text-[var(--ui-text-muted)]">{{ t('ws.reset.hint') }}</p>
         <p v-if="allowance && !loadError && allowance.available > 0" class="mt-1 text-xs text-[var(--ui-text-muted)]">{{ allowance.mode === 'monthly' ? t('ws.reset.monthly', { amount: allowance.amount }) : allowance.mode === 'one_time' ? t('ws.reset.oneTime') : t('ws.reset.none') }}</p>
         <p v-if="!loadError && (allowance?.renews_at || allowance?.expires_at)" class="mt-1 text-xs text-[var(--ui-text-muted)]">{{ allowance?.mode === 'monthly' ? t('ws.reset.renews', { date: formatDate(allowance?.renews_at || allowance?.expires_at || '') }) : t('ws.reset.expires', { date: formatDate(allowance?.renews_at || allowance?.expires_at || '') }) }}</p>
@@ -10,24 +10,28 @@
       </div>
       <AppButton v-if="!loading && !loadError && allowance && allowance.available > 0" size="sm" variant="soft" class="rounded-full" icon="i-tabler-refresh" :disabled="pending || !enabledWindows.length" @click="resetError = ''; confirmOpen = true">{{ t('ws.reset.button') }}</AppButton>
     </div>
-    <UAlert v-if="loadError" class="mt-3" color="error" variant="subtle" :title="t('ws.reset.loadError')" :description="loadError" />
+    <PortalAlert v-if="loadError" class="mt-3" color="error" variant="subtle" :title="t('ws.reset.loadError')" :description="loadError" />
     <AppButton v-if="loadError" class="mt-2" size="sm" color="neutral" variant="outline" :loading="loading" @click="loadLimits">{{ t('common.retry') }}</AppButton>
-    <UModal v-model:open="confirmOpen" :title="t('ws.reset.confirmTitle')" :dismissible="!pending" :close="!pending" :ui="{ content: 'sm:max-w-md' }">
+    <AppModal v-model:open="confirmOpen" :title="t('ws.reset.confirmTitle')" :dismissible="!pending" :close="!pending" :ui="{ content: 'sm:max-w-md' }">
       <template #body>
         <div class="space-y-4">
           <p class="text-sm">{{ t('ws.reset.confirmBody') }}</p>
-          <UAlert v-if="resetError" color="error" variant="subtle" :description="resetError" />
+          <PortalAlert v-if="resetError" color="error" variant="subtle" :description="resetError" />
           <div class="flex justify-end gap-2"><AppButton color="neutral" variant="outline" :disabled="pending" @click="confirmOpen = false">{{ t('common.cancel') }}</AppButton><AppButton :loading="pending" :disabled="pending" @click="resetLimits">{{ t('ws.reset.use') }}</AppButton></div>
         </div>
       </template>
-    </UModal>
+    </AppModal>
   </section>
 </template>
 
 <script setup lang="ts">
+import AppIcon from '~/components/AppIcon.vue'
+import { usePortalToast } from '~/composables/portal/usePortalToast'
+import AppModal from '~/components/AppModal.vue'
+import PortalAlert from '~/components/app/general/PortalAlert.vue'
 const emit = defineEmits<{ reset: [] }>()
 const { capabilities, fetchAPI } = useUserApi()
-const toast = useToast()
+const toast = usePortalToast()
 const { t, intlLocale } = usePortalI18n()
 const supported = computed(() => capabilities.value.user_reset_allowance === true)
 type Allowance = { mode: string; amount: number; available: number; expires_at: string | null; renews_at: string | null }

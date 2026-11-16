@@ -3,7 +3,7 @@
     <template #actions><AppButton color="neutral" variant="ghost" icon="i-tabler-refresh" :aria-label="t('common.refresh')" :loading="loading" @click="loadPools" /><AppButton size="sm" icon="i-tabler-plus" :disabled="unsupported" @click="openCreate">{{ t('proxy.pool.new') }}</AppButton></template>
 
     <div v-if="unsupported || loadError" class="p-4">
-    <UAlert
+    <PortalAlert
       v-if="unsupported"
       color="warning"
       variant="subtle"
@@ -11,7 +11,7 @@
       :title="t('proxy.pool.unsupportedTitle')"
       :description="t('proxy.pool.unsupportedDescription')"
     />
-    <UAlert
+    <PortalAlert
       v-else-if="loadError"
       color="error"
       variant="subtle"
@@ -32,7 +32,7 @@
 
           <template #state-cell="{ row }">
             <div class="flex items-center gap-2">
-              <USwitch
+              <AdminSwitch
                 :model-value="Boolean(rowValue(row).enabled)"
                 :disabled="Boolean(togglingId)"
                 :aria-label="rowValue(row).enabled ? t('proxy.pool.toggleDisable', { name: rowValue(row).name }) : t('proxy.pool.toggleEnable', { name: rowValue(row).name })"
@@ -43,7 +43,7 @@
           </template>
 
           <template #scope-cell="{ row }">
-            <UBadge color="neutral" variant="subtle">{{ rowValue(row).scope || 'global' }}</UBadge>
+            <PortalBadge color="neutral" variant="subtle">{{ rowValue(row).scope || 'global' }}</PortalBadge>
           </template>
 
           <template #priority-cell="{ row }">
@@ -52,9 +52,9 @@
 
           <template #last_test-cell="{ row }">
             <div class="min-w-36">
-              <UBadge v-if="rowValue(row).last_test_result" :color="testColor(rowValue(row).last_test_result)" variant="subtle">
+              <PortalBadge v-if="rowValue(row).last_test_result" :color="testColor(rowValue(row).last_test_result)" variant="subtle">
                 {{ testLabel(rowValue(row).last_test_result) }}
-              </UBadge>
+              </PortalBadge>
               <span v-else class="text-sm text-[var(--ui-text-muted)]">{{ t('proxy.notTested') }}</span>
               <p class="mt-1 text-xs text-[var(--ui-text-dimmed)]">{{ formatDate(rowValue(row).last_tested_at) }}</p>
             </div>
@@ -76,36 +76,36 @@
     <AppModal v-model:open="formOpen" :title="editingId ? t('proxy.form.editTitle') : t('proxy.pool.new')" :description="t('proxy.form.description')">
       <template #body>
         <form class="space-y-4" @submit.prevent="savePool">
-          <UFormField :label="t('common.name')" required :error="formErrors.name">
-            <UInput v-model="form.name" class="w-full" autocomplete="off" :placeholder="t('proxy.field.namePlaceholder')" />
-          </UFormField>
+          <AdminField :label="t('common.name')" required :error="formErrors.name">
+            <AdminInput v-model="form.name" class="w-full" autocomplete="off" :placeholder="t('proxy.field.namePlaceholder')" />
+          </AdminField>
 
-          <UFormField :label="t('proxy.field.url')" required :error="formErrors.proxy_url" :help="t('proxy.field.urlHelp')">
-            <UInput v-model="form.proxy_url" class="w-full" autocomplete="off" placeholder="http://127.0.0.1:7890" />
-          </UFormField>
+          <AdminField :label="t('proxy.field.url')" required :error="formErrors.proxy_url" :help="t('proxy.field.urlHelp')">
+            <AdminInput v-model="form.proxy_url" class="w-full" autocomplete="off" placeholder="http://127.0.0.1:7890" />
+          </AdminField>
 
           <div class="grid gap-4 sm:grid-cols-2">
-            <UFormField :label="t('proxy.field.priority')" required :error="formErrors.priority">
-              <UInput v-model="form.priority" type="number" step="1" class="w-full" />
-            </UFormField>
-            <UFormField :label="t('proxy.field.scope')">
-              <UInput model-value="global" readonly class="w-full" />
-            </UFormField>
+            <AdminField :label="t('proxy.field.priority')" required :error="formErrors.priority">
+              <AdminInput v-model="form.priority" type="number" step="1" class="w-full" />
+            </AdminField>
+            <AdminField :label="t('proxy.field.scope')">
+              <AdminInput model-value="global" readonly class="w-full" />
+            </AdminField>
           </div>
 
-          <UFormField :label="t('proxy.field.note')">
-            <UTextarea v-model="form.note" :rows="3" class="w-full" :placeholder="t('proxy.field.notePlaceholder')" />
-          </UFormField>
+          <AdminField :label="t('proxy.field.note')">
+            <AdminTextarea v-model="form.note" :rows="3" class="w-full" :placeholder="t('proxy.field.notePlaceholder')" />
+          </AdminField>
 
           <label class="flex items-center justify-between gap-4 rounded-lg border border-[var(--ui-border)] p-3">
             <span>
               <span class="block text-sm font-medium text-[var(--ui-text-highlighted)]">{{ t('common.enabled') }}</span>
               <span class="block text-xs text-[var(--ui-text-muted)]">{{ t('proxy.field.enabledHint') }}</span>
             </span>
-            <USwitch v-model="form.enabled" />
+            <AdminSwitch v-model="form.enabled" />
           </label>
 
-          <UAlert v-if="formError" color="error" variant="subtle" icon="i-tabler-alert-circle" :title="t('proxy.form.saveFailedTitle')" :description="formError" />
+          <PortalAlert v-if="formError" color="error" variant="subtle" icon="i-tabler-alert-circle" :title="t('proxy.form.saveFailedTitle')" :description="formError" />
 
           <div class="flex justify-end gap-2">
             <AppButton type="button" color="neutral" variant="ghost" :disabled="saving" @click="closeForm">{{ t('common.cancel') }}</AppButton>
@@ -118,7 +118,7 @@
     <AppModal v-model:open="deleteOpen" :title="t('proxy.action.delete')">
       <template #body>
         <div class="space-y-5">
-          <UAlert color="warning" variant="subtle" icon="i-tabler-alert-triangle" :title="t('proxy.delete.warning')" :description="deleteTarget?.name || deleteTarget?.proxy_url" />
+          <PortalAlert color="warning" variant="subtle" icon="i-tabler-alert-triangle" :title="t('proxy.delete.warning')" :description="deleteTarget?.name || deleteTarget?.proxy_url" />
           <p class="text-sm text-[var(--ui-text-muted)]">{{ t('proxy.delete.irreversible') }}</p>
           <div class="flex justify-end gap-2">
             <AppButton color="neutral" variant="ghost" :disabled="deleting" @click="closeDelete">{{ t('common.cancel') }}</AppButton>
@@ -131,6 +131,12 @@
 </template>
 
 <script setup lang="ts">
+import AdminField from '~/components/admin/general/controls/AdminField.vue'
+import AdminInput from '~/components/admin/general/controls/AdminInput.vue'
+import AdminTextarea from '~/components/admin/general/controls/AdminTextarea.vue'
+import AdminSwitch from '~/components/admin/general/controls/AdminSwitch.vue'
+import PortalAlert from '~/components/app/general/PortalAlert.vue'
+import PortalBadge from '~/components/app/general/PortalBadge.vue'
 import AdminDataPanel from '~/components/admin/general/DataPanel.vue'
 import AdminTableAction from '~/components/admin/general/TableAction.vue'
 import { useWorkspaceState } from '~/composables/useWorkspaceState'
@@ -156,7 +162,8 @@ interface ProxyPoolResponse {
 }
 
 const { fetchAPI } = useApi()
-const toast = useToast()
+import { useAdminToast } from '~/composables/admin-feedback/useAdminToast'
+const toast = useAdminToast()
 const { t, intlLocale } = useAdminI18n()
 
 const columns = computed(() => [

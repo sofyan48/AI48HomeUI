@@ -1,5 +1,6 @@
 import { inject, provide, type InjectionKey } from 'vue'
-import { useAdminI18n, useApi, useCapabilities, useRoute, useToast } from '#imports'
+import { useAdminI18n, useApi, useCapabilities, useRoute } from '#imports'
+import { useAdminToast } from '~/composables/admin-feedback/useAdminToast'
 import { useQuotaCollection } from '~/composables/useQuotaCollection'
 import { supportsCredentialWebsockets, supportsCredentialUsingAPI } from '~/composables/credentialTransport'
 import { ALL_FILTER, createAccountFormat } from './format'
@@ -31,7 +32,7 @@ function createUpstreamAccounts(props: AccountsProps, emit: AccountsEmit) {
   const quotaCollection = useQuotaCollection()
   const { fetchAPI, resolveUrl, token } = useApi()
   const { supports } = useCapabilities()
-  const toast = useToast()
+  const toast = useAdminToast()
   const { t, intlLocale } = useAdminI18n()
   const route = useRoute()
   const base = { t, intlLocale, fetchAPI, resolveUrl, token, supports, toast, route, props, emit, quotaCollection }

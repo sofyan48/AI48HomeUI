@@ -1,6 +1,6 @@
 <template>
   <div class="space-y-4">
-    <UAlert
+    <PortalAlert
       v-if="pageError"
       color="error"
       variant="subtle"
@@ -20,6 +20,7 @@
 </template>
 
 <script setup>
+import PortalAlert from '~/components/app/general/PortalAlert.vue'
 import { provideUpstreamProvidersWorkspace } from '~/composables/upstream-providers/useUpstreamProvidersWorkspace'
 import ProvidersCategoryNav from '~/components/admin/upstream-providers/list/ProvidersCategoryNav.vue'
 import ProvidersTable from '~/components/admin/upstream-providers/list/ProvidersTable.vue'

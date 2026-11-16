@@ -1,7 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
-import { compileScript, compileStyle, compileTemplate, parse } from '@vue/compiler-sfc'
+import { compileScript, compileStyle, compileTemplate, parse, registerTS } from '@vue/compiler-sfc'
+import ts from 'typescript'
+
+registerTS(() => ts)
+const compilerFs = { fileExists: existsSync, readFile: (path: string) => readFileSync(path, 'utf8') }
 
 const movedComponents = {
   ApplicationLogTail: 'logs',
@@ -61,9 +65,9 @@ describe('admin component folder migration', () => {
     test(`${move.oldName} moved to ${move.newPath} and compiles`, () => {
       expect(existsSync(join(root, move.oldPath))).toBe(false)
       expect(existsSync(join(root, move.newPath))).toBe(true)
-      const { descriptor, errors } = parse(read(move.newPath), { filename: move.newPath })
+      const { descriptor, errors } = parse(read(move.newPath), { filename: join(root, move.newPath) })
       expect(errors).toEqual([])
-      const script = compileScript(descriptor, { id: move.newPath })
+      const script = compileScript(descriptor, { id: move.newPath, fs: compilerFs })
       const template = compileTemplate({ source: descriptor.template!.content, filename: move.newPath, id: move.newPath, compilerOptions: { bindingMetadata: script.bindings } })
       expect(template.errors).toEqual([])
       for (const style of descriptor.styles) {
@@ -75,9 +79,9 @@ describe('admin component folder migration', () => {
   test('all consumers explicitly bind every legacy template alias', () => {
     for (const file of consumers) {
       const source = read(file)
-      const { descriptor } = parse(source, { filename: file })
+      const { descriptor } = parse(source, { filename: join(root, file) })
       const template = descriptor.template?.content || ''
-      const script = descriptor.scriptSetup ? compileScript(descriptor, { id: file }) : undefined
+      const script = descriptor.scriptSetup ? compileScript(descriptor, { id: file, fs: compilerFs }) : undefined
       for (const move of migration.moves) {
         expect(source.includes(move.oldPath)).toBe(false)
         if (new RegExp(`<${move.oldName}(?=[\\s/>])`).test(template)) {

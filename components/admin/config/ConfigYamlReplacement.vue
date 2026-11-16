@@ -3,10 +3,10 @@
   <AppModal v-model:open="open" :title="t('config.yaml.title')" :description="t('config.yaml.description')">
     <template #body>
       <div class="space-y-4">
-        <UAlert color="warning" :title="t('config.yaml.warningTitle')" :description="t('config.yaml.warningDescription')" />
-        <UAlert v-if="error" color="error" :title="t('config.yaml.errorTitle')" :description="error" />
-        <UTextarea v-model="text" :disabled="loading || saving" :rows="18" class="w-full font-mono text-xs" :aria-label="t('config.yaml.textareaLabel')" spellcheck="false" />
-        <UCheckbox v-model="confirmed" :disabled="loading || saving" :label="t('config.yaml.confirm')" />
+        <PortalAlert color="warning" :title="t('config.yaml.warningTitle')" :description="t('config.yaml.warningDescription')" />
+        <PortalAlert v-if="error" color="error" :title="t('config.yaml.errorTitle')" :description="error" />
+        <AdminTextarea v-model="text" :disabled="loading || saving" :rows="18" class="w-full font-mono text-xs" :aria-label="t('config.yaml.textareaLabel')" spellcheck="false" />
+        <AdminCheckbox v-model="confirmed" :disabled="loading || saving" :label="t('config.yaml.confirm')" />
         <div class="flex flex-col gap-2 sm:flex-row sm:justify-end">
           <AppButton color="neutral" variant="outline" :disabled="saving" :loading="loading" @click="load">{{ t('config.yaml.reload') }}</AppButton>
           <AppButton color="error" :loading="saving" :disabled="loading || !confirmed || !text.trim()" @click="replace">{{ t('config.yaml.title') }}</AppButton>
@@ -17,6 +17,9 @@
 </template>
 
 <script setup lang="ts">
+import AdminTextarea from '~/components/admin/general/controls/AdminTextarea.vue'
+import AdminCheckbox from '~/components/admin/general/controls/AdminCheckbox.vue'
+import PortalAlert from '~/components/app/general/PortalAlert.vue'
 import { parseDocument } from 'yaml'
 
 withDefaults(defineProps<{ disabled?: boolean }>(), { disabled: false })

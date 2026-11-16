@@ -1,7 +1,7 @@
 <template>
   <AdminTablePanel :title="t('common.users')" :description="description">
     <template #actions>
-      <UInput v-model="search" icon="i-tabler-search" :placeholder="t('users.searchUsersPlaceholder')" :aria-label="t('users.searchUsers')" class="w-full sm:w-72" />
+      <AdminInput v-model="search" icon="i-tabler-search" :placeholder="t('users.searchUsersPlaceholder')" :aria-label="t('users.searchUsers')" class="w-full sm:w-72" />
       <AppButton icon="i-tabler-user-plus" @click="emit('create')">{{ t('users.newUser') }}</AppButton>
     </template>
 
@@ -30,7 +30,7 @@
       :empty="t('users.noUsersMatch')"
     >
       <template #select-header>
-        <UCheckbox
+        <AdminCheckbox
           :model-value="allSelected"
           :indeterminate="someSelected"
           :disabled="!operableUsers.length"
@@ -39,7 +39,7 @@
         />
       </template>
       <template #select-cell="{ row }">
-        <UCheckbox
+        <AdminCheckbox
           :model-value="selectedUserIds.has(row.original.id)"
           :disabled="!isOperableUser(row.original)"
           :aria-label="t('users.selectUser', { name: row.original.username })"
@@ -51,15 +51,15 @@
         <p v-if="row.original.pending_topup" class="text-xs text-[var(--ui-text-muted)]">{{ t('users.topupPending') }}</p>
       </template>
       <template #status-cell="{ row }">
-        <UBadge :color="row.original.deleted_at || row.original.approval_pending ? 'warning' : 'success'" variant="subtle">{{ userStatus(row.original) }}</UBadge>
+        <PortalBadge :color="row.original.deleted_at || row.original.approval_pending ? 'warning' : 'success'" variant="subtle">{{ userStatus(row.original) }}</PortalBadge>
       </template>
       <template #credits-cell="{ row }">
         <span class="tabular-nums">{{ formatCredits(row.original.credits) }}</span>
       </template>
       <template #pendingTopup-cell="{ row }">
-        <UBadge v-if="row.original.pending_topup" color="warning" variant="subtle">
+        <PortalBadge v-if="row.original.pending_topup" color="warning" variant="subtle">
           {{ t('users.creditsAmount', { amount: formatCredits(row.original.pending_topup.amount) }) }}
-        </UBadge>
+        </PortalBadge>
         <span v-else class="text-[var(--ui-text-muted)]">—</span>
       </template>
       <template #periodLimits-cell="{ row }">
@@ -67,7 +67,7 @@
           v-if="zeroPeriodWindows(row.original).length"
           class="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400"
           :title="t('users.blockedWindows', { windows: zeroPeriodWindows(row.original).join(', ') })"
-        ><UIcon name="i-tabler-lock" class="size-3.5" />{{ t('users.blocked') }}</span>
+        ><AppIcon name="i-tabler-lock" class="size-3.5" />{{ t('users.blocked') }}</span>
         <span v-else-if="periodWindows(row.original).length" class="tabular-nums">
           {{ t('users.windowsCount', { count: periodWindows(row.original).length }) }}
         </span>
@@ -106,6 +106,10 @@
 </template>
 
 <script setup lang="ts">
+import AdminInput from '~/components/admin/general/controls/AdminInput.vue'
+import AdminCheckbox from '~/components/admin/general/controls/AdminCheckbox.vue'
+import PortalBadge from '~/components/app/general/PortalBadge.vue'
+import AppIcon from '~/components/AppIcon.vue'
 import AdminTablePanel from '~/components/admin/general/TablePanel.vue'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import UsersResetAllowanceCell from './UsersResetAllowanceCell.vue'

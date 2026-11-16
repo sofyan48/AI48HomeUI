@@ -26,7 +26,7 @@
                 <span class="mt-0.5 block text-xs text-[var(--ui-text-muted)]">{{ t('users.modelsCount', { count: modelDetailsFor(group.id).length }) }}</span>
               </span>
             </span>
-            <UIcon v-if="group.disabled" name="i-tabler-alert-triangle" class="size-4 shrink-0 text-[var(--ui-warning)]" />
+            <AppIcon v-if="group.disabled" name="i-tabler-alert-triangle" class="size-4 shrink-0 text-[var(--ui-warning)]" />
             <span v-else class="shrink-0 rounded-md border border-[var(--ui-border)] px-2 py-1 text-xs">{{ modelDetailsFor(group.id).length }}</span>
           </button>
           <p v-if="!filteredGroups.length" class="px-3 py-8 text-center text-sm text-[var(--ui-text-muted)]">{{ t('users.noModelScopesMatch') }}</p>
@@ -41,7 +41,7 @@
             : t('users.selectOrCreateModelScope')"
         >
           <template #actions>
-            <USelectMenu
+            <AdminSelectMenu
               v-model="selectedId"
               :items="scopeOptions"
               value-key="value"
@@ -83,6 +83,8 @@
 </template>
 
 <script setup lang="ts">
+import AdminSelectMenu from '~/components/admin/general/controls/AdminSelectMenu.vue'
+import AppIcon from '~/components/AppIcon.vue'
 import AdminDataPanel from '~/components/admin/general/DataPanel.vue'
 import AdminTableAction from '~/components/admin/general/TableAction.vue'
 import { computed, ref, watch } from 'vue'

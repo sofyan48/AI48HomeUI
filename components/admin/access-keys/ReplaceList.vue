@@ -2,7 +2,7 @@
   <AppButton color="neutral" variant="outline" icon="i-tabler-list-details" @click="start">
     {{ t('keys.replace.button') }}
   </AppButton>
-  <USlideover
+  <AppModal
     v-model:open="open"
     :title="t('keys.replace.title')"
     :description="t('keys.replace.description')"
@@ -12,24 +12,24 @@
   >
     <template #body>
       <div class="space-y-4">
-        <UAlert color="warning" variant="subtle" :title="t('keys.replace.alertTitle')" :description="t('keys.replace.alertDescription')" />
+        <PortalAlert color="warning" variant="subtle" :title="t('keys.replace.alertTitle')" :description="t('keys.replace.alertDescription')" />
         <p class="text-sm text-[var(--ui-text-muted)]">
           {{ t('keys.replace.explanation') }}
         </p>
-        <UAlert v-if="error" role="alert" color="error" variant="subtle" :description="error" />
+        <PortalAlert v-if="error" role="alert" color="error" variant="subtle" :description="error" />
         <p v-if="loading" role="status" class="text-sm text-[var(--ui-text-muted)]">{{ t('keys.replace.loadingSnapshot') }}</p>
         <AppButton v-if="error && !saving" color="neutral" variant="outline" :loading="loading" @click="loadSnapshot(true)">
           {{ t('keys.replace.reloadKeepDraft') }}
         </AppButton>
-        <UFormField :label="t('keys.replace.fieldLabel')" :hint="t('keys.replace.fieldHint')" :error="validationError || undefined">
-          <UTextarea v-model="draft" :rows="14" class="w-full font-mono" autocomplete="off" autocapitalize="off" :spellcheck="false" :disabled="!snapshot || loading || saving || reviewing" />
-        </UFormField>
+        <AdminField :label="t('keys.replace.fieldLabel')" :hint="t('keys.replace.fieldHint')" :error="validationError || undefined">
+          <AdminTextarea v-model="draft" :rows="14" class="w-full font-mono" autocomplete="off" autocapitalize="off" :spellcheck="false" :disabled="!snapshot || loading || saving || reviewing" />
+        </AdminField>
         <p v-if="plan" role="status" class="text-sm">
           {{ t('keys.replace.planSummary', { kept: plan.kept, added: plan.added, removed: plan.removed, total: plan.total }) }}
         </p>
         <template v-if="reviewing && plan">
-          <UAlert color="warning" variant="subtle" :title="plan.total === 0 ? t('keys.replace.confirmRevokeAllTitle') : t('keys.replace.confirmReplaceTitle')" :description="t('keys.replace.confirmDescription', { removed: plan.removed, added: plan.added })" />
-          <UCheckbox v-model="acknowledged" :disabled="saving" :label="plan.total === 0 ? t('keys.replace.ackAll') : t('keys.replace.ackReview')" />
+          <PortalAlert color="warning" variant="subtle" :title="plan.total === 0 ? t('keys.replace.confirmRevokeAllTitle') : t('keys.replace.confirmReplaceTitle')" :description="t('keys.replace.confirmDescription', { removed: plan.removed, added: plan.added })" />
+          <AdminCheckbox v-model="acknowledged" :disabled="saving" :label="plan.total === 0 ? t('keys.replace.ackAll') : t('keys.replace.ackReview')" />
         </template>
       </div>
     </template>
@@ -41,15 +41,21 @@
         <AppButton v-else color="error" :disabled="blocked || !plan?.changed" @click="reviewing = true; acknowledged = false">{{ t('keys.replace.review') }}</AppButton>
       </div>
     </template>
-  </USlideover>
+  </AppModal>
 </template>
 
 <script setup lang="ts">
+import AppModal from '~/components/AppModal.vue'
+import PortalAlert from '~/components/app/general/PortalAlert.vue'
+import AdminField from '~/components/admin/general/controls/AdminField.vue'
+import AdminTextarea from '~/components/admin/general/controls/AdminTextarea.vue'
+import AdminCheckbox from '~/components/admin/general/controls/AdminCheckbox.vue'
 import { readReplacementSnapshot, planReplacement, type AccessKeySnapshot } from './replacement'
 
 const emit = defineEmits<{ replaced: [] }>()
 const { fetchRaw, fetchAPI, token } = useApi()
-const toast = useToast()
+import { useAdminToast } from '~/composables/admin-feedback/useAdminToast'
+const toast = useAdminToast()
 const { t } = useAdminI18n()
 const open = ref(false)
 const snapshot = shallowRef<AccessKeySnapshot | null>(null)

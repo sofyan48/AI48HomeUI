@@ -1,12 +1,11 @@
 import { readonly } from 'vue'
-import { useAppConfig, useHead, useState } from '#imports'
+import { useHead, useState } from '#imports'
 import { resolveThemeColor, themeColors, themeColorStorageKey, themeColorVariables } from './themeColors'
 import type { ThemeColor } from './themeColors'
 
 export function useThemeColor() {
   const color = useState<ThemeColor>('appearance:color', () => 'violet')
   const initialized = useState('appearance:color-initialized', () => false)
-  const appConfig = useAppConfig()
 
   if (import.meta.client && !initialized.value) {
     try {
@@ -15,12 +14,10 @@ export function useThemeColor() {
       // Storage can be disabled by browser privacy settings.
     }
     initialized.value = true
-    appConfig.ui.colors.primary = color.value
   }
 
   function setColor(value: ThemeColor) {
     color.value = resolveThemeColor(value)
-    appConfig.ui.colors.primary = color.value
     if (import.meta.client) {
       try {
         window.localStorage.setItem(themeColorStorageKey, color.value)

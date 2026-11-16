@@ -8,9 +8,9 @@
       :class="[`dashboard-tone--${card.tone}`, { 'dashboard-metric--static': !card.to }]"
     >
       <div class="flex items-center gap-2.5">
-        <span class="dashboard-metric-icon" aria-hidden="true"><UIcon :name="card.icon" class="size-[18px]" /></span>
+        <span class="dashboard-metric-icon" aria-hidden="true"><AppIcon :name="card.icon" class="size-[18px]" /></span>
         <h2 class="metric-label min-w-0 flex-1 truncate">{{ card.label }}</h2>
-        <UIcon v-if="card.to" name="i-tabler-arrow-up-right" class="metric-link-icon" aria-hidden="true" />
+        <AppIcon v-if="card.to" name="i-tabler-arrow-up-right" class="metric-link-icon" aria-hidden="true" />
       </div>
       <p class="metric-value">{{ card.value }}</p>
       <p class="metric-detail">{{ card.detail }}</p>
@@ -25,6 +25,7 @@
 </template>
 
 <script setup lang="ts">
+import AppIcon from '~/components/AppIcon.vue'
 import AdminUsageSparkline from '~/components/admin/general/UsageSparkline.vue'
 import { computed } from 'vue'
 import { useDashboard } from '~/composables/dashboard/useDashboard'

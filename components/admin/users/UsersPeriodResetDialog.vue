@@ -12,7 +12,7 @@
       <p class="mb-2 text-sm font-medium">{{ t('users.windowsToReset') }}</p>
       <div class="grid gap-2 sm:grid-cols-2">
         <label v-for="window in periodWindowIds" :key="window" class="flex items-center gap-2 rounded-md border border-[var(--ui-border)] px-3 py-2 text-sm">
-          <UCheckbox :model-value="windows.has(window)" :disabled="saving" @update:model-value="toggleWindow(window)" />
+          <AdminCheckbox :model-value="windows.has(window)" :disabled="saving" @update:model-value="toggleWindow(window)" />
           <span class="flex-1">{{ periodWindowLabel(window) }}</span>
           <span v-if="findPeriodWindow(periods, window)?.enabled" class="text-xs text-[var(--ui-text-muted)]">{{ t('users.enabledLower') }}</span>
         </label>
@@ -34,6 +34,7 @@
 </template>
 
 <script setup lang="ts">
+import AdminCheckbox from '~/components/admin/general/controls/AdminCheckbox.vue'
 import { computed, ref } from 'vue'
 import { useUsersWorkspace } from '~/composables/users/useUsersWorkspace'
 import type { AnyRecord } from '~/composables/users/common'

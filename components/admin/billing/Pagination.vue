@@ -3,7 +3,7 @@
     <p class="text-xs tabular-nums text-[var(--ui-text-muted)]">{{ t('billing.pagination.range', { start: formatted(start), end: formatted(end), total: formatted(total) }) }}</p>
     <div class="flex items-center gap-2">
       <span class="text-xs text-[var(--ui-text-muted)]">{{ t('billing.pagination.rows') }}</span>
-      <USelect :model-value="pageSize" :items="pageSizeOptions" value-key="value" label-key="label" size="sm" :aria-label="t('common.rowsPerPage')" class="w-20" @update:model-value="emit('update:pageSize', Number($event))" />
+      <AdminSelect :model-value="pageSize" :items="pageSizeOptions" value-key="value" label-key="label" size="sm" :aria-label="t('common.rowsPerPage')" class="w-20" @update:model-value="emit('update:pageSize', Number($event))" />
       <span class="mx-1 h-4 w-px bg-[var(--ui-border)]" aria-hidden="true" />
       <AppButton size="sm" color="neutral" variant="ghost" icon="i-tabler-chevron-left" :aria-label="t('billing.pagination.previous')" :disabled="page <= 1 || loading" @click="emit('previous')" />
       <span class="min-w-16 text-center text-xs tabular-nums">{{ page }} / {{ pages }}</span>
@@ -13,6 +13,7 @@
 </template>
 
 <script setup lang="ts">
+import AdminSelect from '~/components/admin/general/controls/AdminSelect.vue'
 const props = defineProps<{ page: number; total: number; pageSize: number; loading?: boolean }>()
 const emit = defineEmits<{ previous: []; next: []; 'update:pageSize': [value: number] }>()
 const { t, intlLocale } = useAdminI18n()

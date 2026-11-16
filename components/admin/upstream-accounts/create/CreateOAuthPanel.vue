@@ -15,27 +15,30 @@
         </div>
         <p v-if="oauthSessions[provider.value].status || oauthSessions[provider.value].error" role="status" class="mt-3 break-words text-sm">{{ oauthSessions[provider.value].status }} {{ oauthSessions[provider.value].error }}</p>
         <form v-if="provider.value !== 'kimi'" class="mt-4 space-y-4 border-t border-[var(--ui-border)] pt-4" @submit.prevent="submitCallback(provider.value)">
-          <UFormField :label="t('cred.oauth.callbackUrl')">
-            <UInput v-model="oauthSessions[provider.value].redirect_url" class="w-full" :placeholder="t('cred.oauth.callbackUrl')" />
-          </UFormField>
-          <UFormField :label="t('cred.oauth.code')">
-            <UInput v-model="oauthSessions[provider.value].code" class="w-full" :placeholder="t('cred.oauth.code')" />
-          </UFormField>
-          <UFormField :label="t('cred.oauth.state')">
-            <UInput v-model="oauthSessions[provider.value].state" class="w-full" :placeholder="t('cred.oauth.state')" />
-          </UFormField>
-          <UFormField :label="t('cred.oauth.providerError')">
-            <UInput v-model="oauthSessions[provider.value].callback_error" class="w-full" :placeholder="t('cred.oauth.providerError')" />
-          </UFormField>
+          <AdminField :label="t('cred.oauth.callbackUrl')">
+            <AdminInput v-model="oauthSessions[provider.value].redirect_url" class="w-full" :placeholder="t('cred.oauth.callbackUrl')" />
+          </AdminField>
+          <AdminField :label="t('cred.oauth.code')">
+            <AdminInput v-model="oauthSessions[provider.value].code" class="w-full" :placeholder="t('cred.oauth.code')" />
+          </AdminField>
+          <AdminField :label="t('cred.oauth.state')">
+            <AdminInput v-model="oauthSessions[provider.value].state" class="w-full" :placeholder="t('cred.oauth.state')" />
+          </AdminField>
+          <AdminField :label="t('cred.oauth.providerError')">
+            <AdminInput v-model="oauthSessions[provider.value].callback_error" class="w-full" :placeholder="t('cred.oauth.providerError')" />
+          </AdminField>
           <AppButton type="submit" size="sm" class="w-full justify-center" :loading="submittingCallback === provider.value">{{ t('cred.oauth.submitCallback') }}</AppButton>
         </form>
       </template>
     </section>
-    <UAlert v-if="oauthError" color="error" variant="subtle" :description="oauthError" />
+    <PortalAlert v-if="oauthError" color="error" variant="subtle" :description="oauthError" />
   </div>
 </template>
 
 <script setup lang="ts">
+import AdminField from '~/components/admin/general/controls/AdminField.vue'
+import AdminInput from '~/components/admin/general/controls/AdminInput.vue'
+import PortalAlert from '~/components/app/general/PortalAlert.vue'
 import { useUpstreamAccounts } from '~/composables/upstream-accounts/useUpstreamAccounts'
 
 const {
