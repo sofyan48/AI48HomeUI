@@ -33,7 +33,8 @@ describe('theme accent preference', () => {
     const composable = source('composables/layout/useThemeColor.ts')
     expect(composable).toContain('window.localStorage.getItem(themeColorStorageKey)')
     expect(composable).toContain('window.localStorage.setItem(themeColorStorageKey, color.value)')
-    expect(composable).toContain('appConfig.ui.colors.primary = color.value')
+    expect(composable).not.toContain('useAppConfig')
+    expect(composable).not.toContain('appConfig.ui')
     expect(composable).toContain('htmlAttrs: { style: themeColorVariables(color.value) }')
     expect(composable).not.toContain('colorMode.preference =')
     for (const file of ['assets/main.css', 'assets/admin.css']) {
@@ -44,10 +45,13 @@ describe('theme accent preference', () => {
 
   test('selector keeps labeled mode and accent controls together', () => {
     const selector = source('components/ThemeSwitcher.vue')
+    expect(selector).toContain('v-for="option in options"')
     expect(selector).toContain('v-for="option in colors"')
-    expect(selector).toContain(':aria-pressed="color === option"')
+    expect(selector).toContain(':model-value="colorMode.preference"')
+    expect(selector).toContain(':model-value="color"')
     expect(selector).toContain("t('shared.theme.color', { name: colorName(option) })")
-    expect(selector).toContain('@click="setColor(option)"')
-    expect(selector).toContain('colorMode.preference = value')
+    expect(selector).toContain('@update:model-value="setTheme"')
+    expect(selector).toContain('@update:model-value="selectColor"')
+    expect(selector).toContain('setPreference(value as')
   })
 })

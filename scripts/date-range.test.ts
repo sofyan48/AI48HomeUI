@@ -36,7 +36,7 @@ describe('admin date ranges', () => {
   })
 })
 
-// Compile and mount the real SFC with a lightweight UInput stub; no Nuxt server or DOM required.
+// Compile and mount the real SFC with a lightweight AdminInput stub; no Nuxt server or DOM required.
 function mountInput(initial: Record<string, string | boolean>) {
   const source = readFileSync(new URL('../components/AppDateInput.vue', import.meta.url), 'utf8')
   const { descriptor } = parse(source)
@@ -44,10 +44,11 @@ function mountInput(initial: Record<string, string | boolean>) {
   const js = new Bun.Transpiler({ loader: 'ts' }).transformSync(script.content)
     .replace(/import \{([^}]+)\} from ["']vue["'];?/g, (_, names) => `const { ${names.replace(/ as /g, ': ')} } = Vue;`)
     .replace(/import .* from ["']~\/composables\/dateRange["'];?/, 'const { dateInputBounds, dateRangeError, sanitizeDateInput } = dates;')
+    .replace(/import AdminInput from ["']~\/components\/admin\/general\/controls\/AdminInput\.vue["'];?/, 'const AdminInput = { inheritAttrs: false, setup: (_, { attrs }) => () => { inputs.set(String(attrs.type), attrs); return Vue.h(\'input\') } };')
     .replace('export default', 'return')
   const useAdminI18n = () => ({ t: (key: string) => key })
-  const component = new Function('Vue', 'dates', 'useAdminI18n', `const { computed, useId, useAttrs } = Vue; ${js}`)(Vue, dates, useAdminI18n)
   const inputs = new Map<string, any>()
+  const component = new Function('Vue', 'dates', 'useAdminI18n', 'inputs', `const { computed, useId, useAttrs } = Vue; ${js}`)(Vue, dates, useAdminI18n, inputs)
   const state = Vue.reactive({ modelValue: '', ...initial })
   const renderer = Vue.createRenderer<any, any>({
     createElement: (tag: string) => ({ tag, children: [] }),
@@ -56,7 +57,6 @@ function mountInput(initial: Record<string, string | boolean>) {
     insert: (child: any, parent: any) => { child.parent = parent; parent.children.push(child) }, remove: () => {}, patchProp: () => {}
   })
   const app = renderer.createApp({ render: () => Vue.h(component, { ...state, 'onUpdate:modelValue': (value: string) => { state.modelValue = value } }) })
-  app.component('UInput', { inheritAttrs: false, setup: (_, { attrs }) => () => { inputs.set(String(attrs.type), attrs); return Vue.h('input') } })
   app.mount({ children: [] })
   return { state, current: () => inputs.get('text'), picker: () => inputs.get(String(state.type || 'date')), app }
 }

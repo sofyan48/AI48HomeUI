@@ -34,7 +34,7 @@
           @sync="syncData"
         />
         <main class="workbench-main admin-canvas__body min-h-0 min-w-0 flex-1 overflow-x-clip overflow-y-auto [scrollbar-gutter:stable] !px-3 !pb-6 !pt-1 sm:!px-6">
-          <UAlert
+          <PortalAlert
             v-if="capabilitiesError"
             class="mx-auto mb-4 max-w-[96rem]"
             color="warning"
@@ -55,6 +55,7 @@
 </template>
 
 <script setup lang="ts">
+import PortalAlert from '~/components/app/general/PortalAlert.vue'
 import AdminCommandPalette from '~/components/admin/layout/CommandPalette.vue'
 import AdminConnectionDialog from '~/components/admin/layout/ConnectionDialog.vue'
 import LayoutSidebar from '~/components/admin/layout/LayoutSidebar.vue'

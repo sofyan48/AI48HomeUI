@@ -6,7 +6,7 @@
   >
       <ProvidersDetailView v-if="providerEditorMode === 'detail' && editingProviderEntry" />
       <form v-else novalidate class="max-h-[75vh] space-y-4 overflow-y-auto pr-1" @submit.prevent="saveProviderEntry">
-        <UAlert
+        <PortalAlert
           v-if="editorError"
           color="error"
           variant="subtle"
@@ -31,6 +31,7 @@
 </template>
 
 <script setup>
+import PortalAlert from '~/components/app/general/PortalAlert.vue'
 import AdminModalForm from '~/components/admin/general/ModalForm.vue'
 import { useUpstreamProvidersWorkspace } from '~/composables/upstream-providers/useUpstreamProvidersWorkspace'
 import ProvidersDetailView from '~/components/admin/upstream-providers/editor/ProvidersDetailView.vue'

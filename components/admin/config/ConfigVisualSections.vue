@@ -1,6 +1,6 @@
 <template>
   <div class="space-y-6">
-    <UAlert
+    <PortalAlert
       v-if="loading"
       color="neutral"
       variant="subtle"
@@ -43,7 +43,7 @@
               <span v-if="field.description" class="mt-1 block text-xs text-[var(--ui-text-muted)]">{{ field.description }}</span>
               <span v-if="errorFor(field.key)" class="mt-2 block text-xs text-[var(--ui-error)]">{{ errorFor(field.key) }}</span>
             </span>
-            <USwitch
+            <AdminSwitch
               :model-value="booleanValue(field.key)"
               :disabled="loading || fieldDisabled(field)"
               :aria-label="field.label"
@@ -51,7 +51,7 @@
             />
           </label>
 
-          <UFormField
+          <AdminField
             v-else
             :label="field.label"
             :description="field.description"
@@ -59,7 +59,7 @@
             :error="errorFor(field.key)"
             class="grid gap-2 px-1 py-3 md:grid-cols-[minmax(0,1fr)_minmax(220px,0.45fr)] md:items-center"
           >
-            <UTextarea
+            <AdminTextarea
               v-if="field.type === 'textarea'"
               :model-value="textValue(field.key)"
               :rows="field.rows || 4"
@@ -69,7 +69,7 @@
               spellcheck="false"
               @update:model-value="updateField(field.key, $event)"
             />
-            <USelect
+            <AdminSelect
               v-else-if="field.type === 'select'"
               :model-value="textValue(field.key)"
               :items="field.items"
@@ -80,7 +80,7 @@
               @update:model-value="updateField(field.key, $event)"
             />
             <div v-else-if="field.type === 'password'" class="flex gap-2">
-              <UInput
+              <AdminInput
                 :model-value="textValue(field.key)"
                 :type="secretVisible ? 'text' : 'password'"
                 :autocomplete="secretVisible ? 'off' : 'new-password'"
@@ -99,7 +99,7 @@
                 @click="toggleSecretVisibility"
               />
             </div>
-            <UInput
+            <AdminInput
               v-else
               :model-value="inputValue(field.key)"
               :type="field.type"
@@ -111,7 +111,7 @@
               class="w-full"
               @update:model-value="updateField(field.key, normalizeInput(field, $event))"
             />
-          </UFormField>
+          </AdminField>
         </template>
       </div>
     </AppCard>
@@ -123,6 +123,12 @@
 </template>
 
 <script setup lang="ts">
+import AdminField from '~/components/admin/general/controls/AdminField.vue'
+import AdminInput from '~/components/admin/general/controls/AdminInput.vue'
+import AdminSelect from '~/components/admin/general/controls/AdminSelect.vue'
+import AdminTextarea from '~/components/admin/general/controls/AdminTextarea.vue'
+import AdminSwitch from '~/components/admin/general/controls/AdminSwitch.vue'
+import PortalAlert from '~/components/app/general/PortalAlert.vue'
 type DraftValue = string | number | boolean | null | undefined
 type ConfigDraft = Record<string, DraftValue>
 type ValidationErrors = Record<string, string | string[] | null | undefined>

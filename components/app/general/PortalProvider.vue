@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ConfigProvider } from 'reka-ui'
+import { useColorMode } from '~/composables/useColorMode'
 import { Toaster } from '~/components/ui/sonner'
 import 'vue-sonner/style.css'
 

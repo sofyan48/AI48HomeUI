@@ -5,8 +5,8 @@
         <div>
           <div class="flex flex-wrap items-center gap-2">
             <p class="font-medium">{{ groupName(group) }}</p>
-            <UBadge color="neutral" variant="subtle">{{ t('users.bindingsCount', { count: groupDetails(group).length }) }}</UBadge>
-            <UBadge v-if="group.disabled" color="warning" variant="subtle">{{ t('common.disabled') }}</UBadge>
+            <PortalBadge color="neutral" variant="subtle">{{ t('users.bindingsCount', { count: groupDetails(group).length }) }}</PortalBadge>
+            <PortalBadge v-if="group.disabled" color="warning" variant="subtle">{{ t('common.disabled') }}</PortalBadge>
           </div>
           <p class="mt-1 text-xs text-[var(--ui-text-muted)]">{{ t('users.scopeId', { id: group.id }) }}</p>
         </div>
@@ -51,6 +51,7 @@
 </template>
 
 <script>
+import PortalBadge from '~/components/app/general/PortalBadge.vue'
 import { useAdminI18n } from '~/composables/useAdminI18n'
 
 export default {

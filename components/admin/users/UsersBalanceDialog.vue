@@ -23,7 +23,7 @@
       </div>
       <p v-if="batch" class="mt-2 text-xs text-[var(--ui-text-muted)]">{{ t('users.batchSameAmountHint') }}</p>
     </div>
-    <UFormField :label="t('users.operationType')">
+    <AdminField :label="t('users.operationType')">
       <div class="grid grid-cols-2 gap-2">
         <AppButton
           type="button"
@@ -44,15 +44,15 @@
           {{ t('users.deduct') }}
         </AppButton>
       </div>
-    </UFormField>
-    <UAlert v-if="negativeCount" color="warning" variant="subtle" :description="t('users.negativeAfterDeduction', { count: negativeCount })" />
-    <UFormField :label="t('users.amount')">
-      <UInput v-model="form.amount" type="number" min="0" step="0.000001" class="w-full" />
+    </AdminField>
+    <PortalAlert v-if="negativeCount" color="warning" variant="subtle" :description="t('users.negativeAfterDeduction', { count: negativeCount })" />
+    <AdminField :label="t('users.amount')">
+      <AdminInput v-model="form.amount" type="number" min="0" step="0.000001" class="w-full" />
       <p class="mt-1 text-xs text-[var(--ui-text-muted)]">{{ batch ? t('users.amountEachHint') : t('users.amountCurrentHint') }}</p>
-    </UFormField>
-    <UFormField :label="deduct ? t('users.noteRequired') : t('users.note')">
-      <UTextarea v-model="form.note" class="w-full" />
-    </UFormField>
+    </AdminField>
+    <AdminField :label="deduct ? t('users.noteRequired') : t('users.note')">
+      <AdminTextarea v-model="form.note" class="w-full" />
+    </AdminField>
   </AppFormModal>
 
   <AppConfirmModal
@@ -73,12 +73,16 @@
         <p class="text-xs text-[var(--ui-text-muted)]">{{ t('users.note') }}</p>
         <p class="mt-1 break-words">{{ form.note || '—' }}</p>
       </div>
-      <UAlert v-if="negativeCount" color="warning" variant="subtle" :description="t('users.negativeAfterOperation', { count: negativeCount })" />
+      <PortalAlert v-if="negativeCount" color="warning" variant="subtle" :description="t('users.negativeAfterOperation', { count: negativeCount })" />
     </div>
   </AppConfirmModal>
 </template>
 
 <script setup lang="ts">
+import AdminField from '~/components/admin/general/controls/AdminField.vue'
+import AdminInput from '~/components/admin/general/controls/AdminInput.vue'
+import AdminTextarea from '~/components/admin/general/controls/AdminTextarea.vue'
+import PortalAlert from '~/components/app/general/PortalAlert.vue'
 import { computed, ref } from 'vue'
 import { useUsersWorkspace } from '~/composables/users/useUsersWorkspace'
 import { isOperableUser, type AnyRecord } from '~/composables/users/common'

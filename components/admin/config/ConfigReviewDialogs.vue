@@ -1,5 +1,5 @@
 <template>
-    <USlideover
+    <AppModal
       v-model:open="changesOpen"
       :title="t('config.changes.title')"
       :description="t('config.changes.description')"
@@ -25,7 +25,7 @@
             </button></AppCard
           >
         </div></template
-      ></USlideover
+      ></AppModal
     >
 
     <AppModal
@@ -53,6 +53,7 @@
 </template>
 
 <script setup lang="ts">
+import AppModal from '~/components/AppModal.vue'
 import { useConfigWorkspace } from '~/composables/config/useConfigWorkspace'
 const { t, changesOpen, changes, scrollToSection, reloadConfirmOpen, loadWorkspace } = useConfigWorkspace()
 </script>

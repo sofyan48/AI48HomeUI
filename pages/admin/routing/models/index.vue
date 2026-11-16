@@ -1,6 +1,6 @@
 <template>
   <div class="space-y-4">
-    <UAlert
+    <PortalAlert
       v-if="pageError"
       color="error"
       variant="subtle"
@@ -25,19 +25,19 @@
     </section>
 
     <div class="app-surface flex flex-col gap-3 p-3 lg:flex-row lg:items-end">
-      <UFormField :label="t('models.catalog')" class="w-full lg:w-48">
-        <USelect v-model="scope" :items="scopeOptions" value-key="value" label-key="label" class="w-full" />
-      </UFormField>
-      <UFormField v-if="scope === 'static'" :label="t('models.channel')" class="w-full lg:w-56">
-        <USelectMenu :model-value="channel || allChannelsValue" @update:model-value="channel = $event === allChannelsValue ? '' : $event" :items="channelOptions" value-key="value" label-key="label" class="w-full" :search-input="{ placeholder: t('models.searchChannels') }" />
-      </UFormField>
-      <UFormField :label="t('common.search')" class="w-full lg:flex-1">
-        <UInput v-model="search" icon="i-tabler-search" :placeholder="t('models.searchPlaceholder')" class="w-full" />
-      </UFormField>
+      <AdminField :label="t('models.catalog')" class="w-full lg:w-48">
+        <AdminSelect v-model="scope" :items="scopeOptions" value-key="value" label-key="label" class="w-full" />
+      </AdminField>
+      <AdminField v-if="scope === 'static'" :label="t('models.channel')" class="w-full lg:w-56">
+        <AdminSelectMenu :model-value="channel || allChannelsValue" @update:model-value="channel = $event === allChannelsValue ? '' : $event" :items="channelOptions" value-key="value" label-key="label" class="w-full" :search-input="{ placeholder: t('models.searchChannels') }" />
+      </AdminField>
+      <AdminField :label="t('common.search')" class="w-full lg:flex-1">
+        <AdminInput v-model="search" icon="i-tabler-search" :placeholder="t('models.searchPlaceholder')" class="w-full" />
+      </AdminField>
     </div>
 
     <div v-if="pending && !modelsList.length" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-      <USkeleton v-for="index in 8" :key="index" class="h-24 rounded-2xl" />
+      <PortalSkeleton v-for="index in 8" :key="index" class="h-24 rounded-2xl" />
     </div>
     <div v-else-if="filteredModels.length" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
       <button
@@ -54,11 +54,11 @@
             <span class="block truncate text-sm font-semibold text-[var(--ui-text-highlighted)]" :title="model.display_name || model.id">{{ model.display_name || model.id }}</span>
             <span class="block truncate font-mono text-[11px] text-[var(--ui-text-muted)]" :title="model.id">{{ model.id }}</span>
           </span>
-          <UIcon name="i-tabler-arrow-up-right" class="size-4 shrink-0 text-[var(--ui-text-dimmed)] opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100" aria-hidden="true" />
+          <AppIcon name="i-tabler-arrow-up-right" class="size-4 shrink-0 text-[var(--ui-text-dimmed)] opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100" aria-hidden="true" />
         </span>
         <span class="flex min-w-0 flex-wrap items-center gap-1">
-          <UBadge v-if="model.channel" color="primary" variant="subtle" size="sm">{{ model.channel }}</UBadge>
-          <UBadge v-for="provider in model.providers.slice(0, 3)" :key="provider" color="neutral" variant="subtle" size="sm">{{ provider }}</UBadge>
+          <PortalBadge v-if="model.channel" color="primary" variant="subtle" size="sm">{{ model.channel }}</PortalBadge>
+          <PortalBadge v-for="provider in model.providers.slice(0, 3)" :key="provider" color="neutral" variant="subtle" size="sm">{{ provider }}</PortalBadge>
           <span v-if="model.providers.length > 3" class="text-[11px] text-[var(--ui-text-muted)]">+{{ model.providers.length - 3 }}</span>
           <span v-if="!model.providers.length && !model.channel" class="text-[11px] text-[var(--ui-text-muted)]">{{ t('models.noProviderInfo') }}</span>
           <span class="ml-auto truncate text-[11px] text-[var(--ui-text-muted)]">{{ model.type || model.owned_by || '' }}</span>
@@ -66,12 +66,12 @@
       </button>
     </div>
     <div v-else-if="!pending" class="app-surface border-dashed px-6 py-8 text-center">
-      <UIcon name="i-tabler-box" class="mx-auto mb-3 size-8 text-[var(--ui-text-muted)]" />
+      <AppIcon name="i-tabler-box" class="mx-auto mb-3 size-8 text-[var(--ui-text-muted)]" />
       <p class="font-medium">{{ search ? t('models.noMatching') : t('models.noModels') }}</p>
       <p class="mt-1 text-sm text-[var(--ui-text-muted)]">{{ t('models.emptyHint') }}</p>
     </div>
 
-    <USlideover v-model:open="detailsOpen" side="right" :title="t('models.detailsTitle')" :description="t('models.detailsDescription')" :ui="{ content: 'sm:max-w-xl' }">
+    <AppModal v-model:open="detailsOpen" side="right" :title="t('models.detailsTitle')" :description="t('models.detailsDescription')" :ui="{ content: 'sm:max-w-xl' }">
       <template #body>
         <div v-if="selectedModel" class="space-y-5">
           <div class="rounded-xl bg-[var(--ui-bg-muted)] p-4">
@@ -99,14 +99,14 @@
           <div>
             <p class="mb-2 text-sm font-medium">{{ t('models.authoritativeProviders') }}</p>
             <div class="flex flex-wrap gap-2">
-              <UBadge v-for="provider in selectedModel.providers" :key="provider" color="primary" variant="subtle">{{ provider }}</UBadge>
+              <PortalBadge v-for="provider in selectedModel.providers" :key="provider" color="primary" variant="subtle">{{ provider }}</PortalBadge>
               <span v-if="!selectedModel.providers.length" class="text-sm text-[var(--ui-text-muted)]">{{ t('models.noBillingProvider') }}</span>
             </div>
           </div>
           <div v-for="group in modelMetadataGroups" :key="group.label">
             <p class="mb-2 text-sm font-medium">{{ group.label }}</p>
             <div class="flex flex-wrap gap-2">
-              <UBadge v-for="value in group.values" :key="value" color="neutral" variant="subtle">{{ value }}</UBadge>
+              <PortalBadge v-for="value in group.values" :key="value" color="neutral" variant="subtle">{{ value }}</PortalBadge>
             </div>
           </div>
           <details v-if="hasCapabilityMetadata" class="rounded-xl border border-[var(--ui-border)] px-4 py-3 text-sm">
@@ -118,11 +118,20 @@
           </div>
         </div>
       </template>
-    </USlideover>
+    </AppModal>
   </div>
 </template>
 
 <script setup>
+import AdminField from '~/components/admin/general/controls/AdminField.vue'
+import AdminSelectMenu from '~/components/admin/general/controls/AdminSelectMenu.vue'
+import AdminInput from '~/components/admin/general/controls/AdminInput.vue'
+import AdminSelect from '~/components/admin/general/controls/AdminSelect.vue'
+import PortalAlert from '~/components/app/general/PortalAlert.vue'
+import PortalBadge from '~/components/app/general/PortalBadge.vue'
+import PortalSkeleton from '~/components/app/general/PortalSkeleton.vue'
+import AppIcon from '~/components/AppIcon.vue'
+import AppModal from '~/components/AppModal.vue'
 import { useWorkspaceState } from '~/composables/useWorkspaceState'
 import { useStoreData } from '~/composables/useStoreData'
 const { fetchAPI } = useApi()

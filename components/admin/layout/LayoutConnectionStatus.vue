@@ -1,27 +1,39 @@
 <template>
   <div class="admin-rail__footer" :class="collapsed ? 'lg:flex-col lg:px-1.5' : ''">
-    <button
-      type="button"
-      :aria-label="tc('shell.manageConnection')"
-      class="admin-connection-status flex min-w-0 flex-1 items-center gap-2.5 rounded-xl px-2.5 py-2 text-left"
-      :class="collapsed ? 'lg:w-full lg:justify-center lg:px-0' : ''"
-      :title="status.label"
-      @click="emit('manage')"
-    >
-      <span class="admin-rail__avatar" aria-hidden="true">
-        <UIcon name="i-tabler-shield-check" class="size-4" />
-        <span class="admin-status-dot absolute -right-0.5 -bottom-0.5 size-2.5 rounded-full ring-2 ring-[var(--admin-rail-bg)]" :class="status.dot" />
-      </span>
-      <span class="min-w-0 leading-tight" :class="collapsed ? 'lg:sr-only' : ''">
-        <span class="block truncate text-xs font-semibold text-[var(--ui-text-highlighted)]">{{ tc('shell.management') }}</span>
-        <span role="status" class="block truncate text-[11px] text-[var(--ui-text-muted)]">{{ status.label }}</span>
-      </span>
-    </button>
-    <AppButton icon="i-tabler-plug-off" color="neutral" variant="ghost" size="sm" :aria-label="tc('shell.disconnect')" :title="tc('shell.disconnect')" :disabled="!connected" @click="emit('disconnect')" />
+    <Tooltip>
+      <TooltipTrigger as-child>
+        <button
+          type="button"
+          :aria-label="tc('shell.manageConnection')"
+          class="admin-connection-status flex min-w-0 flex-1 items-center gap-2.5 rounded-xl px-2.5 py-2 text-left"
+          :class="collapsed ? 'lg:w-full lg:justify-center lg:px-0' : ''"
+          :title="status.label"
+          @click="emit('manage')"
+        >
+          <span class="admin-rail__avatar" aria-hidden="true">
+            <AppIcon name="i-tabler-shield-check" />
+            <span class="admin-status-dot absolute -right-0.5 -bottom-0.5 size-2.5 rounded-full ring-2 ring-[var(--admin-rail-bg)]" :class="status.dot" />
+          </span>
+          <span class="min-w-0 leading-tight" :class="collapsed ? 'lg:sr-only' : ''">
+            <span class="block truncate text-xs font-semibold text-[var(--ui-text-highlighted)]">{{ tc('shell.management') }}</span>
+            <span role="status" class="block truncate text-[11px] text-[var(--ui-text-muted)]">{{ status.label }}</span>
+          </span>
+        </button>
+      </TooltipTrigger>
+      <TooltipContent v-if="collapsed">{{ status.label }}</TooltipContent>
+    </Tooltip>
+    <Tooltip>
+      <TooltipTrigger as-child>
+        <AppButton icon="i-tabler-plug-off" color="neutral" variant="ghost" size="sm" :aria-label="tc('shell.disconnect')" :title="tc('shell.disconnect')" :disabled="!connected" @click="emit('disconnect')" />
+      </TooltipTrigger>
+      <TooltipContent>{{ tc('shell.disconnect') }}</TooltipContent>
+    </Tooltip>
   </div>
 </template>
 
 <script setup lang="ts">
+import AppIcon from '~/components/AppIcon.vue'
+import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip'
 import { useConsoleLocale } from '~/composables/useConsoleLocale'
 import type { ConnectionStatus } from '~/composables/layout/useAdminConnection'
 

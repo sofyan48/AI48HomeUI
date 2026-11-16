@@ -24,7 +24,7 @@ export default defineNuxtConfig({
 
   devtools: { enabled: true },
 
-  modules: ["@pinia/nuxt", "@nuxt/ui", "shadcn-nuxt"],
+  modules: ["@pinia/nuxt", "shadcn-nuxt"],
 
     shadcn: {
       prefix: "Shadcn",

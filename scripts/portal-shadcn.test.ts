@@ -19,6 +19,7 @@ const cache = new Map<string, any>()
 const external: Record<string, any> = {
   vue: Vue, 'reka-ui': Reka, '@vueuse/core': VueUse, '@tabler/icons-vue': Icons,
   'class-variance-authority': { cva }, cn: { cn },
+  '~/components/AppIcon.vue': { default: Vue.defineComponent({ setup: () => () => Vue.h('svg') }) },
 }
 // Compile the installed SFCs and resolve their source barrels, without Nuxt or DOM globals.
 function load(file: string): any {

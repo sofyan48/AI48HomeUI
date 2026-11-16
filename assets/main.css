@@ -1,5 +1,5 @@
 @import "tailwindcss" theme(static);
-@import "@nuxt/ui";
+
 @import "./shadcn.css";
 @import "./admin.css" layer(admin);
 

@@ -1,5 +1,6 @@
 import { computed, inject, provide, ref, type InjectionKey } from 'vue'
-import { useApi, useAdminI18n, useToast } from '#imports'
+import { useApi, useAdminI18n } from '#imports'
+import { useAdminToast } from '~/composables/admin-feedback/useAdminToast'
 import { usePluginsData } from './usePluginsData'
 import { usePluginReports } from './usePluginReports'
 import { usePluginAuth } from './usePluginAuth'
@@ -10,7 +11,7 @@ import { safeURL } from './presentation'
 function createPluginsWorkspace() {
     const { fetchAPI, token } = useApi();
     const { t } = useAdminI18n();
-    const toast = useToast();
+    const toast = useAdminToast();
     const value = (row: any) => row?.original ?? row;
     const yesNo = (flag: unknown) => (flag ? t('common.yes') : t('common.no'));
     const message = (error: any) => error?.data?.message || error?.data?.error || error?.message || t('plugins.unexpectedError');

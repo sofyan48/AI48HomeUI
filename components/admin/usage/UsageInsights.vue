@@ -1,15 +1,15 @@
 <template>
   <section class="space-y-4">
     <div class="flex items-center gap-3 border-t border-[var(--ui-border)] pt-5">
-      <span class="flex size-8 items-center justify-center rounded-lg bg-[var(--admin-selected)] text-[var(--ui-primary)]" aria-hidden="true"><UIcon name="i-tabler-chart-dots-3" class="size-4" /></span>
+      <span class="flex size-8 items-center justify-center rounded-lg bg-[var(--admin-selected)] text-[var(--ui-primary)]" aria-hidden="true"><AppIcon name="i-tabler-chart-dots-3" class="size-4" /></span>
       <div><h2 class="text-base font-semibold">{{ t('usage.insights.title') }}</h2><p class="text-xs text-[var(--ui-text-muted)]">{{ t('usage.insights.desc') }}</p></div>
     </div>
-    <UAlert v-if="capabilityError" color="warning" variant="subtle" :title="t('usage.capsUnavailable')" :description="t('usage.insights.capsDesc')" />
-    <UAlert v-if="unavailableFeatures.length" color="warning" variant="subtle" :title="t('usage.insights.someUnavailable')" :description="unavailableFeatures.join(', ')" />
-    <UAlert v-if="error" color="error" variant="subtle" :description="error" />
+    <PortalAlert v-if="capabilityError" color="warning" variant="subtle" :title="t('usage.capsUnavailable')" :description="t('usage.insights.capsDesc')" />
+    <PortalAlert v-if="unavailableFeatures.length" color="warning" variant="subtle" :title="t('usage.insights.someUnavailable')" :description="unavailableFeatures.join(', ')" />
+    <PortalAlert v-if="error" color="error" variant="subtle" :description="error" />
     <div class="app-surface flex flex-wrap items-center gap-3 px-3 py-2.5">
-      <USelect v-model="groupBy" :items="['model', 'provider', 'user', 'client_key', 'credential', 'endpoint', 'home_ip']" class="w-44" />
-      <USelect v-model="metric" :items="['request_count', 'total_tokens', 'total_amount', 'failed_count', 'avg_latency_ms', 'p95_latency_ms']" class="w-48" />
+      <AdminSelect v-model="groupBy" :items="['model', 'provider', 'user', 'client_key', 'credential', 'endpoint', 'home_ip']" class="w-44" />
+      <AdminSelect v-model="metric" :items="['request_count', 'total_tokens', 'total_amount', 'failed_count', 'avg_latency_ms', 'p95_latency_ms']" class="w-48" />
       <AppButton :loading="loading" :disabled="loading || !canLoadInsights" @click="refresh">{{ t('usage.insights.load') }}</AppButton>
       <span class="basis-full text-xs text-[var(--ui-text-muted)] xl:basis-auto xl:flex-1">{{ t('usage.insights.hint') }}</span>
     </div>
@@ -50,7 +50,7 @@
       <AppCard v-for="health in healthSections" :key="health.feature">
         <template #header><h3 class="font-semibold">{{ health.label }}</h3></template>
         <div v-for="item in health.items" :key="item.id" class="flex items-center justify-between gap-3 border-b border-[var(--ui-border)] py-2 text-sm">
-          <span>{{ item.label || item.id }}</span><UBadge :color="item.status === 'healthy' ? 'success' : 'warning'" variant="subtle">{{ item.status }}</UBadge>
+          <span>{{ item.label || item.id }}</span><PortalBadge :color="item.status === 'healthy' ? 'success' : 'warning'" variant="subtle">{{ item.status }}</PortalBadge>
         </div>
         <p v-if="!health.items.length" class="text-sm text-[var(--ui-text-muted)]">{{ t('usage.insights.noHealth') }}</p>
       </AppCard>
@@ -59,6 +59,10 @@
 </template>
 
 <script setup lang="ts">
+import AdminSelect from '~/components/admin/general/controls/AdminSelect.vue'
+import PortalAlert from '~/components/app/general/PortalAlert.vue'
+import PortalBadge from '~/components/app/general/PortalBadge.vue'
+import AppIcon from '~/components/AppIcon.vue'
 import { useWorkspaceState } from '~/composables/useWorkspaceState'
 const props = defineProps<{ commonQuery: string }>()
 const { t, intlLocale } = useAdminI18n()

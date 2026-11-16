@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import AdminField from '~/components/admin/general/controls/AdminField.vue'
+import AdminSelect from '~/components/admin/general/controls/AdminSelect.vue'
 import { useUsagePage } from '~/composables/usage/useUsagePage'
 import { rowValue } from '~/composables/usage/format'
 
@@ -14,9 +16,9 @@ const { formatAmount, formatNumber, formatCompactNumber, formatPercent, formatMi
     <template #body>
       <div class="space-y-4">
         <div class="grid gap-3 sm:grid-cols-3">
-          <UFormField :label="t('usage.groupBy')"><USelect v-model="rankingGroup" :items="rankingGroupOptions" value-key="value" label-key="label" class="w-full" @update:model-value="loadRanking" /></UFormField>
-          <UFormField :label="t('usage.metric')"><USelect v-model="rankingMetric" :items="rankingMetricOptions" value-key="value" label-key="label" class="w-full" @update:model-value="loadRanking" /></UFormField>
-          <UFormField :label="t('usage.rows')"><USelect v-model="rankingLimit" :items="rankingLimitOptions" value-key="value" label-key="label" class="w-full" @update:model-value="loadRanking" /></UFormField>
+          <AdminField :label="t('usage.groupBy')"><AdminSelect v-model="rankingGroup" :items="rankingGroupOptions" value-key="value" label-key="label" class="w-full" @update:model-value="loadRanking" /></AdminField>
+          <AdminField :label="t('usage.metric')"><AdminSelect v-model="rankingMetric" :items="rankingMetricOptions" value-key="value" label-key="label" class="w-full" @update:model-value="loadRanking" /></AdminField>
+          <AdminField :label="t('usage.rows')"><AdminSelect v-model="rankingLimit" :items="rankingLimitOptions" value-key="value" label-key="label" class="w-full" @update:model-value="loadRanking" /></AdminField>
         </div>
         <AppCard :ui="{ body: 'p-0' }">
           <AppTable :columns="rankingColumns" :data="rankingItems" :loading="rankingLoading" class="min-w-[980px]">

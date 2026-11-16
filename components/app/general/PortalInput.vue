@@ -47,10 +47,10 @@ defineExpose({ inputRef: element, focus, blur })
 
 <template>
   <InputGroup v-if="grouped" :class="cn(portalControlSizes[size], attrs.class, ui?.root)" :data-disabled="disabled || undefined">
-    <InputGroupInput ref="root" v-bind="controlProps" @input="onInput" />
     <InputGroupAddon v-if="icon || $slots.leading" :class="ui?.leading">
       <slot name="leading"><AppIcon v-if="icon" :name="icon" aria-hidden="true" /></slot>
     </InputGroupAddon>
+    <InputGroupInput ref="root" v-bind="controlProps" @input="onInput" />
     <InputGroupAddon v-if="$slots.trailing" align="inline-end" :class="ui?.trailing"><slot name="trailing" /></InputGroupAddon>
   </InputGroup>
   <Input v-else ref="root" v-bind="controlProps" @input="onInput" />

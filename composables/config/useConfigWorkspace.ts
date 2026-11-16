@@ -1,5 +1,6 @@
 import { computed, inject, onMounted, provide, ref, toRaw, type InjectionKey } from 'vue'
-import { useApi, useAdminI18n, useToast } from '#imports'
+import { useApi, useAdminI18n } from '#imports'
+import { useAdminToast } from '~/composables/admin-feedback/useAdminToast'
 import { useWorkspaceState } from '~/composables/useWorkspaceState'
 import { useDataSync } from '~/composables/useDataSync'
 import { parseDocument } from 'yaml'
@@ -13,7 +14,7 @@ import type { ConfigDraft } from './types'
 
 function createConfigWorkspace() {
 const { fetchAPI } = useApi();
-const toast = useToast();
+const toast = useAdminToast();
 const { t, intlLocale } = useAdminI18n();
 const loading = useWorkspaceState('admin:config:loading', () => (false));
 const loaded = useWorkspaceState('admin:config:loaded', () => (false));

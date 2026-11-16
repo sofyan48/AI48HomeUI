@@ -1,25 +1,25 @@
 <template>
   <div class="space-y-4">
-    <UAlert v-if="errorMessage" color="error" variant="subtle" icon="i-tabler-alert-circle" :title="t('proxy.net.requestFailed')" :description="errorMessage" />
+    <PortalAlert v-if="errorMessage" color="error" variant="subtle" icon="i-tabler-alert-circle" :title="t('proxy.net.requestFailed')" :description="errorMessage" />
 
     <div class="grid items-stretch gap-4 lg:grid-cols-12">
       <AppCard class="lg:col-span-8">
         <template #header>
           <div class="flex items-center justify-between gap-3">
             <div class="flex min-w-0 items-center gap-3">
-              <span class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[var(--admin-selected)] text-[var(--ui-primary)]" aria-hidden="true"><UIcon name="i-tabler-world-share" class="size-4.5" /></span>
+              <span class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[var(--admin-selected)] text-[var(--ui-primary)]" aria-hidden="true"><AppIcon name="i-tabler-world-share" class="size-4.5" /></span>
               <div class="min-w-0">
                 <h2 class="font-semibold">{{ t('proxy.net.globalTitle') }}</h2>
                 <p class="text-xs text-[var(--ui-text-muted)]">{{ t('proxy.net.globalDescription') }}</p>
               </div>
             </div>
-            <UBadge :color="globalProxy ? 'success' : 'neutral'" variant="subtle" class="shrink-0">{{ globalProxy ? t('proxy.net.configured') : t('proxy.net.direct') }}</UBadge>
+            <PortalBadge :color="globalProxy ? 'success' : 'neutral'" variant="subtle" class="shrink-0">{{ globalProxy ? t('proxy.net.configured') : t('proxy.net.direct') }}</PortalBadge>
           </div>
         </template>
         <form class="flex flex-col gap-3 sm:flex-row sm:items-end" @submit.prevent="saveGlobalProxy">
-          <UFormField :label="t('proxy.field.url')" class="flex-1">
-            <UInput v-model="globalProxy" icon="i-tabler-link" placeholder="http://127.0.0.1:7890" class="w-full" />
-          </UFormField>
+          <AdminField :label="t('proxy.field.url')" class="flex-1">
+            <AdminInput v-model="globalProxy" icon="i-tabler-link" placeholder="http://127.0.0.1:7890" class="w-full" />
+          </AdminField>
           <AppButton type="submit" icon="i-tabler-check" :loading="savingGlobal">{{ t('common.save') }}</AppButton>
           <AppButton color="neutral" variant="outline" icon="i-tabler-x" :loading="savingGlobal" @click="clearGlobalProxy">{{ t('proxy.net.clear') }}</AppButton>
           <AppButton color="neutral" variant="ghost" icon="i-tabler-refresh" :loading="loading" :aria-label="t('proxy.net.refresh')" @click="loadAll" />
@@ -35,7 +35,7 @@
             <div class="rounded-lg bg-[var(--ui-bg-muted)] px-2 py-2"><p class="text-base font-semibold tabular-nums">{{ pools.filter(pool => pool.last_test_result === 'passed').length }}</p><p class="text-[11px] text-[var(--ui-text-muted)]">{{ t('proxy.net.passedTest') }}</p></div>
           </div>
         </div>
-        <p class="flex gap-2 text-xs text-[var(--ui-text-muted)]"><UIcon name="i-tabler-info-circle" class="mt-0.5 size-3.5 shrink-0 text-[var(--ui-info)]" />{{ t('proxy.net.info') }}</p>
+        <p class="flex gap-2 text-xs text-[var(--ui-text-muted)]"><AppIcon name="i-tabler-info-circle" class="mt-0.5 size-3.5 shrink-0 text-[var(--ui-info)]" />{{ t('proxy.net.info') }}</p>
       </AppCard>
     </div>
 
@@ -58,8 +58,8 @@
         </template>
         <template #status-cell="{ row }">
           <div class="flex flex-wrap gap-1">
-            <UBadge :color="value(row).enabled ? 'success' : 'neutral'" variant="subtle">{{ value(row).enabled ? t('common.enabled') : t('common.disabled') }}</UBadge>
-            <UBadge v-if="value(row).last_test_result" :color="value(row).last_test_result === 'passed' ? 'success' : 'error'" variant="subtle">{{ testLabel(value(row).last_test_result) }}</UBadge>
+            <PortalBadge :color="value(row).enabled ? 'success' : 'neutral'" variant="subtle">{{ value(row).enabled ? t('common.enabled') : t('common.disabled') }}</PortalBadge>
+            <PortalBadge v-if="value(row).last_test_result" :color="value(row).last_test_result === 'passed' ? 'success' : 'error'" variant="subtle">{{ testLabel(value(row).last_test_result) }}</PortalBadge>
           </div>
           <p v-if="value(row).last_tested_at" class="mt-1 text-xs text-[var(--ui-text-muted)]">{{ formatDate(value(row).last_tested_at) }}</p>
         </template>
@@ -79,15 +79,15 @@
     <AppModal v-model:open="formOpen" :title="editing ? t('proxy.net.editTitle') : t('proxy.net.addTitle')" :description="t('proxy.net.formDescription')">
       <template #body>
         <form class="space-y-4" @submit.prevent="savePool">
-          <UFormField :label="t('common.name')" required><UInput v-model="form.name" class="w-full" /></UFormField>
-          <UFormField :label="t('proxy.field.url')" required><UInput v-model="form.proxy_url" placeholder="http://127.0.0.1:7890" class="w-full" /></UFormField>
+          <AdminField :label="t('common.name')" required><AdminInput v-model="form.name" class="w-full" /></AdminField>
+          <AdminField :label="t('proxy.field.url')" required><AdminInput v-model="form.proxy_url" placeholder="http://127.0.0.1:7890" class="w-full" /></AdminField>
           <div class="grid gap-4 sm:grid-cols-2">
-            <UFormField :label="t('proxy.field.priority')"><UInput v-model.number="form.priority" type="number" class="w-full" /></UFormField>
-            <UFormField :label="t('proxy.field.scope')"><UInput model-value="global" disabled class="w-full" /></UFormField>
+            <AdminField :label="t('proxy.field.priority')"><AdminInput v-model.number="form.priority" type="number" class="w-full" /></AdminField>
+            <AdminField :label="t('proxy.field.scope')"><AdminInput model-value="global" disabled class="w-full" /></AdminField>
           </div>
-          <UFormField :label="t('proxy.field.note')"><UTextarea v-model="form.note" :rows="3" class="w-full" /></UFormField>
+          <AdminField :label="t('proxy.field.note')"><AdminTextarea v-model="form.note" :rows="3" class="w-full" /></AdminField>
           <label class="flex items-center justify-between rounded-lg border border-[var(--ui-border)] p-3">
-            <span class="text-sm font-medium">{{ t('common.enabled') }}</span><USwitch v-model="form.enabled" />
+            <span class="text-sm font-medium">{{ t('common.enabled') }}</span><AdminSwitch v-model="form.enabled" />
           </label>
           <p v-if="formError" class="text-sm text-red-600 dark:text-red-400">{{ formError }}</p>
           <div class="flex justify-end gap-2">
@@ -101,12 +101,20 @@
 </template>
 
 <script setup>
+import AdminField from '~/components/admin/general/controls/AdminField.vue'
+import AdminInput from '~/components/admin/general/controls/AdminInput.vue'
+import AdminTextarea from '~/components/admin/general/controls/AdminTextarea.vue'
+import AdminSwitch from '~/components/admin/general/controls/AdminSwitch.vue'
+import PortalAlert from '~/components/app/general/PortalAlert.vue'
+import PortalBadge from '~/components/app/general/PortalBadge.vue'
+import AppIcon from '~/components/AppIcon.vue'
 import AdminTableAction from '~/components/admin/general/TableAction.vue'
 import { useWorkspaceState } from '~/composables/useWorkspaceState'
 import { useDataSync } from '~/composables/useDataSync'
 
 const { fetchAPI } = useApi()
-const toast = useToast()
+import { useAdminToast } from '~/composables/admin-feedback/useAdminToast'
+const toast = useAdminToast()
 const { t, intlLocale } = useAdminI18n()
 const loading = useWorkspaceState('admin:proxy-network:loading', () => (false))
 const savingGlobal = useWorkspaceState('admin:proxy-network:savingGlobal', () => (false))

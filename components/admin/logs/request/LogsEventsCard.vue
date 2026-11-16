@@ -6,7 +6,7 @@
           <h2 class="font-semibold">{{ t('logs.view.events') }}</h2>
           <p class="text-xs text-[var(--ui-text-muted)]" :title="t('logs.desc.events')">{{ t('logs.eventsSummary', { count: formatNumber(eventsTotal) }) }}</p>
         </div>
-        <USelect v-model="eventSort" :items="eventSortOptions" value-key="value" label-key="label" class="w-full sm:w-52" @update:model-value="applyFilters" />
+        <AdminSelect v-model="eventSort" :items="eventSortOptions" value-key="value" label-key="label" class="w-full sm:w-52" @update:model-value="applyFilters" />
       </div>
     </template>
 
@@ -22,9 +22,9 @@
       </template>
       <template #status-cell="{ row }">
         <div class="space-y-1">
-          <UBadge :color="rowValue(row).failed ? 'error' : 'success'" variant="subtle" size="sm">
+          <PortalBadge :color="rowValue(row).failed ? 'error' : 'success'" variant="subtle" size="sm">
             {{ rowValue(row).failed ? t('common.failed') : t('common.success') }}
-          </UBadge>
+          </PortalBadge>
           <p v-if="rowValue(row).status_code" class="text-xs text-[var(--ui-text-muted)]">HTTP {{ rowValue(row).status_code }}</p>
         </div>
       </template>
@@ -65,6 +65,8 @@
 </template>
 
 <script setup lang="ts">
+import AdminSelect from '~/components/admin/general/controls/AdminSelect.vue'
+import PortalBadge from '~/components/app/general/PortalBadge.vue'
 import AdminTableAction from '~/components/admin/general/TableAction.vue'
 import LogsEmptyState from '~/components/admin/logs/LogsEmptyState.vue'
 import LogsTablePager from '~/components/admin/logs/LogsTablePager.vue'

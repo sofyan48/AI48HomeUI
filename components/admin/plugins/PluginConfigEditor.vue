@@ -9,30 +9,30 @@
         <template #body>
             <p v-if="loading" role="status" class="text-sm text-[var(--ui-text-muted)]">{{ t('plugins.config.loading') }}</p>
             <div v-else-if="!ready" class="space-y-3">
-                <UAlert v-if="error" color="error" variant="subtle" :title="t('plugins.config.loadFailed')" :description="error" />
+                <PortalAlert v-if="error" color="error" variant="subtle" :title="t('plugins.config.loadFailed')" :description="error" />
                 <AppButton color="neutral" variant="outline" @click="load">{{ t('common.retry') }}</AppButton>
             </div>
             <form v-else class="space-y-5" @submit.prevent="save">
                 <fieldset :disabled="saving" class="space-y-5">
-                    <UCheckbox v-model="enabled" :label="t('plugins.config.enableLabel')" :description="t('plugins.config.enableDescription')" />
-                    <UFormField :label="t('plugins.config.priority')" :description="t('plugins.config.priorityDescription')">
-                        <UInput v-model="priority" inputmode="numeric" placeholder="0" class="w-full" />
-                    </UFormField>
-                    <UCheckbox v-model="loadInHome" :label="t('plugins.config.loadInHome')" :description="t('plugins.config.loadInHomeDescription')" />
+                    <AdminCheckbox v-model="enabled" :label="t('plugins.config.enableLabel')" :description="t('plugins.config.enableDescription')" />
+                    <AdminField :label="t('plugins.config.priority')" :description="t('plugins.config.priorityDescription')">
+                        <AdminInput v-model="priority" inputmode="numeric" placeholder="0" class="w-full" />
+                    </AdminField>
+                    <AdminCheckbox v-model="loadInHome" :label="t('plugins.config.loadInHome')" :description="t('plugins.config.loadInHomeDescription')" />
                     <section class="space-y-3 rounded-lg border border-[var(--ui-border)] p-3">
                         <h3 class="text-sm font-semibold">{{ t('plugins.config.declared') }}</h3>
                         <p v-if="!fields.length" class="text-xs text-[var(--ui-text-muted)]">{{ t('plugins.config.noDeclared') }}</p>
-                        <UFormField v-for="field in fields" :key="field.name" :label="`${field.name} (${field.type})`" :description="field.description">
+                        <AdminField v-for="field in fields" :key="field.name" :label="`${field.name} (${field.type})`" :description="field.description">
                             <div class="space-y-2">
-                                <UCheckbox :model-value="declared[field.name]?.active" :label="t('plugins.config.setValue')" @update:model-value="setActive(field.name, $event)" />
+                                <AdminCheckbox :model-value="declared[field.name]?.active" :label="t('plugins.config.setValue')" @update:model-value="setActive(field.name, $event)" />
                                 <template v-if="declared[field.name]?.active">
-                                    <USelect v-if="field.type === 'boolean'" v-model="declared[field.name].value" :items="['true', 'false']" :aria-label="field.name" class="w-full" />
-                                    <USelect v-else-if="field.type === 'enum' && field.enum_values.length" v-model="declared[field.name].value" :items="field.enum_values" :aria-label="field.name" class="w-full" />
-                                    <UTextarea v-else-if="['array', 'object'].includes(field.type)" v-model="declared[field.name].value" :aria-label="field.name" class="w-full font-mono" />
-                                    <UInput v-else v-model="declared[field.name].value" :aria-label="field.name" class="w-full" />
+                                    <AdminSelect v-if="field.type === 'boolean'" v-model="declared[field.name].value" :items="['true', 'false']" :aria-label="field.name" class="w-full" />
+                                    <AdminSelect v-else-if="field.type === 'enum' && field.enum_values.length" v-model="declared[field.name].value" :items="field.enum_values" :aria-label="field.name" class="w-full" />
+                                    <AdminTextarea v-else-if="['array', 'object'].includes(field.type)" v-model="declared[field.name].value" :aria-label="field.name" class="w-full font-mono" />
+                                    <AdminInput v-else v-model="declared[field.name].value" :aria-label="field.name" class="w-full" />
                                 </template>
                             </div>
-                        </UFormField>
+                        </AdminField>
                     </section>
                     <section class="space-y-3 rounded-lg border border-[var(--ui-border)] p-3">
                         <div class="flex flex-wrap items-center justify-between gap-2">
@@ -42,17 +42,17 @@
                         <p class="text-xs text-[var(--ui-text-muted)]">{{ t('plugins.config.customHint') }}</p>
                         <div v-for="(entry, index) in custom" :key="entry.id" class="space-y-2 border-t border-[var(--ui-border)] pt-3">
                             <div class="flex items-center gap-2">
-                                <UInput v-model="entry.key" :aria-label="t('plugins.config.paramName', { index: index + 1 })" placeholder="option-key" class="min-w-0 flex-1" />
-                                <USelect v-model="entry.type" :items="parameterTypes" :aria-label="t('plugins.config.paramType', { index: index + 1 })" />
+                                <AdminInput v-model="entry.key" :aria-label="t('plugins.config.paramName', { index: index + 1 })" placeholder="option-key" class="min-w-0 flex-1" />
+                                <AdminSelect v-model="entry.type" :items="parameterTypes" :aria-label="t('plugins.config.paramType', { index: index + 1 })" />
                                 <AppButton type="button" color="error" variant="ghost" icon="i-tabler-trash" :aria-label="t('plugins.config.paramRemove', { index: index + 1 })" :disabled="saving" @click="custom.splice(index, 1)" />
                             </div>
-                            <USelect v-if="entry.type === 'boolean'" v-model="entry.value" :items="['true', 'false']" :aria-label="t('plugins.config.paramValue', { index: index + 1 })" class="w-full" />
-                            <UTextarea v-else-if="['array', 'object'].includes(entry.type)" v-model="entry.value" :aria-label="t('plugins.config.paramJsonValue', { index: index + 1 })" class="w-full font-mono" />
-                            <UInput v-else-if="entry.type !== 'null'" v-model="entry.value" :aria-label="t('plugins.config.paramValue', { index: index + 1 })" class="w-full" />
+                            <AdminSelect v-if="entry.type === 'boolean'" v-model="entry.value" :items="['true', 'false']" :aria-label="t('plugins.config.paramValue', { index: index + 1 })" class="w-full" />
+                            <AdminTextarea v-else-if="['array', 'object'].includes(entry.type)" v-model="entry.value" :aria-label="t('plugins.config.paramJsonValue', { index: index + 1 })" class="w-full font-mono" />
+                            <AdminInput v-else-if="entry.type !== 'null'" v-model="entry.value" :aria-label="t('plugins.config.paramValue', { index: index + 1 })" class="w-full" />
                         </div>
                     </section>
                 </fieldset>
-                <UAlert v-if="error" color="error" variant="subtle" :title="t('plugins.config.notSaved')" :description="error" />
+                <PortalAlert v-if="error" color="error" variant="subtle" :title="t('plugins.config.notSaved')" :description="error" />
                 <div class="flex justify-end gap-3">
                     <AppButton type="button" color="neutral" variant="outline" :disabled="saving" @click="close(false)">{{ t('common.cancel') }}</AppButton>
                     <AppButton type="submit" :loading="saving" :disabled="saving || disabled">{{ t('plugins.config.save') }}</AppButton>
@@ -63,6 +63,12 @@
 </template>
 
 <script setup lang="ts">
+import AdminField from '~/components/admin/general/controls/AdminField.vue'
+import AdminInput from '~/components/admin/general/controls/AdminInput.vue'
+import AdminSelect from '~/components/admin/general/controls/AdminSelect.vue'
+import AdminTextarea from '~/components/admin/general/controls/AdminTextarea.vue'
+import AdminCheckbox from '~/components/admin/general/controls/AdminCheckbox.vue'
+import PortalAlert from '~/components/app/general/PortalAlert.vue'
 import { computed, onScopeDispose, reactive, ref, watch } from 'vue'
 import { useApi } from '~/composables/useApi'
 
@@ -74,7 +80,8 @@ const props = defineProps<{ open: boolean; plugin: Plugin | null; disabled?: boo
 const emit = defineEmits<{ 'update:open': [value: boolean]; saved: [id: string] }>()
 const { fetchAPI, token } = useApi()
 const { t } = useAdminI18n()
-const toast = useToast()
+import { useAdminToast } from '~/composables/admin-feedback/useAdminToast'
+const toast = useAdminToast()
 const reserved = new Set(['enabled', 'priority', 'load-in-home', 'store'])
 const parameterTypes = ['string', 'boolean', 'integer', 'number', 'array', 'object', 'null']
 const loading = ref(false)

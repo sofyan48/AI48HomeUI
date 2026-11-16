@@ -7,9 +7,9 @@
         <span class="font-medium capitalize text-[var(--ui-text-highlighted)]">{{ statusLabel }}</span>
         <span v-if="entry.plan?.name" class="min-w-0 truncate text-[var(--ui-text-muted)]" :title="entry.plan.expires_at ? t('quota.preview.planEnds', { plan: entry.plan.name, date: formatDate(entry.plan.expires_at) }) : entry.plan.name">· {{ entry.plan.name }}</span>
         <span class="ml-auto flex shrink-0 items-center gap-1 text-[11px] text-[var(--ui-text-muted)]">
-          <UIcon v-if="loading" name="i-tabler-loader-2" class="size-3 animate-spin" aria-hidden="true" />
+          <AppIcon v-if="loading" name="i-tabler-loader-2" class="size-3 animate-spin" aria-hidden="true" />
           <span v-if="entry.observed_at" :class="stale ? 'text-amber-600 dark:text-amber-400' : ''" :title="t('quota.observedAt', { date: formatDate(entry.observed_at) })">{{ relative(entry.observed_at) }}</span>
-          <UIcon
+          <AppIcon
             v-if="notes.length"
             name="i-tabler-info-circle"
             class="size-3.5 text-amber-500"
@@ -40,6 +40,7 @@
 </template>
 
 <script setup lang="ts">
+import AppIcon from '~/components/AppIcon.vue'
 import { computed, onMounted, onScopeDispose, ref, watch } from 'vue'
 import { useApi } from '~/composables/useApi'
 import { useCapabilities } from '~/composables/useCapabilities'

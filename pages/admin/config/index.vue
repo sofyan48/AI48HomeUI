@@ -1,6 +1,6 @@
 <template>
   <section class="grid gap-5">
-    <UAlert
+    <PortalAlert
       v-if="pageError"
       color="error"
       variant="subtle"
@@ -9,9 +9,9 @@
     />
 
     <div v-if="loading && !loaded" class="grid gap-4">
-      <USkeleton class="h-28 w-full" />
-      <USkeleton class="h-64 w-full" />
-      <USkeleton class="h-64 w-full" />
+      <PortalSkeleton class="h-28 w-full" />
+      <PortalSkeleton class="h-64 w-full" />
+      <PortalSkeleton class="h-64 w-full" />
     </div>
 
     <div v-else class="grid items-start gap-5 xl:grid-cols-[240px_minmax(0,1fr)]">
@@ -50,6 +50,8 @@
 </template>
 
 <script setup lang="ts">
+import PortalAlert from '~/components/app/general/PortalAlert.vue'
+import PortalSkeleton from '~/components/app/general/PortalSkeleton.vue'
 import AdminConfigVisualSections from '~/components/admin/config/ConfigVisualSections.vue'
 import AdminConfigSharedUpstream from '~/components/admin/config/ConfigSharedUpstream.vue'
 import AdminConfigProxyPool from '~/components/admin/config/ConfigProxyPool.vue'

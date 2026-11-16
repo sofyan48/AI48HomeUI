@@ -10,7 +10,7 @@
   >
     <template #body>
       <form class="space-y-4" @submit.prevent="emit('submit')">
-        <UAlert v-if="error" color="error" variant="subtle" :description="error" />
+        <PortalAlert v-if="error" color="error" variant="subtle" :description="error" />
         <slot />
         <div class="flex justify-end gap-2" :class="{ 'border-t border-[var(--ui-border)] pt-4': divided }">
           <slot name="actions">
@@ -28,6 +28,7 @@
 </template>
 
 <script setup lang="ts">
+import PortalAlert from '~/components/app/general/PortalAlert.vue'
 /**
  * Base form dialog: title, optional error alert, body slot and a cancel/submit footer.
  * Use it for every create/edit/confirm flow so footers, spacing and pending states stay consistent.

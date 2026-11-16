@@ -3,7 +3,7 @@
     <template #header="{ close }">
       <div class="flex w-full min-w-0 items-start gap-3">
         <span class="rd-status-icon" :class="`rd-status-icon--${loading ? 'idle' : statusColor}`" aria-hidden="true">
-          <UIcon :name="loading ? 'i-tabler-loader-2' : statusColor === 'error' ? 'i-tabler-x' : 'i-tabler-check'" class="size-4" :class="loading ? 'animate-spin' : ''" />
+          <AppIcon :name="loading ? 'i-tabler-loader-2' : statusColor === 'error' ? 'i-tabler-x' : 'i-tabler-check'" class="size-4" :class="loading ? 'animate-spin' : ''" />
         </span>
         <div class="min-w-0 flex-1">
           <h2 class="truncate text-base font-semibold" :title="title">{{ title }}</h2>
@@ -19,12 +19,12 @@
     </template>
 
     <template #body>
-      <div v-if="loading" role="status" class="flex items-center justify-center gap-2 py-10 text-sm text-[var(--ui-text-muted)]"><UIcon name="i-tabler-loader-2" class="size-5 animate-spin" />{{ t('requests.detail.loading') }}</div>
+      <div v-if="loading" role="status" class="flex items-center justify-center gap-2 py-10 text-sm text-[var(--ui-text-muted)]"><AppIcon name="i-tabler-loader-2" class="size-5 animate-spin" />{{ t('requests.detail.loading') }}</div>
       <div v-else-if="detail" class="space-y-4 p-4 sm:p-5">
         <!-- Key facts: status, latency, tokens, cost -->
         <dl class="grid grid-cols-2 gap-2 sm:grid-cols-4">
           <div v-for="fact in keyFacts" :key="fact.label" class="rd-fact" :class="fact.tone ? `rd-fact--${fact.tone}` : ''">
-            <dt class="flex items-center gap-1.5 text-[11px] font-medium text-[var(--ui-text-muted)]"><UIcon :name="fact.icon" class="size-3.5" />{{ fact.label }}</dt>
+            <dt class="flex items-center gap-1.5 text-[11px] font-medium text-[var(--ui-text-muted)]"><AppIcon :name="fact.icon" class="size-3.5" />{{ fact.label }}</dt>
             <dd class="mt-1 truncate text-base font-semibold tabular-nums text-[var(--ui-text-highlighted)]" :title="fact.value">{{ fact.value }}</dd>
             <dd v-if="fact.hint" class="truncate text-[11px] text-[var(--ui-text-muted)]" :title="fact.hint">{{ fact.hint }}</dd>
           </div>
@@ -33,7 +33,7 @@
         <!-- Error first when the request failed -->
         <section v-if="hasError" class="rd-error" aria-labelledby="request-detail-error">
           <div class="flex items-start gap-2.5">
-            <UIcon name="i-tabler-alert-circle" class="mt-0.5 size-4 shrink-0" />
+            <AppIcon name="i-tabler-alert-circle" class="mt-0.5 size-4 shrink-0" />
             <div class="min-w-0 flex-1">
               <h3 id="request-detail-error" class="text-sm font-semibold">{{ event.error?.reason || t('requests.detail.failed') }}</h3>
               <p v-if="event.error?.message" class="mt-0.5 break-words text-xs">{{ event.error.message }}</p>
@@ -74,14 +74,14 @@
             </div>
           </dl>
           <div v-if="toolUsage.length" class="mt-3 flex flex-wrap gap-1.5 border-t border-[var(--ui-border)] pt-3">
-            <span v-for="item in toolUsage" :key="item.label" class="inline-flex items-center gap-1 rounded-full bg-[var(--ui-bg-muted)] px-2 py-0.5 text-[11px] capitalize"><UIcon name="i-tabler-tool" class="size-3" />{{ item.label }} <strong class="tabular-nums">{{ item.value }}</strong></span>
+            <span v-for="item in toolUsage" :key="item.label" class="inline-flex items-center gap-1 rounded-full bg-[var(--ui-bg-muted)] px-2 py-0.5 text-[11px] capitalize"><AppIcon name="i-tabler-tool" class="size-3" />{{ item.label }} <strong class="tabular-nums">{{ item.value }}</strong></span>
           </div>
         </section>
 
         <!-- Routing / who / where -->
         <div class="grid gap-4 sm:grid-cols-2">
           <section v-for="group in infoGroups" :key="group.title" class="rd-card" :aria-label="group.title">
-            <h3 class="rd-title"><UIcon :name="group.icon" class="size-3.5" />{{ group.title }}</h3>
+            <h3 class="rd-title"><AppIcon :name="group.icon" class="size-3.5" />{{ group.title }}</h3>
             <dl v-if="group.items.length" class="divide-y divide-[var(--ui-border)]">
               <div v-for="item in group.items" :key="item.label" class="rd-row">
                 <dt>{{ item.label }}</dt>
@@ -94,7 +94,7 @@
 
         <!-- Billing -->
         <section v-if="costBreakdown.length" class="rd-card" aria-labelledby="request-detail-cost">
-          <h3 id="request-detail-cost" class="rd-title"><UIcon name="i-tabler-receipt" class="size-3.5" />{{ t('requests.detail.billing') }}</h3>
+          <h3 id="request-detail-cost" class="rd-title"><AppIcon name="i-tabler-receipt" class="size-3.5" />{{ t('requests.detail.billing') }}</h3>
           <dl class="divide-y divide-[var(--ui-border)]">
             <div v-for="(item, index) in costBreakdown" :key="item.label" class="rd-row" :class="index === 0 ? 'rd-row--total' : ''">
               <dt>{{ costRowLabel(item.label) }}</dt>
@@ -110,13 +110,13 @@
         <!-- Log excerpt -->
         <section v-if="detail.log_excerpt?.length" class="rd-card !p-0" aria-labelledby="request-detail-log">
           <div class="flex items-center justify-between gap-2 px-4 py-3">
-            <h3 id="request-detail-log" class="rd-title !mb-0"><UIcon name="i-tabler-terminal-2" class="size-3.5" />{{ t('requests.detail.logExcerpt') }}</h3>
+            <h3 id="request-detail-log" class="rd-title !mb-0"><AppIcon name="i-tabler-terminal-2" class="size-3.5" />{{ t('requests.detail.logExcerpt') }}</h3>
             <span class="text-[11px] text-[var(--ui-text-muted)]">{{ t('requests.detail.logLines', { count: detail.log_excerpt.length }) }}</span>
           </div>
           <pre class="rd-log">{{ detail.log_excerpt.join('\n') }}</pre>
         </section>
       </div>
-      <div v-else class="flex flex-col items-center justify-center px-4 py-10 text-center text-sm text-[var(--ui-text-muted)]"><UIcon name="i-tabler-file-unknown" class="mb-2 size-6" />{{ t('requests.detail.none') }}</div>
+      <div v-else class="flex flex-col items-center justify-center px-4 py-10 text-center text-sm text-[var(--ui-text-muted)]"><AppIcon name="i-tabler-file-unknown" class="mb-2 size-6" />{{ t('requests.detail.none') }}</div>
     </template>
 
     <template #footer>
@@ -130,6 +130,7 @@
 </template>
 
 <script setup lang="ts">
+import AppIcon from '~/components/AppIcon.vue'
 import { requestCostRows, toolUsageEntries } from '~/composables/requestTelemetry'
 type Fields = Record<string, any>
 type Detail = { event?: Fields; payload_summary?: Fields | null; log_excerpt?: string[] }
@@ -138,7 +139,8 @@ type RowInput = { label: string; value: unknown; hint?: unknown; mono?: boolean;
 const props = defineProps<{ detail: Detail | null; loading: boolean; downloading: boolean; downloadError?: string; hasPrevious?: boolean; hasNext?: boolean }>()
 const open = defineModel<boolean>('open', { default: false })
 const emit = defineEmits<{ download: [url: string, requestId: string]; navigate: [direction: -1 | 1] }>()
-const toast = useToast()
+import { useAdminToast } from '~/composables/admin-feedback/useAdminToast'
+const toast = useAdminToast()
 const { t, intlLocale } = useAdminI18n()
 const event = computed(() => props.detail?.event || {})
 const payload = computed(() => props.detail?.payload_summary || {})

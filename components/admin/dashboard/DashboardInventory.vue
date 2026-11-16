@@ -3,13 +3,13 @@
     <template #header><h2 class="font-semibold">{{ t('dashboard.serviceInventory') }}</h2></template>
     <nav :aria-label="t('dashboard.serviceInventory')" class="space-y-0.5">
       <NuxtLink v-for="card in cards" :key="card.label" :to="card.to" class="dashboard-inventory" :class="`dashboard-tone--${card.tone}`">
-        <span class="dashboard-metric-icon dashboard-metric-icon--sm" aria-hidden="true"><UIcon :name="card.icon" class="size-4" /></span>
+        <span class="dashboard-metric-icon dashboard-metric-icon--sm" aria-hidden="true"><AppIcon :name="card.icon" class="size-4" /></span>
         <span class="min-w-0 flex-1">
           <span class="block truncate text-sm font-medium text-[var(--ui-text-highlighted)]">{{ card.label }}</span>
           <span class="block truncate text-xs text-[var(--ui-text-muted)]">{{ card.detail }}</span>
         </span>
         <span class="text-lg font-bold tabular-nums text-[var(--ui-text-highlighted)]">{{ formatNumber(card.value) }}</span>
-        <UIcon name="i-tabler-chevron-right" class="inventory-chevron" aria-hidden="true" />
+        <AppIcon name="i-tabler-chevron-right" class="inventory-chevron" aria-hidden="true" />
       </NuxtLink>
     </nav>
     <div class="mx-2 mt-2 border-t border-[var(--ui-border)] px-1 pb-1 pt-3">
@@ -25,6 +25,7 @@
 </template>
 
 <script setup lang="ts">
+import AppIcon from '~/components/AppIcon.vue'
 import { computed } from 'vue'
 import { useDashboard } from '~/composables/dashboard/useDashboard'
 import { useDashboardFormat } from '~/composables/dashboard/format'

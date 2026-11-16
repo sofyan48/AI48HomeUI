@@ -2,8 +2,8 @@
   <section :aria-label="t('dashboard.serviceReadiness')" class="dashboard-hero" :class="`dashboard-hero--${health.color}`">
     <div class="flex items-start justify-between gap-3">
       <div class="flex items-center gap-2.5">
-        <span class="dashboard-hero-icon" aria-hidden="true"><UIcon :name="healthIcon" class="size-5" /></span>
-        <UBadge :color="health.color" variant="subtle" class="rounded-full">{{ health.label }}</UBadge>
+        <span class="dashboard-hero-icon" aria-hidden="true"><AppIcon :name="healthIcon" class="size-5" /></span>
+        <PortalBadge :color="health.color" variant="subtle" class="rounded-full">{{ health.label }}</PortalBadge>
       </div>
       <AppSyncButton :loading="loading" size="sm" @click="refreshDashboard" />
     </div>
@@ -11,15 +11,15 @@
     <p class="mt-1.5 text-sm leading-relaxed text-[var(--ui-text-muted)]">{{ health.description }}</p>
 
     <div class="mt-4 flex flex-wrap gap-1.5 text-xs">
-      <span class="dashboard-chip"><UIcon name="i-tabler-server" class="size-3.5" aria-hidden="true" />{{ runtimeMode || 'Home' }}</span>
-      <span class="dashboard-chip"><UIcon name="i-tabler-tag" class="size-3.5" aria-hidden="true" />{{ latestVersion || t('dashboard.versionUnavailable') }}</span>
-      <span class="dashboard-chip"><UIcon name="i-tabler-clock" class="size-3.5" aria-hidden="true" />{{ lastUpdated ? lastUpdated.toLocaleTimeString(intlLocale) : t('dashboard.notSynced') }}</span>
+      <span class="dashboard-chip"><AppIcon name="i-tabler-server" class="size-3.5" aria-hidden="true" />{{ runtimeMode || 'Home' }}</span>
+      <span class="dashboard-chip"><AppIcon name="i-tabler-tag" class="size-3.5" aria-hidden="true" />{{ latestVersion || t('dashboard.versionUnavailable') }}</span>
+      <span class="dashboard-chip"><AppIcon name="i-tabler-clock" class="size-3.5" aria-hidden="true" />{{ lastUpdated ? lastUpdated.toLocaleTimeString(intlLocale) : t('dashboard.notSynced') }}</span>
     </div>
 
     <div v-if="statusItems.length" class="dashboard-issues mt-4">
       <p class="mb-1.5 text-xs font-medium text-[var(--ui-text-muted)]">{{ t('dashboard.dataStatus', { count: statusItems.length }) }}</p>
       <NuxtLink v-for="item in statusItems.slice(0, 4)" :key="item.label" :to="item.to" class="dashboard-issue">
-        <UIcon name="i-tabler-point-filled" class="size-3 shrink-0 text-[var(--ui-warning)]" aria-hidden="true" />
+        <AppIcon name="i-tabler-point-filled" class="size-3 shrink-0 text-[var(--ui-warning)]" aria-hidden="true" />
         <span class="min-w-0 flex-1 truncate"><span class="font-medium text-[var(--ui-text-highlighted)]">{{ item.label }}</span> · {{ item.detail }}</span>
         <span class="shrink-0 text-xs font-medium text-[var(--ui-primary)]">{{ t('dashboard.review') }}</span>
       </NuxtLink>
@@ -43,6 +43,8 @@
 </template>
 
 <script setup lang="ts">
+import AppIcon from '~/components/AppIcon.vue'
+import PortalBadge from '~/components/app/general/PortalBadge.vue'
 import { useDashboard } from '~/composables/dashboard/useDashboard'
 
 const { t, intlLocale } = useAdminI18n()

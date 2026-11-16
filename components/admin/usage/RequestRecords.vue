@@ -1,6 +1,6 @@
 <template>
   <div class="space-y-4">
-    <UAlert
+    <PortalAlert
       v-if="pageError || liveError"
       color="error"
       variant="subtle"
@@ -9,31 +9,31 @@
       :description="pageError || liveError"
     />
 
-    <UAlert v-if="capabilityError" color="warning" variant="subtle" :title="t('usage.capsUnavailable')" :description="t('requests.capsDesc')" />
-    <UAlert v-if="!canExport" color="warning" variant="subtle" :title="t('requests.exportUnavailable')" :description="t('requests.exportUnsupported')" />
+    <PortalAlert v-if="capabilityError" color="warning" variant="subtle" :title="t('usage.capsUnavailable')" :description="t('requests.capsDesc')" />
+    <PortalAlert v-if="!canExport" color="warning" variant="subtle" :title="t('requests.exportUnavailable')" :description="t('requests.exportUnsupported')" />
 
     <form class="admin-toolbar" :aria-label="t('requests.filtersLabel')" @submit.prevent="applyFilters">
       <div class="flex flex-wrap items-center gap-2">
-        <div class="w-full sm:w-96"><div class="flex"><USelect v-model="searchField" :items="searchFieldOptions" value-key="value" label-key="label" class="w-36 shrink-0 [&_button]:rounded-r-none" /><UInput v-model="filters.search" icon="i-tabler-search" :placeholder="t('requests.searchPlaceholder')" class="min-w-0 flex-1 [&_input]:rounded-l-none" /></div></div>
-        <USelect v-model="timeRange" :items="timeRangeOptions" value-key="value" label-key="label" class="w-40" icon="i-tabler-calendar" :aria-label="t('usage.timeRange')" @update:model-value="applyTimeRange" />
-        <USelect :model-value="filters.status || allOptionValue" @update:model-value="setSelectFilter('status', $event)" :items="statusOptions" value-key="value" label-key="label" class="w-36" icon="i-tabler-circle-dot" :aria-label="t('common.status')" />
-        <USelectMenu :model-value="filters.provider || allOptionValue" @update:model-value="setSelectFilter('provider', $event)" :items="providerOptions" value-key="value" label-key="label" class="w-44" icon="i-tabler-cloud" :aria-label="t('common.provider')" />
-        <USelectMenu :model-value="filters.model || allOptionValue" @update:model-value="setSelectFilter('model', $event)" :items="modelOptions" value-key="value" label-key="label" class="w-52" icon="i-tabler-box" :aria-label="t('common.model')" />
+        <div class="w-full sm:w-96"><div class="flex"><AdminSelect v-model="searchField" :items="searchFieldOptions" value-key="value" label-key="label" class="w-36 shrink-0 [&_button]:rounded-r-none" /><AdminInput v-model="filters.search" icon="i-tabler-search" :placeholder="t('requests.searchPlaceholder')" class="min-w-0 flex-1 [&_input]:rounded-l-none" /></div></div>
+        <AdminSelect v-model="timeRange" :items="timeRangeOptions" value-key="value" label-key="label" class="w-40" icon="i-tabler-calendar" :aria-label="t('usage.timeRange')" @update:model-value="applyTimeRange" />
+        <AdminSelect :model-value="filters.status || allOptionValue" @update:model-value="setSelectFilter('status', $event)" :items="statusOptions" value-key="value" label-key="label" class="w-36" icon="i-tabler-circle-dot" :aria-label="t('common.status')" />
+        <AdminSelectMenu :model-value="filters.provider || allOptionValue" @update:model-value="setSelectFilter('provider', $event)" :items="providerOptions" value-key="value" label-key="label" class="w-44" icon="i-tabler-cloud" :aria-label="t('common.provider')" />
+        <AdminSelectMenu :model-value="filters.model || allOptionValue" @update:model-value="setSelectFilter('model', $event)" :items="modelOptions" value-key="value" label-key="label" class="w-52" icon="i-tabler-box" :aria-label="t('common.model')" />
         <AppButton type="button" color="neutral" :variant="advancedOpen ? 'soft' : 'ghost'" icon="i-tabler-dots-vertical" :aria-label="advancedOpen ? t('usage.hideAdvanced') : t('usage.showAdvanced')" :title="advancedOpen ? t('usage.hideAdvanced') : t('usage.advancedFilters')" :aria-expanded="advancedOpen" @click="advancedOpen = !advancedOpen" />
         <AppButton type="button" color="neutral" variant="ghost" @click="resetFilters">{{ t('common.reset') }}</AppButton>
         <AppButton type="submit" icon="i-tabler-filter" :loading="loading">{{ t('common.apply') }}</AppButton>
         <span class="mx-1 hidden h-5 w-px bg-[var(--ui-border)] lg:block" aria-hidden="true" />
-        <div class="flex items-center gap-1.5 lg:ml-auto"><div class="flex items-center gap-2 rounded-full border border-[var(--ui-border)] px-2.5 py-1"><USwitch v-model="liveRefresh" size="sm" /><span class="text-xs">{{ t('requests.live') }}</span><USelect v-if="liveRefresh" v-model="refreshSeconds" :items="refreshOptions" value-key="value" label-key="label" size="sm" class="w-24" /></div><AppButton color="neutral" variant="ghost" size="sm" icon="i-tabler-download" :disabled="exporting || !canExport" @click="exportOpen = true" :aria-label="t('requests.exportLabel')" :title="t('requests.exportTitle')" /></div>
+        <div class="flex items-center gap-1.5 lg:ml-auto"><div class="flex items-center gap-2 rounded-full border border-[var(--ui-border)] px-2.5 py-1"><AdminSwitch v-model="liveRefresh" size="sm" /><span class="text-xs">{{ t('requests.live') }}</span><AdminSelect v-if="liveRefresh" v-model="refreshSeconds" :items="refreshOptions" value-key="value" label-key="label" size="sm" class="w-24" /></div><AppButton color="neutral" variant="ghost" size="sm" icon="i-tabler-download" :disabled="exporting || !canExport" @click="exportOpen = true" :aria-label="t('requests.exportLabel')" :title="t('requests.exportTitle')" /></div>
       </div>
-      <div v-if="timeRange === 'custom'" class="mt-2.5 flex flex-wrap items-start gap-2 border-t border-[var(--ui-border)] pt-2.5"><UFormField :label="t('requests.startTime')" class="w-full sm:w-64"><AppDateInput v-model="filters.from" type="datetime-local" :max="filters.to" class="w-full" /></UFormField><UFormField :label="t('requests.endTime')" class="w-full sm:w-64"><AppDateInput v-model="filters.to" type="datetime-local" :min="filters.from" class="w-full" /></UFormField></div>
+      <div v-if="timeRange === 'custom'" class="mt-2.5 flex flex-wrap items-start gap-2 border-t border-[var(--ui-border)] pt-2.5"><AdminField :label="t('requests.startTime')" class="w-full sm:w-64"><AppDateInput v-model="filters.from" type="datetime-local" :max="filters.to" class="w-full" /></AdminField><AdminField :label="t('requests.endTime')" class="w-full sm:w-64"><AppDateInput v-model="filters.to" type="datetime-local" :min="filters.from" class="w-full" /></AdminField></div>
 
       <div v-if="advancedOpen" class="mt-2.5 flex flex-wrap items-center gap-2 border-t border-[var(--ui-border)] pt-2.5">
-        <USelect :model-value="filters.event_type || allOptionValue" @update:model-value="setSelectFilter('event_type', $event)" :items="eventTypeOptions" value-key="value" label-key="label" class="w-40" icon="i-tabler-category" :aria-label="t('requests.eventType')" />
-        <USelectMenu :model-value="filters.home_ip || allOptionValue" @update:model-value="setSelectFilter('home_ip', $event)" :items="homeOptions" value-key="value" label-key="label" class="w-44" icon="i-tabler-server" :aria-label="t('usage.homeNode')" />
-        <USelectMenu :model-value="filters.cpa_node || allOptionValue" @update:model-value="setSelectFilter('cpa_node', $event)" :items="cpaOptions" value-key="value" label-key="label" class="w-44" icon="i-tabler-server-2" :aria-label="t('usage.cpaNode')" />
-        <USelect :model-value="filters.status_code || allOptionValue" @update:model-value="setSelectFilter('status_code', $event)" :items="statusCodeOptions" value-key="value" label-key="label" class="w-36" icon="i-tabler-hash" :aria-label="t('requests.httpStatus')" />
-        <USelect v-model="sort" :items="sortOptions" value-key="value" label-key="label" class="w-44" icon="i-tabler-arrows-sort" :aria-label="t('requests.sort')" />
-        <div class="flex items-center gap-1"><UInput v-model="filters.min_latency_ms" type="number" min="0" :placeholder="t('requests.minMs')" class="w-28" :aria-label="t('requests.minLatency')" /><span class="text-xs text-[var(--ui-text-dimmed)]">–</span><UInput v-model="filters.max_latency_ms" type="number" min="0" :placeholder="t('requests.maxMs')" class="w-28" :aria-label="t('requests.maxLatency')" /></div>
+        <AdminSelect :model-value="filters.event_type || allOptionValue" @update:model-value="setSelectFilter('event_type', $event)" :items="eventTypeOptions" value-key="value" label-key="label" class="w-40" icon="i-tabler-category" :aria-label="t('requests.eventType')" />
+        <AdminSelectMenu :model-value="filters.home_ip || allOptionValue" @update:model-value="setSelectFilter('home_ip', $event)" :items="homeOptions" value-key="value" label-key="label" class="w-44" icon="i-tabler-server" :aria-label="t('usage.homeNode')" />
+        <AdminSelectMenu :model-value="filters.cpa_node || allOptionValue" @update:model-value="setSelectFilter('cpa_node', $event)" :items="cpaOptions" value-key="value" label-key="label" class="w-44" icon="i-tabler-server-2" :aria-label="t('usage.cpaNode')" />
+        <AdminSelect :model-value="filters.status_code || allOptionValue" @update:model-value="setSelectFilter('status_code', $event)" :items="statusCodeOptions" value-key="value" label-key="label" class="w-36" icon="i-tabler-hash" :aria-label="t('requests.httpStatus')" />
+        <AdminSelect v-model="sort" :items="sortOptions" value-key="value" label-key="label" class="w-44" icon="i-tabler-arrows-sort" :aria-label="t('requests.sort')" />
+        <div class="flex items-center gap-1"><AdminInput v-model="filters.min_latency_ms" type="number" min="0" :placeholder="t('requests.minMs')" class="w-28" :aria-label="t('requests.minLatency')" /><span class="text-xs text-[var(--ui-text-dimmed)]">–</span><AdminInput v-model="filters.max_latency_ms" type="number" min="0" :placeholder="t('requests.maxMs')" class="w-28" :aria-label="t('requests.maxLatency')" /></div>
       </div>
       <p class="mt-2 text-[11px] text-[var(--ui-text-muted)]">{{ t('requests.timezone', { timezone }) }}</p>
     </form>
@@ -43,14 +43,21 @@
         <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div class="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5"><h2 class="text-sm font-semibold">{{ t('requests.title') }}</h2><span class="text-xs tabular-nums text-[var(--ui-text-muted)]">{{ t('requests.rangeOf', { from: pageStart, to: pageEnd, total: formatNumber(total) }) }}</span></div>
           <div class="flex flex-wrap items-center gap-2">
-            <UDropdownMenu :items="columnMenuItems" :content="{ align: 'end' }">
-              <AppButton size="sm" color="neutral" variant="outline" icon="i-tabler-columns">{{ t('requests.columns') }} <span class="tabular-nums text-[var(--ui-text-muted)]">{{ visibleColumnKeys.length - 1 }}/{{ columnDefinitions.length - 1 }}</span></AppButton>
-            </UDropdownMenu>
+            <DropdownMenu>
+              <DropdownMenuTrigger as-child>
+                <AppButton size="sm" color="neutral" variant="outline" icon="i-tabler-columns">{{ t('requests.columns') }} <span class="tabular-nums text-[var(--ui-text-muted)]">{{ visibleColumnKeys.length - 1 }}/{{ columnDefinitions.length - 1 }}</span></AppButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuCheckboxItem v-for="item in columnMenuItems" :key="item.label" :checked="item.checked" :disabled="item.disabled" @update:checked="item.onUpdateChecked" @select="item.onSelect">
+                  {{ item.label }}
+                </DropdownMenuCheckboxItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <AppButton size="sm" color="neutral" variant="ghost" icon="i-tabler-arrows-horizontal" :aria-label="t('requests.autoFit')" :title="t('requests.autoFit')" @click="autoFitColumns" />
             <AppButton v-if="pendingNewEvents" size="sm" color="primary" variant="soft" :loading="loading" @click="refreshEvents">
               {{ pendingNewEvents === 1 ? t('requests.showNewOne', { count: formatNumber(pendingNewEvents) }) : t('requests.showNewMany', { count: formatNumber(pendingNewEvents) }) }}
             </AppButton>
-            <UBadge v-if="liveRefresh" color="success" variant="subtle"><span class="mr-1 inline-block size-1.5 rounded-full bg-current" />{{ t('requests.live') }}</UBadge>
+            <PortalBadge v-if="liveRefresh" color="success" variant="subtle"><span class="mr-1 inline-block size-1.5 rounded-full bg-current" />{{ t('requests.live') }}</PortalBadge>
           </div>
         </div>
       </template>
@@ -60,23 +67,23 @@
           <span role="separator" tabindex="0" aria-orientation="vertical" :aria-label="t('requests.resizeColumn', { column: columnHeader(column) })" :aria-valuenow="columnWidth(column.accessorKey)" :aria-valuemin="column.accessorKey === 'status' ? 96 : 120" :aria-valuemax="640" class="absolute inset-y-0 right-0 z-10 w-2 cursor-col-resize touch-none border-r border-[var(--ui-border)] focus-visible:outline-2 focus-visible:outline-[var(--ui-primary)]" @pointerdown.stop="resizeColumn($event, column.accessorKey)" @dblclick.stop.prevent="autoFitColumn(column.accessorKey)" @keydown="resizeColumnWithKeyboard($event, column.accessorKey)" />
         </template>
         <template #timestamp-cell="{ row }"><div class="w-full min-w-0 overflow-hidden"><p class="text-sm font-medium">{{ formatDateTime(rowValue(row).timestamp) }}</p></div></template>
-        <template #event-cell="{ row }"><div class="w-full min-w-0 space-y-1 overflow-hidden"><div class="flex min-w-0 items-center gap-1.5"><UBadge color="neutral" variant="subtle" size="sm" class="max-w-full truncate font-medium">{{ eventTypeLabel(rowValue(row)) }}</UBadge><span v-if="rowValue(row).stream != null" class="shrink-0 text-[10px] text-[var(--ui-text-muted)]">{{ rowValue(row).stream ? t('requests.stream') : t('requests.standard') }}</span></div><p class="truncate font-mono text-[11px] text-[var(--ui-text-muted)]" :title="eventEndpoint(rowValue(row))">{{ eventEndpoint(rowValue(row)) }}</p><p class="truncate text-[11px] text-[var(--ui-text-muted)]" :title="executorLabel(rowValue(row).executor_type)">{{ executorLabel(rowValue(row).executor_type) || t('requests.defaultExecutor') }}</p></div></template>
-        <template #status-cell="{ row }"><div class="w-full min-w-0 overflow-hidden"><UBadge :color="statusColor(rowValue(row))" variant="subtle" class="font-mono tabular-nums" :title="statusLabel(rowValue(row))">{{ statusCode(rowValue(row)) || statusLabel(rowValue(row)) }}</UBadge><p v-if="rowValue(row).upstream_status_code && rowValue(row).upstream_status_code !== rowValue(row).status_code" class="mt-1 truncate text-[11px] text-[var(--ui-text-muted)]">{{ t('requests.upstreamCode', { code: rowValue(row).upstream_status_code }) }}</p></div></template>
+        <template #event-cell="{ row }"><div class="w-full min-w-0 space-y-1 overflow-hidden"><div class="flex min-w-0 items-center gap-1.5"><PortalBadge color="neutral" variant="subtle" size="sm" class="max-w-full truncate font-medium">{{ eventTypeLabel(rowValue(row)) }}</PortalBadge><span v-if="rowValue(row).stream != null" class="shrink-0 text-[10px] text-[var(--ui-text-muted)]">{{ rowValue(row).stream ? t('requests.stream') : t('requests.standard') }}</span></div><p class="truncate font-mono text-[11px] text-[var(--ui-text-muted)]" :title="eventEndpoint(rowValue(row))">{{ eventEndpoint(rowValue(row)) }}</p><p class="truncate text-[11px] text-[var(--ui-text-muted)]" :title="executorLabel(rowValue(row).executor_type)">{{ executorLabel(rowValue(row).executor_type) || t('requests.defaultExecutor') }}</p></div></template>
+        <template #status-cell="{ row }"><div class="w-full min-w-0 overflow-hidden"><PortalBadge :color="statusColor(rowValue(row))" variant="subtle" class="font-mono tabular-nums" :title="statusLabel(rowValue(row))">{{ statusCode(rowValue(row)) || statusLabel(rowValue(row)) }}</PortalBadge><p v-if="rowValue(row).upstream_status_code && rowValue(row).upstream_status_code !== rowValue(row).status_code" class="mt-1 truncate text-[11px] text-[var(--ui-text-muted)]">{{ t('requests.upstreamCode', { code: rowValue(row).upstream_status_code }) }}</p></div></template>
         <template #model-cell="{ row }"><div class="w-full min-w-0 overflow-hidden" :title="[rowValue(row).model_alias || rowValue(row).original_model, rowValue(row).service_tier, rowValue(row).reasoning_effort].filter(Boolean).join(' · ') || undefined"><p class="truncate font-medium">{{ rowValue(row).model || t('requests.unknownModel') }}</p><p class="truncate text-[11px] text-[var(--ui-text-muted)]">{{ [rowValue(row).provider, rowValue(row).service_tier, rowValue(row).reasoning_effort].filter(Boolean).join(' · ') || '—' }}</p></div></template>
         <template #runtime-cell="{ row }"><div class="w-full min-w-0 overflow-hidden"><p class="truncate text-sm">{{ rowValue(row).runtime?.home_id || rowValue(row).runtime?.home_ip || t('requests.unknownHome') }}</p><p class="truncate text-xs text-[var(--ui-text-muted)]">{{ rowValue(row).runtime?.cpa_label || rowValue(row).runtime?.cpa_node_id || rowValue(row).runtime?.cpa_ip || t('requests.unknownCpa') }}</p></div></template>
         <template #client-cell="{ row }"><div class="w-full min-w-0 overflow-hidden"><p class="truncate text-sm">{{ rowValue(row).client?.username || t('usage.detail.unattributed') }}</p><p class="truncate text-xs text-[var(--ui-text-muted)]">{{ rowValue(row).client?.client_key_label || rowValue(row).client?.client_key_masked || t('requests.noClientKey') }}</p></div></template>
         <template #credential-cell="{ row }"><div class="w-full min-w-0 overflow-hidden"><p class="truncate text-sm">{{ rowValue(row).credential?.label || rowValue(row).credential?.credential_id || t('common.unknown') }}</p><p class="truncate text-xs text-[var(--ui-text-muted)]">{{ rowValue(row).credential?.auth_index || rowValue(row).credential?.credential_type || t('requests.noAuthIndex') }}</p></div></template>
         <template #tokens-cell="{ row }"><div class="w-full min-w-0 overflow-hidden text-sm tabular-nums" :title="cacheRate(rowValue(row)) ? t('requests.cacheTitle', { rate: cacheRate(rowValue(row)) }) : undefined"><p class="flex items-baseline gap-1.5"><span class="font-semibold">{{ formatCompactNumber(rowValue(row).tokens?.total_tokens) }}</span><span v-if="cacheRate(rowValue(row))" class="rounded bg-[color-mix(in_oklch,var(--color-blue-500)_12%,transparent)] px-1 text-[10px] font-medium text-blue-600 dark:text-blue-400">{{ t('requests.cacheBadge', { rate: cacheRate(rowValue(row)) }) }}</span></p><p class="truncate text-[11px] text-[var(--ui-text-muted)]">{{ t('requests.inOut', { input: formatCompactNumber(rowValue(row).tokens?.input_tokens), output: formatCompactNumber(rowValue(row).tokens?.output_tokens) }) }}</p></div></template>
         <template #latency-cell="{ row }"><div class="w-full min-w-0 overflow-hidden text-sm tabular-nums" :title="t('requests.ttft', { value: formatMilliseconds(rowValue(row).performance?.ttft_ms) })"><p class="truncate">{{ formatMilliseconds(rowValue(row).performance?.latency_ms) }}</p><p v-if="rowValue(row).performance?.ttft_ms != null" class="truncate text-[11px] text-[var(--ui-text-muted)]">{{ t('requests.ttft', { value: formatMilliseconds(rowValue(row).performance?.ttft_ms) }) }}</p></div></template>
-        <template #cost-cell="{ row }"><div class="w-full min-w-0 overflow-hidden text-right text-sm tabular-nums"><UTooltip :disabled="!requestCostRows(rowValue(row).billing).length" :content="{ side: 'left' }"><span tabindex="0" class="block truncate font-medium" :aria-label="t('requests.costBreakdownLabel')">{{ formatTableAmount(rowValue(row).billing?.amount, rowValue(row).billing?.currency) }}</span><template #content><dl class="min-w-56 space-y-2 p-2"><div v-for="item in requestCostRows(rowValue(row).billing)" :key="item.label" class="flex justify-between gap-6 text-xs"><dt>{{ costRowLabel(item.label) }}</dt><dd class="font-medium tabular-nums">{{ item.value }}</dd></div></dl></template></UTooltip><p class="truncate text-xs text-[var(--ui-text-muted)]">{{ rowValue(row).billing?.currency || t('usage.credits') }}</p></div></template>
+        <template #cost-cell="{ row }"><div class="w-full min-w-0 overflow-hidden text-right text-sm tabular-nums"><Tooltip :disabled="!requestCostRows(rowValue(row).billing).length"><TooltipTrigger as-child><span tabindex="0" class="block truncate font-medium" :aria-label="t('requests.costBreakdownLabel')">{{ formatTableAmount(rowValue(row).billing?.amount, rowValue(row).billing?.currency) }}</span></TooltipTrigger><TooltipContent side="left"><dl class="min-w-56 space-y-2 p-2"><div v-for="item in requestCostRows(rowValue(row).billing)" :key="item.label" class="flex justify-between gap-6 text-xs"><dt>{{ costRowLabel(item.label) }}</dt><dd class="font-medium tabular-nums">{{ item.value }}</dd></div></dl></TooltipContent></Tooltip><p class="truncate text-xs text-[var(--ui-text-muted)]">{{ rowValue(row).billing?.currency || t('usage.credits') }}</p></div></template>
         <template #request-cell="{ row }"><div class="w-full min-w-0 overflow-hidden"><p class="truncate font-mono text-xs">{{ rowValue(row).request_id || rowValue(row).id }}</p><p class="truncate font-mono text-xs text-[var(--ui-text-muted)]">{{ rowValue(row).upstream_request_id || t('requests.noUpstreamId') }}</p></div></template>
         <template #actions-cell="{ row }"><div class="flex justify-end gap-1"><AdminTableAction v-if="rowValue(row).related?.request_log?.download_url" action="download" :label="t('requests.downloadLog')" :loading="downloadingId === rowValue(row).request_id" @click="downloadRequestLog(rowValue(row).related.request_log.download_url, rowValue(row).request_id)" /><AdminTableAction action="view" :label="t('requests.viewEvent')" @click="openDetail(rowValue(row))" /></div></template>
-        <template #empty><div class="flex flex-col items-center justify-center py-8 text-center"><UIcon name="i-tabler-list" class="mb-3 size-8 text-[var(--ui-text-muted)]" /><p class="font-medium">{{ t('requests.empty') }}</p><p class="mt-1 text-sm text-[var(--ui-text-muted)]">{{ t('requests.emptyHint') }}</p></div></template>
+        <template #empty><div class="flex flex-col items-center justify-center py-8 text-center"><AppIcon name="i-tabler-list" class="mb-3 size-8 text-[var(--ui-text-muted)]" /><p class="font-medium">{{ t('requests.empty') }}</p><p class="mt-1 text-sm text-[var(--ui-text-muted)]">{{ t('requests.emptyHint') }}</p></div></template>
       </AppTable>
       <div class="flex flex-col gap-3 border-t border-[var(--ui-border)] px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between">
         <div class="flex flex-wrap items-center gap-3">
                   <p class="text-xs tabular-nums text-[var(--ui-text-muted)]">{{ t('common.pageOf', { page, total: totalPages }) }}</p>
-                  <USelect :model-value="pageSize" :items="[...requestPageSizes]" size="sm" :aria-label="t('requests.rowsPerPage')" class="w-24" :disabled="loading" @update:model-value="changePageSize" />
+                  <AdminSelect :model-value="pageSize" :items="[...requestPageSizes]" size="sm" :aria-label="t('requests.rowsPerPage')" class="w-24" :disabled="loading" @update:model-value="changePageSize" />
                 </div>
         <div class="flex items-center gap-2"><AppButton size="sm" color="neutral" variant="outline" icon="i-tabler-chevron-left" :disabled="page <= 1 || loading" @click="changePage(-1)">{{ t('common.previous') }}</AppButton><AppButton size="sm" color="neutral" variant="outline" trailing-icon="i-tabler-chevron-right" :disabled="page >= totalPages || loading" @click="changePage(1)">{{ t('common.next') }}</AppButton></div>
       </div>
@@ -99,8 +106,8 @@
     <AppModal v-model:open="exportOpen" :title="t('requests.exportModalTitle')" :description="t('requests.exportModalDesc')">
       <template #body>
         <div class="space-y-5">
-          <UFormField :label="t('requests.format')"><USelect v-model="exportFormat" :items="exportOptions" value-key="value" label-key="label" class="w-full" /></UFormField>
-          <UAlert color="info" variant="subtle" icon="i-tabler-shield-check" :title="t('requests.redactedTitle')" :description="t('requests.redactedDesc')" />
+          <AdminField :label="t('requests.format')"><AdminSelect v-model="exportFormat" :items="exportOptions" value-key="value" label-key="label" class="w-full" /></AdminField>
+          <PortalAlert color="info" variant="subtle" icon="i-tabler-shield-check" :title="t('requests.redactedTitle')" :description="t('requests.redactedDesc')" />
           <div class="flex justify-end gap-3"><AppButton color="neutral" variant="ghost" @click="exportOpen = false">{{ t('common.cancel') }}</AppButton><AppButton icon="i-tabler-download" :loading="exporting" :disabled="exporting || !canExport" @click="exportEvents">{{ t('requests.download', { format: exportFormat.toUpperCase() }) }}</AppButton></div>
         </div>
       </template>
@@ -109,8 +116,18 @@
 </template>
 
 <script setup>
+import AdminField from '~/components/admin/general/controls/AdminField.vue'
+import AdminSelectMenu from '~/components/admin/general/controls/AdminSelectMenu.vue'
+import AdminInput from '~/components/admin/general/controls/AdminInput.vue'
+import AdminSelect from '~/components/admin/general/controls/AdminSelect.vue'
+import AdminSwitch from '~/components/admin/general/controls/AdminSwitch.vue'
+import PortalAlert from '~/components/app/general/PortalAlert.vue'
+import PortalBadge from '~/components/app/general/PortalBadge.vue'
+import AppIcon from '~/components/AppIcon.vue'
 import AdminTableAction from '~/components/admin/general/TableAction.vue'
 import AdminUsageSessionTree from '~/components/admin/usage/UsageSessionTree.vue'
+import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '~/components/ui/dropdown-menu'
+import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip'
 import AdminRequestRecordDetail from '~/components/admin/usage/RequestRecordDetail.vue'
 import { dateRangeError } from '~/composables/dateRange'
 import { readTelemetryChoice, saveTelemetryChoice, requestRanges, requestSorts, requestCostRows, toolUsageEntries, requestCacheRate, requestColumnDefaults, requestColumnsHiddenByDefault, normalizeRequestColumnWidths, estimateRequestColumnWidths, clampRequestColumnWidth, requestPageSizes, normalizeRequestPageSize, readRequestPreference, saveRequestPreference, normalizeRequestColumnVisibility, visibleRequestColumns } from '~/composables/requestTelemetry'

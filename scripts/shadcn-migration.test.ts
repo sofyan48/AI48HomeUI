@@ -77,7 +77,7 @@ const NuxtLink = Vue.defineComponent({
   inheritAttrs: false,
   setup: (_, { attrs, slots }) => () => Vue.h('a', { ...attrs, href: attrs.to }, slots.default?.()),
 })
-const formLoadingKey = Symbol('form-loading')
+
 const AppButton = loadSfc('components/AppButton.vue', {
   '~/components/ui/button': { Button }, '#components': { NuxtLink },
   '~/components/AppIcon.vue': Vue.defineComponent({ setup: (_, { attrs }) => () => Vue.h('i', attrs) }),
@@ -152,39 +152,12 @@ test('portal root keeps one provider and layout/page owner across portal navigat
 })
 
 describe('AppButton migrated behavior', () => {
-  test('admin bridge resolves the nearest descendant form and only auto-loads submit buttons', async () => {
-    const Bridge = loadSfc('components/admin/general/AdminButtonFormBridge.vue', {
-      '@nuxt/ui/composables/useFormField': { formLoadingInjectionKey: formLoadingKey },
-      '~/composables/ui/buttonForm': { buttonFormLoadingResolverKey },
-    })
-    const outerLoading = Vue.ref(false)
-    const innerLoading = Vue.ref(true)
-    const Form = Vue.defineComponent({
-      setup() {
-        Vue.provide(formLoadingKey, innerLoading)
-        return () => Vue.h(AppButton, { label: 'Save', type: 'submit', loadingAuto: true })
-      },
-    })
-    const Harness = Vue.defineComponent({
-      setup: () => () => Vue.h(Bridge, {}, { default: () => Vue.h(Form) }),
-    })
-    const view = mount(Harness, {}, {}, () => Vue.provide(formLoadingKey, outerLoading))
-    try {
-      const button = view.find(node => node.tag === 'button')
-      expect(button.props.disabled).toBe(true)
-      innerLoading.value = false
-      outerLoading.value = true
-      await Vue.nextTick()
-      expect(button.props.disabled).toBeUndefined()
-    } finally { view.app.unmount() }
-    for (const props of [{ type: 'button', loadingAuto: true }, { type: 'submit', loadingAuto: false }]) {
-      const view = mount(AppButton, props, {}, () => Vue.provide(buttonFormLoadingResolverKey, () => innerLoading))
-      try {
-        innerLoading.value = true
-        await Vue.nextTick()
-        expect(view.find(node => node.tag === 'button').props.disabled).toBeUndefined()
-      } finally { view.app.unmount() }
-    }
+  test('admin provider owns the default form-loading resolver without reintroducing the deleted bridge', () => {
+    const provider = read('components/admin/general/AdminUiProvider.vue')
+    expect(provider).toContain("import { buttonFormLoadingResolverKey } from '~/composables/ui/buttonForm'")
+    expect(provider).toContain('provide(buttonFormLoadingResolverKey, () => undefined)')
+    expect(provider).not.toContain('AdminButtonFormBridge')
+    expect(existsSync(join(root, 'components/admin/general/AdminButtonFormBridge.vue'))).toBe(false)
   })
   test('loading disables native buttons and exposes a spinner and busy semantics', async () => {
     const view = mount(AppButton, { label: 'Save', loading: true })

@@ -1,10 +1,9 @@
 <template>
   <div class="app-table-frame w-full min-w-0">
     <div v-if="searchable" class="app-table-search">
-      <UInput
+      <Input
         v-model="query"
-        icon="i-tabler-search"
-        size="sm"
+        type="search"
         :placeholder="searchPlaceholder || t('shared.table.search')"
         :aria-label="searchPlaceholder || t('shared.table.search')"
         class="w-full sm:w-72"
@@ -29,22 +28,29 @@
       class="app-table-viewport w-full min-w-0 max-w-full"
       :class="{ 'app-table-viewport--root': rootScrolls, 'app-table-viewport--free': !scroll }"
     >
-      <UTable class="app-table" v-bind="$attrs" :columns="tableColumns" :data="visibleData">
+      <AdminTable
+        class="app-table"
+        v-bind="$attrs"
+        :columns="tableColumns"
+        :data="visibleData"
+        :loading="Boolean($attrs.loading)"
+        :empty="query ? t('shared.table.noMatch', { query }) : undefined"
+      >
         <template v-if="showNumber" #__row_number-cell="{ row }">
           <span class="app-table-number">{{ rowNumber(row) }}</span>
         </template>
         <template v-for="(_, name) in $slots" #[name]="slotProps">
           <slot :name="name" v-bind="slotProps || {}" />
         </template>
-        <template v-if="query && !$slots.empty" #empty>
-          <div class="py-8 text-center text-sm text-[var(--ui-text-muted)]">{{ t('shared.table.noMatch', { query }) }}</div>
-        </template>
-      </UTable>
+      </AdminTable>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import Input from '~/components/ui/input/Input.vue'
+import AdminTable from '~/components/admin/general/table/AdminTable.vue'
+
 defineOptions({ inheritAttrs: false })
 const props = withDefaults(defineProps<{
   data?: any[]
@@ -137,7 +143,10 @@ defineExpose({ nativeRoot })
   border-bottom: 1px solid var(--ui-border);
 }
 
-/* UTable renders a fragment root, so scoped selectors must start from the viewport wrapper. */
+/* The shadcn container must not become a second scroller; the viewport (or virtual root) scrolls. */
+.app-table-viewport :deep([data-slot='table-container']) { overflow: visible; }
+
+/* Scoped selectors start from the viewport wrapper. */
 .app-table-viewport :deep(table) {
   width: 100%;
   border-collapse: separate;

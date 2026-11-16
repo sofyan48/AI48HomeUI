@@ -5,9 +5,11 @@ import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover
 import { ToggleGroup, ToggleGroupItem } from '~/components/ui/toggle-group'
 import { Separator } from '~/components/ui/separator'
 import { useThemeColor } from '~/composables/layout/useThemeColor'
+import { useColorMode } from '~/composables/useColorMode'
 
 const { color, colors, setColor } = useThemeColor()
 const colorMode = useColorMode()
+const setPreference = colorMode.setPreference
 const { t: themeT } = useAdminI18n()
 const options = computed(() => [
   { label: themeT('shared.theme.light'), value: 'light', icon: 'i-tabler-sun' },
@@ -18,7 +20,7 @@ const themeIcon = computed(() => options.value.find(option => option.value === c
 const themeLabel = computed(() => options.value.find(option => option.value === colorMode.preference)?.label || themeT('shared.theme.system'))
 const colorName = (value: string) => value.charAt(0).toUpperCase() + value.slice(1)
 function setTheme(value: AcceptableValue | AcceptableValue[]) {
-  if (typeof value === 'string' && options.value.some(option => option.value === value)) colorMode.preference = value
+  if (typeof value === 'string' && options.value.some(option => option.value === value)) setPreference(value as 'light' | 'dark' | 'system')
 }
 function selectColor(value: AcceptableValue | AcceptableValue[]) {
   const selected = colors.find(option => option === value)

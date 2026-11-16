@@ -1,11 +1,11 @@
 <template>
-  <USlideover v-model:open="open" :title="t('users.userDetail')" :description="t('users.userDetailDescription')" :ui="{ content: 'sm:max-w-xl' }">
+  <AppModal v-model:open="open" :title="t('users.userDetail')" :description="t('users.userDetailDescription')" :ui="{ content: 'sm:max-w-xl' }">
     <template #body>
       <div v-if="user" class="grid gap-5">
         <div class="rounded-md border border-[var(--ui-border)] p-4">
           <div class="flex flex-wrap gap-2">
-            <UBadge :color="user.deleted_at || user.approval_pending ? 'warning' : 'success'" variant="subtle">{{ userStatus(user) }}</UBadge>
-            <UBadge v-if="user.password_set || user.has_password" color="neutral" variant="subtle">{{ t('users.passwordStored') }}</UBadge>
+            <PortalBadge :color="user.deleted_at || user.approval_pending ? 'warning' : 'success'" variant="subtle">{{ userStatus(user) }}</PortalBadge>
+            <PortalBadge v-if="user.password_set || user.has_password" color="neutral" variant="subtle">{{ t('users.passwordStored') }}</PortalBadge>
           </div>
           <p class="mt-3 font-semibold">{{ user.username }}</p>
           <p class="mt-1 text-xs text-[var(--ui-text-muted)]">{{ t('users.userId', { id: user.id }) }}</p>
@@ -30,7 +30,7 @@
             </AppButton>
           </div>
           <div v-if="periodLoading && !periods" class="grid gap-2">
-            <USkeleton v-for="window in periodWindowIds" :key="window" class="h-20 w-full rounded-md" />
+            <PortalSkeleton v-for="window in periodWindowIds" :key="window" class="h-20 w-full rounded-md" />
           </div>
           <div v-else-if="periodError" class="grid gap-2 rounded-md border border-red-300 bg-red-50 px-3 py-2.5 dark:border-red-900 dark:bg-red-950">
             <p class="text-sm text-red-700 dark:text-red-300">{{ t('users.periodStatusFailed') }}</p>
@@ -41,10 +41,10 @@
           </div>
           <div v-else-if="periods" class="grid gap-3">
             <div class="flex flex-wrap gap-2">
-              <UBadge color="neutral" variant="subtle">{{ t('users.timezoneLabel') }} {{ periods.timezone || user.timezone || 'Asia/Shanghai' }}</UBadge>
-              <UBadge v-if="periods.credits_unlimited || periods.creditsUnlimited || user.credits_unlimited" color="info" variant="subtle">
+              <PortalBadge color="neutral" variant="subtle">{{ t('users.timezoneLabel') }} {{ periods.timezone || user.timezone || 'Asia/Shanghai' }}</PortalBadge>
+              <PortalBadge v-if="periods.credits_unlimited || periods.creditsUnlimited || user.credits_unlimited" color="info" variant="subtle">
                 {{ t('users.unlimitedBalance') }}
-              </UBadge>
+              </PortalBadge>
             </div>
             <UsersPeriodCard v-for="window in windows" :key="window.id" :window="window" />
           </div>
@@ -56,12 +56,15 @@
         <UsersDetailSection :title="t('users.accessScope')" :items="accessItems(user)" />
       </div>
     </template>
-  </USlideover>
+  </AppModal>
 
   <UsersPeriodResetDialog ref="resetDialog" :periods="periods" @reset="periods = $event" />
 </template>
 
 <script setup lang="ts">
+import PortalBadge from '~/components/app/general/PortalBadge.vue'
+import PortalSkeleton from '~/components/app/general/PortalSkeleton.vue'
+import AppModal from '~/components/AppModal.vue'
 import { computed, ref } from 'vue'
 import UsersDetailSection from './UsersDetailSection.vue'
 import UsersPeriodCard from './UsersPeriodCard.vue'

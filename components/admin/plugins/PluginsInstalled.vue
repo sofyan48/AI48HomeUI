@@ -1,6 +1,6 @@
 <template>
         <section class="space-y-4">
-            <UAlert
+            <PortalAlert
                 v-if="pluginsResponse && !pluginsResponse.plugins_enabled"
                 color="warning"
                 variant="subtle"
@@ -15,7 +15,7 @@
                                 <p class="font-semibold">
                                     {{ plugin.metadata?.name || plugin.id }}
                                 </p>
-                                <UBadge
+                                <PortalBadge
                                     :color="
                                         plugin.effective_enabled
                                             ? 'success'
@@ -28,7 +28,7 @@
                                             : plugin.enabled
                                               ? t('plugins.badge.enabled')
                                               : t('plugins.badge.disabled')
-                                    }}</UBadge
+                                    }}</PortalBadge
                                 >
                             </div>
                             <p
@@ -59,26 +59,26 @@
                         />
                     </div>
                     <div class="mt-4 flex flex-wrap gap-1">
-                        <UBadge
+                        <PortalBadge
                             v-if="plugin.registered"
                             color="info"
                             variant="subtle"
-                            >{{ t('plugins.badge.registered') }}</UBadge
-                        ><UBadge
+                            >{{ t('plugins.badge.registered') }}</PortalBadge
+                        ><PortalBadge
                             v-if="plugin.configured"
                             color="neutral"
                             variant="subtle"
-                            >{{ t('plugins.badge.configured') }}</UBadge
-                        ><UBadge
+                            >{{ t('plugins.badge.configured') }}</PortalBadge
+                        ><PortalBadge
                             v-if="plugin.supports_oauth"
                             color="primary"
                             variant="subtle"
                             >OAuth:
-                            {{ plugin.oauth_provider || t('plugins.badge.oauthSupported') }}</UBadge
+                            {{ plugin.oauth_provider || t('plugins.badge.oauthSupported') }}</PortalBadge
                         >
                     </div>
                     <div class="mt-4 flex flex-wrap items-center gap-3">
-                        <USwitch
+                        <AdminSwitch
                             :model-value="plugin.enabled === true"
                             :label="t('plugins.enableNamed', { name: plugin.metadata?.name || plugin.id })"
                             :loading="busyPlugin === plugin.id"
@@ -94,7 +94,7 @@
                             @click="openPluginConfig(plugin)"
                         >{{ t('plugins.configure') }}</AppButton>
                     </div>
-                    <UAlert
+                    <PortalAlert
                         v-if="pluginMutationError?.id === plugin.id"
                         class="mt-3"
                         color="error"
@@ -176,6 +176,9 @@
 </template>
 
 <script setup lang="ts">
+import AdminSwitch from '~/components/admin/general/controls/AdminSwitch.vue'
+import PortalAlert from '~/components/app/general/PortalAlert.vue'
+import PortalBadge from '~/components/app/general/PortalBadge.vue'
 import { usePluginsWorkspace } from "~/composables/plugins/usePluginsWorkspace"
 const { t, pluginsResponse, installed, busyPlugin, uninstall, configOpen, togglePlugin, openPluginConfig, pluginMutationError, selectedInstalled, yesNo, safeURL } = usePluginsWorkspace();
 </script>
