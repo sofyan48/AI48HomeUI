@@ -1,6 +1,6 @@
 <template>
   <div :class="section === 'dashboard' ? 'user-dashboard space-y-5' : 'space-y-8'">
-    <UAlert v-if="pageError" color="error" variant="subtle" icon="i-tabler-alert-triangle" :title="t('ws.pageError')" :description="pageError" />
+    <PortalAlert v-if="pageError" color="error" variant="subtle" icon="i-tabler-alert-triangle" :title="t('ws.pageError')" :description="pageError" />
     <WorkspaceDashboard v-if="section === 'dashboard'" />
     <WorkspaceBilling v-if="section === 'billing'">
       <template #balance-history><slot name="balance-history" /></template>
@@ -13,6 +13,7 @@
 </template>
 
 <script setup lang="ts">
+import PortalAlert from '~/components/app/general/PortalAlert.vue'
 import { computed, onMounted } from 'vue'
 import { usePortalI18n } from '~/composables/usePortalI18n'
 import { useUserApi } from '~/composables/useUserApi'

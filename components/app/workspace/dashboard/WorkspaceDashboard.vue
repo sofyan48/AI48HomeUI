@@ -1,4 +1,9 @@
 <script setup lang="ts">
+import AppIcon from '~/components/AppIcon.vue'
+import PortalInput from '~/components/app/general/PortalInput.vue'
+import PortalSelect from '~/components/app/general/PortalSelect.vue'
+import PortalAlert from '~/components/app/general/PortalAlert.vue'
+import PortalBadge from '~/components/app/general/PortalBadge.vue'
 import AppLimitReset from './LimitReset.vue'
 import { usePortalI18n } from '~/composables/usePortalI18n'
 import { useUserApi } from '~/composables/useUserApi'
@@ -28,7 +33,7 @@ const copyText = useWorkspaceClipboard()
     <section class="dashboard-connect" aria-labelledby="connect-title">
       <div class="flex flex-wrap items-start justify-between gap-3">
         <div class="flex items-center gap-3">
-          <span class="dashboard-connect-icon"><UIcon name="i-tabler-plug-connected" class="size-5" aria-hidden="true" /></span>
+          <span class="dashboard-connect-icon"><AppIcon name="i-tabler-plug-connected" class="size-5" aria-hidden="true" /></span>
           <div><h2 id="connect-title" class="text-base font-semibold text-[var(--ui-text-highlighted)]">{{ t('ws.dashboard.connectTitle') }}</h2><p class="text-xs text-[var(--ui-text-muted)]">{{ t('ws.dashboard.connectSubtitle') }}</p></div>
         </div>
         <AppButton to="/app/models" size="xs" color="neutral" variant="ghost" class="rounded-full" trailing-icon="i-tabler-arrow-right">{{ t('ws.dashboard.findModel') }}</AppButton>
@@ -74,8 +79,8 @@ const copyText = useWorkspaceClipboard()
     <!-- Spotlight 2: what the user can still spend. -->
     <section class="dashboard-credits" aria-labelledby="credits-title">
       <div class="flex items-center justify-between gap-3">
-        <h2 id="credits-title" class="flex items-center gap-2 text-sm font-semibold text-[var(--ui-text-highlighted)]"><span class="dashboard-balance-icon"><UIcon name="i-tabler-wallet" class="size-4" aria-hidden="true" /></span>{{ t('ws.dashboard.creditsTitle') }}</h2>
-        <UBadge v-if="limitAlert" :color="limitAlert.color" variant="subtle" class="rounded-full">{{ limitAlert.label }}</UBadge>
+        <h2 id="credits-title" class="flex items-center gap-2 text-sm font-semibold text-[var(--ui-text-highlighted)]"><span class="dashboard-balance-icon"><AppIcon name="i-tabler-wallet" class="size-4" aria-hidden="true" /></span>{{ t('ws.dashboard.creditsTitle') }}</h2>
+        <PortalBadge v-if="limitAlert" :color="limitAlert.color" variant="subtle" class="rounded-full">{{ limitAlert.label }}</PortalBadge>
       </div>
       <div class="mt-4 flex flex-wrap items-end justify-between gap-3">
         <div class="min-w-0">
@@ -109,12 +114,12 @@ const copyText = useWorkspaceClipboard()
     <AppCard class="dashboard-panel dashboard-usage min-w-0" :ui="{ body: 'pt-2' }">
       <template #header>
         <div class="flex flex-wrap items-center justify-between gap-3">
-          <div class="flex items-center gap-3"><span class="dashboard-icon flex size-9 items-center justify-center rounded-lg"><UIcon name="i-tabler-chart-bar" class="size-5" aria-hidden="true" /></span><div><h2 class="text-sm font-semibold">{{ t('ws.dashboard.usage') }}</h2><p class="text-xs text-[var(--ui-text-muted)]">{{ appliedRange.from === appliedRange.to ? appliedRange.from : `${appliedRange.from} – ${appliedRange.to}` }}<template v-if="monthOverview"> · {{ t('ws.dashboard.creditsThisMonth', { amount: formatCredits(monthOverview.total_charge_amount ?? monthOverview.month_spend) }) }}</template></p></div></div>
+          <div class="flex items-center gap-3"><span class="dashboard-icon flex size-9 items-center justify-center rounded-lg"><AppIcon name="i-tabler-chart-bar" class="size-5" aria-hidden="true" /></span><div><h2 class="text-sm font-semibold">{{ t('ws.dashboard.usage') }}</h2><p class="text-xs text-[var(--ui-text-muted)]">{{ appliedRange.from === appliedRange.to ? appliedRange.from : `${appliedRange.from} – ${appliedRange.to}` }}<template v-if="monthOverview"> · {{ t('ws.dashboard.creditsThisMonth', { amount: formatCredits(monthOverview.total_charge_amount ?? monthOverview.month_spend) }) }}</template></p></div></div>
           <form class="flex flex-wrap items-center gap-2" @submit.prevent="applyBillingRange">
-            <USelect v-model="rangePreset" :items="rangeOptions" value-key="value" label-key="label" class="w-36" :aria-label="t('ws.dashboard.timeRange')" @update:model-value="selectRange" />
+            <PortalSelect v-model="rangePreset" :items="rangeOptions" value-key="value" label-key="label" class="w-36" :aria-label="t('ws.dashboard.timeRange')" @update:model-value="selectRange" />
             <template v-if="rangePreset === 'custom'">
-              <UInput v-model="rangeFrom" type="date" :aria-label="t('ws.dashboard.fromUtc')" />
-              <UInput v-model="rangeTo" type="date" :aria-label="t('ws.dashboard.toUtc')" />
+              <PortalInput v-model="rangeFrom" type="date" :aria-label="t('ws.dashboard.fromUtc')" />
+              <PortalInput v-model="rangeTo" type="date" :aria-label="t('ws.dashboard.toUtc')" />
               <AppButton type="submit" :loading="billingLoading">{{ t('ws.dashboard.apply') }}</AppButton>
             </template>
             <AppButton type="button" color="neutral" variant="ghost" icon="i-tabler-refresh" :loading="billingLoading" :aria-label="t('ws.dashboard.refreshUsage')" :title="t('ws.dashboard.refreshUsage')" @click="loadBilling" />
@@ -124,11 +129,11 @@ const copyText = useWorkspaceClipboard()
       </template>
       <dl class="dashboard-usage-strip" :aria-busy="billingLoading">
         <div v-for="metric in dashboardUsageMetrics" :key="metric.label" class="dashboard-usage-item">
-          <dt class="flex items-center gap-2 text-xs font-medium text-[var(--ui-text-muted)]"><UIcon :name="metric.icon" class="size-4 dashboard-usage-icon" aria-hidden="true" />{{ metric.label }}</dt>
+          <dt class="flex items-center gap-2 text-xs font-medium text-[var(--ui-text-muted)]"><AppIcon :name="metric.icon" class="size-4 dashboard-usage-icon" aria-hidden="true" />{{ metric.label }}</dt>
           <dd class="mt-1.5 break-words text-2xl font-bold tabular-nums tracking-tight text-[var(--ui-text-highlighted)]">{{ billingLoading ? '—' : metric.value }}</dd>
         </div>
       </dl>
-      <UAlert v-if="billingError" class="mt-3" color="error" variant="subtle" :title="t('ws.dashboard.usageError')" :description="billingError" />
+      <PortalAlert v-if="billingError" class="mt-3" color="error" variant="subtle" :title="t('ws.dashboard.usageError')" :description="billingError" />
     </AppCard>
   </div>
 </template>

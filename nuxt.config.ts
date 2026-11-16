@@ -24,7 +24,12 @@ export default defineNuxtConfig({
 
   devtools: { enabled: true },
 
-  modules: ["@pinia/nuxt", "@nuxt/ui"],
+  modules: ["@pinia/nuxt", "@nuxt/ui", "shadcn-nuxt"],
+
+    shadcn: {
+      prefix: "Shadcn",
+      componentDir: "~/components/ui",
+    },
 
   // Brand display face for headings and figures; bundled locally by @nuxt/fonts.
   fonts: {

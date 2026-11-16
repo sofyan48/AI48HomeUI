@@ -1,5 +1,6 @@
 @import "tailwindcss" theme(static);
 @import "@nuxt/ui";
+@import "./shadcn.css";
 @import "./admin.css" layer(admin);
 
 /* Muted violet keeps the brand recognizable without competing with status colors. */

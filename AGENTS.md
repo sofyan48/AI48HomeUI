@@ -109,7 +109,9 @@ Keep the root-level source layout used by this repository; do not move it into a
 - Use `~/` imports for project source and `#imports` where the existing store/composable pattern requires Nuxt helpers.
 - Match the formatting of the file being edited; avoid unrelated quote, semicolon, indentation, or component-order rewrites.
 - Prefer existing `App*` primitives and feature components over adding parallel abstractions or dependencies.
-- Use Nuxt UI 4 APIs, Tailwind 4 utilities, shared theme tokens such as `--ui-*`, and existing component slot configuration. Do not introduce a second UI framework.
+- The approved shadcn-vue migration is in progress: `AppButton`, `AppCard`, and `AppModal` use source-owned primitives in `components/ui/`. Keep their existing consumer contracts. Use `shadcn-nuxt` with the `Shadcn` prefix or explicit imports to avoid Nuxt UI name collisions.
+- Nuxt UI 4 remains temporarily for unmigrated inputs, tables, menus, toasts, icons, and the root provider. Migrate feature by feature; do not remove it until remaining consumers and module-provided services have replacements. Do not add other UI frameworks.
+- Use Tailwind 4 and semantic shadcn tokens bridged to the existing `--ui-*` palette in `assets/shadcn.css`. Read `.agents/skills/shadcn-vue/SKILL.md` before changing shadcn components; preserve light/dark themes and slot overrides.
 - Preserve responsive layouts, light/dark themes, compact workspace density, and mobile navigation behavior.
 - Provide loading, empty, unsupported, error, and mutation feedback states where applicable. Prevent duplicate submissions for pending actions.
 - Keep icon-only controls accessible with labels, and preserve keyboard/focus and modal behavior.

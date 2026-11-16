@@ -1,13 +1,14 @@
 import { computed, inject, provide, ref, type InjectionKey } from 'vue'
 import { useUserApi } from '~/composables/useUserApi'
 import { usePortalI18n } from '~/composables/usePortalI18n'
+import { usePortalToast } from '~/composables/portal/usePortalToast'
 import { useWorkspaceState } from '~/composables/useWorkspaceState'
 import { errorMessage, useWorkspaceClipboard } from './common'
 import { keyEntries, normalizeKey, type WorkspaceKey } from './keys'
 
 function createWorkspaceKeys() {
   const { t } = usePortalI18n()
-  const toast = useToast()
+  const toast = usePortalToast()
   const { fetchAPI } = useUserApi()
   const copyText = useWorkspaceClipboard()
   const keys = useWorkspaceState<WorkspaceKey[]>('user:workspace:keys', () => [])

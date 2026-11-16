@@ -4,30 +4,31 @@
     <AppCard>
       <template #header>
         <div class="flex items-start gap-3">
-          <span class="flex size-10 shrink-0 items-center justify-center rounded-md bg-primary-500/10 text-primary-500"><UIcon :name="passkeyRequired ? 'i-tabler-fingerprint' : needsTOTP ? 'i-tabler-device-mobile' : 'i-tabler-user'" class="size-5" /></span>
+          <span class="flex size-10 shrink-0 items-center justify-center rounded-md bg-primary-500/10 text-primary-500"><AppIcon :name="passkeyRequired ? 'i-tabler-fingerprint' : needsTOTP ? 'i-tabler-device-mobile' : 'i-tabler-user'" class="size-5" /></span>
           <div><h1 class="text-xl font-semibold text-[var(--ui-text-highlighted)]">{{ title }}</h1><p class="mt-1 text-sm text-[var(--ui-text-muted)]">{{ description }}</p></div>
         </div>
       </template>
 
-      <form class="space-y-4" @submit.prevent="submit">
-        <UAlert v-if="error" ref="errorAlert" color="error" variant="subtle" :title="t('login.failed')" :description="error" role="alert" tabindex="-1" />
-        <UFormField :label="t('auth.username')" required><UInput v-model="form.username" class="w-full" autocomplete="username" icon="i-tabler-user" :readonly="needsTOTP || passkeyRequired" autofocus /></UFormField>
-        <UFormField v-if="!passkeyRequired" :label="t('auth.password')" required>
-          <UInput v-model="form.password" class="w-full" :type="passwordVisible ? 'text' : 'password'" autocomplete="current-password" icon="i-tabler-lock" :ui="{ trailing: 'pe-1' }">
-            <template #trailing>
-              <AppButton type="button" size="xs" color="neutral" variant="ghost" :icon="passwordVisible ? 'i-tabler-eye-off' : 'i-tabler-eye'" :aria-label="passwordVisible ? t('login.hidePassword') : t('login.showPassword')" :title="passwordVisible ? t('login.hidePassword') : t('login.showPassword')" :aria-pressed="passwordVisible" @click="passwordVisible = !passwordVisible" />
-            </template>
-          </UInput>
-        </UFormField>
-        <UFormField v-if="needsTOTP" :label="t('login.totpCode')" required><UInput v-model="form.totp" class="w-full font-mono tracking-[0.3em]" inputmode="numeric" autocomplete="one-time-code" placeholder="123456" autofocus /></UFormField>
-        <UAlert v-if="passkeyRequired" color="warning" variant="subtle" :title="t('login.passkeyRequired')" :description="t('login.passkeyRequiredDesc')" />
-        <div v-if="!needsTOTP && !passkeyRequired" class="flex justify-end"><NuxtLink to="/app/forgot-password" class="text-sm font-medium text-primary-500">{{ t('login.forgot') }}</NuxtLink></div>
-        <UCheckbox v-model="remember" :label="t('login.remember')" :disabled="loading || passkeyLoading" />
-        <p class="text-xs leading-5 text-[var(--ui-text-muted)]">{{ remember ? t('login.rememberOn') : t('login.rememberOff') }}</p>
-        <AppButton v-if="passkeyRequired" type="button" color="primary" block icon="i-tabler-fingerprint" :loading="passkeyLoading" :disabled="!passkeysSupported || loading" @click="passkeyLogin">{{ t('login.usePasskey') }}</AppButton>
-        <AppButton v-else type="submit" color="primary" block :loading="loading" :disabled="passkeyLoading">{{ needsTOTP ? t('login.verifyAndSignIn') : t('shell.signIn') }}</AppButton>
-        <AppButton v-if="!needsTOTP && !passkeyRequired && passkeysSupported" type="button" color="neutral" variant="outline" block icon="i-tabler-fingerprint" :loading="passkeyLoading" :disabled="loading" @click="passkeyLogin">{{ t('login.withPasskey') }}</AppButton>
-
+      <form @submit.prevent="submit">
+        <FieldGroup class="gap-4">
+          <PortalAlert v-if="error" ref="errorAlert" color="error" variant="subtle" :title="t('login.failed')" :description="error" role="alert" tabindex="-1" />
+          <PortalField :label="t('auth.username')" required><PortalInput v-model="form.username" class="w-full" autocomplete="username" icon="i-tabler-user" :readonly="needsTOTP || passkeyRequired" autofocus /></PortalField>
+          <PortalField v-if="!passkeyRequired" :label="t('auth.password')" required>
+            <PortalInput v-model="form.password" class="w-full" :type="passwordVisible ? 'text' : 'password'" autocomplete="current-password" icon="i-tabler-lock" :ui="{ trailing: 'pe-1' }">
+              <template #trailing>
+                <AppButton type="button" size="xs" color="neutral" variant="ghost" :icon="passwordVisible ? 'i-tabler-eye-off' : 'i-tabler-eye'" :aria-label="passwordVisible ? t('login.hidePassword') : t('login.showPassword')" :title="passwordVisible ? t('login.hidePassword') : t('login.showPassword')" :aria-pressed="passwordVisible" @click="passwordVisible = !passwordVisible" />
+              </template>
+            </PortalInput>
+          </PortalField>
+          <PortalField v-if="needsTOTP" :label="t('login.totpCode')" required><PortalInput v-model="form.totp" class="w-full font-mono tracking-[0.3em]" inputmode="numeric" autocomplete="one-time-code" placeholder="123456" autofocus /></PortalField>
+          <PortalAlert v-if="passkeyRequired" color="warning" variant="subtle" :title="t('login.passkeyRequired')" :description="t('login.passkeyRequiredDesc')" />
+          <div v-if="!needsTOTP && !passkeyRequired" class="flex justify-end"><NuxtLink to="/app/forgot-password" class="text-sm font-medium text-primary-500">{{ t('login.forgot') }}</NuxtLink></div>
+          <PortalCheckbox v-model="remember" :label="t('login.remember')" :disabled="loading || passkeyLoading" />
+          <p class="text-xs leading-5 text-[var(--ui-text-muted)]">{{ remember ? t('login.rememberOn') : t('login.rememberOff') }}</p>
+          <AppButton v-if="passkeyRequired" type="button" color="primary" block icon="i-tabler-fingerprint" :loading="passkeyLoading" :disabled="!passkeysSupported || loading" @click="passkeyLogin">{{ t('login.usePasskey') }}</AppButton>
+          <AppButton v-else type="submit" color="primary" block :loading="loading" :disabled="passkeyLoading">{{ needsTOTP ? t('login.verifyAndSignIn') : t('shell.signIn') }}</AppButton>
+          <AppButton v-if="!needsTOTP && !passkeyRequired && passkeysSupported" type="button" color="neutral" variant="outline" block icon="i-tabler-fingerprint" :loading="passkeyLoading" :disabled="loading" @click="passkeyLogin">{{ t('login.withPasskey') }}</AppButton>
+        </FieldGroup>
       </form>
       <template #footer><p class="text-center text-sm text-[var(--ui-text-muted)]">{{ t('login.needAccount') }} <NuxtLink to="/app/register" class="font-medium text-primary-500">{{ t('login.createAccount') }}</NuxtLink></p></template>
     </AppCard>
@@ -35,6 +36,12 @@
 </template>
 
 <script setup lang="ts">
+import AppIcon from '~/components/AppIcon.vue'
+import PortalAlert from '~/components/app/general/PortalAlert.vue'
+import PortalCheckbox from '~/components/app/general/PortalCheckbox.vue'
+import PortalField from '~/components/app/general/PortalField.vue'
+import PortalInput from '~/components/app/general/PortalInput.vue'
+import { FieldGroup } from '~/components/ui/field'
 import { useWorkspaceState } from '~/composables/useWorkspaceState'
 definePageMeta({ layout: 'app' })
 const { t } = usePortalI18n()

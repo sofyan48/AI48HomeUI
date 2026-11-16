@@ -1,7 +1,7 @@
 <template>
   <div class="model-workspace min-w-0 space-y-5">
 
-    <UAlert v-if="catalogUnsupported" color="warning" variant="subtle" :title="t('models.unsupportedTitle')" :description="t('models.unsupportedDescription')" />
+    <PortalAlert v-if="catalogUnsupported" color="warning" variant="subtle" :title="t('models.unsupportedTitle')" :description="t('models.unsupportedDescription')" />
 
     <template v-else>
       <ModelsAlerts />
@@ -14,6 +14,7 @@
 </template>
 
 <script setup lang="ts">
+import PortalAlert from '~/components/app/general/PortalAlert.vue'
 import ModelsAlerts from '~/components/app/models/ModelsAlerts.vue'
 import ModelsDetailDrawer from '~/components/app/models/ModelsDetailDrawer.vue'
 import ModelsFilters from '~/components/app/models/ModelsFilters.vue'

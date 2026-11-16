@@ -1,12 +1,13 @@
 import { computed, inject, provide, reactive, ref, type InjectionKey } from 'vue'
 import { useUserApi, type UserSessionResponse } from '~/composables/useUserApi'
 import { usePortalI18n } from '~/composables/usePortalI18n'
+import { usePortalToast } from '~/composables/portal/usePortalToast'
 import { useWorkspaceState } from '~/composables/useWorkspaceState'
 import { errorMessage } from './common'
 
 function createWorkspaceAccount() {
   const { t } = usePortalI18n()
-  const toast = useToast()
+  const toast = usePortalToast()
   const { currentUser: user, capabilities, fetchAPI, saveSession, loadCurrentUser } = useUserApi()
   const passwordForm = reactive({ password: '', confirm: '' })
   const passwordError = useWorkspaceState('user:workspace:password-error', () => '')

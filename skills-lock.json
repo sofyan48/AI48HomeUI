@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "skills": {
+    "shadcn-vue": {
+      "source": "unovue/shadcn-vue",
+      "commit": "d1bf1b3a2d1a824b19f32d7253a28a43797b8253",
+      "sourceType": "github",
+      "skillPath": "skills/shadcn-vue/SKILL.md",
+      "computedHash": "a5a9b576670e98117b103e966dccb833386d4a616cd7e42d338ea8fa7c3f32fe"
+    }
+  }
+}

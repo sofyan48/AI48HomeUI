@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppIcon from '~/components/AppIcon.vue'
 import { computed } from 'vue'
 import { usePortalI18n } from '~/composables/usePortalI18n'
 import { useUserApi } from '~/composables/useUserApi'
@@ -32,7 +33,7 @@ function scrollToSection(id: string) {
     <div class="settings-layout">
       <nav class="settings-nav" :aria-label="t('ws.settings.navAria')">
         <a v-for="item in settingsSections" :key="item.id" :href="`#${item.id}`" class="settings-nav-link" @click.prevent="scrollToSection(item.id)">
-          <UIcon :name="item.icon" class="size-4 shrink-0" aria-hidden="true" />
+          <AppIcon :name="item.icon" class="size-4 shrink-0" aria-hidden="true" />
           <span class="min-w-0 flex-1 truncate">{{ item.label }}</span>
           <span class="settings-nav-dot" :class="item.done ? 'settings-nav-dot--on' : ''" :title="item.done ? t('ws.settings.configured') : t('ws.settings.notConfigured')" />
         </a>
