@@ -23,7 +23,7 @@ export default {
   'shell.group.account': 'Аккаунт',
   'shell.nav.dashboard': 'Обзор',
   'shell.nav.balance': 'Баланс',
-  'shell.nav.playground': 'Чат-песочница',
+  'shell.nav.playground': 'Чат',
   'shell.nav.models': 'Каталог моделей',
   'shell.nav.apiKeys': 'API-ключи',
   'shell.nav.logs': 'Журнал запросов',

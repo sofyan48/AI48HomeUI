@@ -12,13 +12,20 @@ const copy = () => copyText(props.message.content, t('common.copied'))
 </script>
 
 <template>
-  <div class="flex gap-3" :class="message.role === 'user' ? 'flex-row-reverse' : ''">
-    <span class="playground-avatar" :class="message.role === 'user' ? 'playground-avatar--user' : ''" aria-hidden="true">
-      <AppIcon :name="message.role === 'user' ? 'i-tabler-user' : 'i-tabler-sparkles'" class="size-4" />
+  <!-- ChatGPT-style turn: user text in a right-aligned bubble, assistant reply as plain text with an avatar. -->
+  <div v-if="message.role === 'user'" class="flex justify-end">
+    <div class="playground-bubble playground-bubble--user max-w-[85%]">
+      <span class="sr-only">{{ t('playground.you') }}:</span>
+      <p class="whitespace-pre-wrap break-words">{{ message.content }}</p>
+    </div>
+  </div>
+  <div v-else class="flex gap-3">
+    <span class="playground-avatar" aria-hidden="true">
+      <AppIcon name="i-tabler-sparkles" class="size-4" />
     </span>
-    <div class="flex min-w-0 max-w-[85%] flex-col gap-1" :class="message.role === 'user' ? 'items-end' : 'items-start'">
-      <span class="px-1 text-[11px] font-medium text-[var(--ui-text-muted)]">{{ message.role === 'user' ? t('playground.you') : message.model || t('playground.assistant') }}</span>
-      <div class="playground-bubble" :class="[message.role === 'user' ? 'playground-bubble--user' : '', message.error ? 'playground-bubble--error' : '']">
+    <div class="flex min-w-0 flex-1 flex-col gap-1">
+      <span class="text-[11px] font-medium text-[var(--ui-text-muted)]">{{ message.model || t('playground.assistant') }}</span>
+      <div class="playground-reply" :class="{ 'playground-bubble--error': message.error }">
         <details v-if="message.reasoning" class="mb-2 text-xs text-[var(--ui-text-muted)]">
           <summary class="cursor-pointer select-none font-medium">{{ t('playground.reasoning') }}</summary>
           <p class="mt-1 whitespace-pre-wrap break-words">{{ message.reasoning }}</p>
@@ -27,7 +34,7 @@ const copy = () => copyText(props.message.content, t('common.copied'))
         <p v-if="message.error" class="flex items-start gap-1.5 text-[var(--ui-error)]"><AppIcon name="i-tabler-alert-triangle" class="mt-0.5 size-4 shrink-0" aria-hidden="true" />{{ message.error }}</p>
         <span v-if="message.pending && !message.content" class="playground-typing" role="status" :aria-label="t('playground.thinking')"><span /><span /><span /></span>
       </div>
-      <div v-if="message.role === 'assistant' && !message.pending && message.content" class="flex flex-wrap items-center gap-x-3 gap-y-1 px-1 text-[11px] tabular-nums text-[var(--ui-text-muted)]">
+      <div v-if="!message.pending && message.content" class="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] tabular-nums text-[var(--ui-text-muted)]">
         <span v-if="message.stopped">{{ t('playground.stoppedShort') }}</span>
         <span v-if="message.latencyMs != null">{{ formatNumber(message.latencyMs) }} ms</span>
         <span v-if="message.usage?.prompt_tokens != null">{{ t('playground.tokensIn', { value: formatNumber(message.usage.prompt_tokens) }) }}</span>
@@ -50,23 +57,23 @@ const copy = () => copyText(props.message.content, t('common.copied'))
   background: var(--user-selected);
   color: var(--ui-primary);
 }
-.playground-avatar--user { background: var(--ui-bg-accented); color: var(--ui-text-toned); }
 .playground-bubble {
-  border: 1px solid var(--ui-border);
-  border-radius: 1rem;
-  border-top-left-radius: 0.375rem;
-  background: var(--ui-bg);
-  padding: 0.625rem 0.875rem;
-  font-size: 0.875rem;
+  border-radius: 1.25rem;
+  padding: 0.625rem 1rem;
+  font-size: 0.9375rem;
   line-height: 1.6;
 }
-.playground-bubble--user {
-  border-color: color-mix(in oklch, var(--ui-primary) 22%, var(--ui-border));
-  border-top-left-radius: 1rem;
-  border-top-right-radius: 0.375rem;
-  background: var(--user-selected);
+.playground-bubble--user { background: var(--ui-bg-accented); color: var(--ui-text-highlighted); }
+.playground-reply {
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: var(--ui-text);
 }
-.playground-bubble--error { border-color: color-mix(in oklch, var(--ui-error) 35%, var(--ui-border)); }
+.playground-bubble--error {
+  border: 1px solid color-mix(in oklch, var(--ui-error) 35%, var(--ui-border));
+  border-radius: 0.75rem;
+  padding: 0.5rem 0.75rem;
+}
 .playground-typing { display: inline-flex; gap: 0.25rem; padding-block: 0.375rem; }
 .playground-typing span {
   width: 0.375rem;
