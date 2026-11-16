@@ -9,6 +9,7 @@ import {
   chatCompletionsUrl, completionReply, historyFor, messageId, parseOptionalNumber, parseStreamLine,
   readLines, responseErrorMessage, type ChatMessage
 } from './chat'
+import { useConversationHistory } from './useConversationHistory'
 
 /**
  * Shared state for the chat playground (/app/playground).
@@ -19,7 +20,14 @@ import {
  */
 function createPlaygroundWorkspace() {
   const { t } = usePortalI18n()
-  const { token, fetchAPI, serverInfo, loadCapabilities } = useUserApi()
+  const { token, fetchAPI, serverInfo, capabilities, loadCapabilities, currentUser } = useUserApi()
+  const history = useConversationHistory({
+    userId: computed(() => currentUser.value?.id),
+    serverSupported: computed(() => capabilities.value.chat_history === true),
+    fetchAPI,
+    failedMessage: () => t('playground.historySyncFailed')
+  })
+  const openingId = ref<string | null>(null)
 
   const keys = useWorkspaceState<WorkspaceKey[]>('user:playground:keys', () => [])
   const models = useWorkspaceState<CatalogModel[]>('user:playground:models', () => [])
@@ -83,9 +91,51 @@ function createPlaygroundWorkspace() {
     controller?.abort()
   }
 
-  function clearChat() {
+  /** Leaves the current conversation, keeping any partial reply that is still streaming. */
+  function detach() {
+    if (sending.value) history.commit(history.activeId.value, messages.value, selectedModel.value)
     stop()
+  }
+
+  function newChat() {
+    openingId.value = null
+    detach()
+    history.activeId.value = null
     messages.value = []
+  }
+
+  async function openConversation(id: string) {
+    if (id === history.activeId.value) return
+    const conversation = history.conversations.value.find(item => item.id === id)
+    if (!conversation) return
+    openingId.value = id
+    const loaded = await history.messagesOf(id)
+    // Ignore a slow load when the user already picked another conversation.
+    if (openingId.value !== id) return
+    openingId.value = null
+    if (!loaded) return
+    detach()
+    history.activeId.value = conversation.id
+    messages.value = loaded.map(message => ({ ...message }))
+    if (conversation.model && models.value.some(model => model.id === conversation.model)) selectedModel.value = conversation.model
+  }
+
+  function deleteConversation(id: string) {
+    if (id === history.activeId.value) newChat()
+    history.remove(id)
+  }
+
+  function clearHistory() {
+    newChat()
+    return history.clearAll()
+  }
+
+  /** Stores the current transcript; the conversation is created on its first message. */
+  function saveConversation(id: string | null) {
+    const savedId = history.commit(id, messages.value, selectedModel.value)
+    // Only follow the saved conversation when the user has not switched away meanwhile.
+    if (history.activeId.value === id) history.activeId.value = savedId
+    return savedId
   }
 
   function patch(id: string, update: Partial<ChatMessage>) {
@@ -105,6 +155,7 @@ function createPlaygroundWorkspace() {
     messages.value = [...messages.value, { id: messageId(), role: 'user', content: text }, reply]
     draft.value = ''
     sending.value = true
+    const conversationId = saveConversation(history.activeId.value)
     controller = new AbortController()
     const started = performance.now()
     const body: Record<string, unknown> = { model: selectedModel.value, messages: history, stream: stream.value }
@@ -145,11 +196,12 @@ function createPlaygroundWorkspace() {
     } finally {
       sending.value = false
       controller = null
+      if (history.activeId.value === conversationId) saveConversation(conversationId)
     }
   }
 
   watch(token, () => {
-    clearChat()
+    newChat()
     void load()
   })
   onScopeDispose(() => { loadGeneration++; stop() })
@@ -158,7 +210,10 @@ function createPlaygroundWorkspace() {
   return {
     keys, models, loading, loadError, modelsError, endpoint, hasKeys, disabledReason, ready, canSend,
     selectedKey, selectedModel, activeModel, systemPrompt, temperature, maxTokens, stream, draft, messages, sending,
-    keyOptions, modelOptions, load, send, stop, clearChat
+    keyOptions, modelOptions, load, send, stop, newChat,
+    conversations: history.conversations, activeConversationId: history.activeId, activeConversation: history.activeConversation,
+    historyMode: history.mode, historyLoading: history.loading, historySyncError: history.syncError, reloadHistory: history.load, openingId,
+    openConversation, deleteConversation, clearHistory
   }
 }
 

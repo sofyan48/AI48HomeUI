@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import AppIcon from '~/components/AppIcon.vue'
 import { Switch } from '~/components/ui/switch'
 import { Textarea } from '~/components/ui/textarea'
 import PortalField from '~/components/app/general/PortalField.vue'
@@ -14,13 +13,7 @@ const { loading, ready, sending, selectedKey, selectedModel, keyOptions, modelOp
 </script>
 
 <template>
-  <AppCard class="playground-panel min-w-0" :ui="{ body: 'space-y-4' }">
-    <template #header>
-      <div class="flex items-center justify-between gap-3">
-        <h2 class="flex items-center gap-2 text-sm font-semibold"><AppIcon name="i-tabler-adjustments-horizontal" class="size-4 text-[var(--ui-text-muted)]" aria-hidden="true" /> {{ t('playground.settings') }}</h2>
-        <AppButton icon="i-tabler-refresh" color="neutral" variant="ghost" size="sm" :loading="loading" :disabled="sending" :aria-label="t('common.refresh')" :title="t('common.refresh')" @click="load" />
-      </div>
-    </template>
+  <div class="min-w-0 space-y-4 p-4">
     <template v-if="loading">
       <PortalSkeleton v-for="index in 4" :key="index" class="h-14 w-full rounded-xl" />
     </template>
@@ -50,6 +43,7 @@ const { loading, ready, sending, selectedKey, selectedModel, keyOptions, modelOp
         <p class="text-[11px] font-medium text-[var(--ui-text-muted)]">{{ t('playground.endpoint') }}</p>
         <code class="mt-0.5 block break-all text-xs">{{ endpoint }}</code>
       </div>
+      <AppButton icon="i-tabler-refresh" color="neutral" variant="outline" size="sm" class="w-full" :loading="loading" :disabled="sending" @click="load">{{ t('playground.reload') }}</AppButton>
     </template>
-  </AppCard>
+  </div>
 </template>

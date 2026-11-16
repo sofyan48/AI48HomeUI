@@ -23,7 +23,7 @@ export default {
   'shell.group.account': '帳號',
   'shell.nav.dashboard': '儀表板',
   'shell.nav.balance': '餘額',
-  'shell.nav.playground': '聊天試驗場',
+  'shell.nav.playground': '聊天',
   'shell.nav.models': '模型目錄',
   'shell.nav.apiKeys': 'API 金鑰',
   'shell.nav.logs': '請求日誌',
