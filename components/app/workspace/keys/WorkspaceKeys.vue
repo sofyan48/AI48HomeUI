@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AppIcon from '~/components/AppIcon.vue'
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '~/components/ui/empty'
 import PortalInput from '~/components/app/general/PortalInput.vue'
 import PortalField from '~/components/app/general/PortalField.vue'
 import PortalSkeleton from '~/components/app/general/PortalSkeleton.vue'
@@ -49,12 +50,16 @@ const { keys, keySearch, filteredKeys, keysLoading, openKeyForm, confirmKeyDelet
         </div>
       </AppCard>
     </div>
-    <div v-else class="flex flex-col items-center px-5 py-12 text-center">
-      <span class="finance-icon mb-4 flex size-12 items-center justify-center rounded-2xl"><AppIcon :name="keys.length ? 'i-tabler-search' : 'i-tabler-key'" class="size-6" aria-hidden="true" /></span>
-      <h2 class="text-sm font-semibold">{{ keys.length ? t('ws.keys.noMatch') : t('ws.keys.emptyTitle') }}</h2>
-      <p class="mt-2 max-w-sm text-sm text-[var(--ui-text-muted)]">{{ keys.length ? t('ws.keys.noMatchDetail') : t('ws.keys.emptyDetail') }}</p>
-      <AppButton v-if="keys.length" class="mt-5 rounded-full" color="neutral" variant="soft" size="sm" @click="keySearch = ''">{{ t('ws.keys.clearSearch') }}</AppButton>
-    </div>
+    <Empty v-else class="gap-5 px-5 py-12 md:px-5">
+      <EmptyHeader>
+        <EmptyMedia variant="icon" class="finance-icon mb-2 size-12 rounded-2xl"><AppIcon :name="keys.length ? 'i-tabler-search' : 'i-tabler-key'" aria-hidden="true" /></EmptyMedia>
+        <EmptyTitle class="text-sm font-semibold">{{ keys.length ? t('ws.keys.noMatch') : t('ws.keys.emptyTitle') }}</EmptyTitle>
+        <EmptyDescription>{{ keys.length ? t('ws.keys.noMatchDetail') : t('ws.keys.emptyDetail') }}</EmptyDescription>
+      </EmptyHeader>
+      <EmptyContent v-if="keys.length">
+        <AppButton class="rounded-full" color="neutral" variant="soft" size="sm" @click="keySearch = ''">{{ t('ws.keys.clearSearch') }}</AppButton>
+      </EmptyContent>
+    </Empty>
   </section>
 </template>
 

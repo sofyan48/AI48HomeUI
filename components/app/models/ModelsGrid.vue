@@ -14,11 +14,12 @@
     <p class="text-xs text-[var(--ui-text-muted)]">{{ t('models.showing', { from: (catalogPage - 1) * catalogPageSize + 1, to: Math.min(catalogPage * catalogPageSize, filteredModels.length), total: filteredModels.length }) }}</p>
     <PortalPagination v-if="filteredModels.length > catalogPageSize" v-model:page="catalogPage" :total="filteredModels.length" :items-per-page="catalogPageSize" :sibling-count="1" size="sm" />
   </div>
-  <div v-if="catalogReady && !loading && !error && !filteredModels.length" class="rounded-2xl border border-dashed border-[var(--ui-border)] py-16 text-center text-sm text-[var(--ui-text-muted)]">{{ models.length ? t('models.emptyFiltered') : t('models.emptyNone') }}</div>
+  <Empty v-if="catalogReady && !loading && !error && !filteredModels.length" class="rounded-2xl border border-border py-16 md:py-16"><EmptyHeader><EmptyDescription>{{ models.length ? t('models.emptyFiltered') : t('models.emptyNone') }}</EmptyDescription></EmptyHeader></Empty>
 </template>
 
 <script setup lang="ts">
 import AppIcon from '~/components/AppIcon.vue'
+import { Empty, EmptyDescription, EmptyHeader } from '~/components/ui/empty'
 import PortalSkeleton from '~/components/app/general/PortalSkeleton.vue'
 import PortalPagination from '~/components/app/general/PortalPagination.vue'
 import ModelsCard from '~/components/app/models/ModelsCard.vue'

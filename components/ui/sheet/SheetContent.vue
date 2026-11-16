@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { DialogContentEmits, DialogContentProps } from "reka-ui"
-import type { HTMLAttributes } from "vue"
+import { computed, Transition, type HTMLAttributes } from "vue"
 import { IconX } from '@tabler/icons-vue'
 import { reactiveOmit } from "@vueuse/core"
 import { cn } from "cn"
@@ -8,6 +8,7 @@ import {
   DialogClose,
   DialogContent,
   DialogPortal,
+  injectDialogRootContext,
   useForwardPropsEmits,
 } from "reka-ui"
 import SheetOverlay from "./SheetOverlay.vue"
@@ -33,17 +34,48 @@ const props = withDefaults(defineProps<SheetContentProps>(), {
   overlay: true,
   portal: true,
 })
-const emits = defineEmits<DialogContentEmits>()
+const emits = defineEmits<DialogContentEmits & {
+  afterEnter: []
+  afterLeave: []
+}>()
+const { open } = injectDialogRootContext()
 
 const delegatedProps = reactiveOmit(props, "class", "side", "showClose", "closeLabel", "overlay", "overlayClass", "portal")
 
-const forwarded = useForwardPropsEmits(delegatedProps, emits)
+const forwardedProps = useForwardPropsEmits(delegatedProps, emits)
+// Lifecycle events belong to Transition, not DialogContent's DOM attributes.
+const forwarded = computed(() => {
+  const { onAfterEnter, onAfterLeave, ...contentProps } = forwardedProps.value
+  return contentProps
+})
+
+function finishAnimation(element: Element, done: () => void) {
+  // getAnimations flushes styles and excludes disabled/reduced-motion animations.
+  const animations = element.getAnimations()
+  if (!animations.length) done()
+  else void Promise.allSettled(animations.map(animation => animation.finished)).then(() => done())
+}
+
+function leave(element: Element, done: () => void) {
+  // A v-if removal does not patch the outgoing DialogContent's data-state.
+  element.setAttribute('data-state', 'closed')
+  finishAnimation(element, done)
+}
 </script>
 
 <template>
   <DialogPortal :disabled="portal === false" :to="typeof portal === 'boolean' ? undefined : portal">
     <SheetOverlay v-if="overlay" :class="overlayClass" />
+    <Transition
+      appear
+      :css="false"
+      @enter="finishAnimation"
+      @leave="leave"
+      @after-enter="emits('afterEnter')"
+      @after-leave="emits('afterLeave')"
+    >
     <DialogContent
+      v-if="open"
       data-slot="sheet-content"
       :class="cn(
         'bg-background data-[state=open]:animate-in data-[state=closed]:animate-out fixed z-50 flex flex-col gap-4 shadow-lg transition ease-in-out data-[state=closed]:duration-300 data-[state=open]:duration-500',
@@ -57,6 +89,7 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits)
           && 'data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom inset-x-0 bottom-0 h-auto border-t',
         props.class)"
       v-bind="{ ...$attrs, ...forwarded }"
+      force-mount
     >
       <slot />
 
@@ -68,5 +101,6 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits)
         <span class="sr-only">{{ closeLabel }}</span>
       </DialogClose>
     </DialogContent>
+    </Transition>
   </DialogPortal>
 </template>

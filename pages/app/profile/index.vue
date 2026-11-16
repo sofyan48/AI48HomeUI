@@ -23,7 +23,7 @@
 
     <PortalAlert v-if="error" color="error" variant="subtle" :title="t('profile.loadError')" :description="error" />
 
-    <AppCard v-if="activePeriods.length" class="profile-panel"><template #header><div class="flex items-center gap-3"><span class="profile-icon flex size-9 shrink-0 items-center justify-center rounded-xl"><AppIcon name="i-tabler-gauge" class="size-5" aria-hidden="true" /></span><div><h2 class="text-sm font-semibold">{{ t('profile.periodTitle') }}</h2><p class="text-xs text-[var(--ui-text-muted)]">{{ t('profile.periodDescription') }}</p></div></div></template><div class="grid gap-x-6 gap-y-4 sm:grid-cols-2"><div v-for="window in activePeriods" :key="window.id" class="min-w-0"><div class="flex items-center justify-between"><span class="font-medium">{{ periodLabel(window.id) }}</span><span class="text-xs font-semibold">{{ percent(window) }}%</span></div><div class="mt-2 h-2 overflow-hidden rounded-full bg-[var(--ui-bg-muted)]"><div class="h-full rounded-full bg-[var(--ui-primary)]" :style="{ width: `${percent(window)}%` }" /></div><p class="mt-2 text-xs text-[var(--ui-text-muted)]">{{ t('profile.periodUsage', { used: credits(window.used), remaining: credits(window.remaining) }) }}</p></div></div></AppCard>
+    <AppCard v-if="activePeriods.length" class="profile-panel"><template #header><div class="flex items-center gap-3"><span class="profile-icon flex size-9 shrink-0 items-center justify-center rounded-xl"><AppIcon name="i-tabler-gauge" class="size-5" aria-hidden="true" /></span><div><h2 class="text-sm font-semibold">{{ t('profile.periodTitle') }}</h2><p class="text-xs text-[var(--ui-text-muted)]">{{ t('profile.periodDescription') }}</p></div></div></template><div class="grid gap-x-6 gap-y-4 sm:grid-cols-2"><div v-for="window in activePeriods" :key="window.id" class="min-w-0"><div class="flex items-center justify-between"><span class="font-medium">{{ periodLabel(window.id) }}</span><span class="text-xs font-semibold">{{ percent(window) }}%</span></div><PortalProgress :model-value="percent(window)" class="mt-2" :aria-label="periodLabel(window.id)" /><p class="mt-2 text-xs text-[var(--ui-text-muted)]">{{ t('profile.periodUsage', { used: credits(window.used), remaining: credits(window.remaining) }) }}</p></div></div></AppCard>
 
 
     <div class="grid items-start gap-5 lg:grid-cols-2">
@@ -36,6 +36,7 @@
       <template #header><div class="flex items-center gap-3"><span class="profile-icon flex size-9 shrink-0 items-center justify-center rounded-xl"><AppIcon name="i-tabler-fingerprint" class="size-5" aria-hidden="true" /></span><div><h2 class="text-sm font-semibold">{{ t('profile.passkeysTitle') }}</h2><p class="text-xs text-[var(--ui-text-muted)]">{{ t('profile.passkeysDescription') }}</p></div></div></template>
       <div class="overflow-x-auto">
         <PortalTable :data="user?.passkeys || []" :columns="passkeyColumns" :empty="t('profile.passkeysEmpty')" class="min-w-[560px]">
+          <template #empty><Empty class="p-0 md:p-0"><EmptyHeader><EmptyDescription>{{ t('profile.passkeysEmpty') }}</EmptyDescription></EmptyHeader></Empty></template>
           <template #name-cell="{ row }"><span class="font-medium">{{ row.original.name || t('profile.unnamedPasskey') }}</span></template>
           <template #id-cell="{ row }"><span class="font-mono text-xs">{{ row.original.id }}</span></template>
           <template #created_at-cell="{ row }">{{ date(row.original.created_at) }}</template>
@@ -48,6 +49,8 @@
 
 <script setup lang="ts">
 import AppIcon from '~/components/AppIcon.vue'
+import PortalProgress from '~/components/app/general/PortalProgress.vue'
+import { Empty, EmptyDescription, EmptyHeader } from '~/components/ui/empty'
 import PortalTable from '~/components/app/general/PortalTable.vue'
 import PortalAlert from '~/components/app/general/PortalAlert.vue'
 import PortalBadge from '~/components/app/general/PortalBadge.vue'

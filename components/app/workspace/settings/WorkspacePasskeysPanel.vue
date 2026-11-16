@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AppIcon from '~/components/AppIcon.vue'
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '~/components/ui/empty'
 import PortalTable from '~/components/app/general/PortalTable.vue'
 import PortalInput from '~/components/app/general/PortalInput.vue'
 import PortalField from '~/components/app/general/PortalField.vue'
@@ -27,7 +28,7 @@ const { formatDate } = useWorkspaceFormat()
     </div>
     <div v-if="user?.passkeys?.length" class="overflow-x-auto">
       <PortalTable :data="user?.passkeys || []" :columns="passkeyColumns" :empty="t('ws.settings.noPasskeysRegistered')" class="min-w-[560px]">
-        <template #empty><div class="flex flex-col items-center gap-2 py-6 text-center"><span class="settings-icon mb-1 flex size-10 items-center justify-center rounded-xl"><AppIcon name="i-tabler-fingerprint" class="size-5" aria-hidden="true" /></span><p class="text-sm font-medium text-[var(--ui-text-highlighted)]">{{ t('ws.settings.noPasskeysTitle') }}</p><p class="max-w-xs text-xs leading-relaxed text-[var(--ui-text-muted)]">{{ t('ws.settings.noPasskeysHint') }}</p></div></template>
+        <template #empty><Empty class="py-6 md:py-6"><EmptyHeader><EmptyMedia variant="icon" class="settings-icon mb-1 rounded-xl"><AppIcon name="i-tabler-fingerprint" aria-hidden="true" /></EmptyMedia><EmptyTitle class="text-sm">{{ t('ws.settings.noPasskeysTitle') }}</EmptyTitle><EmptyDescription class="max-w-xs text-xs">{{ t('ws.settings.noPasskeysHint') }}</EmptyDescription></EmptyHeader></Empty></template>
         <template #name-cell="{ row }"><span class="font-medium">{{ row.original.name || t('ws.settings.unnamedPasskey') }}</span></template>
         <template #created_at-cell="{ row }">{{ formatDate(row.original.created_at) }}</template>
         <template #updated_at-cell="{ row }">{{ formatDate(row.original.updated_at) }}</template>
@@ -36,6 +37,6 @@ const { formatDate } = useWorkspaceFormat()
         </template>
       </PortalTable>
     </div>
-    <p v-else class="settings-passkey-empty text-xs text-[var(--ui-text-muted)]">{{ t('ws.settings.noPasskeysShort') }}</p>
+    <Empty v-else class="settings-passkey-empty items-start text-left"><EmptyHeader class="items-start text-left"><EmptyDescription class="text-xs">{{ t('ws.settings.noPasskeysShort') }}</EmptyDescription></EmptyHeader></Empty>
   </AppCard>
 </template>

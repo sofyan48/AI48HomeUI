@@ -62,7 +62,7 @@ describe('portal toast mapping', () => {
 })
 
 test('all portal toast consumers explicitly import the portal adapter, not Nuxt useToast', () => {
-  const files = ['pages/app', 'components/app', 'composables/workspace'].flatMap(folder => sourceFiles(resolve(root, folder)))
+  const files = ['pages/app', 'components/app', 'composables/workspace', 'composables/models'].flatMap(folder => sourceFiles(resolve(root, folder)))
   const consumers: string[] = []
   for (const file of files) {
     const source = readFileSync(file, 'utf8')
@@ -72,6 +72,7 @@ test('all portal toast consumers explicitly import the portal adapter, not Nuxt 
     expect(source, file).toContain("import { usePortalToast } from '~/composables/portal/usePortalToast'")
   }
   for (const file of [
+    'composables/models/useModelFormat.ts',
     'composables/workspace/common.ts',
     'composables/workspace/useWorkspaceAccount.ts',
     'composables/workspace/useWorkspaceKeys.ts',

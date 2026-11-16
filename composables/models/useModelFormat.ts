@@ -1,4 +1,4 @@
-import { useToast } from '#imports'
+import { usePortalToast } from '~/composables/portal/usePortalToast'
 import { usePortalI18n } from '~/composables/usePortalI18n'
 import { useUserApi } from '~/composables/useUserApi'
 import { formatCatalogPrice, pricingMessageKind, type CatalogModel } from '~/composables/userModelCatalog'
@@ -8,7 +8,7 @@ import { componentLabelKeys, unitKeys } from '~/composables/models/catalog'
 export function useModelFormat() {
   const { t, intlLocale } = usePortalI18n()
   const { token } = useUserApi()
-  const toast = useToast()
+  const toast = usePortalToast()
 
   async function copyModelId(id: string) {
     try {

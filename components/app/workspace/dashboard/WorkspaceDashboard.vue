@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import AppIcon from '~/components/AppIcon.vue'
+import PortalProgress from '~/components/app/general/PortalProgress.vue'
+import { Empty, EmptyDescription, EmptyHeader } from '~/components/ui/empty'
 import PortalInput from '~/components/app/general/PortalInput.vue'
 import PortalSelect from '~/components/app/general/PortalSelect.vue'
 import PortalAlert from '~/components/app/general/PortalAlert.vue'
@@ -98,14 +100,14 @@ const copyText = useWorkspaceClipboard()
               <p class="text-sm font-semibold">{{ periodWindowLabel(window.id) }}</p>
               <span class="shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums" :class="periodWindowColor(window)">{{ formatPercent(periodWindowRatio(window)) }}</span>
             </div>
-            <div class="period-progress-track mt-2 h-2 overflow-hidden rounded-full" role="progressbar" :aria-label="t('ws.dashboard.limitUsed', { label: periodWindowLabel(window.id) })" aria-valuemin="0" aria-valuemax="100" :aria-valuenow="Math.round(periodWindowRatio(window) * 100)"><div class="h-full rounded-full transition-[width]" :class="periodWindowBarColor(window)" :style="{ width: `${periodWindowRatio(window) * 100}%`, minWidth: periodWindowRatio(window) > 0 ? '4px' : '0' }" /></div>
+            <PortalProgress class="period-progress-track mt-2" :model-value="periodWindowRatio(window) * 100" :color="periodWindowRatio(window) >= 1 ? 'error' : periodWindowRatio(window) >= 0.8 ? 'warning' : 'primary'" min-visible :aria-label="t('ws.dashboard.limitUsed', { label: periodWindowLabel(window.id) })" :aria-valuenow="Math.round(periodWindowRatio(window) * 100)" />
             <div class="mt-1.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5 text-xs text-[var(--ui-text-muted)]">
               <span><strong class="font-semibold tabular-nums text-[var(--ui-text-highlighted)]">{{ formatCredits(window.remaining) }}</strong> {{ t('ws.dashboard.leftOf', { limit: formatCredits(window.limit) }) }}</span>
               <span v-if="window.reset_at" class="text-[var(--ui-text-dimmed)]">{{ t('ws.dashboard.resets', { date: formatDate(window.reset_at) }) }}</span>
             </div>
           </div>
         </template>
-        <p v-else class="rounded-xl border border-dashed border-[var(--ui-border)] px-3 py-3 text-xs text-[var(--ui-text-muted)]">{{ t('ws.dashboard.noLimits') }}</p>
+        <Empty v-else class="items-start rounded-xl border border-border px-3 py-3 text-left md:p-3"><EmptyHeader class="items-start text-left"><EmptyDescription class="text-xs">{{ t('ws.dashboard.noLimits') }}</EmptyDescription></EmptyHeader></Empty>
       </div>
       <AppLimitReset class="mt-auto" @reset="loadPeriodLimits" />
     </section>
