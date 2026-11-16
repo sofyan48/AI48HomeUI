@@ -30,7 +30,7 @@ bun run build:embedded      # Generate and package the embedded SPA into dist/
 - `bun run test` runs the Bun test suite in `scripts/*.test.ts` and `**/*.test.ts` (unit, i18n key, SFC compile, and file-size checks). It is fast; prefer it over a full build for quick verification.
 - There are currently no `lint` or `typecheck` scripts in `package.json`.
 - README mentions `node scripts/test-state.mjs`, but that file is not currently present. Do not treat it as an available test command.
-- For application changes, use `bun run build` as the normal build verification. For embedded packaging changes, also use `bun run build:embedded`.
+- Use `bun run test` for routine verification. Do not run production builds, static generation, or embedded packaging unless explicitly requested; these are slow. When requested, use `bun run build` for application builds and `bun run build:embedded` for embedded packaging.
 - A successful build is not proof of TypeScript type-checking or browser behavior. Report the validation actually performed.
 - Documentation-only changes do not require an application build.
 
@@ -46,10 +46,17 @@ bun run build:embedded      # Generate and package the embedded SPA into dist/
 - `layouts/default.vue`: admin shell, navigation, connection state, capabilities, and synchronization controls.
 - `layouts/app.vue`: user shell, public/authenticated route handling, navigation, and session integration.
 - `components/App*.vue`: shared base components for buttons, cards, tables, panels, modals (`AppFormModal`, `AppConfirmModal`), empty states, summary rows, and synchronization.
-- Each large page has its own folders: `components/admin/<page>/` for sections/dialogs and `composables/<page>/` for state and helpers (e.g. `pages/admin/users/index.vue` → `components/admin/users/` + `composables/users/`). Do not add a global `utils/` folder.
-- Keep source files under 500 lines; `scripts/file-size.test.ts` enforces this with a shrink-only allowlist for legacy files. Follow the split pattern in `CONTRIBUTING.md` (reference: `pages/admin/users/index.vue`).
-- `components/admin/`: admin-specific components, including configuration and user-management subdirectories.
-- `components/app/`: user-specific components.
+- Organize components by feature, not by file size alone. Keep route shells thin: compose sections/dialogs and wire events; put feature UI and logic in their own folders. Do not just move a monolith into a large composable.
+- `components/admin/<feature>/`: admin feature components. Use meaningful subfolders such as `editor/`, `list/`, `overview/`, `models/`, or `dialogs/` when a feature has multiple parts. No loose `.vue` files directly under `components/admin/`.
+- `components/admin/general/`: reusable admin-only components (tables, panels, row actions, detail items, modal cards, and other cross-feature primitives). Cross-workspace base components remain in `components/App*.vue`.
+- `components/app/<feature>/`: portal feature components. No loose `.vue` files directly under `components/app/`. Put reusable portal-only primitives in `components/app/general/` when needed, not in the admin folder.
+- Portal workspace entry: `components/app/workspace/UserWorkspace.vue`; its dashboard, billing, keys, and settings sections live in matching subfolders. `LimitReset.vue` belongs in `workspace/dashboard/`; `SecurityRow.vue` belongs in `workspace/settings/`.
+- `composables/<feature>/`: feature state, API loading, normalization, validation, formatting, and other feature-only helpers. Keep helpers beside their feature; do not add a global `utils/` folder.
+- Examples: `pages/admin/dashboard/index.vue` → `components/admin/dashboard/` + `composables/dashboard/`; `pages/app/models/index.vue` → `components/app/models/` + `composables/models/`.
+- Keep source files under 500 lines, preferably 150–300 lines per focused module. `scripts/file-size.test.ts` currently has an empty allowlist; do not add exemptions merely to bypass decomposition. Translation data is outside this source-size check. See `CONTRIBUTING.md` for the split pattern.
+- Moving components changes Nuxt auto-import names. Update every consumer with an explicit import or the new component name, including page/layout consumers and relative sibling imports. Do not leave compatibility wrappers at obsolete paths or depend on stale `.nuxt/components.d.ts`.
+- Folder moves must preserve route URLs/metadata, props, emits, slots, API payloads, capability fallbacks, styling, focus behavior, and state lifecycle. Update source-reading test fixtures to the new implementation paths without weakening their assertions.
+- Folder/import/route regression tests include `scripts/page-folders.test.ts` and the component/workspace tests. Run the existing suite after structural changes; successful SFC compilation is not a browser interaction or visual test.
 - `composables/`: API wrappers, capability access, workspace refs, asynchronous data loading, synchronization, and upstream quota helpers.
 - `stores/`: Pinia session, capability, configuration cache, and workspace stores.
 - `middleware/mail-link.global.ts`: translates backend email-link fragments into frontend verification/reset routes.
@@ -82,6 +89,7 @@ Keep the root-level source layout used by this repository; do not move it into a
 - Use `useWorkspaceState()` for writable store-backed workspace refs and `useStoreData()` for asynchronous page data, following nearby usage.
 - Namespace admin workspace keys with `admin:` and user workspace keys with `user:`. Token changes clear the corresponding domain.
 - Each workspace owner starts with fresh state. Preserve generation/version guards so obsolete owners or stale requests cannot overwrite newer state.
+- Create each `useWorkspaceState(key)` exactly once per mounted owner: calling it again for the same key starts a new generation and resets the value. When extracted sections share state, create it once in the page/entry scope and expose focused feature composables through `provide`/`inject`; children must not recreate the same keys. Preserve form lifetimes and cleanup across tab changes.
 - Workspace data is not persisted. Keep transient forms, modal visibility, filters, and pagination component-local unless the task explicitly requires shared state.
 - Register shared refresh behavior through `useDataSync()` when appropriate. Dispose registrations, timers, listeners, and in-flight work with the component scope.
 - Use `storeToRefs()` when exposing reactive store state; avoid losing reactivity through plain destructuring.
