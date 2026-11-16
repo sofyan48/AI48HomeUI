@@ -24,6 +24,15 @@ const adminFiles = [
 ]
 
 describe('admin console i18n', () => {
+  test('recursive discovery covers every admin route, including nested routing features', () => {
+    const routes = adminFiles.filter(file => file.startsWith('pages/admin/'))
+    expect(routes).toHaveLength(21)
+    expect(routes).toContain('pages/admin/index.vue')
+    expect(routes).toContain('pages/admin/dashboard/index.vue')
+    expect(routes).toContain('pages/admin/routing/channels/index.vue')
+    expect(routes).toContain('pages/admin/routing/model-groups/index.vue')
+    expect(routes).toContain('pages/admin/routing/models/index.vue')
+  })
   test('area keys do not collide', () => {
     const seen = new Map<string, string>()
     for (const [area, messages] of Object.entries(adminAreas)) {

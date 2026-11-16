@@ -2,7 +2,11 @@ import { describe, expect, test } from 'bun:test'
 import { applyConfigWrites, planConfigWrites, reconcileConfigDraft } from './configWrites'
 import { configParitySections, emptyConfigJson, validateConfigParityField, validateConfigPolicyJson } from './configParity'
 import { parseDocument } from 'yaml'
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
+import { buildDraft, configWriteValue, v8YamlPaths } from './config/draft'
+import { sharedConfigFields } from './config/schema'
+import { useConfigValidation } from './config/useConfigValidation'
+import { ref } from 'vue'
 import { compileScript, compileTemplate, parse } from '@vue/compiler-sfc'
 
 const fields = configParitySections.flatMap(section => section.fields)
@@ -136,8 +140,89 @@ describe('targeted config writes', () => {
   })
 })
 
+describe('extracted config workspace', () => {
+  test('every draft field retains a targeted write path and shared YAML values', () => {
+    const draft = buildDraft({}, {})
+    expect(Object.keys(draft).sort()).toEqual(Object.keys(v8YamlPaths).sort())
+    for (const field of sharedConfigFields) {
+      expect(draft[field.key]).toBeNull()
+      expect(v8YamlPaths[field.key]).toEqual(field.path)
+    }
+    const explicit = buildDraft({}, { routing: { 'session-affinity': false, 'session-affinity-ttl': '' }, requests: { streaming: { 'keepalive-seconds': 0 } } })
+    expect(explicit.sessionAffinity).toBe(false)
+    expect(explicit.sessionAffinityTtl).toBe('')
+    expect(explicit.streamingKeepaliveSeconds).toBe(0)
+  })
+
+  test('write conversion preserves JSON, null, numeric, trimmed and line-list semantics', () => {
+    const draft = buildDraft({}, {})
+    Object.assign(draft, { serverHost: null, port: '8327', proxyUrl: ' http://proxy ', pluginStoreSourcesJson: ' a\n b\n a ', payloadJson: '{"future":true}', liveMediaRelayIceServersJson: '[{"urls":["turn:relay"],"credential":"secret","future":true}]' })
+    expect(configWriteValue(draft, 'serverHost')).toBeNull()
+    expect(configWriteValue(draft, 'port')).toBe(8327)
+    expect(configWriteValue(draft, 'proxyUrl')).toBe('http://proxy')
+    expect(configWriteValue(draft, 'pluginStoreSourcesJson')).toEqual(['a', 'b'])
+    expect(configWriteValue(draft, 'payloadJson')).toEqual({ future: true })
+    expect(configWriteValue(draft, 'liveMediaRelayIceServersJson')).toEqual([{ urls: ['turn:relay'], credential: 'secret', future: true }])
+  })
+
+  test('validation remains reactive across draft replacement and shared settings', () => {
+    const draft = ref(buildDraft({}, {}))
+    const { validationErrors, validationCount } = useConfigValidation(draft, key => key)
+    expect(validationCount.value).toBe(0)
+    draft.value.port = 0
+    expect(validationErrors.value.port).toBe('config.validation.port')
+    draft.value = buildDraft({}, {})
+    draft.value.oauthExcludedModelsJson = '{"claude":[false]}'
+    draft.value.liveMediaRelayUdpPortMin = 20000
+    draft.value.liveMediaRelayUdpPortMax = 10000
+    expect(validationErrors.value.oauthExcludedModelsJson).toBe('config.validation.exclusions')
+    expect(validationErrors.value.liveMediaRelayUdpPortMax).toBe('config.validation.udpRange')
+    expect(validationErrors.value.port).toBeUndefined()
+  })
+
+  test('workspace keeps save readback, sync ownership and editor preservation guards', () => {
+    const workspace = readFileSync(new URL('./config/useConfigWorkspace.ts', import.meta.url), 'utf8')
+    const editors = readFileSync(new URL('./config/useConfigEditors.ts', import.meta.url), 'utf8')
+    expect(workspace).toContain('await applyConfigWrites(writes, fetchAPI)')
+    expect(workspace).toContain('await loadWorkspace(true)')
+    expect(workspace).toContain('reconcileConfigDraft(previous, intended, baseline.value)')
+    expect(workspace).toContain('for (const key of write.keys) draft.value[key] = baseline.value[key]')
+    expect(workspace).toContain('saveNeedsReload.value = Boolean(pageError.value)')
+    expect(workspace).toContain("useDataSync('admin:config:sync'")
+    expect(workspace).toContain('onMounted(loadWorkspace)')
+    expect(workspace).toContain('if (saving.value) return;')
+    expect(editors).toContain('if (version !== modelRequestVersion) return;')
+    expect(editors).toContain('if (version === modelRequestVersion) modelsLoading.value = false;')
+    expect(editors).toContain('watch(aliasRows, syncSpecialDrafts, { deep: true })')
+    expect(editors).toContain('...row.original')
+    expect(editors).toContain('...parseJSON(payloadEditorSource, {})')
+    expect(editors).toContain('draft.value.oauthModelAliasJson = aliasEditorSource')
+    expect(editors).toContain('JSON.stringify(payloadDraft) === payloadEditorBaseline')
+    const keys = [...(workspace + editors).matchAll(/useWorkspaceState(?:<[^\n]+?>)?\('([^']+)'/g)].map(match => match[1])
+    expect(keys.sort()).toEqual([
+      'admin:config:loading', 'admin:config:loaded', 'admin:config:saving',
+      'admin:config:pageError', 'admin:config:updatedAt', 'admin:config:runtimeMode',
+      'admin:config:baseline', 'admin:config:yamlText', 'admin:config:configSnapshot',
+      'admin:config:channelModels', 'admin:config:modelsLoading',
+    ].sort())
+  })
+
+  test('page owns one workspace and all extracted files stay below 500 lines', () => {
+    const page = readFileSync(new URL('../pages/admin/config/index.vue', import.meta.url), 'utf8')
+    expect(page.match(/= provideConfigWorkspace\(\)/g)).toHaveLength(1)
+    expect(page).not.toContain('fetchAPI(')
+    expect(page.split('\n').length).toBeLessThan(100)
+    for (const folder of ['./config/', '../components/admin/config/']) {
+      for (const name of readdirSync(new URL(folder, import.meta.url))) {
+        const source = readFileSync(new URL(folder + name, import.meta.url), 'utf8')
+        expect(source.split('\n').length).toBeLessThan(500)
+      }
+    }
+  })
+})
+
 describe('config Vue compilation', () => {
-  for (const relative of ['../pages/admin/config.vue', '../components/admin/config/ConfigSharedUpstream.vue', '../components/admin/config/ConfigVisualSections.vue', '../components/admin/config/ConfigYamlReplacement.vue']) {
+  for (const relative of ['../pages/admin/config/index.vue', ...readdirSync(new URL('../components/admin/config/', import.meta.url)).filter(name => name.endsWith('.vue')).map(name => `../components/admin/config/${name}`)]) {
     test(relative, () => {
       const source = readFileSync(new URL(relative, import.meta.url), 'utf8')
       const { descriptor, errors } = parse(source)

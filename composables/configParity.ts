@@ -7,6 +7,8 @@ export type ConfigField = {
   min?: number
   max?: number
   placeholder?: string
+  // Allowed values for `choice` fields.
+  options?: Array<{ value: string; label: string }>
 }
 export type ConfigSection = { id: string; title: string; description: string; fields: ConfigField[] }
 

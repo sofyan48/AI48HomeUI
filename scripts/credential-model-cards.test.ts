@@ -48,12 +48,12 @@ describe('credential model cards', () => {
   })
 
   test('Models tab renders one card loop keyed by exposed ID and one heading', () => {
-    const source = readFileSync(new URL('../components/admin/UpstreamAccounts.vue', import.meta.url), 'utf8')
-    const section = source.split(`detailsTab === 'Models'`)[1].split(`detailsTab === 'Recovery'`)[0]
+    const source = readFileSync(new URL('../composables/upstream-accounts/useAccountModels.js', import.meta.url), 'utf8')
+    const section = readFileSync(new URL('../components/admin/upstream-accounts/models/DetailsModelsTab.vue', import.meta.url), 'utf8')
     expect(section.match(/<h3 /g)?.length).toBe(1)
     expect(section).toContain('v-for="model in scopedModelCards" :key="model.id"')
-        expect(section.match(/v-for="model in /g)?.length).toBe(1)
-        expect(section).toContain('v-model="modelScope"')
+    expect(section.match(/v-for="model in /g)?.length).toBe(1)
+    expect(section).toContain('v-model="modelScope"')
     expect(section).not.toContain('v-for="model in credentialModels"')
     expect(section).not.toContain('v-for="model in modelStates.credential.models')
     expect(source).toContain('credentialModelCards(credentialModels.value, modelStates.value?.credential?.models || [])')

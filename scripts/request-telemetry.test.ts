@@ -1,6 +1,9 @@
 import { describe, expect, test } from 'bun:test'
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
 import { compileScript, parse } from '@vue/compiler-sfc'
+import { dateRangeError } from '../composables/dateRange'
+import { adminMessages } from '../locales/admin'
+import consoleEn from '../locales/en'
 import { clampRequestColumnWidth, estimateRequestColumnWidths, normalizeRequestColumnWidths, readTelemetryChoice, requestCacheRate, requestCostRows, requestRanges, requestSorts, saveTelemetryChoice, toolUsageEntries, usageRanges, requestPageSizes, normalizeRequestPageSize, normalizeRequestColumnVisibility, visibleRequestColumns, readRequestPreference, saveRequestPreference } from '../composables/requestTelemetry'
 
 describe('request telemetry preferences', () => {
@@ -106,14 +109,16 @@ describe('request telemetry display', () => {
 
 describe('Nuxt telemetry integration', () => {
   test('updated components compile with their real templates', () => {
-    for (const file of ['components/admin/RequestRecords.vue', 'components/admin/RequestRecordDetail.vue', 'pages/admin/usage.vue']) {
+    const usageComponents = readdirSync(new URL('../components/admin/usage/', import.meta.url), { recursive: true }).filter(file => String(file).endsWith('.vue')).map(file => `components/admin/usage/${file}`)
+    expect(usageComponents).toHaveLength(13)
+    for (const file of ['pages/admin/usage/index.vue', ...usageComponents]) {
       const { descriptor, errors } = parse(readFileSync(new URL(`../${file}`, import.meta.url), 'utf8'))
       expect(errors).toEqual([])
       expect(() => compileScript(descriptor, { id: file, inlineTemplate: true })).not.toThrow()
     }
   })
   test('page-size changes reset pagination and pending live records, persist only supported sizes and refresh once', async () => {
-    const source = readFileSync(new URL('../components/admin/RequestRecords.vue', import.meta.url), 'utf8')
+    const source = readFileSync(new URL('../components/admin/usage/RequestRecords.vue', import.meta.url), 'utf8')
     const body = source.split('async function changePageSize(value) {')[1]!.split('\nasync function changePage(delta)')[0]!
     const pageSize = { value: 50 }, page = { value: 4 }, pendingNewEvents = { value: 12 }
     let refreshes = 0
@@ -133,13 +138,78 @@ describe('Nuxt telemetry integration', () => {
     expect(source).toContain('columnDefinitions.filter(column => visibleColumnKeys.value.includes(column.accessorKey))')
     expect(source).toContain('onUpdateChecked: checked => setColumnVisible')
   })
+  test('usage filter validation returns before changing applied filters, pagination or requests', async () => {
+    const source = readFileSync(new URL('../composables/usage/useUsagePage.ts', import.meta.url), 'utf8')
+    const body = source.split('  const applyFilters = async () => {')[1]!.split('\n  const refreshAll =')[0]!.trim()
+    const filters = { value: { from: '2026-11-16', to: '2026-11-15', provider: 'draft' } }
+    const appliedFilters = { value: { from: '', to: '', provider: 'applied' } }
+    const rangePreset = { value: 'custom' }, appliedPreset = { value: '7d' }
+    const credentialPage = { value: 3 }, page = { value: 4 }, errorMessage = { value: '' }
+    let refreshes = 0
+    const apply = new Function('dateRangeError', 'filters', 'errorMessage', 'format', 'appliedFilters', 'appliedPreset', 'rangePreset', 'credentialPage', 'page', 'refreshAll', `return async () => {${body}`)(dateRangeError, filters, errorMessage, { dateErrorText: (error: string) => `translated: ${error}` }, appliedFilters, appliedPreset, rangePreset, credentialPage, page, async () => { refreshes++ })
+    const previous = appliedFilters.value
+    await apply()
+    expect(errorMessage.value).toBe(`translated: ${dateRangeError(filters.value.from, filters.value.to)}`)
+    expect(appliedFilters.value).toBe(previous)
+    expect(appliedPreset.value).toBe('7d')
+    expect(credentialPage.value).toBe(3)
+    expect(page.value).toBe(4)
+    expect(refreshes).toBe(0)
+    for (const invalid of ['', '2026-02-30', '202']) {
+      filters.value.from = invalid
+      filters.value.to = '202'
+      await apply()
+      expect(appliedFilters.value).toBe(previous)
+      expect(refreshes).toBe(0)
+    }
+    filters.value.from = '2026-11-15'
+    filters.value.to = '2026-11-16'
+    await apply()
+    expect(appliedFilters.value).toEqual(filters.value)
+    expect(appliedFilters.value).not.toBe(filters.value)
+    expect(appliedPreset.value).toBe('custom')
+    expect(credentialPage.value).toBe(1)
+    expect(page.value).toBe(1)
+    expect(refreshes).toBe(1)
+  })
+  test('usage owns shared state and refresh lifecycle once at page scope', () => {
+    const read = (file: string) => readFileSync(new URL(`../${file}`, import.meta.url), 'utf8')
+    const route = read('pages/admin/usage/index.vue')
+    const page = read('composables/usage/useUsagePage.ts')
+    expect(route.match(/provideUsagePage\(\)/g)).toHaveLength(1)
+    expect(route).not.toContain('useWorkspaceState(')
+    expect(page).toContain("useDataSync('admin:usage:sync', () => refreshAll())")
+    expect(page).toContain('onScopeDispose(() => { scope.disposed = true; invalidateAll(); scope.controller.abort() })')
+    expect(page).toContain('scope.controller.abort(); scope.controller = new AbortController()')
+    expect(page).toContain("!['yesterday', 'custom'].includes(appliedPreset.value)")
+    expect(page).toContain('!detail.detailOpen.value && !ranking.rankingOpen.value')
+    expect(page).toContain('!automatic || credentialPage.value === 1')
+    for (const file of readdirSync(new URL('../components/admin/usage/', import.meta.url), { recursive: true }).filter(file => String(file).includes('/') && String(file).endsWith('.vue'))) {
+      const component = read(`components/admin/usage/${file}`)
+      expect(component).toContain('useUsagePage()')
+      expect(component).not.toContain('provideUsagePage()')
+      expect(component).not.toContain('useWorkspaceState(')
+      expect(component.split('\n').length).toBeLessThan(500)
+    }
+    for (const file of readdirSync(new URL('../composables/usage/', import.meta.url)).filter(file => file.endsWith('.ts'))) {
+      const source = read(`composables/usage/${file}`)
+      expect(source.split('\n').length).toBeLessThan(500)
+      const keys = [...source.matchAll(/\bt\(\s*['"]([\w.-]+)['"]/g)].map(match => match[1]!)
+      expect(keys.filter(key => !(key in adminMessages.en) && !(key in consoleEn))).toEqual([])
+    }
+    const dates = read('components/admin/usage/overview/UsageFilters.vue')
+    expect(dates).toContain('v-model="filters.from" type="date" :max="filters.to"')
+    expect(dates).toContain('v-model="filters.to" type="date" :min="filters.from"')
+    expect(dates).toContain('@submit.prevent="applyFilters"')
+    expect(route.split('\n').length).toBeLessThan(100)
+  })
   test('keeps resize cleanup, keyboard auto-fit and saved usage initialization wired', () => {
-    const requests = readFileSync(new URL('../components/admin/RequestRecords.vue', import.meta.url), 'utf8')
+    const requests = readFileSync(new URL('../components/admin/usage/RequestRecords.vue', import.meta.url), 'utf8')
     expect(requests).toContain('stopColumnResize(); disposed = true')
     expect(requests).toContain('@dblclick.stop.prevent="autoFitColumn')
     expect(requests).toContain('@keydown="resizeColumnWithKeyboard')
     expect(requests).toContain('requestCostRows(rowValue(row).billing)')
-    const usage = readFileSync(new URL('../pages/admin/usage.vue', import.meta.url), 'utf8')
+    const usage = readFileSync(new URL('../composables/usage/useUsageFilters.ts', import.meta.url), 'utf8')
     expect(usage).toContain('...datesForRange(rangePreset.value)')
     expect(usage).toContain('const appliedPreset = ref(rangePreset.value)')
   })

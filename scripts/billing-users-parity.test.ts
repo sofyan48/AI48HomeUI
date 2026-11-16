@@ -63,7 +63,7 @@ describe('billing policy and catalog preferences', () => {
   })
 })
 
-for (const file of ['pages/admin/billing.vue', 'components/admin/BillingPriceImport.vue', 'pages/admin/users.vue']) {
+for (const file of ['pages/admin/billing/index.vue', 'components/admin/billing/BillingPriceImport.vue', 'pages/admin/users/index.vue', 'components/admin/users/UsersKeyFormDialog.vue']) {
   test(`${file} compiles as a Vue SFC`, () => {
     const source = readFileSync(new URL(`../${file}`, import.meta.url), 'utf8')
     const { descriptor, errors } = parse(source, { filename: file })
@@ -71,14 +71,16 @@ for (const file of ['pages/admin/billing.vue', 'components/admin/BillingPriceImp
     const script = compileScript(descriptor, { id: file })
     const template = compileTemplate({ source: descriptor.template!.content, filename: file, id: file, compilerOptions: { bindingMetadata: script.bindings } })
     expect(template.errors).toEqual([])
-    if (file.endsWith('users.vue')) {
+    if (file.endsWith('UsersKeyFormDialog.vue')) {
       expect(source).toContain('changedUsersKeyBindings(editingKey.value, bindings)')
       expect(source).toContain('if (!Object.keys(changed).length)')
-      expect(source).toContain('...changed,')
+      expect(source).toContain('...changed')
     }
     if (file.endsWith('BillingPriceImport.vue')) {
-      expect(source).toContain('source: source.value')
-      expect(source).toContain('watch([source, targets,')
+      const logic = readFileSync(new URL('../composables/billing/useBillingPriceImport.ts', import.meta.url), 'utf8')
+      expect(source).toContain('provideBillingPriceImport(props, emit)')
+      expect(logic).toContain('source: source.value')
+      expect(logic).toContain('watch([source, targets,')
     }
   })
 }
