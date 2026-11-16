@@ -7,12 +7,12 @@
         class="user-sidebar fixed inset-y-0 left-0 z-50 flex w-64 max-w-[calc(100vw-2rem)] flex-col border-r transition-[width,transform] duration-200 motion-reduce:transition-none"
         :class="[mobileOpen ? 'translate-x-0' : '-translate-x-full', sidebarHidden ? 'lg:w-16' : 'lg:w-64', 'lg:translate-x-0']"
       >
-        <div class="flex h-16 shrink-0 items-center justify-between gap-1 border-b border-[var(--ui-border)] px-3" :class="sidebarHidden ? 'lg:justify-center lg:px-1' : ''">
-          <NuxtLink to="/app" class="user-brand flex min-w-0 items-center gap-2.5 rounded-lg" :class="sidebarHidden ? 'lg:hidden' : ''" @click="closeMobile">
+        <div class="flex h-16 shrink-0 items-center justify-between gap-1 border-b border-[var(--ui-border)] px-3" :class="sidebarHidden ? 'lg:h-auto lg:flex-col lg:justify-center lg:px-1 lg:py-3 lg:gap-2' : ''">
+          <NuxtLink to="/app" class="user-brand flex min-w-0 flex-1 items-center gap-2.5 rounded-lg" :class="sidebarHidden ? 'lg:flex-none' : ''" @click="closeMobile">
             <AppBrandMark />
-            <span class="min-w-0 leading-tight"><span class="block truncate text-[15px] font-bold tracking-tight text-[var(--ui-text-highlighted)]">AI48<span class="user-brand-accent">Hub</span></span><span class="block truncate text-[11px] text-[var(--ui-text-muted)]">{{ t('shell.userWorkspace') }}</span></span>
+            <span class="min-w-0 leading-tight" :class="sidebarHidden ? 'lg:hidden' : ''"><span class="block truncate text-[15px] font-bold tracking-tight text-[var(--ui-text-highlighted)]">AI48<span class="user-brand-accent">Hub</span></span><span class="block truncate text-[11px] text-[var(--ui-text-muted)]">{{ t('shell.userWorkspace') }}</span></span>
           </NuxtLink>
-          <NuxtLink v-if="sidebarHidden" to="/app" class="user-brand hidden shrink-0 rounded-lg lg:flex" :aria-label="t('shell.dashboardLink')"><AppBrandMark /></NuxtLink>
+          <AppButton class="hidden shrink-0 lg:inline-flex" :icon="sidebarHidden ? 'i-tabler-layout-sidebar-left-expand' : 'i-tabler-layout-sidebar-left-collapse'" color="neutral" variant="ghost" :aria-label="sidebarHidden ? t('shell.expandSidebar') : t('shell.collapseSidebar')" :title="sidebarHidden ? t('shell.expandSidebar') : t('shell.collapseSidebar')" :aria-expanded="!sidebarHidden" aria-controls="workspace-sidebar" @click="sidebarHidden = !sidebarHidden" />
           <AppButton class="lg:hidden" icon="i-tabler-x" color="neutral" variant="ghost" :aria-label="t('shell.closeNavigation')" @click="closeMobile" />
         </div>
 
@@ -34,7 +34,7 @@
           </div>
         </nav>
 
-        <div class="user-account m-2 shrink-0 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg-elevated)] p-1" :class="sidebarHidden ? 'lg:flex lg:flex-col lg:items-center' : ''">
+        <div class="user-account shrink-0 border-t border-[var(--ui-border)] px-2 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]" :class="sidebarHidden ? 'lg:flex lg:flex-col lg:items-center' : ''">
           <NuxtLink
             to="/app/profile"
             class="user-nav-link"
@@ -44,14 +44,14 @@
           >
             <span class="user-avatar" aria-hidden="true">{{ userInitial }}</span>
             <span class="min-w-0 flex-1 leading-tight" :class="sidebarHidden ? 'lg:hidden' : ''">
-              <span class="block truncate text-sm font-semibold text-[var(--ui-text-highlighted)]">{{ currentUser?.username || t('shell.profile') }}</span>
+              <span class="block truncate text-sm font-medium text-[var(--ui-text-highlighted)]">{{ currentUser?.username || t('shell.profile') }}</span>
               <span class="block truncate text-[11px] font-normal text-[var(--ui-text-muted)]">{{ t('shell.viewProfile') }}</span>
             </span>
           </NuxtLink>
-          <div class="mt-1 flex items-center gap-1 border-t border-[var(--ui-border)] pt-1" :class="sidebarHidden ? 'lg:flex-col lg:border-t-0' : ''">
+          <div class="mt-2 flex w-full items-center gap-1 border-t border-[var(--ui-border)] pt-2" :class="sidebarHidden ? 'lg:flex-col' : ''">
             <ThemeSwitcher />
             <ConsoleLanguageSwitcher />
-            <AppButton class="hidden lg:inline-flex" :icon="sidebarHidden ? 'i-tabler-layout-sidebar-left-expand' : 'i-tabler-layout-sidebar-left-collapse'" color="neutral" variant="ghost" :aria-label="sidebarHidden ? t('shell.expandSidebar') : t('shell.collapseSidebar')" :title="sidebarHidden ? t('shell.expandSidebar') : t('shell.collapseSidebar')" :aria-expanded="!sidebarHidden" aria-controls="workspace-sidebar" @click="sidebarHidden = !sidebarHidden" />
+
             <AppButton class="ml-auto" :class="sidebarHidden ? 'lg:ml-0' : ''" icon="i-tabler-logout" color="neutral" variant="ghost" :aria-label="t('shell.logout')" :title="t('shell.logout')" @click="logout" />
           </div>
         </div>
@@ -206,10 +206,10 @@ onMounted(ensureSession)
   align-items: center;
   justify-content: center;
   border-radius: 9999px;
-  background: var(--brand-gradient);
-  color: white;
+  background: var(--ui-bg-accented);
+  color: var(--ui-text-toned);
   font-size: 0.8125rem;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .user-page-icon {

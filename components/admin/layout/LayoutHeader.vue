@@ -2,17 +2,7 @@
   <header class="admin-workspace-header z-30 flex h-[4.25rem] shrink-0 items-center justify-between gap-2 px-3 sm:gap-3 sm:px-6">
     <div class="flex min-w-0 flex-1 items-center gap-2">
       <AppButton class="shrink-0 lg:hidden" icon="i-tabler-menu-2" color="neutral" variant="ghost" :aria-label="tc('shell.openNavigation')" aria-controls="management-sidebar" :aria-expanded="mobileOpen" @click="emit('openMobile')" />
-      <AppButton
-        class="hidden shrink-0 lg:inline-flex"
-        :icon="collapsed ? 'i-tabler-layout-sidebar-left-expand' : 'i-tabler-layout-sidebar-left-collapse'"
-        color="neutral"
-        variant="ghost"
-        :aria-label="collapsed ? tc('shell.expandSidebar') : tc('shell.collapseSidebar')"
-        :title="collapsed ? tc('shell.expandSidebar') : tc('shell.collapseSidebar')"
-        :aria-expanded="!collapsed"
-        aria-controls="management-sidebar"
-        @click="emit('toggleSidebar')"
-      />
+
       <span v-if="pageIcon" class="admin-page-glyph hidden sm:flex" aria-hidden="true"><UIcon :name="pageIcon" class="size-[1.125rem]" /></span>
       <div class="min-w-0 leading-tight">
         <nav :aria-label="t('shared.breadcrumb')" class="hidden items-center gap-1 text-[11px] font-medium text-[var(--ui-text-muted)] sm:flex">
@@ -60,12 +50,12 @@ defineProps<{
   subtitle: string
   section: string
   pageIcon?: string
-  collapsed: boolean
+
   mobileOpen: boolean
   syncing: boolean
   connected: boolean
 }>()
-const emit = defineEmits<{ openMobile: []; toggleSidebar: []; openCommands: []; openConnection: []; sync: [] }>()
+const emit = defineEmits<{ openMobile: []; openCommands: []; openConnection: []; sync: [] }>()
 
 const { t: tc } = useConsoleLocale()
 const { t } = useAdminI18n()

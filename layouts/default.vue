@@ -11,6 +11,7 @@
       :mobile-open="mobileOpen"
       :desktop-viewport="desktopViewport"
       @close="closeMobile"
+      @toggle-sidebar="toggleSidebar"
       @keydown="handleSidebarKeydown"
       @manage="openConnection"
       @disconnect="handleDisconnect"
@@ -22,12 +23,12 @@
           :subtitle="pageSubtitle"
           :section="currentSection"
           :page-icon="currentNavigation?.icon"
-          :collapsed="sidebarCollapsed"
+
           :mobile-open="mobileOpen"
           :syncing="syncing"
           :connected="!!token"
           @open-mobile="openMobile"
-          @toggle-sidebar="toggleSidebar"
+
           @open-commands="openCommands"
           @open-connection="openConnection"
           @sync="syncData"

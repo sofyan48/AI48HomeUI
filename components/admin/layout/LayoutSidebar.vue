@@ -10,7 +10,7 @@
     @keydown="emit('keydown', $event)"
     :class="[mobileOpen ? 'translate-x-0' : '-translate-x-full', collapsed ? 'lg:w-[4.25rem]' : 'lg:w-64']"
   >
-    <div class="flex h-16 shrink-0 items-center gap-3 px-4" :class="collapsed ? 'lg:justify-center lg:px-0' : ''">
+    <div class="flex h-16 shrink-0 items-center gap-2 px-3" :class="collapsed ? 'lg:h-auto lg:flex-col lg:justify-center lg:gap-2 lg:px-1 lg:py-3' : ''">
       <NuxtLink to="/admin/dashboard" class="admin-brand flex min-w-0 flex-1 items-center gap-3 rounded-lg" :class="collapsed ? 'lg:flex-none' : ''" title="AI48Hub" aria-label="AI48Hub" @click="emit('close')">
         <AppBrandMark />
         <div class="min-w-0 leading-tight" :class="collapsed ? 'lg:hidden' : ''">
@@ -19,6 +19,7 @@
         </div>
       </NuxtLink>
 
+      <AppButton class="hidden shrink-0 lg:inline-flex" :icon="collapsed ? 'i-tabler-layout-sidebar-left-expand' : 'i-tabler-layout-sidebar-left-collapse'" color="neutral" variant="ghost" :aria-label="collapsed ? tc('shell.expandSidebar') : tc('shell.collapseSidebar')" :title="collapsed ? tc('shell.expandSidebar') : tc('shell.collapseSidebar')" :aria-expanded="!collapsed" aria-controls="management-sidebar" @click="emit('toggleSidebar')" />
       <AppButton class="lg:hidden" icon="i-tabler-x" color="neutral" variant="ghost" :aria-label="tc('shell.closeNavigation')" @click="emit('close')" />
     </div>
 
@@ -47,7 +48,7 @@ defineProps<{
   mobileOpen: boolean
   desktopViewport: boolean
 }>()
-const emit = defineEmits<{ close: []; keydown: [event: KeyboardEvent]; manage: []; disconnect: [] }>()
+const emit = defineEmits<{ close: []; toggleSidebar: []; keydown: [event: KeyboardEvent]; manage: []; disconnect: [] }>()
 
 const { t: tc } = useConsoleLocale()
 // The layout reads this element to move focus into, and trap focus inside, the mobile drawer.
