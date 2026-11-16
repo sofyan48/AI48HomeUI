@@ -452,7 +452,7 @@
 import { useWorkspaceState } from '~/composables/useWorkspaceState'
 import { useDataSync } from '~/composables/useDataSync'
 import { parseDocument } from "yaml";
-import { configParitySections, isConfigJsonField, validateConfigParityField } from '~/composables/configParity'
+import { configParitySections, isConfigJsonField, validateConfigParityField, validateConfigPolicyJson } from '~/composables/configParity'
 import { planConfigWrites, applyConfigWrites, reconcileConfigDraft } from '~/composables/configWrites'
 
 const { fetchAPI } = useApi();
@@ -535,9 +535,10 @@ const sharedConfigSections = [
   {
     id: "session-streaming", title: "Session routing and streaming", description: "Session-sticky routing and downstream response keepalives. Unset settings retain backend defaults.",
     fields: [
-      { key: "sessionAffinity", path: ["routing", "session-affinity"], label: "Session affinity", type: "boolean", description: "Keep a session on its selected credential, with automatic failover when unavailable." },
+      { key: "sessionAffinity", path: ["routing", "session-affinity"], label: "Session affinity", type: "boolean", description: "Keep a session on its selected credential. Failover of an unavailable binding follows the rebind policy." },
       { key: "sessionAffinityTtl", path: ["routing", "session-affinity-ttl"], label: "Session affinity TTL", type: "session-duration", placeholder: "1h or 30m", description: "Session-to-credential binding duration, for example 1h or 30m. Backend default: 1h; empty uses the backend fallback." },
-      { key: "sessionAffinitySubagents", path: ["routing", "session-affinity-subagents"], label: "Subagent credential inheritance", type: "boolean", description: "Optional CPA compatibility setting for inheriting a parent session's credential. Home continues to manage its own session hierarchy." },
+      { key: "sessionAffinityRebindOn", path: ["routing", "session-affinity-rebind-on"], label: "Session rebind policy", type: "choice", options: [{ value: "any", label: "any" }, { value: "quota", label: "quota" }, { value: "never", label: "never" }], description: "any (default): any credential failure rebinds on failover. quota: transient errors fail over for that request only; quota/auth/model-support errors rebind. never: never move an established session. Executed by Home; ignored when session affinity is off." },
+      { key: "sessionAffinitySubagents", path: ["routing", "session-affinity-subagents"], label: "Subagent credential inheritance", type: "boolean", description: "Let unbound child sessions inherit the parent's credential; Guardian requests may inherit across models. Default: true. False uses normal selection and stops recording Guardian history. Upgrade every Home node first." },
       { key: "streamingKeepaliveSeconds", path: ["requests", "streaming", "keepalive-seconds"], label: "SSE keepalive interval (seconds)", type: "number", description: "SSE heartbeat interval; zero or negative values disable heartbeats." },
       { key: "streamingSendKeepaliveBeforeFt", path: ["requests", "streaming", "send-keepalive-before-ft"], label: "SSE keepalive before first token", type: "boolean", description: "Send heartbeats before the first token only when the SSE keepalive interval is greater than zero." },
       { key: "streamingBootstrapRetries", path: ["requests", "streaming", "bootstrap-retries"], label: "Streaming bootstrap retries", type: "number", description: "Retries before the first byte of a stream; zero or negative values disable retries." },
@@ -567,6 +568,13 @@ const sharedConfigSections = [
         ["Timezone", "timezone", "Timezone", "Fallback IANA timezone for cloaked currentDate; credential JSON timezone takes priority."],
       ].map(([suffix, name, label, description]) => ({ key: `claudeHeader${suffix}`, path: ["upstream", "claude", "header-defaults", name], label, description, type: "text" })),
       { key: "claudeHeaderStabilizeDeviceProfile", path: ["upstream", "claude", "header-defaults", "stabilize-device-profile"], label: "Stabilize device profile", type: "boolean", description: "Pin OS/architecture and cached profiles to the configured software baseline. Unset retains the backend fallback; explicit false disables pinning." },
+      { key: "claudeServerSideFallback", path: ["upstream", "claude", "server-side-fallback"], label: "Server-side refusal fallback", type: "boolean", description: "Inject Anthropic server-side refusal fallbacks on cloaked requests that do not specify fallbacks. Translated responses report the serving model. Default: false." },
+      { key: "claudeSessionDatePinDays", path: ["upstream", "claude", "session-date-pin-days"], label: "Session date pin (days)", type: "number", description: "Days to keep the cloaked currentDate pin per session in CPA in-memory mode. Default 7; 0 uses the continuity-scoped pin. Ignored with Home KV." },
+      { key: "claudeHeaderNativeEntrypointsJson", path: ["upstream", "claude", "header-defaults", "native-entrypoints"], label: "Native entrypoints (JSON)", type: "string-list", description: 'Extra Claude Code entrypoint labels treated as native for passthrough, e.g. ["t3-code"].' },
+      { key: "claudeHeaderAnthropicBetaStripJson", path: ["upstream", "claude", "header-defaults", "anthropic-beta-strip"], label: "Anthropic-Beta strip (JSON)", type: "string-list", description: "Beta names removed from every Claude request. Advanced; api.anthropic.com may reject unusual beta sets." },
+      { key: "claudeHeaderAnthropicBetaAppendJson", path: ["upstream", "claude", "header-defaults", "anthropic-beta-append"], label: "Anthropic-Beta append (JSON)", type: "string-list", description: "Beta names appended to every Claude request unless already present. Strip runs first." },
+      { key: "claudeHeaderInjectDiagnostics", path: ["upstream", "claude", "header-defaults", "inject-diagnostics"], label: "Inject diagnostics", type: "boolean", description: "Add the Claude Code diagnostics body field on cloaked api.anthropic.com requests. Default: true." },
+      { key: "claudeHeaderClientRequestId", path: ["upstream", "claude", "header-defaults", "client-request-id"], label: "x-client-request-id", type: "choice", options: [{ value: "on", label: "on" }, { value: "passthrough", label: "passthrough" }, { value: "off", label: "off" }], description: "on (default): synthesize a UUID per request; passthrough: forward only the caller's value; off: never send the header." },
     ],
   },
   {
@@ -578,12 +586,56 @@ const sharedConfigSections = [
       { key: "codexStreamBootstrapTimeout", path: ["upstream", "codex", "stream-bootstrap-timeout"], label: "Stream bootstrap timeout", type: "duration", description: "Optional buffering ceiling, e.g. 20s. Evaluated as upstream frames arrive; never aborts the upstream connection. Translators may still wait for generated text before committing headers. Empty, 0, 0s, none, unlimited, disabled, off or never means no time ceiling (frame/byte budgets only)." },
       { key: "codexOrphanDelegationCompatibility", path: ["upstream", "codex", "orphan-delegation-compatibility"], label: "Orphan delegation compatibility", type: "boolean", description: "Convert orphan codex_app/create_thread and send_message_to_thread outputs into user messages when X-Openai-Subagent is collab_spawn. Default: false." },
       { key: "codexModelLevelCooling", path: ["upstream", "codex", "model-level-cooling"], label: "Model-level cooling", type: "boolean", description: "Scope usage_limit_reached cooldowns to the requested model. CPA compatibility option: Home cooldown scheduling remains authoritative. Default: false." },
+      { key: "codexUpstreamRequestCompression", path: ["upstream", "codex", "upstream-request-compression"], label: "Upstream request compression", type: "boolean", description: "Compress request bodies sent to the ChatGPT Codex backend with zstd (OAuth credentials only). A 400/415 rejection is retried uncompressed once. Default: false." },
+      { key: "codexUpstreamRequestCompressionMinBytes", path: ["upstream", "codex", "upstream-request-compression-min-bytes"], label: "Compression minimum (bytes)", type: "number", description: "Request bodies smaller than this are sent uncompressed. Default: 1024." },
+      { key: "codexWebsocketCompression", path: ["upstream", "codex", "websocket-compression"], label: "WebSocket compression", type: "boolean", description: "Negotiate permessage-deflate on upstream and downstream Codex WebSocket connections. Default: true." },
     ],
   },
   {
     id: "client-codex", title: "Codex client compatibility", description: "Client-facing compatibility across OAuth and API-key routes, including non-Codex upstream protocols.",
     fields: [
       { key: "codexOptimizeMultiAgentV2", path: ["client", "codex", "optimize-multi-agent-v2"], label: "Optimize multi-agent v2", type: "boolean", description: "Refresh spawn_agent model details, remove message parameter encryption, normalize encrypted agent_message content, and translate agent_message inputs for non-Codex protocols. Default: false." },
+      { key: "codexEnableApplyPatch", path: ["client", "codex", "enable-apply-patch"], label: "Advertise freeform apply_patch", type: "boolean", description: "Also advertise freeform apply_patch on non-template and bridged models supported by every routing executor. Default: false (native models only)." },
+      { key: "codexWebSearchCacheEnabled", path: ["client", "codex", "web-search-result-cache", "enabled"], label: "Web search result cache", type: "boolean", description: "Cache upstream web search results per session so replayed web_search_call items keep their results in later turns. Default: false." },
+      { key: "codexWebSearchCacheTtl", path: ["client", "codex", "web-search-result-cache", "ttl"], label: "Web search cache TTL", type: "session-duration", placeholder: "24h", description: "Go duration such as 24h. Backend default: 24h." },
+      { key: "codexWebSearchCacheLimit", path: ["client", "codex", "web-search-result-cache", "limit"], label: "Web search cache limit", type: "number", description: "Maximum cached entries; must not be negative. Backend default: 1024." },
+    ],
+  },
+  {
+    id: "client-claude", title: "Claude client compatibility", description: "Client-facing Claude behavior executed on CPA nodes.",
+    fields: [
+      { key: "claudeShowCodexCommentary", path: ["client", "claude", "show-codex-commentary"], label: "Show Codex commentary", type: "boolean", description: "Show public Codex commentary as visible Claude text; genuine reasoning summaries remain thinking blocks. Default: false." },
+    ],
+  },
+  {
+    id: "cpa-server", title: "CPA server execution", description: "Body-size, compression, shutdown and GitHub settings executed on CPA nodes, not on the Home listener.",
+    fields: [
+      { key: "serverMaxRequestBodyBytes", path: ["server", "max-request-body-bytes"], label: "Maximum request body (bytes)", type: "number", description: "Requests above this size are rejected with HTTP 413. Default 0 (no limit)." },
+      { key: "serverResponseCompressionEnabled", path: ["server", "response-compression", "enabled"], label: "Response compression", type: "boolean", description: "Compress downstream responses (including SSE) with zstd or gzip when the client advertises it. Default: true." },
+      { key: "serverResponseCompressionMinBytes", path: ["server", "response-compression", "min-bytes"], label: "Compression minimum (bytes)", type: "number", description: "Non-streaming responses smaller than this are sent uncompressed. Default: 1024." },
+      { key: "serverShutdownTimeout", path: ["server", "shutdown-timeout"], label: "Shutdown drain (seconds)", type: "number", description: "Graceful drain budget for in-flight requests on SIGINT/SIGTERM. Default 0 closes immediately." },
+      { key: "serverGithubToken", path: ["server", "github-token"], label: "GitHub token", type: "secret", description: "Token for GitHub release and asset downloads; overrides GITHUB_TOKEN. Treat as a secret: it is distributed to trusted CPA nodes." },
+    ],
+  },
+  {
+    id: "oauth-model-settings", title: "OAuth model settings", description: "Per-channel model settings for OAuth/file credentials; API-key models are not affected. Home publishes the resulting catalog.",
+    fields: [
+      { key: "oauthSettingsJson", path: ["oauth", "settings"], label: "Model settings (JSON)", type: "oauth-settings", description: 'Map channels to entries, e.g. {"codex":[{"name":"gpt-6-sol","max-context-length":524288}]}. An optional alias targets one public route and wins over name-only entries. Channels: vertex, aistudio, antigravity, claude, codex, kimi, xai, meta.' },
+    ],
+  },
+  {
+    id: "antigravity-policies", title: "Antigravity protection and prompt rewriting", description: "OAuth Antigravity pool pause and system-instruction rewriting.",
+    fields: [
+      { key: "antigravityTosPauseWindow", path: ["oauth", "providers", "antigravity", "tos-pause-window"], label: "TOS violation pause window", type: "pause-window", placeholder: "6h", description: "Pool-wide pause after a Google 403 TOS_VIOLATION. Default 0 (disabled); set a positive duration such as 6h to enable. 0/off/false/none/disabled disables it." },
+      { key: "antigravitySensitiveWordsReplaceJson", path: ["oauth", "providers", "antigravity", "sensitive-words-replace"], label: "Sensitive word replacements (JSON)", type: "string-map", description: 'Literal target-to-replacement map applied to system instructions, e.g. {"Claude Code": "Claude"}. An empty replacement deletes the phrase.' },
+      { key: "antigravitySensitivePatternsReplaceJson", path: ["oauth", "providers", "antigravity", "sensitive-patterns-replace"], label: "Sensitive pattern replacements (JSON)", type: "pattern-rules", description: 'Ordered Go RE2 rules, e.g. [{"pattern":"(?m)^RFC 2119[^\\n]*\\n?","replacement":""}]. Patterns are validated by the backend.' },
+    ],
+  },
+  {
+    id: "devin-policies", title: "Devin prompt rewriting", description: "OAuth Devin system-prompt rewriting rules.",
+    fields: [
+      { key: "devinSensitiveWordsReplaceJson", path: ["oauth", "providers", "devin", "sensitive-words-replace"], label: "Sensitive word replacements (JSON)", type: "string-map", description: 'Literal target-to-replacement map applied to system prompts, e.g. {"Claude Code": "Devin"}.' },
+      { key: "devinSensitivePatternsReplaceJson", path: ["oauth", "providers", "devin", "sensitive-patterns-replace"], label: "Sensitive pattern replacements (JSON)", type: "pattern-rules", description: 'Ordered Go RE2 rules, e.g. [{"pattern":"(?m)^You are omp[^\\n]*\\n?","replacement":""}].' },
     ],
   },
   {
@@ -613,6 +665,7 @@ function sharedText() {
     multimediaGptImage2BaseModel: t('config.shared.multimediaGptImage2BaseModel'), multimediaVideoResultAuthCacheTtl: t('config.shared.multimediaVideoResultAuthCacheTtl'),
     "oauth-defaults.title": t('config.shared.oauth-defaults.title'), "oauth-defaults.description": t('config.shared.oauth-defaults.description'),
     oauthAuthDir: t('config.shared.oauthAuthDir'), oauthCodexHeaderUserAgent: t('config.shared.oauthCodexHeaderUserAgent'), oauthCodexHeaderBetaFeatures: t('config.shared.oauthCodexHeaderBetaFeatures'),
+    oauthCodexSigninIdentifier: t('config.shared.oauthCodexSigninIdentifier'), "oauthCodexSigninIdentifier.desc": t('config.shared.oauthCodexSigninIdentifier.desc'),
     "live-media-relay.title": t('config.shared.live-media-relay.title'), "live-media-relay.description": t('config.shared.live-media-relay.description'),
     liveMediaRelayEnabled: t('config.shared.liveMediaRelayEnabled'), liveMediaRelayDisablePrivateRemoteIps: t('config.shared.liveMediaRelayDisablePrivateRemoteIps'),
     liveMediaRelayMaxSessions: t('config.shared.liveMediaRelayMaxSessions'), liveMediaRelayUdpPortMin: t('config.shared.liveMediaRelayUdpPortMin'),
@@ -626,6 +679,7 @@ function sharedText() {
     "session-streaming.title": t('config.shared.session-streaming.title'), "session-streaming.description": t('config.shared.session-streaming.description'),
     sessionAffinity: t('config.shared.sessionAffinity'), "sessionAffinity.desc": t('config.shared.sessionAffinity.desc'),
     sessionAffinityTtl: t('config.shared.sessionAffinityTtl'), "sessionAffinityTtl.desc": t('config.shared.sessionAffinityTtl.desc'), "sessionAffinityTtl.placeholder": t('config.shared.sessionAffinityTtl.placeholder'),
+    sessionAffinityRebindOn: t('config.shared.sessionAffinityRebindOn'), "sessionAffinityRebindOn.desc": t('config.shared.sessionAffinityRebindOn.desc'),
     sessionAffinitySubagents: t('config.shared.sessionAffinitySubagents'), "sessionAffinitySubagents.desc": t('config.shared.sessionAffinitySubagents.desc'),
     streamingKeepaliveSeconds: t('config.shared.streamingKeepaliveSeconds'), "streamingKeepaliveSeconds.desc": t('config.shared.streamingKeepaliveSeconds.desc'),
     streamingSendKeepaliveBeforeFt: t('config.shared.streamingSendKeepaliveBeforeFt'), "streamingSendKeepaliveBeforeFt.desc": t('config.shared.streamingSendKeepaliveBeforeFt.desc'),
@@ -646,6 +700,13 @@ function sharedText() {
     claudeHeaderTimeout: t('config.shared.claudeHeaderTimeout'), "claudeHeaderTimeout.desc": t('config.shared.claudeHeaderTimeout.desc'),
     claudeHeaderTimezone: t('config.shared.claudeHeaderTimezone'), "claudeHeaderTimezone.desc": t('config.shared.claudeHeaderTimezone.desc'),
     claudeHeaderStabilizeDeviceProfile: t('config.shared.claudeHeaderStabilizeDeviceProfile'), "claudeHeaderStabilizeDeviceProfile.desc": t('config.shared.claudeHeaderStabilizeDeviceProfile.desc'),
+    claudeServerSideFallback: t('config.shared.claudeServerSideFallback'), "claudeServerSideFallback.desc": t('config.shared.claudeServerSideFallback.desc'),
+    claudeSessionDatePinDays: t('config.shared.claudeSessionDatePinDays'), "claudeSessionDatePinDays.desc": t('config.shared.claudeSessionDatePinDays.desc'),
+    claudeHeaderNativeEntrypointsJson: t('config.shared.claudeHeaderNativeEntrypointsJson'), "claudeHeaderNativeEntrypointsJson.desc": t('config.shared.claudeHeaderNativeEntrypointsJson.desc'),
+    claudeHeaderAnthropicBetaStripJson: t('config.shared.claudeHeaderAnthropicBetaStripJson'), "claudeHeaderAnthropicBetaStripJson.desc": t('config.shared.claudeHeaderAnthropicBetaStripJson.desc'),
+    claudeHeaderAnthropicBetaAppendJson: t('config.shared.claudeHeaderAnthropicBetaAppendJson'), "claudeHeaderAnthropicBetaAppendJson.desc": t('config.shared.claudeHeaderAnthropicBetaAppendJson.desc'),
+    claudeHeaderInjectDiagnostics: t('config.shared.claudeHeaderInjectDiagnostics'), "claudeHeaderInjectDiagnostics.desc": t('config.shared.claudeHeaderInjectDiagnostics.desc'),
+    claudeHeaderClientRequestId: t('config.shared.claudeHeaderClientRequestId'), "claudeHeaderClientRequestId.desc": t('config.shared.claudeHeaderClientRequestId.desc'),
     "upstream-codex.title": t('config.shared.upstream-codex.title'), "upstream-codex.description": t('config.shared.upstream-codex.description'),
     codexResponseSteering: t('config.shared.codexResponseSteering'), "codexResponseSteering.desc": t('config.shared.codexResponseSteering.desc'),
     codexDisableCloaking: t('config.shared.codexDisableCloaking'), "codexDisableCloaking.desc": t('config.shared.codexDisableCloaking.desc'),
@@ -653,8 +714,32 @@ function sharedText() {
     codexStreamBootstrapTimeout: t('config.shared.codexStreamBootstrapTimeout'), "codexStreamBootstrapTimeout.desc": t('config.shared.codexStreamBootstrapTimeout.desc'),
     codexOrphanDelegationCompatibility: t('config.shared.codexOrphanDelegationCompatibility'), "codexOrphanDelegationCompatibility.desc": t('config.shared.codexOrphanDelegationCompatibility.desc'),
     codexModelLevelCooling: t('config.shared.codexModelLevelCooling'), "codexModelLevelCooling.desc": t('config.shared.codexModelLevelCooling.desc'),
+    codexUpstreamRequestCompression: t('config.shared.codexUpstreamRequestCompression'), "codexUpstreamRequestCompression.desc": t('config.shared.codexUpstreamRequestCompression.desc'),
+    codexUpstreamRequestCompressionMinBytes: t('config.shared.codexUpstreamRequestCompressionMinBytes'), "codexUpstreamRequestCompressionMinBytes.desc": t('config.shared.codexUpstreamRequestCompressionMinBytes.desc'),
+    codexWebsocketCompression: t('config.shared.codexWebsocketCompression'), "codexWebsocketCompression.desc": t('config.shared.codexWebsocketCompression.desc'),
     "client-codex.title": t('config.shared.client-codex.title'), "client-codex.description": t('config.shared.client-codex.description'),
     codexOptimizeMultiAgentV2: t('config.shared.codexOptimizeMultiAgentV2'), "codexOptimizeMultiAgentV2.desc": t('config.shared.codexOptimizeMultiAgentV2.desc'),
+    codexEnableApplyPatch: t('config.shared.codexEnableApplyPatch'), "codexEnableApplyPatch.desc": t('config.shared.codexEnableApplyPatch.desc'),
+    codexWebSearchCacheEnabled: t('config.shared.codexWebSearchCacheEnabled'), "codexWebSearchCacheEnabled.desc": t('config.shared.codexWebSearchCacheEnabled.desc'),
+    codexWebSearchCacheTtl: t('config.shared.codexWebSearchCacheTtl'), "codexWebSearchCacheTtl.desc": t('config.shared.codexWebSearchCacheTtl.desc'),
+    codexWebSearchCacheLimit: t('config.shared.codexWebSearchCacheLimit'), "codexWebSearchCacheLimit.desc": t('config.shared.codexWebSearchCacheLimit.desc'),
+    "client-claude.title": t('config.shared.client-claude.title'), "client-claude.description": t('config.shared.client-claude.description'),
+    claudeShowCodexCommentary: t('config.shared.claudeShowCodexCommentary'), "claudeShowCodexCommentary.desc": t('config.shared.claudeShowCodexCommentary.desc'),
+    "cpa-server.title": t('config.shared.cpa-server.title'), "cpa-server.description": t('config.shared.cpa-server.description'),
+    serverMaxRequestBodyBytes: t('config.shared.serverMaxRequestBodyBytes'), "serverMaxRequestBodyBytes.desc": t('config.shared.serverMaxRequestBodyBytes.desc'),
+    serverResponseCompressionEnabled: t('config.shared.serverResponseCompressionEnabled'), "serverResponseCompressionEnabled.desc": t('config.shared.serverResponseCompressionEnabled.desc'),
+    serverResponseCompressionMinBytes: t('config.shared.serverResponseCompressionMinBytes'), "serverResponseCompressionMinBytes.desc": t('config.shared.serverResponseCompressionMinBytes.desc'),
+    serverShutdownTimeout: t('config.shared.serverShutdownTimeout'), "serverShutdownTimeout.desc": t('config.shared.serverShutdownTimeout.desc'),
+    serverGithubToken: t('config.shared.serverGithubToken'), "serverGithubToken.desc": t('config.shared.serverGithubToken.desc'),
+    "oauth-model-settings.title": t('config.shared.oauth-model-settings.title'), "oauth-model-settings.description": t('config.shared.oauth-model-settings.description'),
+    oauthSettingsJson: t('config.shared.oauthSettingsJson'), "oauthSettingsJson.desc": t('config.shared.oauthSettingsJson.desc'),
+    "antigravity-policies.title": t('config.shared.antigravity-policies.title'), "antigravity-policies.description": t('config.shared.antigravity-policies.description'),
+    antigravityTosPauseWindow: t('config.shared.antigravityTosPauseWindow'), "antigravityTosPauseWindow.desc": t('config.shared.antigravityTosPauseWindow.desc'),
+    antigravitySensitiveWordsReplaceJson: t('config.shared.sensitiveWordsReplaceJson'), "antigravitySensitiveWordsReplaceJson.desc": t('config.shared.antigravitySensitiveWordsReplaceJson.desc'),
+    antigravitySensitivePatternsReplaceJson: t('config.shared.sensitivePatternsReplaceJson'), "antigravitySensitivePatternsReplaceJson.desc": t('config.shared.antigravitySensitivePatternsReplaceJson.desc'),
+    "devin-policies.title": t('config.shared.devin-policies.title'), "devin-policies.description": t('config.shared.devin-policies.description'),
+    devinSensitiveWordsReplaceJson: t('config.shared.sensitiveWordsReplaceJson'), "devinSensitiveWordsReplaceJson.desc": t('config.shared.devinSensitiveWordsReplaceJson.desc'),
+    devinSensitivePatternsReplaceJson: t('config.shared.sensitivePatternsReplaceJson'), "devinSensitivePatternsReplaceJson.desc": t('config.shared.devinSensitivePatternsReplaceJson.desc'),
     "upstream-xai.title": t('config.shared.upstream-xai.title'), "upstream-xai.description": t('config.shared.upstream-xai.description'),
     xaiInjectXSearch: t('config.shared.xaiInjectXSearch'), "xaiInjectXSearch.desc": t('config.shared.xaiInjectXSearch.desc'),
   };
@@ -882,8 +967,22 @@ const validationErrors = computed(() => {
         ["match", "match-regexr"].some(key => rule[key] !== undefined && (!Array.isArray(rule[key]) || rule[key].some(item => typeof item !== "string"))) ||
         Object.hasOwn(rule, "match-regex")
       ))) errors[field.key] = t('config.validation.requestScopedRules');
+    } else if (["string-list", "string-map", "pattern-rules", "oauth-settings"].includes(field.type)) {
+      const valid = field.type === "string-list"
+        ? [parseJSON(value, null)].every(list => Array.isArray(list) && list.every(item => typeof item === "string"))
+        : validateConfigPolicyJson(field.type, value);
+      if (!valid) errors[field.key] = t(`config.validation.${field.type === "string-list" ? "stringList" : field.type === "string-map" ? "stringMap" : field.type === "pattern-rules" ? "patternRules" : "oauthSettings"}`);
     } else if (typeof value !== "string") {
       errors[field.key] = t('config.validation.string');
+    } else if (field.type === "choice") {
+      if (!field.options.some(option => option.value === value)) errors[field.key] = t('config.validation.choice');
+    } else if (field.type === "pause-window") {
+      const text = value.trim().toLowerCase();
+      if (!["", "0", "off", "false", "none", "disabled"].includes(text) && !/^\+?(?:(?:\d+(?:\.\d*)?|\.\d+)(?:ns|us|µs|μs|ms|s|m|h))+$/.test(value.trim())) {
+        errors[field.key] = t('config.validation.pauseWindow');
+      }
+    } else if (field.type === "secret") {
+      if (/[\r\n\u0000]/.test(value)) errors[field.key] = t('config.validation.header');
     } else if (field.type === "session-duration") {
       if (value.trim() !== "" && value.trim() !== "0" && !/^\+?(?:(?:\d+(?:\.\d*)?|\.\d+)(?:ns|us|µs|μs|ms|s|m|h))+$/.test(value.trim())) {
         errors[field.key] = t('config.validation.sessionDuration');
@@ -976,7 +1075,7 @@ function fieldChanged(key) {
   return String(draft.value[key]) !== String(baseline.value[key]);
 }
 function formatChangeValue(key, value) {
-  if (key === "remoteManagementSecretKey" || key === "liveMediaRelayIceServersJson") return t('config.changes.sensitive');
+  if (key === "remoteManagementSecretKey" || key === "liveMediaRelayIceServersJson" || key === "serverGithubToken") return t('config.changes.sensitive');
   if (sharedConfigFields.some(field => field.key === key)) {
     if (value === null || value === undefined) return t('config.changes.unset');
     if (value === "") return t('config.changes.emptyString');

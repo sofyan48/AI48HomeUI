@@ -191,9 +191,26 @@
                 <UFormField :label="t('upstream.providers.cloakMode')" :hint="t('upstream.providers.cloakModeHint')"><USelect v-model="cloakMode" :items="cloakModeOptions" value-key="value" label-key="label" class="w-full" /></UFormField>
                 <UCheckbox v-model="cloakStrictMode" :label="t('upstream.providers.strictMode')" />
                 <UFormField :label="t('upstream.providers.sensitiveWords')" :hint="t('upstream.providers.sensitiveWordsHint')"><UTextarea v-model="cloakSensitiveWordsText" :rows="3" class="w-full" /></UFormField>
+                <UFormField :label="t('upstream.providers.sensitiveWordsReplace')" :hint="t('upstream.providers.sensitiveWordsReplaceHint')"><UTextarea v-model="cloakSensitiveWordsReplaceText" :rows="3" class="w-full font-mono text-xs" spellcheck="false" placeholder='{"Claude Code": "Claude"}' /></UFormField>
+                <UFormField :label="t('upstream.providers.sensitivePatternsReplace')" :hint="t('upstream.providers.sensitivePatternsReplaceHint')"><UTextarea v-model="cloakSensitivePatternsReplaceText" :rows="4" class="w-full font-mono text-xs" spellcheck="false" placeholder='[{"pattern": "(?m)^You are omp[^\\n]*\\n?", "replacement": ""}]' /></UFormField>
                 <UFormField :label="t('upstream.providers.cacheUserId')"><USelect v-model="cloakCacheUserID" :items="cloakCacheOptions" value-key="value" label-key="label" class="w-full" /></UFormField>
               </div>
             </AdminModalCard>
+
+            <AdminModalCard v-if="!isCompat" as="details" class="space-y-3">
+              <summary class="cursor-pointer font-medium">{{ t('upstream.providers.connectionPool') }}</summary>
+              <div class="mt-3 space-y-3">
+                <p class="text-xs text-[var(--ui-text-muted)]">{{ t('upstream.providers.connectionPoolHelp') }}</p>
+                <UFormField :label="t('upstream.providers.connectionPoolMode')"><USelect v-model="connectionPoolMode" :items="connectionPoolOptions" value-key="value" label-key="label" class="w-full" /></UFormField>
+                <div v-if="connectionPoolMode === 'enabled'" class="grid gap-3 sm:grid-cols-2">
+                  <UFormField :label="t('upstream.providers.poolIdleTimeout')" :hint="t('upstream.providers.poolIdleTimeoutHint')"><UInput v-model="connectionPoolIdleTimeout" class="w-full" placeholder="300s" /></UFormField>
+                  <UFormField :label="t('upstream.providers.poolMaxIdle')" :hint="t('upstream.providers.poolMaxIdleHint')"><UInput v-model="connectionPoolMaxIdle" type="number" step="1" class="w-full" placeholder="2" /></UFormField>
+                </div>
+              </div>
+            </AdminModalCard>
+            <div v-if="selectedProviderRoute === 'vertex-api-key'" class="space-y-1">
+              <UFormField :label="t('upstream.providers.vertexInteractions')" :hint="t('upstream.providers.vertexInteractionsHint')"><USelect v-model="vertexInteractions" :items="triStateOptions" value-key="value" label-key="label" class="w-full" /></UFormField>
+            </div>
 
             <AdminModalCard as="details" class="space-y-3">
               <summary class="cursor-pointer font-medium">{{ t('upstream.providers.customModels') }}</summary>
@@ -230,6 +247,9 @@
                     </UFormField>
                     <UCheckbox v-if="supportsContextLimit" v-model="model['is-compat']" :label="t('upstream.providers.retainThinking')" />
                     <UCheckbox v-if="selectedProviderRoute === 'codex-api-key'" v-model="model['support-configuration-update']" :label="t('upstream.providers.configurationUpdate')" />
+                    <UFormField v-if="selectedProviderRoute === 'vertex-api-key'" :label="t('upstream.providers.vertexOpenapi')" :hint="t('upstream.providers.vertexOpenapiHint')">
+                      <USelect :model-value="model.openapi == null ? 'inherit' : model.openapi ? 'true' : 'false'" :items="triStateOptions" value-key="value" label-key="label" class="w-full" @update:model-value="model.openapi = $event === 'inherit' ? undefined : $event === 'true'" />
+                    </UFormField>
                     <UCheckbox :model-value="model.thinking != null" :label="t('upstream.providers.overrideThinking')" @update:model-value="model.thinking = $event ? (model.thinking || {}) : undefined" />
                     <div v-if="model.thinking != null" class="grid gap-3 sm:grid-cols-2">
                       <UFormField :label="t('upstream.providers.minBudget')"><UInput v-model="model.thinking.min" type="number" min="0" step="1" class="w-full" /></UFormField>
@@ -364,7 +384,16 @@ const automaticTestModel = '__auto__'
 const cloakMode = ref(unsetCloakMode)
 const cloakStrictMode = ref(false)
 const cloakSensitiveWordsText = ref('')
+const cloakSensitiveWordsReplaceText = ref('')
+const cloakSensitivePatternsReplaceText = ref('')
 const cloakCacheUserID = ref('inherit')
+// Per-key connection pool override: inherit keeps the group policy, enabled writes a pool block, disabled writes enabled: false.
+const connectionPoolMode = ref('inherit')
+const connectionPoolIdleTimeout = ref('')
+const connectionPoolMaxIdle = ref('')
+const connectionPoolOptions = computed(() => [{ label: t('upstream.providers.poolInherit'), value: 'inherit' }, { label: t('upstream.providers.poolEnabled'), value: 'enabled' }, { label: t('upstream.providers.poolDisabled'), value: 'disabled' }])
+const vertexInteractions = ref('inherit')
+const triStateOptions = computed(() => [{ label: t('upstream.providers.triInherit'), value: 'inherit' }, { label: t('upstream.providers.triTrue'), value: 'true' }, { label: t('upstream.providers.triFalse'), value: 'false' }])
 const cloakModeOptions = computed(() => [{ label: t('upstream.providers.cloakNotSet'), value: unsetCloakMode }, { label: t('upstream.providers.cloakAuto'), value: 'auto' }, { label: t('upstream.providers.cloakAlways'), value: 'always' }, { label: t('upstream.providers.cloakNever'), value: 'never' }])
 const cloakCacheOptions = computed(() => [{ label: t('upstream.providers.cacheDefault'), value: 'inherit' }, { label: t('upstream.providers.cachePerKey'), value: 'enabled' }, { label: t('upstream.providers.cachePerRequest'), value: 'disabled' }])
 const requestRetryText = ref('')
@@ -450,6 +479,9 @@ const providerOptions = computed(() => providerCategories.map(item => ({ label: 
 
 const v8GroupFields = ['name', 'base-url', 'priority', 'disabled', 'prefix', 'proxy-url', 'headers', 'models', 'excluded-models', 'disable-cooling', 'request-retry', 'request-scoped-errors', 'support-prompt-cache-key']
 const v8NativeKeyFields = ['id', 'uuid', 'api-key', 'weight', 'priority', 'prefix', 'proxy-url', 'headers', 'models', 'excluded-models', 'disable-cooling', 'request-retry', 'request-scoped-errors', 'websockets', 'alpha-search', 'disable-codex-cloaking', 'cloak', 'experimental-cch-signing', 'rebuild-mid-system-message', 'fingerprint-profile', 'native-tool-search']
+// Key-only overrides edited explicitly. Flattened entries merge group values, so these are
+// written from `__set:<field>` markers instead of copied, keeping inherited group policies intact.
+const v8KeyOverrideFields = ['connection-pool', 'interactions']
 
 function cloneValue(value) {
   return value == null ? value : JSON.parse(JSON.stringify(value))
@@ -518,6 +550,12 @@ function v8GroupsFromEntries(entries, category = selectedProvider.value) {
       group.keys = groupEntries.map((entry) => {
         const key = cloneValue(entry.__v8Key) || {}
         copyFields(key, entry, v8NativeKeyFields)
+        for (const field of v8KeyOverrideFields) {
+          if (!Object.hasOwn(entry, `__set:${field}`)) continue
+          const override = entry[`__set:${field}`]
+          if (override == null) delete key[field]
+          else key[field] = cloneValue(override)
+        }
         return key
       })
       return group
@@ -840,7 +878,16 @@ function loadGuidedEntry(entry) {
   cloakMode.value = cloak?.mode || unsetCloakMode
   cloakStrictMode.value = cloak?.['strict-mode'] === true
   cloakSensitiveWordsText.value = Array.isArray(cloak?.['sensitive-words']) ? cloak['sensitive-words'].join('\n') : ''
+  cloakSensitiveWordsReplaceText.value = cloak?.['sensitive-words-replace'] && typeof cloak['sensitive-words-replace'] === 'object' && Object.keys(cloak['sensitive-words-replace']).length ? JSON.stringify(cloak['sensitive-words-replace'], null, 2) : ''
+  cloakSensitivePatternsReplaceText.value = Array.isArray(cloak?.['sensitive-patterns-replace']) && cloak['sensitive-patterns-replace'].length ? JSON.stringify(cloak['sensitive-patterns-replace'], null, 2) : ''
   cloakCacheUserID.value = cloak?.['cache-user-id'] == null ? 'inherit' : cloak['cache-user-id'] ? 'enabled' : 'disabled'
+  // Only the key-level override is edited here; group pools stay untouched and are inherited.
+  const pool = entry.__v8Group ? entry.__v8Key?.['connection-pool'] : entry['connection-pool']
+  connectionPoolMode.value = pool == null || typeof pool !== 'object' ? 'inherit' : pool.enabled === false ? 'disabled' : 'enabled'
+  connectionPoolIdleTimeout.value = pool?.['idle-conn-timeout'] == null ? '' : String(pool['idle-conn-timeout'])
+  connectionPoolMaxIdle.value = pool?.['max-idle-conns-per-host'] == null ? '' : String(pool['max-idle-conns-per-host'])
+  const interactions = entry.__v8Group ? entry.__v8Key?.interactions : entry.interactions
+  vertexInteractions.value = interactions == null ? 'inherit' : interactions ? 'true' : 'false'
 
 }
 
@@ -917,9 +964,39 @@ function guidedEntry() {
     if (!name && header.value.trim()) { editorError.value = t('upstream.providers.headerNameRequired'); return null }
     if (name) value.headers[name] = header.value
   }
+  if (!isCompat.value) {
+    if (connectionPoolMode.value === 'inherit') value['connection-pool'] = undefined
+    else if (connectionPoolMode.value === 'disabled') value['connection-pool'] = { enabled: false }
+    else {
+      const pool = { enabled: true }
+      const idle = connectionPoolIdleTimeout.value.trim()
+      if (idle) {
+        if (!/^-?(?:(?:\d+(?:\.\d*)?|\.\d+)(?:ns|us|µs|μs|ms|s|m|h))+$|^0$/.test(idle)) { editorError.value = t('upstream.providers.poolIdleTimeoutInvalid'); return null }
+        pool['idle-conn-timeout'] = idle
+      }
+      const maxIdle = String(connectionPoolMaxIdle.value ?? '').trim()
+      if (maxIdle) {
+        if (!/^-?\d+$/.test(maxIdle) || !Number.isSafeInteger(Number(maxIdle))) { editorError.value = t('upstream.providers.poolMaxIdleInvalid'); return null }
+        pool['max-idle-conns-per-host'] = Number(maxIdle)
+      }
+      value['connection-pool'] = pool
+    }
+  }
+  if (selectedProviderRoute.value === 'vertex-api-key') value.interactions = vertexInteractions.value === 'inherit' ? undefined : vertexInteractions.value === 'true'
+  else delete value.interactions
   if (selectedProviderRoute.value === 'claude-api-key') {
     const selectedCloakMode = cloakMode.value === unsetCloakMode ? '' : cloakMode.value
-    if (selectedCloakMode || cloakStrictMode.value || cloakCacheUserID.value !== 'inherit' || cloakSensitiveWordsText.value.trim()) {
+    let wordsReplace = null
+    let patternsReplace = null
+    try {
+      wordsReplace = cloakSensitiveWordsReplaceText.value.trim() ? JSON.parse(cloakSensitiveWordsReplaceText.value) : null
+      if (wordsReplace !== null && (typeof wordsReplace !== 'object' || Array.isArray(wordsReplace) || Object.values(wordsReplace).some(item => typeof item !== 'string'))) throw new Error()
+    } catch { editorError.value = t('upstream.providers.sensitiveWordsReplaceInvalid'); return null }
+    try {
+      patternsReplace = cloakSensitivePatternsReplaceText.value.trim() ? JSON.parse(cloakSensitivePatternsReplaceText.value) : null
+      if (patternsReplace !== null && (!Array.isArray(patternsReplace) || patternsReplace.some(rule => !rule || typeof rule !== 'object' || Array.isArray(rule) || typeof rule.pattern !== 'string' || !rule.pattern.trim() || (rule.replacement != null && typeof rule.replacement !== 'string')))) throw new Error()
+    } catch { editorError.value = t('upstream.providers.sensitivePatternsReplaceInvalid'); return null }
+    if (selectedCloakMode || cloakStrictMode.value || cloakCacheUserID.value !== 'inherit' || cloakSensitiveWordsText.value.trim() || wordsReplace || patternsReplace) {
       if (!cloakModeOptions.value.some(option => option.value === cloakMode.value)) {
         editorError.value = t('upstream.providers.cloakModeInvalid')
         return null
@@ -929,9 +1006,13 @@ function guidedEntry() {
       if (cloakCacheUserID.value === 'inherit') delete value.cloak['cache-user-id']
       if (selectedCloakMode) value.cloak.mode = selectedCloakMode
       else delete value.cloak.mode
+      if (wordsReplace && Object.keys(wordsReplace).length) value.cloak['sensitive-words-replace'] = wordsReplace
+      else delete value.cloak['sensitive-words-replace']
+      if (patternsReplace && patternsReplace.length) value.cloak['sensitive-patterns-replace'] = patternsReplace
+      else delete value.cloak['sensitive-patterns-replace']
     } else {
       const remaining = { ...value.cloak }
-      for (const field of ['mode', 'strict-mode', 'sensitive-words', 'cache-user-id']) delete remaining[field]
+      for (const field of ['mode', 'strict-mode', 'sensitive-words', 'sensitive-words-replace', 'sensitive-patterns-replace', 'cache-user-id']) delete remaining[field]
       if (Object.keys(remaining).length) value.cloak = remaining
       else delete value.cloak
     }
@@ -1007,6 +1088,9 @@ function guidedEntry() {
     if (value['api-key-entries']) payload['api-key-entries'] = value['api-key-entries']
   } else if (value['api-key']) payload['api-key'] = value['api-key']
   if (selectedProviderRoute.value === 'claude-api-key' && value.cloak) payload.cloak = value.cloak
+  for (const field of v8KeyOverrideFields) delete payload[field]
+  if (!isCompat.value) payload['__set:connection-pool'] = value['connection-pool'] ?? null
+  if (selectedProviderRoute.value === 'vertex-api-key') payload['__set:interactions'] = value.interactions ?? null
   return payload
 }
 
