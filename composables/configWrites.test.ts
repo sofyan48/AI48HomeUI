@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import { applyConfigWrites, planConfigWrites, reconcileConfigDraft } from './configWrites'
-import { configParitySections, validateConfigParityField } from './configParity'
+import { configParitySections, emptyConfigJson, validateConfigParityField, validateConfigPolicyJson } from './configParity'
 import { parseDocument } from 'yaml'
 import { readFileSync, readdirSync } from 'node:fs'
 import { buildDraft, configWriteValue, v8YamlPaths } from './config/draft'
@@ -47,6 +47,23 @@ describe('config parity', () => {
     expect(validate('antigravityConnPoolIdleTimeout', '1m30s')).toBeUndefined()
     expect(validate('antigravityConnPoolIdleTimeout', 'never')).toBeDefined()
     expect(validate('oauthCodexHeaderUserAgent', 'agent\r\nInjected: true')).toBeDefined()
+  })
+
+  test('validates replacement maps, pattern rules and OAuth model settings', () => {
+    expect(validateConfigPolicyJson('string-map', '{"Claude Code":"Claude","drop":""}')).toBe(true)
+    expect(validateConfigPolicyJson('string-map', '{"a":1}')).toBe(false)
+    expect(validateConfigPolicyJson('string-map', '[]')).toBe(false)
+    expect(validateConfigPolicyJson('pattern-rules', '[{"pattern":"(?m)^x","replacement":""},{"pattern":"y"}]')).toBe(true)
+    expect(validateConfigPolicyJson('pattern-rules', '[{"pattern":""}]')).toBe(false)
+    expect(validateConfigPolicyJson('pattern-rules', '[{"pattern":"(unclosed","replacement":""}]')).toBe(false)
+    expect(validateConfigPolicyJson('pattern-rules', JSON.stringify([{ pattern: '(?s)<system[-_](conventions|directive)>.*?</system[-_](conventions|directive)>\\n?', replacement: '' }]))).toBe(true)
+    expect(validateConfigPolicyJson('pattern-rules', JSON.stringify([{ pattern: '(?m)^RFC 2119[^\\n]*\\n?', replacement: '' }]))).toBe(true)
+    expect(validateConfigPolicyJson('pattern-rules', '{"pattern":"x"}')).toBe(false)
+    expect(validateConfigPolicyJson('oauth-settings', '{"codex":[{"name":"gpt","alias":"g","max-context-length":524288}]}')).toBe(true)
+    expect(validateConfigPolicyJson('oauth-settings', '{"codex":[{"name":"gpt","max-context-length":0}]}')).toBe(false)
+    expect(validateConfigPolicyJson('oauth-settings', '{"codex":{"name":"gpt"}}')).toBe(false)
+    expect(emptyConfigJson('string-map')).toBe('{}')
+    expect(emptyConfigJson('pattern-rules')).toBe('[]')
   })
 })
 

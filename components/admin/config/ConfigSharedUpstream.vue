@@ -34,7 +34,7 @@
               :disabled="loading"
               :aria-label="t('config.shared.source', { label: field.label })"
               class="w-full sm:w-48"
-              @update:model-value="updateField(field.key, $event === 'default' ? null : field.type === 'number' ? 0 : isConfigJsonField(field.type) ? (field.type === 'json' ? '{}' : '[]') : field.type === 'image-mode' ? false : '')"
+              @update:model-value="updateField(field.key, $event === 'default' ? null : field.type === 'number' ? 0 : isConfigJsonField(field.type) ? emptyConfigJson(field.type) : field.type === 'image-mode' ? false : field.type === 'choice' ? field.options?.[0]?.value ?? '' : '')"
             />
             <UTextarea
               v-if="isConfigJsonField(field.type) && draft[field.key] != null"
@@ -55,12 +55,22 @@
               class="min-w-0 flex-1"
               @update:model-value="updateField(field.key, $event === 'true' ? true : $event === 'false' ? false : $event)"
             />
+            <USelect
+              v-else-if="field.type === 'choice' && draft[field.key] != null"
+              :model-value="String(draft[field.key])"
+              :items="field.options || []"
+              :disabled="loading"
+              :aria-label="field.label"
+              class="min-w-0 flex-1"
+              @update:model-value="updateField(field.key, String($event ?? ''))"
+            />
             <UInput
               v-else-if="draft[field.key] != null"
               :model-value="String(draft[field.key])"
               :disabled="loading"
               :aria-label="field.label"
-              :type="field.type === 'number' ? 'number' : 'text'"
+              :type="field.type === 'number' ? 'number' : field.type === 'secret' ? 'password' : 'text'"
+              :autocomplete="field.type === 'secret' ? 'new-password' : undefined"
               :step="field.type === 'number' ? 1 : undefined"
               :placeholder="field.placeholder || (field.type === 'duration' ? t('config.shared.durationPlaceholder') : t('config.shared.explicitPlaceholder'))"
               class="min-w-0 flex-1"
@@ -74,7 +84,7 @@
 </template>
 
 <script setup lang="ts">
-import { isConfigJsonField } from '~/composables/configParity'
+import { emptyConfigJson, isConfigJsonField } from '~/composables/configParity'
 
 const { t } = useAdminI18n()
 const imageOptions = computed(() => [
@@ -95,6 +105,7 @@ type SharedSection = {
     description: string
     type: string
     placeholder?: string
+    options?: Array<{ label: string; value: string }>
   }>
 }
 

@@ -1,5 +1,5 @@
 import { computed, type Ref } from 'vue'
-import { configParitySections, validateConfigParityField, type ConfigField } from '~/composables/configParity'
+import { configParitySections, validateConfigParityField, validateConfigPolicyJson, type ConfigField } from '~/composables/configParity'
 import { sharedConfigFields } from './schema'
 import { parseJSON } from './draft'
 import type { ConfigDraft, ConfigTranslator } from './types'
@@ -99,8 +99,22 @@ const validationErrors = computed(() => {
         ["match", "match-regexr"].some(key => rule[key] !== undefined && (!Array.isArray(rule[key]) || rule[key].some(item => typeof item !== "string"))) ||
         Object.hasOwn(rule, "match-regex")
       ))) errors[field.key] = t('config.validation.requestScopedRules');
+    } else if (["string-list", "string-map", "pattern-rules", "oauth-settings"].includes(field.type)) {
+      const valid = field.type === "string-list"
+        ? [parseJSON(value, null)].every(list => Array.isArray(list) && list.every(item => typeof item === "string"))
+        : validateConfigPolicyJson(field.type, value);
+      if (!valid) errors[field.key] = policyJsonErrorText(field.type);
     } else if (typeof value !== "string") {
       errors[field.key] = t('config.validation.string');
+    } else if (field.type === "choice") {
+      if (!(field as any).options?.some((option: { value: string }) => option.value === value)) errors[field.key] = t('config.validation.choice');
+    } else if (field.type === "pause-window") {
+      const text = value.trim().toLowerCase();
+      if (!["", "0", "off", "false", "none", "disabled"].includes(text) && !/^\+?(?:(?:\d+(?:\.\d*)?|\.\d+)(?:ns|us|µs|μs|ms|s|m|h))+$/.test(value.trim())) {
+        errors[field.key] = t('config.validation.pauseWindow');
+      }
+    } else if (field.type === "secret") {
+      if (/[\r\n\u0000]/.test(value)) errors[field.key] = t('config.validation.header');
     } else if (field.type === "session-duration") {
       if (value.trim() !== "" && value.trim() !== "0" && !/^\+?(?:(?:\d+(?:\.\d*)?|\.\d+)(?:ns|us|µs|μs|ms|s|m|h))+$/.test(value.trim())) {
         errors[field.key] = t('config.validation.sessionDuration');
@@ -119,6 +133,13 @@ const validationErrors = computed(() => {
   }
   return errors;
 });
+// Literal keys keep the i18n key check able to see every message.
+function policyJsonErrorText(type: string) {
+  if (type === "string-list") return t('config.validation.stringList');
+  if (type === "string-map") return t('config.validation.stringMap');
+  if (type === "pattern-rules") return t('config.validation.patternRules');
+  return t('config.validation.oauthSettings');
+}
 // configParity.ts returns English messages (asserted by tests); show the translation for the failing field type.
 function parityErrorText(field: ConfigField) {
   if (field.type === "image-mode") return t('config.validation.imageMode');

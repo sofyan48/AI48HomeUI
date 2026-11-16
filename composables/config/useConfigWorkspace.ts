@@ -65,7 +65,7 @@ function fieldChanged(key: string) {
   return String(draft.value[key]) !== String(baseline.value[key]);
 }
 function formatChangeValue(key: string, value: unknown) {
-  if (key === "remoteManagementSecretKey" || key === "liveMediaRelayIceServersJson") return t('config.changes.sensitive');
+  if (key === "remoteManagementSecretKey" || key === "liveMediaRelayIceServersJson" || key === "serverGithubToken") return t('config.changes.sensitive');
   if (sharedConfigFields.some(field => field.key === key)) {
     if (value === null || value === undefined) return t('config.changes.unset');
     if (value === "") return t('config.changes.emptyString');
