@@ -93,6 +93,33 @@ export const emptyConfigJson = (type: string) => ['json', 'string-map', 'oauth-s
 
 const isPlainObject = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value)
 
+// Best-effort RE2 syntax check. Home stores invalid patterns and CPA drops them silently,
+// so catch obvious breakage (unbalanced groups, bad quantifiers) before saving.
+// Leading RE2 flag groups such as (?m) or (?s) are translated to JS flags first.
+export function isLikelyValidRegex(pattern: string): boolean {
+  let source = pattern
+  let flags = 'u'
+  const leading = /^\(\?([imsU]+)\)/.exec(source)
+  if (leading) {
+    flags += leading[1]!.replace(/U/g, '')
+    source = source.slice(leading[0].length)
+  }
+  // Inline flag groups elsewhere are valid RE2 but unsupported in JS; strip them for the check.
+  source = source.replace(/\(\?[imsU-]+(:)?/g, (_, colon) => colon ? '(?:' : '')
+  try {
+    new RegExp(source, [...new Set(flags)].join(''))
+    return true
+  } catch {
+    // Unicode-mode JS rejects some escapes RE2 accepts; retry without it before failing.
+    try {
+      new RegExp(source, [...new Set(flags.replace('u', ''))].join(''))
+      return true
+    } catch {
+      return false
+    }
+  }
+}
+
 // Validates JSON-backed replacement and model-setting fields; returns true when the value is well formed.
 export function validateConfigPolicyJson(type: string, value: unknown): boolean {
   let parsed: unknown
@@ -103,7 +130,7 @@ export function validateConfigPolicyJson(type: string, value: unknown): boolean 
   }
   if (type === 'string-map') return isPlainObject(parsed) && Object.values(parsed).every(item => typeof item === 'string')
   if (type === 'pattern-rules') {
-    return Array.isArray(parsed) && parsed.every(rule => isPlainObject(rule) && typeof rule.pattern === 'string' && rule.pattern.trim() !== '' &&
+    return Array.isArray(parsed) && parsed.every(rule => isPlainObject(rule) && typeof rule.pattern === 'string' && rule.pattern.trim() !== '' && isLikelyValidRegex(rule.pattern) &&
       (rule.replacement === undefined || typeof rule.replacement === 'string'))
   }
   if (type === 'oauth-settings') {

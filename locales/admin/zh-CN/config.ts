@@ -426,7 +426,7 @@ export default {
   'config.shared.sensitiveWordsReplaceJson': "敏感词替换（JSON）",
   'config.shared.sensitivePatternsReplaceJson': "敏感模式替换（JSON）",
   'config.shared.antigravitySensitiveWordsReplaceJson.desc': "应用于系统指令的字面目标到替换映射，例如 {\"Claude Code\": \"Claude\"}。替换为空则删除该短语。",
-  'config.shared.antigravitySensitivePatternsReplaceJson.desc': "有序的 Go RE2 规则，例如 [{\"pattern\":\"(?m)^RFC 2119[^\\\\n]*\\\\n?\",\"replacement\":\"\"}]。模式由后端校验。",
+  'config.shared.antigravitySensitivePatternsReplaceJson.desc': "有序的 Go RE2 规则，例如 [{\"pattern\":\"(?m)^RFC 2119[^\\\\n]*\\\\n?\",\"replacement\":\"\"}]。无效的正则表达式仍会保存，但会被 CPA 静默丢弃；保存前请检查。",
   'config.shared.devin-policies.title': "Devin 提示词改写",
   'config.shared.devin-policies.description': "Devin OAuth 系统提示词改写规则。",
   'config.shared.devinSensitiveWordsReplaceJson.desc': "应用于系统提示词的字面目标到替换映射，例如 {\"Claude Code\": \"Devin\"}。",

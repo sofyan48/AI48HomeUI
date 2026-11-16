@@ -322,6 +322,7 @@
 <script setup>
 import { useWorkspaceState } from '~/composables/useWorkspaceState'
 import { useStoreData } from '~/composables/useStoreData'
+import { isLikelyValidRegex } from '~/composables/configParity'
 const props = defineProps({ syncRequest: { type: Number, default: 0 } })
 const emit = defineEmits(['changed'])
 const { fetchAPI } = useApi()
@@ -555,6 +556,8 @@ function v8GroupsFromEntries(entries, category = selectedProvider.value) {
           const override = entry[`__set:${field}`]
           if (override == null) delete key[field]
           else key[field] = cloneValue(override)
+          // A single-key group's value is this key's value, so the editor owns it; shared groups stay intact.
+          if (groupEntries.length === 1) delete group[field]
         }
         return key
       })
@@ -881,12 +884,13 @@ function loadGuidedEntry(entry) {
   cloakSensitiveWordsReplaceText.value = cloak?.['sensitive-words-replace'] && typeof cloak['sensitive-words-replace'] === 'object' && Object.keys(cloak['sensitive-words-replace']).length ? JSON.stringify(cloak['sensitive-words-replace'], null, 2) : ''
   cloakSensitivePatternsReplaceText.value = Array.isArray(cloak?.['sensitive-patterns-replace']) && cloak['sensitive-patterns-replace'].length ? JSON.stringify(cloak['sensitive-patterns-replace'], null, 2) : ''
   cloakCacheUserID.value = cloak?.['cache-user-id'] == null ? 'inherit' : cloak['cache-user-id'] ? 'enabled' : 'disabled'
-  // Only the key-level override is edited here; group pools stay untouched and are inherited.
-  const pool = entry.__v8Group ? entry.__v8Key?.['connection-pool'] : entry['connection-pool']
+  // Home normalizes saved groups to one key each and lifts these options onto the group,
+  // so show the key value first, then the group value that applies to this key.
+  const pool = entry.__v8Key?.['connection-pool'] ?? entry.__v8Group?.['connection-pool'] ?? entry['connection-pool']
   connectionPoolMode.value = pool == null || typeof pool !== 'object' ? 'inherit' : pool.enabled === false ? 'disabled' : 'enabled'
   connectionPoolIdleTimeout.value = pool?.['idle-conn-timeout'] == null ? '' : String(pool['idle-conn-timeout'])
   connectionPoolMaxIdle.value = pool?.['max-idle-conns-per-host'] == null ? '' : String(pool['max-idle-conns-per-host'])
-  const interactions = entry.__v8Group ? entry.__v8Key?.interactions : entry.interactions
+  const interactions = entry.__v8Key?.interactions ?? entry.__v8Group?.interactions ?? entry.interactions
   vertexInteractions.value = interactions == null ? 'inherit' : interactions ? 'true' : 'false'
 
 }
@@ -994,7 +998,7 @@ function guidedEntry() {
     } catch { editorError.value = t('upstream.providers.sensitiveWordsReplaceInvalid'); return null }
     try {
       patternsReplace = cloakSensitivePatternsReplaceText.value.trim() ? JSON.parse(cloakSensitivePatternsReplaceText.value) : null
-      if (patternsReplace !== null && (!Array.isArray(patternsReplace) || patternsReplace.some(rule => !rule || typeof rule !== 'object' || Array.isArray(rule) || typeof rule.pattern !== 'string' || !rule.pattern.trim() || (rule.replacement != null && typeof rule.replacement !== 'string')))) throw new Error()
+      if (patternsReplace !== null && (!Array.isArray(patternsReplace) || patternsReplace.some(rule => !rule || typeof rule !== 'object' || Array.isArray(rule) || typeof rule.pattern !== 'string' || !rule.pattern.trim() || !isLikelyValidRegex(rule.pattern) || (rule.replacement != null && typeof rule.replacement !== 'string')))) throw new Error()
     } catch { editorError.value = t('upstream.providers.sensitivePatternsReplaceInvalid'); return null }
     if (selectedCloakMode || cloakStrictMode.value || cloakCacheUserID.value !== 'inherit' || cloakSensitiveWordsText.value.trim() || wordsReplace || patternsReplace) {
       if (!cloakModeOptions.value.some(option => option.value === cloakMode.value)) {

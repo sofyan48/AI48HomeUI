@@ -628,7 +628,7 @@ const sharedConfigSections = [
     fields: [
       { key: "antigravityTosPauseWindow", path: ["oauth", "providers", "antigravity", "tos-pause-window"], label: "TOS violation pause window", type: "pause-window", placeholder: "6h", description: "Pool-wide pause after a Google 403 TOS_VIOLATION. Default 0 (disabled); set a positive duration such as 6h to enable. 0/off/false/none/disabled disables it." },
       { key: "antigravitySensitiveWordsReplaceJson", path: ["oauth", "providers", "antigravity", "sensitive-words-replace"], label: "Sensitive word replacements (JSON)", type: "string-map", description: 'Literal target-to-replacement map applied to system instructions, e.g. {"Claude Code": "Claude"}. An empty replacement deletes the phrase.' },
-      { key: "antigravitySensitivePatternsReplaceJson", path: ["oauth", "providers", "antigravity", "sensitive-patterns-replace"], label: "Sensitive pattern replacements (JSON)", type: "pattern-rules", description: 'Ordered Go RE2 rules, e.g. [{"pattern":"(?m)^RFC 2119[^\\n]*\\n?","replacement":""}]. Patterns are validated by the backend.' },
+      { key: "antigravitySensitivePatternsReplaceJson", path: ["oauth", "providers", "antigravity", "sensitive-patterns-replace"], label: "Sensitive pattern replacements (JSON)", type: "pattern-rules", description: 'Ordered Go RE2 rules, e.g. [{"pattern":"(?m)^RFC 2119[^\\n]*\\n?","replacement":""}]. Invalid regexes are saved but silently dropped by CPA; check them before saving.' },
     ],
   },
   {

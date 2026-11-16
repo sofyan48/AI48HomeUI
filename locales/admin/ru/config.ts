@@ -426,7 +426,7 @@ export default {
   'config.shared.sensitiveWordsReplaceJson': "Замена чувствительных слов (JSON)",
   'config.shared.sensitivePatternsReplaceJson': "Замена чувствительных шаблонов (JSON)",
   'config.shared.antigravitySensitiveWordsReplaceJson.desc': "Буквальное сопоставление цель–замена для системных инструкций, например {\"Claude Code\": \"Claude\"}. Пустая замена удаляет фразу.",
-  'config.shared.antigravitySensitivePatternsReplaceJson.desc': "Упорядоченные правила Go RE2, например [{\"pattern\":\"(?m)^RFC 2119[^\\\\n]*\\\\n?\",\"replacement\":\"\"}]. Шаблоны проверяются сервером.",
+  'config.shared.antigravitySensitivePatternsReplaceJson.desc': "Упорядоченные правила Go RE2, например [{\"pattern\":\"(?m)^RFC 2119[^\\\\n]*\\\\n?\",\"replacement\":\"\"}]. Некорректные регулярные выражения сохраняются, но молча отбрасываются CPA; проверьте их перед сохранением.",
   'config.shared.devin-policies.title': "Переписывание промптов Devin",
   'config.shared.devin-policies.description': "Правила переписывания системных промптов Devin OAuth.",
   'config.shared.devinSensitiveWordsReplaceJson.desc': "Буквальное сопоставление цель–замена для системных промптов, например {\"Claude Code\": \"Devin\"}.",
