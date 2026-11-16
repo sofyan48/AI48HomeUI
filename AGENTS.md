@@ -27,7 +27,8 @@ bun run build:embedded      # Generate and package the embedded SPA into dist/
 
 - `package.json` also supports running scripts through npm, but keep dependency changes consistent with `bun.lock`.
 - The development script sets `TMPDIR=/tmp`; preserve this unless intentionally changing the development workflow.
-- There are currently no `test`, `lint`, or `typecheck` scripts in `package.json`.
+- `bun run test` runs the Bun test suite in `scripts/*.test.ts` and `**/*.test.ts` (unit, i18n key, SFC compile, and file-size checks). It is fast; prefer it over a full build for quick verification.
+- There are currently no `lint` or `typecheck` scripts in `package.json`.
 - README mentions `node scripts/test-state.mjs`, but that file is not currently present. Do not treat it as an available test command.
 - For application changes, use `bun run build` as the normal build verification. For embedded packaging changes, also use `bun run build:embedded`.
 - A successful build is not proof of TypeScript type-checking or browser behavior. Report the validation actually performed.
@@ -43,7 +44,9 @@ bun run build:embedded      # Generate and package the embedded SPA into dist/
 - `pages/app/`: user workspace and public account flows, including login, registration, password recovery, email verification, model catalog, API keys, balance, profile, and settings.
 - `layouts/default.vue`: admin shell, navigation, connection state, capabilities, and synchronization controls.
 - `layouts/app.vue`: user shell, public/authenticated route handling, navigation, and session integration.
-- `components/App*.vue`: shared application primitives for buttons, cards, tables, panels, modals, and synchronization.
+- `components/App*.vue`: shared base components for buttons, cards, tables, panels, modals (`AppFormModal`, `AppConfirmModal`), empty states, summary rows, and synchronization.
+- Each large page has its own folders: `components/admin/<page>/` for sections/dialogs and `composables/<page>/` for state and helpers (e.g. `pages/admin/users.vue` → `components/admin/users/` + `composables/users/`). Do not add a global `utils/` folder.
+- Keep source files under 500 lines; `scripts/file-size.test.ts` enforces this with a shrink-only allowlist for legacy files. Follow the split pattern in `CONTRIBUTING.md` (reference: `pages/admin/users.vue`).
 - `components/admin/`: admin-specific components, including configuration and user-management subdirectories.
 - `components/app/`: user-specific components.
 - `composables/`: API wrappers, capability access, workspace refs, asynchronous data loading, synchronization, and upstream quota helpers.

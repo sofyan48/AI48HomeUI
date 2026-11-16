@@ -5,8 +5,7 @@
   </div>
 </template>
 
-<script>
-export default {
-  props: ['label', 'value', 'warning']
-}
+<script setup lang="ts">
+/** Base label/value line for review and confirmation summaries. */
+defineProps<{ label: string; value?: string | number | null; warning?: boolean }>()
 </script>

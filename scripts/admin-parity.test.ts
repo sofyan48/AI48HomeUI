@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
 import { compileScript, compileTemplate, parse } from '@vue/compiler-sfc'
 import { normalizeTopologyConfig } from '../composables/systemTopologyConfig'
 import { pluginInstallTrust } from '../composables/pluginInstallTrust'
@@ -29,7 +29,7 @@ describe('plugin install trust and payloads', () => {
     const plugin = { id: 'spoofed-plugin', repository: 'https://github.com/router-for-me/plugin', source_id: 'custom', source_url: 'https://untrusted.example/registry.json', install_type: 'direct' }
     const trust = pluginInstallTrust(plugin)
     expect(trust).toEqual({ confirmation: 'spoofed-plugin' })
-    const script = source('pages/admin/plugins.vue')
+    const script = source('composables/plugins/usePluginActions.js')
     const expression = script.slice(script.indexOf('const canConfirmAction ='), script.indexOf('const confirmationTitle ='))
     const canConfirm = (kind: string, text: string, confirmation = trust.confirmation) => new Function('computed', 'confirmation', 'installTrust', 'typedConfirmation', `${expression}; return canConfirmAction`)((fn: () => boolean) => fn(), { value: { kind, plugin } }, { value: { confirmation } }, { value: text })
     expect(canConfirm('install', '')).toBe(false)
@@ -41,12 +41,18 @@ describe('plugin install trust and payloads', () => {
     expect(canConfirm('auth', '')).toBe(true)
     expect(script).not.toContain('installTrust.official')
     expect(script).not.toContain('installTrust.value.official')
+    const dialog = source('components/admin/plugins/PluginsConfirmation.vue')
+    expect(dialog).toContain('@submit.prevent="performConfirmedAction"')
+    expect(dialog).toContain(':disabled="!canConfirmAction"')
+    expect(dialog).toContain('v-model="typedConfirmation"')
+    expect(script).toContain('if (confirmationBusy.value || !canConfirmAction.value) return;')
+    expect(script).toContain("installVersion.value.trim()")
     expect(source('locales/admin/plugins.ts')).toContain('Registry and repository labels do not verify the provenance')
   })
   test('sends entered version or an empty latest-release body, retaining source selector', async () => {
-    const script = source('pages/admin/plugins.vue')
+    const script = source('composables/plugins/usePluginActions.js')
     const calls: any[] = []
-    const functions = script.slice(script.indexOf('async function performInstall('), script.indexOf('function assignAuth('))
+    const functions = script.slice(script.indexOf('async function performInstall('), script.indexOf('return { configOpen'))
     const { performInstall, performUninstall } = new Function('fetchAPI', 'busyPlugin', 'operation', 'toast', 'refreshAll', 'message', 't', `${functions}; return { performInstall, performUninstall }`)(async (...args: any[]) => { calls.push(args); return { status: 'installed' } }, { value: '' }, { value: null }, { add() {} }, async () => {}, String, (key: string) => key)
     const plugin = { id: 'a/b', version: 'registry-version', source_id: 'third-party' }
     await performInstall(plugin, 'v1.2.3')
@@ -57,6 +63,34 @@ describe('plugin install trust and payloads', () => {
     expect(calls[2]).toEqual(['/plugins/store/a%2Fb/uninstall', { method: 'POST' }])
     expect(script).not.toMatch(/\bconfirm\(/)
   })
+})
+
+test('plugins feature state retains a single page-scoped owner and polling lifecycle', () => {
+  const workspace = source('composables/plugins/usePluginsWorkspace.ts')
+  const page = source('pages/admin/plugins.vue')
+  expect(page.match(/providePluginsWorkspace\(\)/g)).toHaveLength(1)
+  for (const feature of ['usePluginsData', 'usePluginReports', 'usePluginAuth', 'usePluginActions', 'usePluginCatalog']) {
+    expect(workspace.match(new RegExp(`${feature}\\(`, 'g'))).toHaveLength(1)
+  }
+  const files = readdirSync(new URL('../composables/plugins/', import.meta.url)).map(path => source(`composables/plugins/${path}`)).join('\n')
+  const keys = [...files.matchAll(/useWorkspaceState\('(admin:plugins:[^']+)'/g)].map(match => match[1])
+  expect(keys.sort()).toEqual(['pageError', 'operation', 'busyPlugin', 'savingAuth', 'nodesResponse', 'nodesError', 'nodesLoading', 'pollExpired'].map(key => `admin:plugins:${key}`).sort())
+  expect(files).toContain("useStoreData('admin:plugins:management-plugins', loadAll)")
+  const reports = source('composables/plugins/usePluginReports.js')
+  expect(reports).toContain("useDataSync('admin:plugins:sync', () => loadNodes(pollGeneration))")
+  expect(reports).toContain('const pollDuration = 60000;')
+  expect(reports).toContain('const pollInterval = 5000;')
+  expect(reports).toContain('if (generation !== pollGeneration || document.hidden) return;')
+  expect(reports).toContain('onUnmounted(() => {\n    pollGeneration++;\n    clearTimeout(pollTimer);\n    document.removeEventListener("visibilitychange", onVisibilityChange);')
+  for (const path of pluginComponents) {
+    const component = source(path)
+    expect(component).toContain('usePluginsWorkspace()')
+    expect(component).not.toContain('useWorkspaceState(')
+    expect(component).not.toContain('providePluginsWorkspace(')
+  }
+  for (const path of ['pages/admin/plugins.vue', ...pluginComponents, ...readdirSync(new URL('../composables/plugins/', import.meta.url)).map(path => `composables/plugins/${path}`)]) {
+    expect(source(path).split('\n').length).toBeLessThan(500)
+  }
 })
 
 test('Meta discovery uses official default and never enables Meta WebSockets', () => {
@@ -70,7 +104,9 @@ test('Meta discovery uses official default and never enables Meta WebSockets', (
   expect(source('locales/admin/upstream.ts')).toContain('Signing is automatic on supported direct upstreams')
 })
 
-for (const path of ['pages/admin/plugins.vue', 'components/admin/UpstreamProviders.vue', 'components/admin/SystemTopology.vue']) {
+const pluginComponents = readdirSync(new URL('../components/admin/plugins/', import.meta.url)).filter(path => path.endsWith('.vue')).map(path => `components/admin/plugins/${path}`)
+
+for (const path of ['pages/admin/plugins.vue', ...pluginComponents, 'components/admin/UpstreamProviders.vue', 'components/admin/SystemTopology.vue']) {
   test(`${path} compiles as a Vue SFC`, () => {
     const { descriptor, errors } = parse(source(path), { filename: path })
     expect(errors).toEqual([])

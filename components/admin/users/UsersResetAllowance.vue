@@ -1,18 +1,21 @@
 <template>
-  <AppModal v-model:open="open" :dismissible="!saving" :title="`${t('users.resetAllowance')} · ${user?.username || t('common.user')}`">
-    <template #body>
-      <form class="space-y-4" @submit.prevent="submit">
+  <AppFormModal
+    v-model:open="open"
+    :title="`${t('users.resetAllowance')} · ${user?.username || t('common.user')}`"
+    :error="error"
+    :submit-label="t('users.saveAllowance')"
+    :loading="saving"
+    :submit-disabled="saving"
+    :locked="saving"
+    @submit="submit"
+  >
         <p class="text-sm text-[var(--ui-text-muted)]">{{ t('users.resetAllowanceIntro') }}</p>
-        <UAlert v-if="error" color="error" variant="subtle" :description="error" />
         <UFormField :label="t('users.mode')"><USelect v-model="mode" :items="modes" value-key="value" label-key="label" :disabled="saving" class="w-full" /></UFormField>
         <UFormField :label="mode === 'monthly' ? t('users.resetsPerMonth') : t('users.numberOfResets')"><UInput v-model="amount" type="number" min="0" step="1" :disabled="saving" class="w-full" /></UFormField>
         <UFormField v-if="mode === 'one_time'" :label="t('users.expiresAtOptional')" :description="t('users.localTimezoneHint')"><UInput v-model="expiresAt" type="datetime-local" :disabled="saving" class="w-full" /></UFormField>
         <p class="text-xs text-[var(--ui-text-muted)]">{{ mode === 'monthly' ? t('users.monthlyRenewHint') : t('users.oneTimeHint') }}</p>
         <UAlert color="warning" variant="subtle" :description="t('users.allowanceReplaceWarning')" />
-        <div class="flex justify-end gap-2"><AppButton type="button" color="neutral" variant="outline" :disabled="saving" @click="open = false">{{ t('common.cancel') }}</AppButton><AppButton type="submit" :loading="saving" :disabled="saving">{{ t('users.saveAllowance') }}</AppButton></div>
-      </form>
-    </template>
-  </AppModal>
+  </AppFormModal>
 </template>
 
 <script setup lang="ts">
