@@ -21,3 +21,18 @@
   --color-input: var(--ui-border-accented);
   --color-ring: var(--ring, var(--ui-primary));
 }
+
+/* Grouped controls: the group is the visible control, the inner field stays transparent.
+   Workspace-wide input rules (background, radius, min-height, hover, focus outline) must not
+   paint a second box inside the group, so they are reset here regardless of cascade layer. */
+[data-slot="input-group"] > [data-slot="input-group-control"] {
+  min-height: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+[data-slot="input-group"] {
+  background-color: var(--admin-control-bg, transparent);
+}

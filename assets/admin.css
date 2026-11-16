@@ -192,6 +192,12 @@
   :is(input, textarea, select, [role="combobox"]) {
     background-color: var(--admin-control-bg);
   }
+  /* Grouped inputs: size and round the group, not its inner field. */
+  [data-slot="input-group"] {
+    min-height: var(--admin-control-height);
+    border-radius: var(--admin-control-radius);
+    transition: border-color 120ms ease, background-color 120ms ease, box-shadow 120ms ease;
+  }
   textarea { border-radius: var(--admin-control-radius); }
 
   :is(button, a, input, textarea, select, [tabindex]):focus-visible {
@@ -201,7 +207,8 @@
 
   /* Nuxt outline controls use inset rings rather than borders. */
   @media (hover: hover) {
-    :is(input, textarea, select, [role="combobox"], [data-slot="base"].ring-inset):hover:not(:disabled, [data-disabled], [aria-disabled="true"], [readonly]) {
+    [data-slot="input-group"]:hover:not([data-disabled]) { border-color: var(--admin-hover-border); }
+    :is(input:not([data-slot="input-group-control"]), textarea, select, [role="combobox"], [data-slot="base"].ring-inset):hover:not(:disabled, [data-disabled], [aria-disabled="true"], [readonly]) {
       border-color: var(--admin-hover-border);
       --tw-ring-color: var(--admin-hover-border);
       background-color: var(--ui-hover);
