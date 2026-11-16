@@ -87,6 +87,7 @@ const publicPaths = new Set(['/app/login', '/app/register', '/app/forgot-passwor
 const workspaceNavigation = computed(() => [
   { label: t('shell.nav.dashboard'), to: '/app', icon: 'i-tabler-layout-dashboard' },
   { label: t('shell.nav.balance'), to: '/app/balance', icon: 'i-tabler-wallet' },
+  { label: t('shell.nav.playground'), to: '/app/playground', icon: 'i-tabler-message-chatbot' },
   { label: t('shell.nav.models'), to: '/app/models', icon: 'i-tabler-box-multiple' },
   { label: t('shell.nav.apiKeys'), to: '/app/api-keys', icon: 'i-tabler-key' },
   ...(capabilities.value.request_logs === true ? [{ label: t('shell.nav.logs'), to: '/app/logs', icon: 'i-tabler-list-details' }] : []),
@@ -94,14 +95,15 @@ const workspaceNavigation = computed(() => [
 ])
 const navigationGroups = computed(() => [
   { key: 'overview', label: t('shell.group.overview'), items: workspaceNavigation.value.filter(item => ['/app', '/app/balance'].includes(item.to)) },
+  { key: 'playground', label: t('shell.group.playground'), items: workspaceNavigation.value.filter(item => item.to === '/app/playground') },
   { key: 'build', label: t('shell.group.build'), items: workspaceNavigation.value.filter(item => ['/app/models', '/app/api-keys', '/app/logs'].includes(item.to)) },
   { key: 'account', label: t('shell.group.account'), items: workspaceNavigation.value.filter(item => item.to === '/app/settings') }
 ].filter(group => group.items.length))
 const currentNavigation = computed(() => [...workspaceNavigation.value, { label: t('shell.profile'), to: '/app/profile', icon: 'i-tabler-user-circle' }].find(item => isActive(item.to)))
 const userInitial = computed(() => (currentUser.value?.username || '?').trim().charAt(0).toUpperCase() || '?')
-const workspaceRoute = computed(() => ['/app', '/app/balance', '/app/api-keys', '/app/settings', '/app/profile', '/app/logs'].includes(route.path) || (route.path === '/app/models' && Boolean(token.value)))
-const pageTitles = computed<Record<string, string>>(() => ({ '/app/logs': t('shell.nav.logs'), '/app': t('shell.nav.dashboard'), '/app/balance': t('shell.nav.balance'), '/app/models': t('shell.nav.models'), '/app/api-keys': t('shell.nav.apiKeys'), '/app/settings': t('shell.nav.settings'), '/app/profile': t('shell.profile') }))
-const workspaceSubtitles = computed<Record<string, string>>(() => ({ '/app/logs': t('shell.sub.logs'), '/app': t('shell.sub.dashboard'), '/app/balance': t('shell.sub.balance'), '/app/models': t('shell.sub.models'), '/app/api-keys': t('shell.sub.apiKeys'), '/app/profile': t('shell.sub.profile') }))
+const workspaceRoute = computed(() => ['/app', '/app/balance', '/app/playground', '/app/api-keys', '/app/settings', '/app/profile', '/app/logs'].includes(route.path) || (route.path === '/app/models' && Boolean(token.value)))
+const pageTitles = computed<Record<string, string>>(() => ({ '/app/playground': t('shell.nav.playground'), '/app/logs': t('shell.nav.logs'), '/app': t('shell.nav.dashboard'), '/app/balance': t('shell.nav.balance'), '/app/models': t('shell.nav.models'), '/app/api-keys': t('shell.nav.apiKeys'), '/app/settings': t('shell.nav.settings'), '/app/profile': t('shell.profile') }))
+const workspaceSubtitles = computed<Record<string, string>>(() => ({ '/app/playground': t('shell.sub.playground'), '/app/logs': t('shell.sub.logs'), '/app': t('shell.sub.dashboard'), '/app/balance': t('shell.sub.balance'), '/app/models': t('shell.sub.models'), '/app/api-keys': t('shell.sub.apiKeys'), '/app/profile': t('shell.sub.profile') }))
 const accessSubtitles = computed<Record<string, string>>(() => ({ '/app/login': t('shell.access.login'), '/app/register': t('shell.access.register'), '/app/models': t('shell.access.models'), '/app/forgot-password': t('shell.access.forgot'), '/app/reset-password': t('shell.access.reset'), '/app/verify-email': t('shell.access.verify') }))
 const pageTitle = computed(() => pageTitles.value[route.path] || t('shell.userWorkspace'))
 const pageSubtitle = computed(() => workspaceRoute.value
