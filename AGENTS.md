@@ -1,6 +1,6 @@
 # AGENTS.md
 
-CPAHomeUI is the browser-based admin and user interface for CLIProxyAPIHome (Home), the database-backed control plane for CLIProxyAPI (CPA). It can run separately during development or be generated as a static bundle embedded into Home.
+CPAHomeUI is the browser-based admin and user interface for AI48Home (Home), the database-backed control plane for CLIProxyAPI (CPA). It can run separately during development or be generated as a static bundle embedded into Home.
 
 ## Stack And Repository
 
@@ -10,7 +10,7 @@ CPAHomeUI is the browser-based admin and user interface for CLIProxyAPIHome (Hom
 - Pinia 3 with `@pinia/nuxt` for application state.
 - `bun.lock` is the checked-in dependency lockfile. Prefer Bun for dependency installation and scripts; do not introduce another lockfile unless explicitly requested.
 - `go.mod` exists, but this repository's application and build workflow are JavaScript/TypeScript, not a Go service.
-- Related backend: `../CLIProxyAPIHome` when both repositories are checked out next to each other.
+- Related backend: `../AI48Home` when both repositories are checked out next to each other.
 
 ## Commands
 
@@ -108,14 +108,14 @@ Keep the root-level source layout used by this repository; do not move it into a
 
 - `bun run build:embedded` clears `NUXT_PUBLIC_API_URL`, runs static generation, then invokes `scripts/build-embedded.mjs`.
 - The packaging script recreates `dist/`, copies hashed Nuxt assets and fonts, and rewrites `/_nuxt/`, `/_fonts/`, and favicon URLs to `/assets/` paths.
-- The output includes `dist/index.html`, `dist/management.html`, `dist/user.html`, and `dist/assets/`.
-- Home embeds these files through `internal/managementasset`. Admin entry points are `/management.html` and `/admin/*`; user entry points are `/user.html` and `/app/*`.
+- The output includes `dist/index.html`, `dist/management.html`, `dist/user.html`, and `dist/assets/`. These HTML filenames are internal embedded build artifacts, not the recommended browser entry points.
+- Home embeds these files through `internal/managementasset`. Admin entry points are `/admin` and `/admin/*`; user entry points are `/app` and `/app/*`. Use `/admin/connect` for administrator connection and `/app/login` for user login.
 - With sibling repositories, the integration command is:
 
 ```bash
-make -C ../CLIProxyAPIHome panel-assets-local PANEL_SOURCE_DIR=../CPAHomeUI
+make -C ../AI48Home panel-assets-local PANEL_SOURCE_DIR=../AI48HomeUI
 ```
 
-- This command copies build artifacts into the backend repository; run it only when the task requires updating embedded Home assets.
 - Preserve SPA deep-link support and same-origin API behavior. Do not replace embedded entry points with development-only URLs.
 - Do not hand-edit or commit generated `dist/`, `.nuxt/`, `.output/`, or dependency files under `node_modules/`; change the source or packaging script instead.
+- Home ini adalah merupakan pengembangan lebih jauh dari Home Management Center (https://github.com/router-for-me/Home-Management-Center) jika ada perubahan baru di repositories tersebut segera terapkan perubahan dengan cara design saat ini ada

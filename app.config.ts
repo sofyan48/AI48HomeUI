@@ -1,15 +1,15 @@
 export default defineAppConfig({
   ui: {
     colors: {
-      primary: "sky",
-      neutral: "slate",
+      primary: "violet",
+      neutral: "zinc",
     },
     card: {
       slots: {
-        root: "rounded-2xl overflow-hidden bg-white/40 dark:bg-neutral-900/40 backdrop-blur-xl border border-white/40 dark:border-white/10 shadow-[0_8px_32px_0_rgba(14,165,233,0.1)] dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] ring-0",
-        header: "px-4 py-3 sm:px-5 border-b border-white/20 dark:border-white/5",
+        root: "rounded-2xl overflow-hidden bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 shadow-[0_1px_2px_rgba(24,24,27,0.04),0_8px_24px_-12px_rgba(24,24,27,0.10)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.3)] ring-0",
+        header: "px-4 py-3.5 sm:px-5 border-b border-zinc-100 dark:border-zinc-800",
         body: "p-4 sm:p-5",
-        footer: "px-4 py-3 sm:px-5 border-t border-white/20 dark:border-white/5",
+        footer: "px-4 py-3 sm:px-5 border-t border-zinc-100 dark:border-zinc-800",
       },
     },
     formField: {

@@ -1,68 +1,68 @@
 <template>
   <div class="logs-workspace min-w-0 space-y-5">
 
-    <UAlert v-if="unsupported" color="warning" variant="subtle" title="Request logs unavailable" description="This server does not support user request logs." />
-    <UAlert v-else-if="error" color="error" variant="subtle" title="Could not load request logs" :description="errorMessage" />
+    <UAlert v-if="unsupported" color="warning" variant="subtle" :title="t('logs.unsupportedTitle')" :description="t('logs.unsupportedDescription')" />
+    <UAlert v-else-if="error" color="error" variant="subtle" :title="t('logs.loadError')" :description="errorMessage" />
     <AppCard class="logs-panel">
       <template #header>
         <div class="flex flex-wrap items-center justify-between gap-3">
-          <h2 class="flex items-center gap-2 text-sm font-semibold"><UIcon name="i-tabler-adjustments-horizontal" class="size-4 text-[var(--ui-text-muted)]" aria-hidden="true" /> Filter requests</h2>
-          <AppButton icon="i-tabler-refresh" color="neutral" variant="outline" size="sm" :loading="pending" @click="refresh">Refresh</AppButton>
+          <h2 class="flex items-center gap-2 text-sm font-semibold"><UIcon name="i-tabler-adjustments-horizontal" class="size-4 text-[var(--ui-text-muted)]" aria-hidden="true" /> {{ t('logs.filterTitle') }}</h2>
+          <AppButton icon="i-tabler-refresh" color="neutral" variant="outline" size="sm" :loading="pending" @click="refresh">{{ t('common.refresh') }}</AppButton>
         </div>
       </template>
       <form class="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]" @submit.prevent="applyFilters">
-        <UFormField label="From" class="min-w-0"><UInput v-model="filters.from" type="datetime-local" class="w-full" :disabled="pending || unsupported" /></UFormField>
-        <UFormField label="Until" hint="Exclusive end time" class="min-w-0"><UInput v-model="filters.to" type="datetime-local" class="w-full" :disabled="pending || unsupported" /></UFormField>
-        <UFormField label="Request ID" class="min-w-0"><UInput v-model="filters.request_id" icon="i-tabler-search" placeholder="Exact request ID" class="w-full" :disabled="pending || unsupported" /></UFormField>
+        <UFormField :label="t('logs.from')" class="min-w-0"><UInput v-model="filters.from" type="datetime-local" class="w-full" :disabled="pending || unsupported" /></UFormField>
+        <UFormField :label="t('logs.until')" :hint="t('logs.untilHint')" class="min-w-0"><UInput v-model="filters.to" type="datetime-local" class="w-full" :disabled="pending || unsupported" /></UFormField>
+        <UFormField :label="t('logs.requestId')" class="min-w-0"><UInput v-model="filters.request_id" icon="i-tabler-search" :placeholder="t('logs.requestIdPlaceholder')" class="w-full" :disabled="pending || unsupported" /></UFormField>
         <div class="flex items-end gap-2">
-          <AppButton type="submit" icon="i-tabler-filter" :disabled="pending || unsupported">Apply</AppButton>
-          <AppButton type="button" color="neutral" variant="outline" :disabled="pending || unsupported" @click="resetFilters">Reset</AppButton>
+          <AppButton type="submit" icon="i-tabler-filter" :disabled="pending || unsupported">{{ t('logs.apply') }}</AppButton>
+          <AppButton type="button" color="neutral" variant="outline" :disabled="pending || unsupported" @click="resetFilters">{{ t('logs.reset') }}</AppButton>
         </div>
       </form>
-      <p class="mt-3 text-xs leading-relaxed text-[var(--ui-text-muted)]">Only request summaries attributed to your account are shown. Unattributed requests are excluded.</p>
+      <p class="mt-3 text-xs leading-relaxed text-[var(--ui-text-muted)]">{{ t('logs.scopeNote') }}</p>
       <UAlert v-if="filterError" class="mt-4" color="error" variant="subtle" :description="filterError" />
     </AppCard>
-    <div v-if="!unsupported" class="grid min-w-0 gap-4 md:grid-cols-3" aria-label="Matching request summary" :aria-busy="pending">
+    <div v-if="!unsupported" class="grid min-w-0 gap-4 md:grid-cols-3" :aria-label="t('logs.summaryAria')" :aria-busy="pending">
       <AppCard class="logs-panel logs-metric min-w-0">
-        <h3 class="mb-3 flex items-center gap-2 text-sm font-semibold"><UIcon name="i-tabler-box-multiple" class="size-4 text-[var(--ui-text-muted)]" aria-hidden="true" /> Requests by model</h3>
+        <h3 class="mb-3 flex items-center gap-2 text-sm font-semibold"><UIcon name="i-tabler-box-multiple" class="size-4 text-[var(--ui-text-muted)]" aria-hidden="true" /> {{ t('logs.byModel') }}</h3>
         <USkeleton v-if="pending" class="h-24 w-full" />
         <div v-else-if="summary?.by_model.length" class="max-h-40 space-y-2 overflow-y-auto">
           <div v-for="model in summary.by_model" :key="model.model" class="flex items-center justify-between gap-3 py-1 text-sm">
-            <span class="min-w-0 truncate" :title="model.model">{{ model.model || 'Unknown model' }}</span>
+            <span class="min-w-0 truncate" :title="model.model">{{ model.model || t('logs.unknownModel') }}</span>
             <span class="shrink-0 font-semibold tabular-nums">{{ formatNumber(model.requests) }}</span>
           </div>
         </div>
-        <p v-else class="text-sm text-[var(--ui-text-muted)]">{{ summary ? 'No requests in this range.' : 'Summary unavailable.' }}</p>
-        <p class="mt-3 text-xs text-[var(--ui-text-muted)]">Request counts across all matching logs</p>
+        <p v-else class="text-sm text-[var(--ui-text-muted)]">{{ summary ? t('logs.noRequests') : t('logs.summaryUnavailable') }}</p>
+        <p class="mt-3 text-xs text-[var(--ui-text-muted)]">{{ t('logs.byModelNote') }}</p>
       </AppCard>
       <AppCard class="logs-panel logs-metric min-w-0">
-        <h3 class="mb-3 flex items-center gap-2 text-sm font-semibold"><UIcon name="i-tabler-clock" class="size-4 text-[var(--ui-text-muted)]" aria-hidden="true" /> Average latency</h3>
+        <h3 class="mb-3 flex items-center gap-2 text-sm font-semibold"><UIcon name="i-tabler-clock" class="size-4 text-[var(--ui-text-muted)]" aria-hidden="true" /> {{ t('logs.avgLatency') }}</h3>
         <USkeleton v-if="pending" class="h-10 w-32" />
         <p v-else class="break-words text-3xl font-semibold tabular-nums tracking-tight text-[var(--ui-text-highlighted)]">{{ summary?.average_latency_ms != null ? formatLatency(summary.average_latency_ms) : '—' }}<span v-if="summary?.average_latency_ms != null" class="ml-1 text-sm font-normal text-[var(--ui-text-muted)]">ms</span></p>
-        <p class="mt-3 text-xs text-[var(--ui-text-muted)]">All matching requests with measured latency</p>
+        <p class="mt-3 text-xs text-[var(--ui-text-muted)]">{{ t('logs.avgLatencyNote') }}</p>
       </AppCard>
       <AppCard class="logs-panel logs-metric min-w-0">
-        <h3 class="mb-3 flex items-center gap-2 text-sm font-semibold"><UIcon name="i-tabler-circle-check" class="size-4 text-[var(--ui-text-muted)]" aria-hidden="true" /> Request outcomes</h3>
+        <h3 class="mb-3 flex items-center gap-2 text-sm font-semibold"><UIcon name="i-tabler-circle-check" class="size-4 text-[var(--ui-text-muted)]" aria-hidden="true" /> {{ t('logs.outcomes') }}</h3>
         <USkeleton v-if="pending" class="h-16 w-full" />
         <div v-else class="grid grid-cols-2 gap-4">
-          <div class="min-w-0"><p class="text-xs font-medium text-[var(--ui-success)]">Success</p><p class="mt-2 text-2xl font-semibold tabular-nums">{{ summary ? formatNumber(summary.status.success) : '—' }}</p></div>
-          <div class="min-w-0"><p class="text-xs font-medium text-[var(--ui-error)]">Failed</p><p class="mt-2 text-2xl font-semibold tabular-nums">{{ summary ? formatNumber(summary.status.failed) : '—' }}</p></div>
+          <div class="min-w-0"><p class="text-xs font-medium text-[var(--ui-success)]">{{ t('logs.status.success') }}</p><p class="mt-2 text-2xl font-semibold tabular-nums">{{ summary ? formatNumber(summary.status.success) : '—' }}</p></div>
+          <div class="min-w-0"><p class="text-xs font-medium text-[var(--ui-error)]">{{ t('logs.status.failed') }}</p><p class="mt-2 text-2xl font-semibold tabular-nums">{{ summary ? formatNumber(summary.status.failed) : '—' }}</p></div>
         </div>
-        <p class="mt-3 text-xs text-[var(--ui-text-muted)]">All matching logs, not just the current page</p>
+        <p class="mt-3 text-xs text-[var(--ui-text-muted)]">{{ t('logs.outcomesNote') }}</p>
       </AppCard>
     </div>
     <AppCard class="logs-panel min-w-0 overflow-hidden" :ui="{ body: 'p-0' }">
       <template #header>
         <div class="flex flex-wrap items-center justify-between gap-3">
-          <div><h2 class="flex items-center gap-2 text-sm font-semibold"><UIcon name="i-tabler-list-details" class="size-4 text-[var(--ui-text-muted)]" aria-hidden="true" /> Request history</h2><p class="mt-1 text-xs tabular-nums text-[var(--ui-text-muted)]">{{ formatNumber(total) }} requests matching your filters</p></div>
-          <UFormField label="Rows per page"><USelect v-model="pageSize" :items="pageSizeOptions" class="w-24" :disabled="pending || unsupported" @update:model-value="changePageSize" /></UFormField>
+          <div><h2 class="flex items-center gap-2 text-sm font-semibold"><UIcon name="i-tabler-list-details" class="size-4 text-[var(--ui-text-muted)]" aria-hidden="true" /> {{ t('logs.historyTitle') }}</h2><p class="mt-1 text-xs tabular-nums text-[var(--ui-text-muted)]">{{ t('logs.historyCount', { count: formatNumber(total) }) }}</p></div>
+          <UFormField :label="t('logs.rowsPerPage')"><USelect v-model="pageSize" :items="pageSizeOptions" class="w-24" :disabled="pending || unsupported" @update:model-value="changePageSize" /></UFormField>
         </div>
       </template>
       <div class="overflow-x-auto">
-        <AppTable :data="items" :columns="columns" :loading="pending" empty="No request logs match the current filters." class="min-w-[900px]">
+        <AppTable :data="items" :columns="columns" :loading="pending" :number-offset="(page - 1) * pageSize" :empty="t('logs.empty')" class="min-w-[900px]">
           <template #timestamp-cell="{ row }"><span class="whitespace-nowrap">{{ formatTime(row.original.timestamp) }}</span></template>
           <template #event_type-cell="{ row }">{{ row.original.event_type || '—' }}</template>
-          <template #status-cell="{ row }"><UBadge :color="row.original.status === 'failed' ? 'error' : 'success'" variant="subtle">{{ row.original.status }}</UBadge></template>
+          <template #status-cell="{ row }"><UBadge :color="row.original.status === 'failed' ? 'error' : 'success'" variant="subtle">{{ statusLabel(row.original.status) }}</UBadge></template>
           <template #model-cell="{ row }"><span class="font-medium text-[var(--ui-text-highlighted)]">{{ row.original.model || '—' }}</span></template>
 
           <template #tokens-cell="{ row }"><span class="tabular-nums">{{ formatNumber(row.original.tokens) }}</span></template>
@@ -72,11 +72,11 @@
       </div>
       <template #footer>
         <div class="flex flex-wrap items-center justify-between gap-3 text-sm">
-          <span class="text-[var(--ui-text-muted)]">Showing {{ rangeStart }}–{{ rangeEnd }} of {{ formatNumber(total) }}</span>
+          <span class="text-[var(--ui-text-muted)]">{{ t('logs.showing', { start: rangeStart, end: rangeEnd, total: formatNumber(total) }) }}</span>
           <div class="flex flex-wrap items-center gap-2">
-            <AppButton color="neutral" variant="outline" size="sm" :disabled="page <= 1 || pending || unsupported" @click="changePage(-1)">Previous</AppButton>
-            <span class="px-1 text-xs tabular-nums text-[var(--ui-text-muted)]">Page {{ page }} of {{ pages }}</span>
-            <AppButton color="neutral" variant="outline" size="sm" :disabled="page >= pages || pending || unsupported" @click="changePage(1)">Next</AppButton>
+            <AppButton color="neutral" variant="outline" size="sm" :disabled="page <= 1 || pending || unsupported" @click="changePage(-1)">{{ t('logs.previous') }}</AppButton>
+            <span class="px-1 text-xs tabular-nums text-[var(--ui-text-muted)]">{{ t('logs.pageOf', { page, pages }) }}</span>
+            <AppButton color="neutral" variant="outline" size="sm" :disabled="page >= pages || pending || unsupported" @click="changePage(1)">{{ t('logs.next') }}</AppButton>
           </div>
         </div>
       </template>
@@ -88,6 +88,7 @@
 import { useStoreData } from '~/composables/useStoreData'
 
 definePageMeta({ layout: 'app' })
+const { t, intlLocale } = usePortalI18n()
 interface RequestLog {
   timestamp: string
   event_type: string
@@ -151,33 +152,34 @@ const summary = computed(() => error.value ? null : data.value?.summary || null)
 const pages = computed(() => Math.max(1, Math.ceil(total.value / pageSize.value)))
 const rangeStart = computed(() => items.value.length ? (data.value?.offset || 0) + 1 : 0)
 const rangeEnd = computed(() => items.value.length ? (data.value?.offset || 0) + items.value.length : 0)
-const errorMessage = computed(() => (error.value as any)?.message || 'Please try refreshing again.')
-const columns = [
-  { accessorKey: 'timestamp', header: 'Time' },
-  { accessorKey: 'event_type', header: 'Event' },
-  { accessorKey: 'status', header: 'Status' },
-  { accessorKey: 'model', header: 'Model' },
+const errorMessage = computed(() => (error.value as any)?.message || t('logs.refreshError'))
+const columns = computed(() => [
+  { accessorKey: 'timestamp', header: t('logs.col.time') },
+  { accessorKey: 'event_type', header: t('logs.col.event') },
+  { accessorKey: 'status', header: t('logs.col.status') },
+  { accessorKey: 'model', header: t('logs.col.model') },
 
-  { accessorKey: 'tokens', header: 'Tokens' },
-  { accessorKey: 'latency_ms', header: 'Latency' },
-  { accessorKey: 'request_id', header: 'Request ID' }
-]
-const formatNumber = (value: number) => new Intl.NumberFormat().format(value)
-const formatLatency = (value: number) => new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(value)
+  { accessorKey: 'tokens', header: t('logs.col.tokens') },
+  { accessorKey: 'latency_ms', header: t('logs.col.latency') },
+  { accessorKey: 'request_id', header: t('logs.col.requestId') }
+])
+const statusLabel = (status: string) => status === 'success' ? t('logs.status.success') : status === 'failed' ? t('logs.status.failed') : status
+const formatNumber = (value: number) => new Intl.NumberFormat(intlLocale.value).format(value)
+const formatLatency = (value: number) => new Intl.NumberFormat(intlLocale.value, { maximumFractionDigits: 2 }).format(value)
 const formatTime = (value: string) => {
   const date = new Date(value)
-  return Number.isNaN(date.getTime()) ? '—' : new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'medium' }).format(date)
+  return Number.isNaN(date.getTime()) ? '—' : new Intl.DateTimeFormat(intlLocale.value, { dateStyle: 'medium', timeStyle: 'medium' }).format(date)
 }
 function applyFilters() {
   filterError.value = ''
   const from = filters.from ? new Date(filters.from) : null
   const to = filters.to ? new Date(filters.to) : null
   if ((from && Number.isNaN(from.getTime())) || (to && Number.isNaN(to.getTime()))) {
-    filterError.value = 'Enter a valid date and time.'
+    filterError.value = t('logs.invalidDate')
     return
   }
   if (from && to && from > to) {
-    filterError.value = 'From must not be after Until.'
+    filterError.value = t('logs.rangeError')
     return
   }
   appliedFilters.value = { ...(from ? { from: from.toISOString() } : {}), ...(to ? { to: to.toISOString() } : {}), ...(filters.request_id.trim() ? { request_id: filters.request_id.trim() } : {}) }
@@ -197,15 +199,6 @@ function changePage(delta: number) { page.value += delta; void refresh() }
   max-width: 80rem;
   padding-block: 0.75rem;
   margin-inline: auto;
-}
-.logs-workspace .logs-panel {
-  border-radius: 1.5rem;
-  border-color: color-mix(in oklch, var(--ui-border) 50%, transparent);
-  background: var(--ui-bg);
-  box-shadow: none;
-}
-:global(.dark) .logs-workspace .logs-panel {
-  box-shadow: none;
 }
 .logs-metric :deep(p.tabular-nums) { overflow-wrap: anywhere; }
 .logs-workspace :deep(input[type='datetime-local']) { min-width: 0; }

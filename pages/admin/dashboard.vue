@@ -4,7 +4,7 @@
       v-if="loadError"
       color="error"
       variant="subtle"
-      title="Dashboard data could not be loaded"
+      :title="t('dashboard.loadErrorTitle')"
       :description="loadError"
     >
       <template #actions
@@ -13,344 +13,229 @@
           variant="outline"
           size="sm"
           @click="refreshDashboard"
-          >Retry</AppButton
+          >{{ t('common.retry') }}</AppButton
         ></template
       >
     </UAlert>
 
     <template v-if="snapshot && !loadError">
-      <section aria-label="Service readiness" class="space-y-3 border-b border-[var(--ui-border)] pb-4">
-        <header>
-          <div class="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <div class="flex flex-wrap items-center gap-2">
-                <h1 class="font-semibold">{{ health.title }}</h1>
-                <UBadge :color="health.color" variant="subtle">{{
-                  health.label
-                }}</UBadge>
-              </div>
-              <p class="mt-1 text-sm text-[var(--ui-text-muted)]">
-                {{ health.description }}
-              </p>
+      <div class="grid grid-cols-1 gap-4 lg:grid-cols-12">
+        <section :aria-label="t('dashboard.serviceReadiness')" class="dashboard-hero lg:col-span-5" :class="`dashboard-hero--${health.color}`">
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex items-center gap-2.5">
+              <span class="dashboard-hero-icon" aria-hidden="true"><UIcon :name="healthIcon" class="size-5" /></span>
+              <UBadge :color="health.color" variant="subtle" class="rounded-full">{{ health.label }}</UBadge>
             </div>
-            <AppSyncButton :loading="loading" @click="refreshDashboard" />
+            <AppSyncButton :loading="loading" size="sm" @click="refreshDashboard" />
           </div>
-        </header>
-        <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-[var(--ui-text-muted)]">
-          <span>Server: {{ runtimeMode || "Home" }}</span>
-          <span>Version: {{ latestVersion || "Unavailable" }}</span>
-          <span>Synced: {{ lastUpdated ? lastUpdated.toLocaleString() : "Not synced" }}</span>
-        </div>
-        <div
-          v-if="missingCapabilities.length"
-          class="flex flex-wrap gap-2"
-        >
-          <UBadge
-            v-for="item in missingCapabilities"
-            :key="item.label"
-            color="neutral"
-            variant="subtle"
-            >{{ item.label }} unavailable</UBadge
-          >
-        </div>
-        <div
-          v-if="suggestedActions.length"
-          class="flex flex-col items-stretch gap-2 border-t border-[var(--ui-border)] pt-3 sm:flex-row sm:flex-wrap sm:items-center"
-        >
-          <span class="text-xs font-medium">Suggested actions</span
-          ><AppButton
-            v-for="action in suggestedActions"
-            :key="action.label"
-            :to="action.to"
-            size="sm"
-            color="neutral"
-            variant="outline"
-            >{{ action.label }}</AppButton
-          >
-        </div>
-      </section>
+          <h1 class="mt-4 text-xl font-bold tracking-tight text-[var(--ui-text-highlighted)]">{{ health.title }}</h1>
+          <p class="mt-1.5 text-sm leading-relaxed text-[var(--ui-text-muted)]">{{ health.description }}</p>
 
-      <section aria-label="Operating metrics" class="dashboard-metric-strip">
-        <NuxtLink
-          v-for="card in operatingCards"
-          :key="card.label"
-          :to="card.to"
-          class="dashboard-metric"
-        >
-          <h2 class="metric-label">{{ card.label }}</h2>
-          <p class="metric-value">{{ card.value }}</p>
-          <p class="metric-detail">{{ card.detail }}</p>
-          <UIcon name="i-tabler-chevron-right" class="metric-link-icon" aria-hidden="true" />
-        </NuxtLink>
-      </section>
+          <div class="mt-4 flex flex-wrap gap-1.5 text-xs">
+            <span class="dashboard-chip"><UIcon name="i-tabler-server" class="size-3.5" aria-hidden="true" />{{ runtimeMode || "Home" }}</span>
+            <span class="dashboard-chip"><UIcon name="i-tabler-tag" class="size-3.5" aria-hidden="true" />{{ latestVersion || t('dashboard.versionUnavailable') }}</span>
+            <span class="dashboard-chip"><UIcon name="i-tabler-clock" class="size-3.5" aria-hidden="true" />{{ lastUpdated ? lastUpdated.toLocaleTimeString(intlLocale) : t('dashboard.notSynced') }}</span>
+          </div>
 
-      <section
-        v-if="tokenTrend.length || activity.length"
-        class="grid gap-4 lg:grid-cols-2"
-      >
+          <div v-if="statusItems.length" class="dashboard-issues mt-4">
+            <p class="mb-1.5 text-xs font-medium text-[var(--ui-text-muted)]">{{ t('dashboard.dataStatus', { count: statusItems.length }) }}</p>
+            <NuxtLink v-for="item in statusItems.slice(0, 4)" :key="item.label" :to="item.to" class="dashboard-issue">
+              <UIcon name="i-tabler-point-filled" class="size-3 shrink-0 text-[var(--ui-warning)]" aria-hidden="true" />
+              <span class="min-w-0 flex-1 truncate"><span class="font-medium text-[var(--ui-text-highlighted)]">{{ item.label }}</span> · {{ item.detail }}</span>
+              <span class="shrink-0 text-xs font-medium text-[var(--ui-primary)]">{{ t('dashboard.review') }}</span>
+            </NuxtLink>
+          </div>
+
+          <div v-if="suggestedActions.length" class="mt-auto flex flex-wrap gap-2 pt-5">
+            <AppButton
+              v-for="(action, index) in suggestedActions"
+              :key="action.label"
+              :to="action.to"
+              size="sm"
+              class="rounded-full"
+              :color="index === 0 ? 'primary' : 'neutral'"
+              :variant="index === 0 ? 'solid' : 'outline'"
+              :trailing-icon="index === 0 ? 'i-tabler-arrow-right' : undefined"
+              >{{ action.label }}</AppButton
+            >
+          </div>
+        </section>
+
+        <section :aria-label="t('dashboard.operatingMetrics')" class="grid grid-cols-1 content-start gap-3 sm:grid-cols-2 lg:col-span-7">
+          <NuxtLink
+            v-for="card in operatingCards"
+            :key="card.label"
+            :to="card.to"
+            class="dashboard-metric"
+            :class="[`dashboard-metric--${card.tone}`, { 'dashboard-metric--static': !card.to }]"
+          >
+            <div class="metric-head">
+              <span class="metric-icon" aria-hidden="true"><UIcon :name="card.icon" class="size-[18px]" /></span>
+              <h2 class="metric-label min-w-0 flex-1 truncate">{{ card.label }}</h2>
+              <UIcon v-if="card.to" name="i-tabler-arrow-up-right" class="metric-link-icon" aria-hidden="true" />
+            </div>
+            <p class="metric-value">{{ card.value }}</p>
+            <p class="metric-detail">{{ card.detail }}</p>
+            <div class="mt-auto pt-2">
+              <AdminUsageSparkline v-if="card.points && card.points.length > 1" :values="card.points" :label="t('dashboard.trendAria', { label: card.label })" class="metric-spark" />
+              <div v-else-if="card.ratio != null" class="metric-bar" role="img" :aria-label="`${card.label}: ${Math.round(card.ratio * 100)}%`">
+                <span :style="{ width: `${Math.min(100, Math.max(0, card.ratio * 100))}%` }" />
+              </div>
+            </div>
+          </NuxtLink>
+        </section>
+
         <AdminDashboardTokenTrend
           v-if="tokenTrend.length"
+          :class="activity.length ? 'lg:col-span-8' : 'lg:col-span-12'"
           :trend="tokenTrend"
           :range="usage?.range"
         />
         <AdminDashboardRequestHealth
           v-if="activity.length"
+          :class="tokenTrend.length ? 'lg:col-span-4' : 'lg:col-span-12'"
           :activity="activity"
           :range="usage?.range"
         />
-      </section>
 
-      <section class="grid gap-4 lg:grid-cols-2">
-        <AppCard>
-          <template #header
-            ><div class="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <h2 class="font-semibold">Key status</h2>
-                <p class="text-xs text-[var(--ui-text-muted)]">
-                  {{
-                    formatNumber(usage?.totals?.active_client_key_count ?? 0)
-                  }}
-                  active · {{ formatNumber(quietKeyCount) }} quiet ·
-                  {{ formatNumber(clientKeys.length) }} configured
-                </p>
-              </div>
-              <AppButton
-                to="/admin/usage"
-                color="neutral"
-                variant="ghost"
-                size="sm"
-                >Usage details</AppButton
-              >
-            </div></template
-          >
-          <div v-if="topClientKeys.length" class="space-y-3">
-            <div
-              v-for="(item, index) in topClientKeys"
-              :key="item.id || index"
-              class="flex items-center justify-between gap-3 border-b border-[var(--ui-border)] pb-3 last:border-0 last:pb-0"
-            >
+        <AppCard class="lg:col-span-4">
+          <template #header>
+            <div class="dashboard-card-head">
               <div class="min-w-0">
-                <p class="truncate text-sm font-medium">
-                  {{ index + 1 }}. {{ keyLabel(item) }}
-                </p>
+                <h2 class="font-semibold">{{ t('dashboard.topClientKeys') }}</h2>
                 <p class="text-xs text-[var(--ui-text-muted)]">
-                  {{ formatNumber(item.request_count) }} requests ·
-                  {{ formatPercent(item.success_rate) }} success<span
-                    v-if="item.failed_count"
-                  >
-                    · {{ formatNumber(item.failed_count) }} failed</span
-                  >
+                  {{ t('dashboard.topClientKeysSummary', { active: formatNumber(usage?.totals?.active_client_key_count ?? 0), quiet: formatNumber(quietKeyCount), configured: formatNumber(clientKeys.length) }) }}
                 </p>
               </div>
-              <span class="shrink-0 text-sm font-semibold"
-                >{{
-                  item.token_breakdown?.total_tokens == null
-                    ? "--"
-                    : formatCompact(item.token_breakdown.total_tokens)
-                }}
-                tokens</span
-              >
+              <AppButton to="/admin/usage" color="neutral" variant="ghost" size="xs" trailing-icon="i-tabler-arrow-right" :aria-label="t('dashboard.keyUsageDetails')">{{ t('common.details') }}</AppButton>
             </div>
-          </div>
-          <p
-            v-else
-            class="py-8 text-center text-sm text-[var(--ui-text-muted)]"
-          >
-            {{
-              usage
-                ? "No client key activity in this range."
-                : "Key usage is unavailable."
-            }}
-          </p>
-        </AppCard>
-        <AppCard>
-          <template #header
-            ><div class="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <h2 class="font-semibold">Model usage distribution</h2>
-                <p class="text-xs text-[var(--ui-text-muted)]">
-                  {{
-                    formatNumber(usage?.totals?.active_model_count ?? 0)
-                  }}
-                  models used
+          </template>
+          <ol v-if="topClientKeys.length" class="space-y-3.5">
+            <li v-for="(item, index) in topClientKeys" :key="item.id || index" class="dashboard-rank">
+              <span class="dashboard-rank-index" aria-hidden="true">{{ index + 1 }}</span>
+              <div class="min-w-0 flex-1">
+                <div class="flex items-baseline justify-between gap-3">
+                  <p class="truncate text-sm font-medium text-[var(--ui-text-highlighted)]">{{ keyLabel(item) }}</p>
+                  <span class="shrink-0 text-xs font-semibold tabular-nums">{{ t('dashboard.tokensCount', { count: item.token_breakdown?.total_tokens == null ? "--" : formatCompact(item.token_breakdown.total_tokens) }) }}</span>
+                </div>
+                <div class="dashboard-share mt-1.5"><span :style="{ width: shareOf(item, topClientKeys) }" /></div>
+                <p class="mt-1 text-xs text-[var(--ui-text-muted)]">
+                  {{ t('dashboard.rankSummary', { requests: formatNumber(item.request_count), rate: formatPercent(item.success_rate) }) }}<span v-if="item.failed_count">{{ t('dashboard.rankFailed', { count: formatNumber(item.failed_count) }) }}</span>
                 </p>
               </div>
-              <AppButton
-                to="/admin/usage"
-                color="neutral"
-                variant="ghost"
-                size="sm"
-                >Usage details</AppButton
-              >
-            </div></template
-          >
-          <div v-if="topModels.length" class="space-y-3">
-            <div
-              v-for="(item, index) in topModels"
-              :key="item.id || index"
-              class="flex items-center justify-between gap-3 border-b border-[var(--ui-border)] pb-3 last:border-0 last:pb-0"
-            >
+            </li>
+          </ol>
+          <div v-else class="dashboard-empty"><UIcon name="i-tabler-key-off" class="size-6" aria-hidden="true" /><p>{{ usage ? t('dashboard.noKeyActivity') : t('dashboard.keyUsageUnavailable') }}</p></div>
+        </AppCard>
+
+        <AppCard class="lg:col-span-4">
+          <template #header>
+            <div class="dashboard-card-head">
               <div class="min-w-0">
-                <p class="truncate text-sm font-medium">
-                  {{ index + 1 }}. {{ item.label || item.id }}
-                </p>
-                <p class="text-xs text-[var(--ui-text-muted)]">
-                  {{ formatNumber(item.request_count) }} requests ·
-                  {{ formatPercent(item.success_rate) }} success<span
-                    v-if="item.failed_count"
-                  >
-                    · {{ formatNumber(item.failed_count) }} failed</span
-                  >
-                </p>
+                <h2 class="font-semibold">{{ t('dashboard.modelDistribution') }}</h2>
+                <p class="text-xs text-[var(--ui-text-muted)]">{{ t('dashboard.modelsUsed', { count: formatNumber(usage?.totals?.active_model_count ?? 0) }) }}</p>
               </div>
-              <span class="shrink-0 text-sm font-semibold"
-                >{{
-                  item.token_breakdown?.total_tokens == null
-                    ? "--"
-                    : formatCompact(item.token_breakdown.total_tokens)
-                }}
-                tokens</span
-              >
+              <AppButton to="/admin/usage" color="neutral" variant="ghost" size="xs" trailing-icon="i-tabler-arrow-right" :aria-label="t('dashboard.modelUsageDetails')">{{ t('common.details') }}</AppButton>
             </div>
-          </div>
-          <p
-            v-else
-            class="py-8 text-center text-sm text-[var(--ui-text-muted)]"
-          >
-            {{
-              usage
-                ? "No model activity in this range."
-                : "Model usage is unavailable."
-            }}
-          </p>
-        </AppCard>
-      </section>
-
-      <section aria-label="Service inventory" class="dashboard-metric-strip">
-        <NuxtLink
-          v-for="card in inventoryCards"
-          :key="card.label"
-          :to="card.to"
-          class="dashboard-metric"
-        >
-          <h2 class="metric-label">{{ card.label }}</h2>
-          <p class="metric-value">{{ formatNumber(card.value) }}</p>
-          <p class="metric-detail">{{ card.detail }}</p>
-          <UIcon name="i-tabler-chevron-right" class="metric-link-icon" aria-hidden="true" />
-        </NuxtLink>
-      </section>
-
-      <section class="grid gap-4 lg:grid-cols-2">
-        <AppCard
-          ><template #header
-            ><div class="flex flex-wrap items-center justify-between gap-2">
-              <h2 class="font-semibold">Model service access</h2>
-              <AppButton
-                to="/admin/providers"
-                color="neutral"
-                variant="ghost"
-                size="sm"
-                >Manage</AppButton
-              >
-            </div></template
-          >
-          <div class="space-y-2">
-            <div
-              v-for="provider in providerRows"
-              :key="provider.path"
-              class="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--ui-border)] py-2 text-sm last:border-0"
-            >
-              <div>
-                <p class="font-medium">{{ provider.label }}</p>
-                <p class="font-mono text-xs text-[var(--ui-text-muted)]">
-                  {{ provider.path }}
+          </template>
+          <ol v-if="topModels.length" class="space-y-3.5">
+            <li v-for="(item, index) in topModels" :key="item.id || index" class="dashboard-rank dashboard-rank--blue">
+              <span class="dashboard-rank-index" aria-hidden="true">{{ index + 1 }}</span>
+              <div class="min-w-0 flex-1">
+                <div class="flex items-baseline justify-between gap-3">
+                  <p class="truncate text-sm font-medium text-[var(--ui-text-highlighted)]">{{ item.label || item.id }}</p>
+                  <span class="shrink-0 text-xs font-semibold tabular-nums">{{ t('dashboard.tokensCount', { count: item.token_breakdown?.total_tokens == null ? "--" : formatCompact(item.token_breakdown.total_tokens) }) }}</span>
+                </div>
+                <div class="dashboard-share mt-1.5"><span :style="{ width: shareOf(item, topModels) }" /></div>
+                <p class="mt-1 text-xs text-[var(--ui-text-muted)]">
+                  {{ t('dashboard.rankSummary', { requests: formatNumber(item.request_count), rate: formatPercent(item.success_rate) }) }}<span v-if="item.failed_count">{{ t('dashboard.rankFailed', { count: formatNumber(item.failed_count) }) }}</span>
                 </p>
               </div>
-              <p class="text-xs">
-                {{ provider.total }} total · {{ provider.active }} available ·
-                {{ provider.disabled }} disabled
-              </p>
+            </li>
+          </ol>
+          <div v-else class="dashboard-empty"><UIcon name="i-tabler-box-off" class="size-6" aria-hidden="true" /><p>{{ usage ? t('dashboard.noModelActivity') : t('dashboard.modelUsageUnavailable') }}</p></div>
+        </AppCard>
+
+        <AppCard class="lg:col-span-4" :ui="{ body: 'p-2 sm:p-2' }">
+          <template #header><h2 class="font-semibold">{{ t('dashboard.serviceInventory') }}</h2></template>
+          <nav :aria-label="t('dashboard.serviceInventory')" class="space-y-0.5">
+            <NuxtLink
+              v-for="card in inventoryCards"
+              :key="card.label"
+              :to="card.to"
+              class="dashboard-inventory"
+              :class="`dashboard-metric--${card.tone}`"
+            >
+              <span class="metric-icon metric-icon--sm" aria-hidden="true"><UIcon :name="card.icon" class="size-4" /></span>
+              <span class="min-w-0 flex-1">
+                <span class="block truncate text-sm font-medium text-[var(--ui-text-highlighted)]">{{ card.label }}</span>
+                <span class="block truncate text-xs text-[var(--ui-text-muted)]">{{ card.detail }}</span>
+              </span>
+              <span class="text-lg font-bold tabular-nums text-[var(--ui-text-highlighted)]">{{ formatNumber(card.value) }}</span>
+              <UIcon name="i-tabler-chevron-right" class="metric-chevron" aria-hidden="true" />
+            </NuxtLink>
+          </nav>
+          <div class="mx-2 mt-2 border-t border-[var(--ui-border)] px-1 pb-1 pt-3">
+            <p class="mb-2 text-xs font-medium text-[var(--ui-text-muted)]">{{ t('dashboard.credentialSources') }}</p>
+            <div v-if="credentialSources.length" class="flex flex-wrap gap-1.5">
+              <span v-for="source in credentialSources" :key="source.label" class="dashboard-chip">{{ source.label }} <strong class="text-[var(--ui-text-highlighted)]">{{ source.count }}</strong></span>
+            </div>
+            <p v-else class="text-xs text-[var(--ui-text-dimmed)]">{{ t('dashboard.noCredentialSources') }}</p>
+          </div>
+        </AppCard>
+
+        <AppCard class="lg:col-span-7">
+          <template #header>
+            <div class="dashboard-card-head">
+              <h2 class="font-semibold">{{ t('dashboard.modelServiceAccess') }}</h2>
+              <AppButton to="/admin/providers" color="neutral" variant="ghost" size="xs" trailing-icon="i-tabler-arrow-right">{{ t('dashboard.manage') }}</AppButton>
+            </div>
+          </template>
+          <div class="grid gap-x-6 gap-y-4 sm:grid-cols-2">
+            <div v-for="provider in providerRows" :key="provider.path" class="min-w-0">
+              <div class="flex items-baseline justify-between gap-2">
+                <p class="truncate text-sm font-medium text-[var(--ui-text-highlighted)]">{{ providerLabel(provider) }}</p>
+                <span v-if="provider.total" class="shrink-0 text-xs tabular-nums text-[var(--ui-text-muted)]"><strong class="text-[var(--ui-text-highlighted)]">{{ provider.active }}</strong> / {{ provider.total }}</span>
+                <span v-else class="shrink-0 text-xs text-[var(--ui-text-dimmed)]">{{ t('dashboard.notConfigured') }}</span>
+              </div>
+              <div class="provider-bar mt-1.5" role="img" :aria-label="t('dashboard.providerBarAria', { label: providerLabel(provider), total: provider.total, active: provider.active, disabled: provider.disabled })">
+                <span v-if="provider.total" class="provider-bar__active" :style="{ width: `${(provider.active / provider.total) * 100}%` }" />
+                <span v-if="provider.total" class="provider-bar__disabled" :style="{ width: `${(provider.disabled / provider.total) * 100}%` }" />
+              </div>
+              <p class="mt-1 truncate font-mono text-[11px] text-[var(--ui-text-dimmed)]">{{ provider.path }}</p>
             </div>
           </div>
           <AppButton
             v-if="providerRows.every((item) => item.total === 0)"
             to="/admin/providers"
-            color="neutral"
-            variant="outline"
+            color="primary"
+            variant="soft"
             size="sm"
-            class="mt-4"
-            >Configure model service</AppButton
+            icon="i-tabler-plus"
+            class="mt-5 rounded-full"
+            >{{ t('dashboard.configureModelService') }}</AppButton
           >
         </AppCard>
-        <AppCard
-          ><template #header
-            ><h2 class="font-semibold">Key switches</h2></template
-          >
-          <div class="space-y-3">
-            <div
-              v-for="item in configChecks"
-              :key="item.label"
-              class="flex items-center justify-between gap-4 text-sm"
-            >
-              <span>{{ item.label }}</span
-              ><UBadge :color="item.color" variant="subtle">{{
-                item.value
-              }}</UBadge>
-            </div>
-          </div>
-        </AppCard>
-      </section>
 
-      <section class="grid gap-4 lg:grid-cols-2">
-        <AppCard
-          v-if="dataIssues.length || missingCapabilities.length"
-          ><template #header
-            ><h2 class="font-semibold">
-              Data loading status ·
-              {{ dataIssues.length + missingCapabilities.length }}
-            </h2></template
-          >
-          <div class="space-y-2">
-            <div
-              v-for="item in statusItems.slice(0, 4)"
-              :key="item.label"
-              class="flex items-center justify-between gap-2 text-sm"
-            >
-              <span>{{ item.label }} · {{ item.detail }}</span
-              ><AppButton :to="item.to" size="xs" color="neutral" variant="ghost"
-                >Review</AppButton
-              >
+        <AppCard class="lg:col-span-5">
+          <template #header><h2 class="font-semibold">{{ t('dashboard.keySwitches') }}</h2></template>
+          <div class="grid gap-2 sm:grid-cols-2">
+            <div v-for="item in configChecks" :key="item.label" class="dashboard-switch" :class="`dashboard-switch--${item.color}`">
+              <span class="dashboard-switch__dot" aria-hidden="true" />
+              <span class="min-w-0 flex-1 leading-tight">
+                <span class="block truncate text-xs text-[var(--ui-text-muted)]">{{ item.label }}</span>
+                <span class="block truncate text-sm font-semibold text-[var(--ui-text-highlighted)]">{{ item.value }}</span>
+              </span>
             </div>
           </div>
         </AppCard>
-        <AppCard
-          ><template #header
-            ><h2 class="font-semibold">Account credential sources</h2></template
-          >
-          <div v-if="credentialSources.length" class="space-y-2">
-            <div
-              v-for="source in credentialSources"
-              :key="source.label"
-              class="flex justify-between text-sm"
-            >
-              <span>{{ source.label }}</span
-              ><strong>{{ source.count }}</strong>
-            </div>
-          </div>
-          <p
-            v-else
-            class="py-6 text-center text-sm text-[var(--ui-text-muted)]"
-          >
-            No account credential sources available.
-          </p>
-        </AppCard>
-      </section>
+      </div>
     </template>
     <p
       v-else-if="loading"
       class="py-12 text-center text-sm text-[var(--ui-text-muted)]"
     >
-      Loading dashboard…
+      {{ t('dashboard.loading') }}
     </p>
   </div>
 </template>
@@ -360,6 +245,7 @@ import { useWorkspaceState } from '~/composables/useWorkspaceState'
 import { useDataSync } from '~/composables/useDataSync'
 const { fetchAPI } = useApi();
 const { refreshCapabilities, supports } = useCapabilities();
+const { t, intlLocale } = useAdminI18n();
 
 type Issue = { label: string; detail: string; to: string };
 type ProviderRow = {
@@ -469,63 +355,86 @@ const routing = computed(() => {
 const missingCapabilities = computed(() =>
   [
     {
-      label: "Node topology",
+      id: "Node topology",
+      label: t("dashboard.capability.nodeTopology"),
       enabled: supports("topology", false) || supports("nodes", false),
     },
-    { label: "Usage statistics", enabled: supports("usage_overview", false) },
-    { label: "Request logs", enabled: supports("logs", false) },
-    { label: "Error logs", enabled: supports("request_error_logs", false) },
-    { label: "User management", enabled: supports("users", false) },
-    { label: "Access scopes", enabled: supports("access_groups", false) },
+    { id: "Usage statistics", label: t("dashboard.capability.usageStatistics"), enabled: supports("usage_overview", false) },
+    { id: "Request logs", label: t("dashboard.capability.requestLogs"), enabled: supports("logs", false) },
+    { id: "Error logs", label: t("dashboard.capability.errorLogs"), enabled: supports("request_error_logs", false) },
+    { id: "User management", label: t("dashboard.capability.userManagement"), enabled: supports("users", false) },
+    { id: "Access scopes", label: t("dashboard.capability.accessScopes"), enabled: supports("access_groups", false) },
   ].filter((item) => !item.enabled),
 );
 const statusItems = computed<Issue[]>(() => [
-  ...dataIssues.value,
+  ...dataIssues.value.map((item) => ({
+    ...item,
+    label: sourceLabel(item.label),
+    detail: item.detail || t("dashboard.requestFailed"),
+  })),
   ...missingCapabilities.value.map((item) => ({
     label: item.label,
-    detail: "Not provided by this runtime",
+    detail: t("dashboard.notProvided"),
     to:
-      item.label === "Usage statistics"
+      item.id === "Usage statistics"
         ? "/admin/usage"
-        : item.label === "Request logs" || item.label === "Error logs"
+        : item.id === "Request logs" || item.id === "Error logs"
           ? "/admin/diagnostics"
-          : item.label === "User management"
+          : item.id === "User management"
             ? "/admin/users"
-            : item.label === "Access scopes"
+            : item.id === "Access scopes"
               ? "/admin/users"
               : "/admin/system-nodes",
   })),
 ]);
+// Issue labels are stored as stable English source names and translated at render time.
+function sourceLabel(label: string) {
+  const labels: Record<string, string> = {
+    Capabilities: t("dashboard.source.capabilities"),
+    "Latest version": t("dashboard.source.latestVersion"),
+    "Client keys": t("dashboard.source.clientKeys"),
+    "Account credentials": t("dashboard.source.accountCredentials"),
+    "Available models": t("dashboard.source.availableModels"),
+    Topology: t("dashboard.source.topology"),
+    Nodes: t("dashboard.source.nodes"),
+    "Usage overview": t("dashboard.source.usageOverview"),
+    Users: t("dashboard.source.users"),
+    "OpenAI compatibility": t("dashboard.provider.openaiCompat"),
+  };
+  return labels[label] || label;
+}
+function providerLabel(provider: { label: string; path: string }) {
+  return provider.path === "/config/api-keys/openai-compatibility"
+    ? t("dashboard.provider.openaiCompat")
+    : provider.label;
+}
 const health = computed(() => {
   if (availableModels.value === null)
     return {
-      title: "Model request status cannot be confirmed",
-      description:
-        "Available model data could not be loaded. Sync again or review data status instead of treating the current inventory counts as missing configuration.",
-      label: "Needs review",
+      title: t("dashboard.health.unconfirmedTitle"),
+      description: t("dashboard.health.unconfirmedDesc"),
+      label: t("dashboard.health.needsReview"),
       color: "warning" as const,
     };
   if (availableModels.value === 0)
     return availableProviders.value || activeAccounts.value
       ? {
-          title: "No models are currently available",
-          description:
-            "Upstream configuration was detected, but the runtime has not registered any available models. Review model services or account credential status and model mappings.",
-          label: "Needs review",
+          title: t("dashboard.health.noModelsTitle"),
+          description: t("dashboard.health.noModelsDesc"),
+          label: t("dashboard.health.needsReview"),
           color: "warning" as const,
         }
       : {
-          title: "Add upstream model access",
-          description:
-            "The runtime has no available models and no model service keys or account credentials were detected. Configure at least one upstream access method.",
-          label: "Needs review",
+          title: t("dashboard.health.addUpstreamTitle"),
+          description: t("dashboard.health.addUpstreamDesc"),
+          label: t("dashboard.health.needsReview"),
           color: "warning" as const,
         };
   if (!clientKeys.value.length)
     return {
-      title: "Create a client access key",
-      description: "Model access is ready; add a client key to allow requests.",
-      label: "Needs review",
+      title: t("dashboard.health.createKeyTitle"),
+      description: t("dashboard.health.createKeyDesc"),
+      label: t("dashboard.health.needsReview"),
       color: "warning" as const,
     };
   if (
@@ -535,57 +444,67 @@ const health = computed(() => {
     routing.value === "Unknown"
   )
     return {
-      title: "Service is connected with items to review",
-      description: "Review the data loading status and configuration below.",
-      label: "Needs review",
+      title: t("dashboard.health.reviewTitle"),
+      description: t("dashboard.health.reviewDesc"),
+      label: t("dashboard.health.needsReview"),
       color: "warning" as const,
     };
   if (missingCapabilities.value.length)
     return {
-      title: "Service is connected with limited capabilities",
-      description:
-        "Core data loaded, but this runtime does not expose every observability route. Model, credential, and config management remain available.",
-      label: "Limited",
+      title: t("dashboard.health.limitedTitle"),
+      description: t("dashboard.health.limitedDesc"),
+      label: t("dashboard.health.limited"),
       color: "info" as const,
     };
   return {
-    title: "Model requests are available",
-    description:
-      "Available models and a client access key were detected. Model access can come from model service keys or OAuth and file-backed credentials.",
-    label: "Ready",
+    title: t("dashboard.health.readyTitle"),
+    description: t("dashboard.health.readyDesc"),
+    label: t("dashboard.health.ready"),
     color: "success" as const,
   };
 });
+const healthIcon = computed(() =>
+  health.value.color === "success"
+    ? "i-tabler-rosette-discount-check"
+    : health.value.color === "info"
+      ? "i-tabler-info-circle"
+      : "i-tabler-alert-triangle",
+);
 const suggestedActions = computed(() => {
   const actions: { label: string; to: string }[] = [];
   if (availableModels.value === null)
-    actions.push({ label: "Review data status", to: "/admin/system-nodes" });
+    actions.push({ label: t("dashboard.action.reviewDataStatus"), to: "/admin/system-nodes" });
   if (availableModels.value === 0) {
     if (!activeAccounts.value)
-      actions.push({ label: "Add credential", to: "/admin/credentials" });
+      actions.push({ label: t("dashboard.action.addCredential"), to: "/admin/credentials" });
     actions.push({
       label: availableProviders.value
-        ? "Review model services"
-        : "Configure providers",
+        ? t("dashboard.action.reviewModelServices")
+        : t("dashboard.action.configureProviders"),
       to: "/admin/providers",
     });
   }
   if (!clientKeys.value.length)
-    actions.push({ label: "Create client key", to: "/admin/access-keys" });
+    actions.push({ label: t("dashboard.action.createClientKey"), to: "/admin/access-keys" });
   if (routing.value === "Unknown")
-    actions.push({ label: "Check routing", to: "/admin/config" });
+    actions.push({ label: t("dashboard.action.checkRouting"), to: "/admin/config" });
   if (
     config.value.debug === true ||
     config.value.observability?.logs?.debug === true
   )
-    actions.push({ label: "Review debug mode", to: "/admin/config" });
+    actions.push({ label: t("dashboard.action.reviewDebug"), to: "/admin/config" });
   if (dataIssues.value.length)
-    actions.push({ label: "Review data status", to: "/admin/system-nodes" });
+    actions.push({ label: t("dashboard.action.reviewDataStatus"), to: "/admin/system-nodes" });
   return actions.slice(0, 3);
 });
-const operatingCards = computed(() => [
+const trendPoints = computed<any[]>(() =>
+  Array.isArray(usage.value?.trend) ? usage.value.trend : [],
+);
+const operatingCards = computed<
+  Array<{ label: string; value: string; detail: string; to?: string; icon: string; tone: string; points?: number[]; ratio?: number | null }>
+>(() => [
   {
-    label: "Total token consumption",
+    label: t("dashboard.card.totalTokens"),
     value:
       hasUsage.value &&
       usage.value.totals?.token_breakdown?.total_tokens != null
@@ -594,67 +513,96 @@ const operatingCards = computed(() => [
     detail:
       hasUsage.value &&
       usage.value.totals?.token_breakdown?.total_tokens != null
-        ? `Across ${formatNumber(usage.value.totals?.active_model_count || 0)} active models`
-        : "No usage yet",
+        ? t("dashboard.card.acrossModels", { count: formatNumber(usage.value.totals?.active_model_count || 0) })
+        : t("dashboard.card.noUsage"),
     to: hasUsage.value ? "/admin/usage" : undefined,
+    icon: "i-tabler-coins",
+    tone: "violet",
+    points: trendPoints.value.map(
+      (point) => Number(point.token_breakdown?.total_tokens ?? point.total_tokens) || 0,
+    ),
   },
   {
-    label: "Total requests",
+    label: t("dashboard.card.totalRequests"),
     value: hasUsage.value
       ? formatNumber(usage.value.totals?.request_count)
       : "--",
     detail: hasUsage.value
-      ? `${formatNumber(usage.value.totals?.failed_count)} failed requests`
-      : "No requests yet",
+      ? t("dashboard.card.failedRequests", { count: formatNumber(usage.value.totals?.failed_count) })
+      : t("dashboard.card.noRequests"),
     to: hasUsage.value ? "/admin/usage" : undefined,
+    icon: "i-tabler-arrows-exchange",
+    tone: "blue",
+    points: trendPoints.value.map((point) => Number(point.request_count) || 0),
   },
   {
-    label: "Request success rate",
+    label: t("dashboard.card.successRate"),
     value: hasUsage.value
       ? formatPercent(usage.value.totals?.success_rate)
       : "--",
     detail: hasUsage.value
-      ? `${formatPercent(usage.value.totals?.error_rate)} error rate`
-      : "No success rate yet",
+      ? t("dashboard.card.errorRate", { rate: formatPercent(usage.value.totals?.error_rate) })
+      : t("dashboard.card.noSuccessRate"),
     to: hasUsage.value ? "/admin/diagnostics" : undefined,
+    icon: "i-tabler-circle-check",
+    tone: "emerald",
+    ratio:
+      hasUsage.value && usage.value.totals?.success_rate != null
+        ? Number(usage.value.totals.success_rate) || 0
+        : null,
   },
   {
-    label: "Active access keys",
+    label: t("dashboard.card.activeKeys"),
     value: hasUsage.value
       ? formatNumber(usage.value.totals?.active_client_key_count)
       : "--",
     detail: hasUsage.value
-      ? `${formatNumber(usage.value.totals?.active_credential_count)} execution credentials used`
-      : "No active keys yet",
+      ? t("dashboard.card.credentialsUsed", { count: formatNumber(usage.value.totals?.active_credential_count) })
+      : t("dashboard.card.noActiveKeys"),
     to: hasUsage.value ? "/admin/usage" : undefined,
+    icon: "i-tabler-key",
+    tone: "amber",
+    ratio:
+      hasUsage.value && clientKeys.value.length
+        ? Number(usage.value.totals?.active_client_key_count || 0) /
+          clientKeys.value.length
+        : null,
   },
 ]);
 const inventoryCards = computed(() => [
   {
-    label: "Enabled model service keys",
+    label: t("dashboard.inventory.modelServiceKeys"),
     value: availableProviders.value,
-    detail: `${providerRows.value.filter((item) => item.total > 0).length} model service types connected`,
+    detail: t("dashboard.inventory.serviceTypes", { count: providerRows.value.filter((item) => item.total > 0).length }),
     to: "/admin/providers",
+    icon: "i-tabler-cloud-computing",
+    tone: "violet",
   },
   {
-    label: "Enabled account credentials",
+    label: t("dashboard.inventory.accountCredentials"),
     value: activeAccounts.value,
-    detail: `${accountFiles.value.length} total records`,
+    detail: t("dashboard.inventory.totalRecords", { count: accountFiles.value.length }),
     to: "/admin/credentials",
+    icon: "i-tabler-id-badge-2",
+    tone: "blue",
   },
   {
-    label: "Client access keys",
+    label: t("dashboard.inventory.clientKeys"),
     value: clientKeys.value.length,
-    detail: `${clientKeys.value.length} keys can call the server API`,
+    detail: t("dashboard.inventory.keysCanCall", { count: clientKeys.value.length }),
     to: "/admin/access-keys",
+    icon: "i-tabler-key",
+    tone: "amber",
   },
   ...(supports("topology", false) || supports("nodes", false)
     ? [
         {
-          label: "Runtime nodes",
+          label: t("dashboard.inventory.runtimeNodes"),
           value: cpaCount.value,
-          detail: `${homeCount.value} Home instances`,
+          detail: t("dashboard.inventory.homeInstances", { count: homeCount.value }),
           to: "/admin/system-nodes",
+          icon: "i-tabler-server-2",
+          tone: "emerald",
         },
       ]
     : []),
@@ -664,34 +612,34 @@ const configChecks = computed(() => {
   const usageConfig = config.value.observability?.usage || config.value;
   return [
     {
-      label: "Request log",
-      value: logs["request-log"] === true ? "Enabled" : "Disabled",
+      label: t("dashboard.switch.requestLog"),
+      value: logs["request-log"] === true ? t("common.enabled") : t("common.disabled"),
       color: logs["request-log"] === true ? "success" : "warning",
     },
     {
-      label: "Usage statistics",
+      label: t("dashboard.switch.usageStatistics"),
       value:
         usageConfig["usage-statistics-enabled"] === true
-          ? "Enabled"
-          : "Disabled",
+          ? t("common.enabled")
+          : t("common.disabled"),
       color:
         usageConfig["usage-statistics-enabled"] === true
           ? "success"
           : "warning",
     },
     {
-      label: "File logging",
-      value: logs["logging-to-file"] === true ? "Enabled" : "Disabled",
+      label: t("dashboard.switch.fileLogging"),
+      value: logs["logging-to-file"] === true ? t("common.enabled") : t("common.disabled"),
       color: "neutral",
     },
     {
-      label: "Debug mode",
-      value: logs.debug === true ? "Enabled" : "Disabled",
+      label: t("dashboard.switch.debugMode"),
+      value: logs.debug === true ? t("common.enabled") : t("common.disabled"),
       color: logs.debug === true ? "warning" : "success",
     },
     {
-      label: "Routing strategy",
-      value: routing.value,
+      label: t("dashboard.switch.routingStrategy"),
+      value: routing.value === "Unknown" ? t("common.unknown") : routing.value,
       color: routing.value === "Unknown" ? "warning" : "success",
     },
   ] as const;
@@ -702,13 +650,13 @@ const credentialSources = computed(() => {
     const source = String(item.source || "unknown").toLowerCase();
     const label =
       source === "db" || source === "database"
-        ? "Database"
+        ? t("dashboard.sourceKind.database")
         : source === "file"
-          ? "File"
+          ? t("dashboard.sourceKind.file")
           : source === "memory"
-            ? "Memory"
+            ? t("dashboard.sourceKind.memory")
             : source === "unknown"
-              ? "Unknown"
+              ? t("common.unknown")
               : source;
     counts.set(label, (counts.get(label) || 0) + 1);
   }
@@ -716,11 +664,15 @@ const credentialSources = computed(() => {
     .map(([label, count]) => ({ label, count }))
     .sort((a, b) => b.count - a.count);
 });
+function shareOf(item: any, list: any[]) {
+  const max = Math.max(1, ...list.map((entry) => Number(entry.request_count) || 0));
+  return `${Math.round(((Number(item.request_count) || 0) / max) * 100)}%`;
+}
 function formatNumber(value: unknown) {
-  return new Intl.NumberFormat().format(Number(value) || 0);
+  return new Intl.NumberFormat(intlLocale.value).format(Number(value) || 0);
 }
 function formatCompact(value: unknown) {
-  return new Intl.NumberFormat(undefined, {
+  return new Intl.NumberFormat(intlLocale.value, {
     notation: "compact",
     maximumFractionDigits: 1,
   }).format(Number(value) || 0);
@@ -739,7 +691,7 @@ function keyLabel(item: any) {
     (key) => String(key.id) === String(item.metadata?.api_key_id || item.id),
   );
   return (
-    key?.display_name || key?.name || item.label || item.id || "Client key"
+    key?.display_name || key?.name || item.label || item.id || t("dashboard.clientKey")
   );
 }
 const snapshotUsers = useWorkspaceState<any[]>('admin:dashboard:snapshotUsers', () => ([]));
@@ -758,7 +710,7 @@ async function refreshDashboard() {
         label: "Capabilities",
         detail: error?.statusCode
           ? `HTTP ${error.statusCode}`
-          : error?.message || "Request failed",
+          : error?.message || "",
         to: "/admin/system-nodes",
       });
     }
@@ -775,7 +727,7 @@ async function refreshDashboard() {
           label,
           detail: error?.statusCode
             ? `HTTP ${error.statusCode}`
-            : error?.message || "Request failed",
+            : error?.message || "",
           to,
         });
         return fallback;
@@ -930,7 +882,7 @@ async function refreshDashboard() {
     lastUpdated.value = new Date();
     snapshot.value = true;
   } catch (error: any) {
-    loadError.value = error?.message || "Unable to load dashboard data.";
+    loadError.value = error?.message || t("dashboard.loadErrorFallback");
   } finally {
     loading.value = false;
   }
@@ -940,61 +892,279 @@ onMounted(refreshDashboard);
 </script>
 
 <style scoped>
-.dashboard-metric-strip {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 1px;
+/* Bento layout: readiness spotlight + metric tiles, then charts and insight cards. */
+.dashboard-hero {
+  --hero-accent: var(--ui-primary);
+  position: relative;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
   overflow: hidden;
-  border: 1px solid var(--ui-border);
-  border-radius: 0.5rem;
-  background: var(--ui-border);
+  padding: 1.25rem 1.25rem 1.375rem;
+  border: 1px solid color-mix(in oklch, var(--hero-accent) 24%, var(--ui-border));
+  border-radius: 1.125rem;
+  background:
+    radial-gradient(ellipse 120% 70% at 100% 0%, color-mix(in oklch, var(--hero-accent) 16%, transparent), transparent 65%),
+    var(--admin-panel-bg, var(--ui-bg));
+  box-shadow: var(--admin-panel-shadow);
 }
+.dashboard-hero::after {
+  position: absolute;
+  right: -4rem;
+  bottom: -5rem;
+  width: 12rem;
+  height: 12rem;
+  border: 1.75rem solid color-mix(in oklch, var(--hero-accent) 7%, transparent);
+  border-radius: 9999px;
+  content: '';
+  pointer-events: none;
+}
+.dashboard-hero > * { position: relative; z-index: 1; }
+.dashboard-hero--success { --hero-accent: var(--ui-success); }
+.dashboard-hero--warning { --hero-accent: var(--ui-warning); }
+.dashboard-hero--info { --hero-accent: var(--ui-info); }
+.dashboard-hero-icon {
+  display: flex;
+  width: 2.25rem;
+  height: 2.25rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.75rem;
+  background: color-mix(in oklch, var(--hero-accent) 15%, transparent);
+  color: var(--hero-accent);
+}
+
+.dashboard-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  border: 1px solid var(--ui-border);
+  border-radius: 9999px;
+  background: color-mix(in oklch, var(--admin-panel-bg, var(--ui-bg)) 70%, transparent);
+  color: var(--ui-text-muted);
+}
+
+.dashboard-issues {
+  padding: 0.5rem;
+  border: 1px solid var(--ui-border);
+  border-radius: 0.75rem;
+  background: color-mix(in oklch, var(--ui-bg-elevated) 80%, transparent);
+}
+.dashboard-issue {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.5rem;
+  border-radius: 0.5rem;
+  color: var(--ui-text-muted);
+  font-size: 0.8125rem;
+}
+.dashboard-issue:hover { background: var(--ui-hover); }
+
+/* Metric tiles */
+.dashboard-metric--violet { --metric-accent: var(--color-violet-500); }
+.dashboard-metric--blue { --metric-accent: var(--color-blue-500); }
+.dashboard-metric--emerald { --metric-accent: var(--color-emerald-500); }
+.dashboard-metric--amber { --metric-accent: var(--color-amber-500); }
 
 .dashboard-metric {
+  --metric-accent: var(--ui-primary);
   position: relative;
+  display: flex;
   min-width: 0;
-  padding: 0.75rem 2rem 0.75rem 1rem;
-  background: var(--ui-bg-elevated);
+  flex-direction: column;
+  padding: 0.875rem 1rem 0.9375rem;
+  border: 1px solid var(--admin-panel-border, var(--ui-border));
+  border-radius: 0.875rem;
+  background: var(--admin-panel-bg, var(--ui-bg));
+  box-shadow: var(--admin-panel-shadow);
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
 }
 
-.dashboard-metric:focus-visible {
-  z-index: 1;
-  outline: 2px solid var(--ui-focus);
-  outline-offset: -2px;
+.metric-head {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
 }
 
-.metric-label,
-.metric-detail {
-  font-size: 0.75rem;
-  line-height: 1rem;
-  font-weight: 400;
+.metric-icon {
+  display: flex;
+  width: 2.125rem;
+  height: 2.125rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.625rem;
+  background: color-mix(in oklch, var(--metric-accent) 13%, transparent);
+  color: var(--metric-accent);
+}
+.metric-icon--sm { width: 1.875rem; height: 1.875rem; border-radius: 0.5rem; }
+
+.metric-label {
+  font-size: 0.8125rem;
+  line-height: 1.125rem;
+  font-weight: 500;
   color: var(--ui-text-muted);
 }
 
 .metric-value {
-  margin-block: 0.25rem;
-  font-size: 1.25rem;
+  margin-top: 0.625rem;
+  font-size: 1.375rem;
   line-height: 1.75rem;
-  font-weight: 600;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+  color: var(--ui-text-highlighted);
   font-variant-numeric: tabular-nums;
 }
 
-.metric-link-icon {
-  position: absolute;
-  top: 0.75rem;
-  right: 0.75rem;
-  color: var(--ui-text-muted);
+.metric-detail {
+  margin-top: 0.125rem;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  color: var(--ui-text-dimmed);
+}
+
+.metric-spark { height: 2.25rem; color: var(--metric-accent); }
+
+.metric-bar {
+  height: 0.375rem;
+  overflow: hidden;
+  border-radius: 9999px;
+  background: color-mix(in oklch, var(--metric-accent) 14%, var(--ui-bg-muted));
+}
+.metric-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, color-mix(in oklch, var(--metric-accent) 65%, transparent), var(--metric-accent));
+}
+
+.metric-link-icon,
+.metric-chevron {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  color: var(--ui-text-dimmed);
+  transition: color 160ms ease, transform 160ms ease;
+}
+
+/* Insight cards */
+.dashboard-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.dashboard-rank { display: flex; align-items: flex-start; gap: 0.75rem; --rank-accent: var(--color-violet-500); }
+.dashboard-rank--blue { --rank-accent: var(--color-blue-500); }
+.dashboard-rank-index {
+  display: flex;
+  width: 1.5rem;
+  height: 1.5rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.4375rem;
+  background: color-mix(in oklch, var(--rank-accent) 13%, transparent);
+  color: var(--rank-accent);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.dashboard-share {
+  height: 0.3125rem;
+  overflow: hidden;
+  border-radius: 9999px;
+  background: var(--ui-bg-muted);
+}
+.dashboard-share > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--rank-accent);
+}
+
+.dashboard-empty {
+  display: flex;
+  min-height: 9rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  color: var(--ui-text-dimmed);
+  font-size: 0.8125rem;
+  text-align: center;
+}
+
+.dashboard-inventory {
+  --metric-accent: var(--ui-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.625rem;
+  border-radius: 0.625rem;
+  transition: background-color 120ms ease;
+}
+.dashboard-inventory:hover { background: var(--ui-hover); }
+
+.provider-bar {
+  display: flex;
+  height: 0.375rem;
+  overflow: hidden;
+  border-radius: 9999px;
+  background: var(--ui-bg-muted);
+}
+.provider-bar__active { background: var(--color-emerald-500); }
+.provider-bar__disabled { background: var(--color-zinc-400); }
+
+.dashboard-switch {
+  --switch-accent: var(--ui-text-dimmed);
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--ui-border);
+  border-radius: 0.75rem;
+  background: var(--ui-bg-elevated);
+}
+.dashboard-switch--success { --switch-accent: var(--ui-success); }
+.dashboard-switch--warning { --switch-accent: var(--ui-warning); }
+.dashboard-switch__dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  flex-shrink: 0;
+  border-radius: 9999px;
+  background: var(--switch-accent);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--switch-accent) 20%, transparent);
+}
+
+.dashboard-metric:focus-visible,
+.dashboard-inventory:focus-visible,
+.dashboard-issue:focus-visible {
+  outline: 2px solid var(--ui-focus);
+  outline-offset: 2px;
 }
 
 @media (hover: hover) {
-  .dashboard-metric:hover { background: var(--ui-hover); }
+  .dashboard-metric:not(.dashboard-metric--static):hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in oklch, var(--metric-accent) 40%, var(--ui-border));
+    box-shadow: 0 14px 30px -16px color-mix(in oklch, var(--metric-accent) 55%, transparent);
+  }
+  .dashboard-metric:hover .metric-link-icon {
+    color: var(--metric-accent);
+    transform: translate(2px, -2px);
+  }
+  .dashboard-inventory:hover .metric-chevron {
+    color: var(--metric-accent);
+    transform: translateX(2px);
+  }
 }
 
-@media (min-width: 40rem) {
-  .dashboard-metric-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-
-@media (min-width: 80rem) {
-  .dashboard-metric-strip { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-metric,
+  .metric-link-icon,
+  .metric-chevron { transition: none; }
 }
 </style>

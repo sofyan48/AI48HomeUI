@@ -4,50 +4,45 @@
       v-if="summaryError"
       color="warning"
       variant="subtle"
-      title="Upstream summary unavailable"
+      :title="t('upstream.summaryUnavailable')"
       :description="summaryError"
     />
-    <section aria-label="Upstream summary" :aria-busy="summaryPending" class="metric-strip">
-      <dl class="metric">
-        <dt>Accounts</dt>
-        <dd class="metric-value">{{ summaryPending && !accounts.length ? "—" : accounts.length }}</dd>
-        <dd class="metric-detail">
-          <span class="metric-dot bg-green-500" />{{ activeAccounts }} active
-          <span class="metric-dot ml-2 bg-slate-400" />{{ disabledAccounts }} disabled
-          <template v-if="unavailableAccounts"><span class="metric-dot ml-2 bg-amber-500" />{{ unavailableAccounts }} unavailable</template>
-        </dd>
-      </dl>
-      <dl class="metric">
-        <dt>Provider keys</dt>
-        <dd class="metric-value">{{ providerKeyCount }}</dd>
-        <dd class="metric-detail truncate" :title="providerGroups">
-          {{ providerGroups || "No entries" }}
-        </dd>
-      </dl>
-      <button
-        type="button"
-        class="metric metric--action text-left"
-        :class="attentionCount && !quotaError ? 'metric--warning' : ''"
-        aria-label="Show accounts needing attention"
-        @click="showAttention"
-      >
-        <span class="flex items-center justify-between text-xs text-[var(--ui-text-muted)]">Needs attention<UIcon name="i-tabler-arrow-right" class="metric-arrow size-3.5" /></span>
-        <span class="metric-value block">{{ quotaError ? "—" : attentionCount }}</span>
-        <span class="metric-detail block">{{ quotaError ? "Quota snapshots unavailable" : "Quota status or stale collection" }}</span>
-      </button>
-      <dl class="metric">
-        <dt>WebSockets</dt>
-        <dd class="metric-value">
-          {{ accounts.filter((item) => item.websockets).length }}
-        </dd>
-        <dd class="metric-detail">Accounts with WebSockets on</dd>
-      </dl>
+    <section class="fleet" :aria-label="t('upstream.fleetLabel')" :aria-busy="summaryPending && !accounts.length">
+      <div class="fleet__card">
+        <span class="fleet__icon" aria-hidden="true"><UIcon name="i-tabler-user-shield" class="size-4" /></span>
+        <div class="min-w-0 flex-1">
+          <div class="flex items-baseline justify-between gap-2">
+            <span class="truncate text-xs font-medium text-[var(--ui-text-muted)]">{{ t('upstream.accounts') }}</span>
+            <span class="shrink-0 text-[11px] tabular-nums text-[var(--ui-text-muted)]">{{ t('upstream.dispatchable', { percent: accounts.length ? Math.round((activeAccounts / accounts.length) * 100) : 0 }) }}</span>
+          </div>
+          <div class="flex min-w-0 items-baseline gap-3">
+            <span class="fleet__count">{{ summaryPending && !accounts.length ? '—' : accounts.length }}</span>
+            <span class="flex min-w-0 flex-wrap gap-x-2.5 text-[11px] text-[var(--ui-text-muted)]">
+              <span class="inline-flex items-center gap-1"><span class="size-1.5 rounded-full bg-emerald-500" />{{ t('upstream.countActive', { count: activeAccounts }) }}</span>
+              <span v-if="unavailableAccounts" class="inline-flex items-center gap-1"><span class="size-1.5 rounded-full bg-amber-500" />{{ t('upstream.countUnavailable', { count: unavailableAccounts }) }}</span>
+              <span class="inline-flex items-center gap-1"><span class="size-1.5 rounded-full bg-zinc-400" />{{ t('upstream.countDisabled', { count: disabledAccounts }) }}</span>
+            </span>
+          </div>
+          <div class="fleet__bar" role="img" :aria-label="t('upstream.fleetBar', { active: activeAccounts, unavailable: unavailableAccounts, disabled: disabledAccounts })">
+            <span class="bg-emerald-500" :style="{ flexGrow: activeAccounts }" />
+            <span class="bg-amber-500" :style="{ flexGrow: unavailableAccounts }" />
+            <span class="bg-zinc-400 dark:bg-zinc-600" :style="{ flexGrow: disabledAccounts }" />
+          </div>
+        </div>
+      </div>
+      <AdminStatGrid
+        :label="t('upstream.details')"
+        :items="summaryCards.slice(1)"
+        :columns="3"
+        :loading="summaryPending && !accounts.length"
+        @select="showAttention"
+      />
     </section>
 
     <AppPanelTabs
       :model-value="tab"
       :items="upstreamTabs"
-      label="Upstream"
+      :label="t('upstream.tabsLabel')"
       @update:model-value="selectTab"
     />
     <AdminUpstreamAccounts
@@ -84,6 +79,7 @@ watch(
 const router = useRouter();
 const { fetchAPI, token } = useApi();
 const toast = useToast();
+const { t } = useAdminI18n();
 const tab = computed(() =>
   route.query.credential
     ? "accounts"
@@ -91,10 +87,10 @@ const tab = computed(() =>
       ? "providers"
       : "accounts",
 );
-const upstreamTabs = [
-  { label: "Accounts", value: "accounts", icon: "i-tabler-user-shield" },
-  { label: "Provider keys", value: "providers", icon: "i-tabler-key" },
-];
+const upstreamTabs = computed(() => [
+  { label: t('upstream.accounts'), value: "accounts", icon: "i-tabler-user-shield" },
+  { label: t('upstream.providerKeys'), value: "providers", icon: "i-tabler-key" },
+]);
 const summaryError = useWorkspaceState('admin:upstream:summaryError', () => (""));
 const quotaError = useWorkspaceState('admin:upstream:quotaError', () => (""));
 const syncing = useWorkspaceState('admin:upstream:syncing', () => (false));
@@ -119,7 +115,7 @@ async function loadSummary() {
     ...providerRoutes.map((name) => fetchAPI(`/config/api-keys/${name}`)),
   ]);
   if (auth.status === "rejected")
-    summaryError.value = auth.reason?.message || "Could not load accounts.";
+    summaryError.value = auth.reason?.message || t('upstream.accountsLoadFailed');
   const authData = auth.status === "fulfilled" ? auth.value : null;
   const accounts = Array.isArray(authData)
     ? authData
@@ -146,7 +142,7 @@ async function loadSummary() {
   if (providers.some((result) => result.status === "rejected"))
     summaryError.value = [
       summaryError.value,
-      "Some provider groups could not be loaded.",
+      t('upstream.groupsLoadFailed'),
     ]
       .filter(Boolean)
       .join(" ");
@@ -181,7 +177,7 @@ async function loadSummaryQuota() {
     }
     return quota;
   } catch (error) {
-    quotaError.value = error?.message || "Quota snapshots unavailable.";
+    quotaError.value = error?.message || t('upstream.quotaUnavailable');
     return [];
   }
 }
@@ -218,6 +214,48 @@ const providerGroups = computed(() =>
 const attentionCount = computed(
   () => (summaryQuota.value || []).filter(isQuotaAttention).length,
 );
+const summaryCards = computed(() => [
+  {
+    key: "accounts",
+    label: t('upstream.accounts'),
+    value: accounts.value.length,
+    detail: [
+      t('upstream.countActive', { count: activeAccounts.value }),
+      t('upstream.countDisabled', { count: disabledAccounts.value }),
+      unavailableAccounts.value ? t('upstream.countUnavailable', { count: unavailableAccounts.value }) : "",
+    ].filter(Boolean).join(" · "),
+    icon: "i-tabler-user-shield",
+    tone: "violet",
+    ratio: accounts.value.length ? activeAccounts.value / accounts.value.length : null,
+  },
+  {
+    key: "providers",
+    label: t('upstream.providerKeys'),
+    value: providerKeyCount.value,
+    detail: providerGroups.value || t('upstream.noEntries'),
+    icon: "i-tabler-key",
+    tone: "blue",
+  },
+  {
+    key: "attention",
+    label: t('upstream.needsAttention'),
+    value: quotaError.value ? "—" : attentionCount.value,
+    detail: quotaError.value ? t('upstream.quotaUnavailableShort') : t('upstream.attentionDetail'),
+    icon: "i-tabler-alert-triangle",
+    tone: "amber",
+    action: true,
+    ariaLabel: t('upstream.attentionAria'),
+    warning: Boolean(attentionCount.value && !quotaError.value),
+  },
+  {
+    key: "websockets",
+    label: "WebSockets",
+    value: accounts.value.filter((item) => item.websockets).length,
+    detail: t('upstream.websocketsDetail'),
+    icon: "i-tabler-plug-connected",
+    tone: "emerald",
+  },
+]);
 function selectTab(value) {
   void router.replace({
     query: { ...route.query, tab: value, credential: undefined },
@@ -241,8 +279,8 @@ async function syncData() {
   } catch (error) {
     if (session !== token.value) return;
     toast.add({
-      title: "Sync failed",
-      description: error?.message || "Could not queue quota collection.",
+      title: t('upstream.syncFailed'),
+      description: error?.message || t('upstream.syncFailedDetail'),
       color: "error",
     });
   } finally {
@@ -252,64 +290,52 @@ async function syncData() {
 </script>
 
 <style scoped>
-.metric-strip {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 1px;
-  overflow: hidden;
-  border: 1px solid var(--ui-border);
-  border-radius: 0.5rem;
-  background: var(--ui-border);
-}
-
-.metric {
+/* Upstream summary: one compact row; each card is only as tall as its content. */
+.fleet { display: grid; gap: 0.75rem; align-items: start; }
+@media (min-width: 64rem) { .fleet { grid-template-columns: minmax(0, 1.15fr) minmax(0, 2fr); } }
+.fleet :deep(.kpi) { align-self: start; }
+.fleet__card {
+  display: flex;
   min-width: 0;
-  padding: 0.875rem 1.125rem;
-  background: var(--ui-bg);
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem 0.875rem;
+  border: 1px solid var(--admin-panel-border);
+  border-radius: 0.875rem;
+  background:
+    linear-gradient(135deg, color-mix(in oklch, var(--page-accent) 6%, transparent), transparent 55%),
+    var(--admin-panel-bg);
+  box-shadow: 0 1px 2px rgb(24 24 27 / 4%);
 }
-
-.metric dt,
-.metric-detail {
-  font-size: 0.75rem;
-  line-height: 1rem;
-  color: var(--ui-text-muted);
+.fleet__icon {
+  display: flex;
+  width: 2rem;
+  height: 2rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.625rem;
+  background: color-mix(in oklch, var(--page-accent) 12%, transparent);
+  color: var(--page-accent);
 }
-
-.metric-value {
-  margin-block: 0.375rem 0.25rem;
-  font-size: 1.5rem;
-  line-height: 2rem;
-  font-weight: 600;
+.fleet__count {
+  flex-shrink: 0;
+  font-size: 1.1875rem;
+  line-height: 1.5rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
   font-variant-numeric: tabular-nums;
   color: var(--ui-text-highlighted);
 }
-
-.metric-dot {
-  display: inline-block;
-  width: 0.375rem;
-  height: 0.375rem;
-  margin-right: 0.3125rem;
+.fleet__bar {
+  display: flex;
+  height: 0.25rem;
+  gap: 2px;
+  margin-top: 0.375rem;
+  overflow: hidden;
   border-radius: 9999px;
-  vertical-align: middle;
+  background: var(--ui-bg-muted);
 }
-
-.metric--action {
-  cursor: pointer;
-  transition: background-color 120ms ease;
-}
-
-.metric--action:hover { background: var(--ui-bg-elevated); }
-.metric--action:focus-visible { outline: 2px solid var(--ui-primary); outline-offset: -2px; }
-.metric--action .metric-arrow { opacity: 0; transition: opacity 120ms ease; }
-.metric--action:is(:hover, :focus-visible) .metric-arrow { opacity: 1; }
-.metric--warning .metric-value { color: var(--color-amber-600); }
-:global(.dark) .metric--warning .metric-value { color: var(--color-amber-400); }
-
-@media (min-width: 40rem) {
-  .metric-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-
-@media (min-width: 80rem) {
-  .metric-strip { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-}
+.fleet__bar > span { flex-basis: 0; border-radius: 9999px; transition: flex-grow 400ms ease; }
+@media (prefers-reduced-motion: reduce) { .fleet__bar > span { transition: none; } }
 </style>

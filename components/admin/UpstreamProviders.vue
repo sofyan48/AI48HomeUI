@@ -5,36 +5,36 @@
       color="error"
       variant="subtle"
       icon="i-tabler-alert-triangle"
-      title="Unable to load provider entries"
+      :title="t('upstream.providers.loadErrorTitle')"
       :description="pageError"
     />
 
     <section class="grid gap-4 xl:grid-cols-[280px_minmax(0,1fr)]">
-      <aside class="self-start max-xl:hidden" aria-label="Provider categories">
+      <aside class="self-start max-xl:hidden" :aria-label="t('upstream.providers.categories')">
         <AppCard :ui="{ header: 'px-4 py-3', body: 'p-2' }">
-          <template #header><h2 class="font-semibold">Provider categories</h2></template>
-          <nav class="grid gap-1" aria-label="Provider categories">
+          <template #header><h2 class="font-semibold">{{ t('upstream.providers.categories') }}</h2></template>
+          <nav class="grid gap-1" :aria-label="t('upstream.providers.categories')">
           <button
             v-for="category in providerCategories"
             :key="category.value"
             type="button"
             :disabled="providerEditorOpen || deleteOpen"
             :aria-current="selectedProviderRoute === category.value ? 'page' : undefined"
-            class="flex w-full min-w-0 items-center justify-between gap-3 rounded-md border px-3 py-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-            :class="selectedProviderRoute === category.value ? 'border-[var(--ui-primary)] bg-[var(--ui-primary)]/10 text-[var(--ui-primary)]' : 'border-transparent hover:border-[var(--ui-border)] hover:bg-[var(--ui-bg-elevated)]'"
+            class="flex w-full min-w-0 items-center justify-between gap-3 rounded-lg border px-2.5 py-2 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+            :class="selectedProviderRoute === category.value ? 'border-[color-mix(in_oklch,var(--ui-primary)_30%,transparent)] bg-[var(--admin-selected)] text-[var(--ui-primary)]' : 'border-transparent hover:bg-[var(--ui-hover)]'"
             @click="selectedProviderRoute = category.value"
           >
             <span class="flex min-w-0 items-center gap-2.5">
-              <span class="flex size-6 shrink-0 items-center justify-center rounded-md border border-[var(--ui-border)] bg-[var(--ui-bg-elevated)] text-[10px] font-semibold" aria-hidden="true">{{ category.mark }}</span>
+              <span class="flex size-7 shrink-0 items-center justify-center rounded-md bg-[var(--ui-bg-muted)] text-[10px] font-semibold" aria-hidden="true">{{ category.mark }}</span>
               <span class="min-w-0">
-              <span class="block truncate text-sm font-medium">{{ category.label }}</span>
+              <span class="block truncate text-sm font-medium">{{ categoryLabel(category) }}</span>
               <span class="mt-0.5 block text-xs text-[var(--ui-text-muted)]">
-                {{ categoryStats[category.value] ? `${categoryStats[category.value].active} active / ${categoryStats[category.value].total} total` : 'Counts unavailable' }}
+                {{ categoryStats[category.value] ? t('upstream.providers.categoryCounts', { active: categoryStats[category.value].active, total: categoryStats[category.value].total }) : t('upstream.providers.countsUnavailable') }}
               </span>
               </span>
             </span>
-            <UIcon v-if="categoryStats[category.value]?.disabled" name="i-tabler-alert-triangle" class="size-4 shrink-0 text-[var(--ui-warning)]" :aria-label="`${categoryStats[category.value].disabled} disabled entries`" />
-            <span v-else class="shrink-0 rounded-md border border-[var(--ui-border)] px-2 py-1 text-xs" :aria-label="categoryStats[category.value] ? `${categoryStats[category.value].total} entries` : 'Counts unavailable'">{{ categoryStats[category.value]?.total ?? '—' }}</span>
+            <UIcon v-if="categoryStats[category.value]?.disabled" name="i-tabler-alert-triangle" class="size-4 shrink-0 text-[var(--ui-warning)]" :aria-label="t('upstream.providers.disabledEntries', { count: categoryStats[category.value].disabled })" />
+            <span v-else class="shrink-0 rounded-full bg-[var(--ui-bg-muted)] px-2 py-0.5 text-xs tabular-nums" :aria-label="categoryStats[category.value] ? t('upstream.providers.entriesCount', { count: categoryStats[category.value].total }) : t('upstream.providers.countsUnavailable')">{{ categoryStats[category.value]?.total ?? '—' }}</span>
           </button>
           </nav>
         </AppCard>
@@ -42,23 +42,23 @@
 
       <div class="min-w-0">
         <AppCard :ui="{ body: 'p-0' }">
-        <div class="flex flex-col gap-3 border-b border-[var(--ui-border)] px-4 py-4 md:flex-row md:items-center md:justify-between">
+        <div class="flex flex-col gap-3 border-b border-[var(--ui-border)] px-4 py-3 md:flex-row md:items-center md:justify-between">
           <div class="w-full sm:w-auto">
-            <label class="mb-1.5 block text-sm font-medium xl:hidden">Provider category</label>
+            <label class="mb-1.5 block text-sm font-medium xl:hidden">{{ t('upstream.providers.category') }}</label>
             <USelectMenu
               v-model="selectedProviderRoute"
               :items="providerOptions"
               value-key="value"
               label-key="label"
-              :search-input="{ placeholder: 'Search provider categories...' }"
+              :search-input="{ placeholder: t('upstream.providers.searchCategories') }"
               :disabled="providerEditorOpen || deleteOpen"
               class="w-full xl:hidden"
             />
-            <h2 class="hidden items-center gap-2 text-base font-semibold text-[var(--ui-text-highlighted)] xl:flex"><span class="flex size-5 items-center justify-center rounded border border-[var(--ui-border)] text-[9px]" aria-hidden="true">{{ selectedProvider.mark }}</span>{{ selectedProvider.label }} <span class="font-mono text-xs font-normal text-[var(--ui-text-muted)]">/{{ selectedProviderRoute }}</span></h2>
+            <h2 class="hidden items-center gap-2 text-base font-semibold text-[var(--ui-text-highlighted)] xl:flex"><span class="flex size-5 items-center justify-center rounded border border-[var(--ui-border)] text-[9px]" aria-hidden="true">{{ selectedProvider.mark }}</span>{{ selectedProviderLabel }} <span class="font-mono text-xs font-normal text-[var(--ui-text-muted)]">/{{ selectedProviderRoute }}</span></h2>
           </div>
           <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <UInput v-model="providerSearch" icon="i-tabler-search" placeholder="Filter entries..." class="w-full sm:w-72" />
-            <AppButton color="primary" icon="i-tabler-plus" :disabled="pending || !!pageError" @click="openProviderCreate">New provider</AppButton>
+            <UInput v-model="providerSearch" icon="i-tabler-search" :placeholder="t('upstream.providers.filterEntries')" class="w-full sm:w-72" />
+            <AppButton color="primary" icon="i-tabler-plus" :disabled="pending || !!pageError" @click="openProviderCreate">{{ t('upstream.providers.newProvider') }}</AppButton>
           </div>
         </div>
 
@@ -66,32 +66,30 @@
           <template #identity-cell="{ row }">
             <div class="min-w-0">
               <p class="max-w-52 truncate font-medium text-[var(--ui-text-highlighted)]">{{ providerEntryLabel(rowValue(row)) }}</p>
-              <p class="mt-1 max-w-52 truncate font-mono text-xs text-[var(--ui-text-muted)]">{{ rowValue(row).api_key_preview || rowValue(row).auth_index || rowValue(row).id || selectedProvider.label }}</p>
+              <p class="mt-1 max-w-52 truncate font-mono text-xs text-[var(--ui-text-muted)]">{{ rowValue(row).api_key_preview || rowValue(row).auth_index || rowValue(row).id || selectedProviderLabel }}</p>
             </div>
           </template>
 
           <template #endpoint-cell="{ row }">
             <p class="max-w-56 truncate font-mono text-xs text-[var(--ui-text-muted)]" :title="safeEndpoint(rowValue(row)['base-url'] || rowValue(row).base_url)">{{ safeEndpoint(rowValue(row)['base-url'] || rowValue(row).base_url) }}</p>
           </template>
-          <template #prefix-cell="{ row }"><span class="rounded-md border border-[var(--ui-border)] px-2 py-1 text-xs">{{ rowValue(row).prefix || 'None' }}</span></template>
-          <template #models-cell="{ row }"><span class="text-xs text-[var(--ui-text-muted)]">{{ Array.isArray(rowValue(row).models) ? rowValue(row).models.length : 0 }} models · {{ Object.keys(rowValue(row).headers || {}).length }} headers</span></template>
+          <template #prefix-cell="{ row }"><span class="rounded-full bg-[var(--ui-bg-muted)] px-2 py-0.5 font-mono text-xs">{{ rowValue(row).prefix || t('common.none') }}</span></template>
+          <template #models-cell="{ row }"><span class="text-xs text-[var(--ui-text-muted)]">{{ t('upstream.providers.modelsHeaders', { models: Array.isArray(rowValue(row).models) ? rowValue(row).models.length : 0, headers: Object.keys(rowValue(row).headers || {}).length }) }}</span></template>
           <template #status-cell="{ row }">
-            <span class="inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs font-medium" :class="rowValue(row).disabled ? 'border-[var(--ui-warning)] text-[var(--ui-warning)]' : 'border-[var(--ui-primary)] text-[var(--ui-primary)]'">
-              <UIcon :name="rowValue(row).disabled ? 'i-tabler-alert-triangle' : 'i-tabler-circle-check'" class="size-3" />{{ rowValue(row).disabled ? 'Disabled' : 'Active' }}
-            </span>
+            <UBadge :color="rowValue(row).disabled ? 'warning' : 'success'" variant="subtle" size="sm" :icon="rowValue(row).disabled ? 'i-tabler-alert-triangle' : 'i-tabler-circle-check'">{{ rowValue(row).disabled ? t('common.disabled') : t('common.active') }}</UBadge>
           </template>
 
           <template #actions-cell="{ row }">
-            <AdminRowActions :actions="providerRowActions(rowValue(row))" :menu-label="`provider ${providerEntryLabel(rowValue(row))}`" />
+            <AdminRowActions :actions="providerRowActions(rowValue(row))" :menu-label="t('upstream.providers.rowMenu', { name: providerEntryLabel(rowValue(row)) })" />
           </template>
 
           <template #empty>
-            <div class="flex flex-col items-center justify-center px-6 py-14 text-center">
-              <div class="mb-3 rounded-full bg-white/40 p-3 dark:bg-neutral-900/40">
+            <div class="flex flex-col items-center justify-center px-6 py-8 text-center">
+              <div class="mb-3 rounded-full bg-[var(--ui-bg-muted)] p-3 text-[var(--ui-text-muted)]">
                 <UIcon name="i-tabler-server-2" class="size-6 text-[var(--ui-text-muted)]" />
               </div>
-              <p class="font-medium">{{ pending ? 'Loading provider entries…' : pageError ? 'Provider entries unavailable' : providerSearch ? 'No matching entries' : `No ${selectedProvider.label} entries` }}</p>
-              <p class="mt-1 text-sm text-[var(--ui-text-muted)]">{{ pageError ? 'Check the error above and retry.' : providerSearch ? 'Try a different search.' : 'Add an entry to configure this provider category.' }}</p>
+              <p class="font-medium">{{ pending ? t('upstream.providers.emptyLoading') : pageError ? t('upstream.providers.emptyUnavailable') : providerSearch ? t('upstream.providers.emptyNoMatch') : t('upstream.providers.emptyNone', { provider: selectedProviderLabel }) }}</p>
+              <p class="mt-1 text-sm text-[var(--ui-text-muted)]">{{ pageError ? t('upstream.providers.emptyCheckError') : providerSearch ? t('upstream.providers.emptyTryDifferent') : t('upstream.providers.emptyAddHint') }}</p>
             </div>
           </template>
         </AppTable>
@@ -101,18 +99,18 @@
 
     <AdminModalForm
       v-model:open="providerEditorOpen"
-      :title="providerEditorMode === 'detail' ? 'Provider details' : isCompat ? (providerEditorMode === 'edit' ? 'Edit compatibility group' : 'New compatibility group') : providerEditorMode === 'edit' ? `Edit model key · ${selectedProvider.label}` : `New model key · ${selectedProvider.label}`"
-      description="Configure model provider credentials and settings."
+      :title="providerEditorMode === 'detail' ? t('upstream.providers.detailsTitle') : isCompat ? (providerEditorMode === 'edit' ? t('upstream.providers.editCompat') : t('upstream.providers.newCompat')) : providerEditorMode === 'edit' ? t('upstream.providers.editKey', { provider: selectedProviderLabel }) : t('upstream.providers.newKey', { provider: selectedProviderLabel })"
+      :description="t('upstream.providers.modalDescription')"
     >
         <div v-if="providerEditorMode === 'detail' && editingProviderEntry" class="max-h-[75vh] space-y-5 overflow-y-auto pr-1">
-          <div><p class="text-xs font-medium uppercase text-[var(--ui-text-muted)]">Provider details</p><h2 class="mt-2 text-base font-semibold">{{ providerEntryLabel(editingProviderEntry) }}</h2></div>
+          <div><p class="text-xs font-medium uppercase text-[var(--ui-text-muted)]">{{ t('upstream.providers.detailsTitle') }}</p><h2 class="mt-2 text-base font-semibold">{{ providerEntryLabel(editingProviderEntry) }}</h2></div>
           <dl class="grid gap-x-4 gap-y-3 sm:grid-cols-2">
             <div v-for="field in providerDetailFields" :key="field.label" class="min-w-0"><dt class="text-xs text-[var(--ui-text-muted)]">{{ field.label }}</dt><dd class="mt-1 break-words font-mono text-xs">{{ field.value }}</dd></div>
           </dl>
-          <details class="rounded-md border border-[var(--ui-border)] px-3 py-2.5 text-sm"><summary class="cursor-pointer font-medium">Additional metadata</summary>
+          <details class="rounded-md border border-[var(--ui-border)] px-3 py-2.5 text-sm"><summary class="cursor-pointer font-medium">{{ t('upstream.providers.additionalMetadata') }}</summary>
             <dl class="mt-3 grid gap-x-4 gap-y-3 sm:grid-cols-2"><div v-for="field in providerMetadataFields" :key="field.label"><dt class="text-xs text-[var(--ui-text-muted)]">{{ field.label }}</dt><dd class="mt-1 break-words font-mono text-xs">{{ field.value }}</dd></div></dl>
           </details>
-          <div class="flex justify-end gap-2 border-t border-[var(--ui-border)] pt-4"><AppButton color="neutral" variant="ghost" @click="providerEditorOpen = false">Close</AppButton><AppButton color="primary" icon="i-tabler-pencil" @click="openProviderEdit(editingProviderEntry)">Edit</AppButton></div>
+          <div class="flex justify-end gap-2 border-t border-[var(--ui-border)] pt-4"><AppButton color="neutral" variant="ghost" @click="providerEditorOpen = false">{{ t('common.close') }}</AppButton><AppButton color="primary" icon="i-tabler-pencil" @click="openProviderEdit(editingProviderEntry)">{{ t('common.edit') }}</AppButton></div>
         </div>
         <form v-else novalidate class="max-h-[75vh] space-y-4 overflow-y-auto pr-1" @submit.prevent="saveProviderEntry">
           <UAlert
@@ -120,130 +118,132 @@
             color="error"
             variant="subtle"
             icon="i-tabler-alert-circle"
-            title="Invalid provider entry"
+            :title="t('upstream.providers.invalidEntry')"
             :description="editorError"
           />
 
 
             <div class="grid gap-4">
-              <UFormField v-if="isCompat" label="Model provider name" required><UInput v-model="providerForm.name" class="w-full" placeholder="my-upstream" /></UFormField>
-              <UFormField v-if="!isCompat" label="Model service key" :required="providerEditorMode === 'create'"><UInput v-model="providerKey" type="password" autocomplete="new-password" class="w-full" :placeholder="providerEditorMode === 'edit' ? 'Leave blank to keep the current key' : 'Enter API key'" /></UFormField>
-              <UFormField label="Base URL" :required="requiresBaseURL"><UInput v-model="providerForm['base-url']" type="url" class="w-full" placeholder="https://api.example.com" /></UFormField>
-              <UFormField v-if="!isCompat" label="Proxy URL"><UInput v-model="providerForm['proxy-url']" type="url" class="w-full" placeholder="http://127.0.0.1:7890" /></UFormField>
-              <UFormField label="Model prefix"><UInput v-model="providerForm.prefix" class="w-full" /></UFormField>
-              <UFormField label="Priority"><UInput v-model="providerForm.priority" type="number" step="1" class="w-full" /></UFormField>
-              <UFormField v-if="!isCompat" label="Weight" hint="Used by weighted round-robin routing"><UInput v-model="providerForm.weight" type="number" step="1" class="w-full" /></UFormField>
-              <UFormField label="Request retry rounds" hint="Blank inherits global; 0 disables retry rounds"><UInput v-model="requestRetryText" type="number" step="1" class="w-full" placeholder="Inherit global" /></UFormField>
-              <UFormField label="Cooling policy" hint="Inherit uses the group policy, then the global policy.">
+              <UFormField v-if="isCompat" :label="t('upstream.providers.providerName')" required><UInput v-model="providerForm.name" class="w-full" placeholder="my-upstream" /></UFormField>
+              <UFormField v-if="!isCompat" :label="t('upstream.providers.serviceKey')" :required="providerEditorMode === 'create'"><UInput v-model="providerKey" type="password" autocomplete="new-password" class="w-full" :placeholder="providerEditorMode === 'edit' ? t('upstream.providers.keepCurrentKey') : t('upstream.providers.enterApiKey')" /></UFormField>
+              <UFormField :label="t('upstream.providers.baseUrl')" :required="requiresBaseURL"><UInput v-model="providerForm['base-url']" type="url" class="w-full" placeholder="https://api.example.com" /></UFormField>
+              <UFormField v-if="!isCompat" :label="t('upstream.providers.proxyUrl')"><UInput v-model="providerForm['proxy-url']" type="url" class="w-full" placeholder="http://127.0.0.1:7890" /></UFormField>
+              <UFormField :label="t('upstream.providers.modelPrefix')"><UInput v-model="providerForm.prefix" class="w-full" /></UFormField>
+              <UFormField :label="t('upstream.providers.priority')"><UInput v-model="providerForm.priority" type="number" step="1" class="w-full" /></UFormField>
+              <UFormField v-if="!isCompat" :label="t('upstream.providers.weight')" :hint="t('upstream.providers.weightHint')"><UInput v-model="providerForm.weight" type="number" step="1" class="w-full" /></UFormField>
+              <UFormField :label="t('upstream.providers.retryRounds')" :hint="t('upstream.providers.retryRoundsHint')"><UInput v-model="requestRetryText" type="number" step="1" class="w-full" :placeholder="t('upstream.providers.inheritGlobal')" /></UFormField>
+              <UFormField :label="t('upstream.providers.coolingPolicy')" :hint="t('upstream.providers.coolingPolicyHint')">
                       <USelect v-model="coolingPolicy" :items="coolingPolicyOptions" value-key="value" label-key="label" class="w-full" />
                     </UFormField>
             </div>
             <AdminModalCard v-if="isCompat" class="space-y-3">
               <div class="flex items-center justify-between gap-2">
-                <h3 class="text-sm font-medium">API key entries</h3>
-                <AppButton type="button" size="sm" color="neutral" variant="outline" icon="i-tabler-plus" @click="addCompatKey()">Add key</AppButton>
+                <h3 class="text-sm font-medium">{{ t('upstream.providers.keyEntries') }}</h3>
+                <AppButton type="button" size="sm" color="neutral" variant="outline" icon="i-tabler-plus" @click="addCompatKey()">{{ t('upstream.providers.addKey') }}</AppButton>
               </div>
-              <p class="text-xs text-[var(--ui-text-muted)]">Editing all keys in this compatibility group. Shared settings apply to every key. Discovery and connectivity tests use the first key; save proxy changes before testing.</p>
-              <UAlert v-if="!compatKeyRows.length" color="warning" variant="subtle" title="Keyless fallback" description="Saving without keys creates a fallback credential that sends no API key. Group authentication headers still apply." />
+              <p class="text-xs text-[var(--ui-text-muted)]">{{ t('upstream.providers.compatHelp') }}</p>
+              <UAlert v-if="!compatKeyRows.length" color="warning" variant="subtle" :title="t('upstream.providers.keylessTitle')" :description="t('upstream.providers.keylessDescription')" />
               <AdminModalCard v-for="(key, index) in compatKeyRows" :key="key.rowId" nested class="space-y-3">
                 <div class="flex items-center justify-between gap-2">
-                  <span class="text-sm font-medium">Key {{ index + 1 }}</span>
-                  <AppButton type="button" color="error" variant="ghost" icon="i-tabler-trash" :aria-label="`Remove key ${index + 1}`" @click="compatKeyRows.splice(index, 1)">Remove</AppButton>
+                  <span class="text-sm font-medium">{{ t('upstream.providers.keyN', { n: index + 1 }) }}</span>
+                  <AppButton type="button" color="error" variant="ghost" icon="i-tabler-trash" :aria-label="t('upstream.providers.removeKeyN', { n: index + 1 })" @click="compatKeyRows.splice(index, 1)">{{ t('common.remove') }}</AppButton>
                 </div>
                 <p v-if="key.source.id || key.source.uuid" class="break-all font-mono text-xs text-[var(--ui-text-muted)]">{{ key.source.id || key.source.uuid }}</p>
-                <UFormField label="Model service key" :required="!key.source['api-key']" :hint="key.source['api-key'] ? 'Leave blank to keep the saved key and its identity.' : undefined">
-                  <UInput v-model="key.secret" type="password" autocomplete="new-password" class="w-full" :placeholder="key.source['api-key'] ? 'Keep saved key' : 'Enter API key'" />
+                <UFormField :label="t('upstream.providers.serviceKey')" :required="!key.source['api-key']" :hint="key.source['api-key'] ? t('upstream.providers.keepSavedHint') : undefined">
+                  <UInput v-model="key.secret" type="password" autocomplete="new-password" class="w-full" :placeholder="key.source['api-key'] ? t('upstream.providers.keepSaved') : t('upstream.providers.enterApiKey')" />
                 </UFormField>
-                <UFormField label="Proxy URL" hint="Blank inherits the global proxy; direct bypasses it. HTTP, HTTPS, SOCKS5 and SOCKS5H are supported.">
-                  <UInput v-model="key.proxy" class="w-full" placeholder="direct or http://127.0.0.1:7890" />
+                <UFormField :label="t('upstream.providers.proxyUrl')" :hint="t('upstream.providers.keyProxyHint')">
+                  <UInput v-model="key.proxy" class="w-full" :placeholder="t('upstream.providers.keyProxyPlaceholder')" />
                 </UFormField>
-                <UFormField label="Weight" hint="Blank defaults to 1. Maximum 1000000; non-positive values exclude this key only in weighted round-robin routing.">
+                <UFormField :label="t('upstream.providers.weight')" :hint="t('upstream.providers.keyWeightHint')">
                   <UInput v-model="key.weight" type="number" max="1000000" step="1" class="w-full" placeholder="1" />
                 </UFormField>
               </AdminModalCard>
             </AdminModalCard>
-            <UCheckbox v-if="isCompat" v-model="providerForm['support-prompt-cache-key']" label="Support prompt_cache_key" />
-            <UCheckbox v-if="supportsWebsockets" v-model="providerForm.websockets" label="WebSocket support" />
-            <UCheckbox v-if="isCompat" v-model="providerForm.disabled" label="Disabled" />
+            <UCheckbox v-if="isCompat" v-model="providerForm['support-prompt-cache-key']" :label="t('upstream.providers.promptCacheKeySupport')" />
+            <UCheckbox v-if="supportsWebsockets" v-model="providerForm.websockets" :label="t('upstream.providers.websocketSupport')" />
+            <UCheckbox v-if="isCompat" v-model="providerForm.disabled" :label="t('common.disabled')" />
             <div v-if="selectedProviderRoute === 'codex-api-key'" class="space-y-3">
-              <UCheckbox v-model="providerForm['alpha-search']" label="Enable Alpha Search" />
-              <UFormField label="Codex identity headers" hint="Unset uses the backend default.">
+              <UCheckbox v-model="providerForm['alpha-search']" :label="t('upstream.providers.alphaSearch')" />
+              <UFormField :label="t('upstream.providers.codexIdentity')" :hint="t('upstream.providers.codexIdentityHint')">
                 <USelect v-model="codexCloakingPolicy" :items="codexCloakingOptions" value-key="value" label-key="label" class="w-full" />
               </UFormField>
             </div>
             <div v-if="selectedProviderRoute === 'claude-api-key'" class="space-y-3">
-              <UCheckbox v-model="providerForm['native-tool-search']" label="Trust custom upstream with native tool search" />
-              <p class="text-xs text-[var(--ui-text-muted)]">Requires upstream.claude.tool-search. Official api.anthropic.com keys support native tool search automatically.</p>
-              <UCheckbox v-model="providerForm['rebuild-mid-system-message']" label="Move conversation system messages into the Claude system field" />
-              <UFormField label="Fingerprint profile" hint="Blank leaves the caller's profile in control; claude-code-cli opts into the CLI fingerprint.">
-                <UInput v-model="providerForm['fingerprint-profile']" class="w-full" placeholder="Caller-owned (default)" />
+              <UCheckbox v-model="providerForm['experimental-cch-signing']" :label="t('upstream.providers.cchSigning')" />
+              <p class="text-xs text-[var(--ui-text-muted)]">{{ t('upstream.providers.cchSigningHelp') }}</p>
+              <UCheckbox v-model="providerForm['native-tool-search']" :label="t('upstream.providers.nativeToolSearch')" />
+              <p class="text-xs text-[var(--ui-text-muted)]">{{ t('upstream.providers.nativeToolSearchHelp') }}</p>
+              <UCheckbox v-model="providerForm['rebuild-mid-system-message']" :label="t('upstream.providers.rebuildSystem')" />
+              <UFormField :label="t('upstream.providers.fingerprint')" :hint="t('upstream.providers.fingerprintHint')">
+                <UInput v-model="providerForm['fingerprint-profile']" class="w-full" :placeholder="t('upstream.providers.fingerprintPlaceholder')" />
               </UFormField>
             </div>
             <AdminModalCard v-if="supportsRequestScopedErrors" as="details" class="space-y-3">
-              <summary class="cursor-pointer font-medium">Request-scoped error rules</summary>
-              <UFormField class="mt-3" label="Rules (JSON array)" hint="Blank inherits; [] disables rules. Fields: status, match, match-regexr, action. Actions: stop, stop-and-cooldown, continue, continue-and-cooldown.">
+              <summary class="cursor-pointer font-medium">{{ t('upstream.providers.scopedErrors') }}</summary>
+              <UFormField class="mt-3" :label="t('upstream.providers.scopedRules')" :hint="t('upstream.providers.scopedRulesHint')">
                 <UTextarea v-model="requestScopedErrorsText" :rows="6" class="w-full" placeholder='[{"status": 400, "match": ["invalid request"], "action": "stop"}]' />
               </UFormField>
             </AdminModalCard>
             <AdminModalCard v-if="selectedProviderRoute === 'claude-api-key'" as="details" class="space-y-3">
-              <summary class="cursor-pointer font-medium">Cloak configuration</summary>
+              <summary class="cursor-pointer font-medium">{{ t('upstream.providers.cloakConfig') }}</summary>
               <div class="mt-3 space-y-3">
-                <UFormField label="Cloak mode" hint="Auto cloaks clients other than Claude Code."><USelect v-model="cloakMode" :items="cloakModeOptions" value-key="value" label-key="label" class="w-full" /></UFormField>
-                <UCheckbox v-model="cloakStrictMode" label="Strict mode" />
-                <UFormField label="Sensitive words" hint="One word per line; obfuscated in system instructions."><UTextarea v-model="cloakSensitiveWordsText" :rows="3" class="w-full" /></UFormField>
-                <UFormField label="Cache user ID"><USelect v-model="cloakCacheUserID" :items="cloakCacheOptions" value-key="value" label-key="label" class="w-full" /></UFormField>
+                <UFormField :label="t('upstream.providers.cloakMode')" :hint="t('upstream.providers.cloakModeHint')"><USelect v-model="cloakMode" :items="cloakModeOptions" value-key="value" label-key="label" class="w-full" /></UFormField>
+                <UCheckbox v-model="cloakStrictMode" :label="t('upstream.providers.strictMode')" />
+                <UFormField :label="t('upstream.providers.sensitiveWords')" :hint="t('upstream.providers.sensitiveWordsHint')"><UTextarea v-model="cloakSensitiveWordsText" :rows="3" class="w-full" /></UFormField>
+                <UFormField :label="t('upstream.providers.cacheUserId')"><USelect v-model="cloakCacheUserID" :items="cloakCacheOptions" value-key="value" label-key="label" class="w-full" /></UFormField>
               </div>
             </AdminModalCard>
 
             <AdminModalCard as="details" class="space-y-3">
-              <summary class="cursor-pointer font-medium">Custom models</summary>
-              <div class="mt-3 flex justify-end"><AppButton type="button" size="sm" color="neutral" variant="outline" icon="i-tabler-plus" @click="addProviderModel">Add model</AppButton></div>
+              <summary class="cursor-pointer font-medium">{{ t('upstream.providers.customModels') }}</summary>
+              <div class="mt-3 flex justify-end"><AppButton type="button" size="sm" color="neutral" variant="outline" icon="i-tabler-plus" @click="addProviderModel">{{ t('upstream.providers.addModel') }}</AppButton></div>
 
               <AdminModalCard v-if="supportsDiscovery" nested class="space-y-3">
-                <p class="text-sm font-medium">Discover models</p>
-                <p class="text-xs text-[var(--ui-text-muted)]">Fetch available models from the upstream provider.</p>
+                <p class="text-sm font-medium">{{ t('upstream.providers.discoverModels') }}</p>
+                <p class="text-xs text-[var(--ui-text-muted)]">{{ t('upstream.providers.discoverDescription') }}</p>
                 <div class="flex flex-wrap items-center gap-2">
-                  <AppButton type="button" color="neutral" variant="outline" icon="i-tabler-search" :loading="discovering" :disabled="!discoveryReady" @click="discoverModels">{{ discoveryLoaded ? 'Reload' : 'Discover models' }}</AppButton>
-                  <span class="text-xs text-[var(--ui-text-muted)]">{{ discoveryAuthLabel }} · {{ requiresBaseURL ? providerForm['base-url']?.trim() ? 'Base URL set' : 'Base URL required' : 'Default Base URL available' }}</span>
+                  <AppButton type="button" color="neutral" variant="outline" icon="i-tabler-search" :loading="discovering" :disabled="!discoveryReady" @click="discoverModels">{{ discoveryLoaded ? t('common.reload') : t('upstream.providers.discoverModels') }}</AppButton>
+                  <span class="text-xs text-[var(--ui-text-muted)]">{{ discoveryAuthLabel }} · {{ requiresBaseURL ? providerForm['base-url']?.trim() ? t('upstream.providers.baseUrlSet') : t('upstream.providers.baseUrlRequiredShort') : t('upstream.providers.defaultBaseUrl') }}</span>
                 </div>
-                <UAlert v-if="discoveryError" color="error" variant="subtle" title="Discovery failed" :description="discoveryError" />
+                <UAlert v-if="discoveryError" color="error" variant="subtle" :title="t('upstream.providers.discoveryFailed')" :description="discoveryError" />
                 <div v-if="discoveryVisible" class="space-y-2">
-                  <UInput v-model="discoverySearch" icon="i-tabler-search" placeholder="Search models..." class="w-full" />
-                  <p v-if="discoveryLoaded && !discoveredModels.length" class="text-xs text-[var(--ui-text-muted)]">No models found.</p>
+                  <UInput v-model="discoverySearch" icon="i-tabler-search" :placeholder="t('upstream.providers.searchModels')" class="w-full" />
+                  <p v-if="discoveryLoaded && !discoveredModels.length" class="text-xs text-[var(--ui-text-muted)]">{{ t('upstream.providers.noModelsFound') }}</p>
                   <div class="flex flex-wrap items-center justify-between gap-2">
-                    <p class="text-sm">{{ selectedDiscovered.length }} of {{ discoveredModels.length }} selected</p>
-                    <div class="flex gap-2"><AppButton type="button" size="sm" color="neutral" variant="ghost" @click="selectAllDiscoveredModels">Select all</AppButton><AppButton type="button" size="sm" color="neutral" variant="ghost" @click="selectedDiscovered = []">Clear</AppButton></div>
+                    <p class="text-sm">{{ t('upstream.providers.selectedOf', { selected: selectedDiscovered.length, total: discoveredModels.length }) }}</p>
+                    <div class="flex gap-2"><AppButton type="button" size="sm" color="neutral" variant="ghost" @click="selectAllDiscoveredModels">{{ t('upstream.providers.selectAll') }}</AppButton><AppButton type="button" size="sm" color="neutral" variant="ghost" @click="selectedDiscovered = []">{{ t('upstream.providers.clear') }}</AppButton></div>
                   </div>
                   <div class="max-h-40 space-y-1 overflow-y-auto">
-                    <UCheckbox v-for="model in filteredDiscoveredModels" :key="model.name" :model-value="existingModelNames.has(model.name.toLowerCase()) || selectedDiscovered.includes(model.name)" :disabled="existingModelNames.has(model.name.toLowerCase())" :label="existingModelNames.has(model.name.toLowerCase()) ? `${model.name} · Already added` : model.displayName ? `${model.name} · ${model.displayName}` : model.name" @update:model-value="toggleDiscoveredModel(model.name, $event)" />
+                    <UCheckbox v-for="model in filteredDiscoveredModels" :key="model.name" :model-value="existingModelNames.has(model.name.toLowerCase()) || selectedDiscovered.includes(model.name)" :disabled="existingModelNames.has(model.name.toLowerCase())" :label="existingModelNames.has(model.name.toLowerCase()) ? t('upstream.providers.alreadyAdded', { name: model.name }) : model.displayName ? `${model.name} · ${model.displayName}` : model.name" @update:model-value="toggleDiscoveredModel(model.name, $event)" />
                   </div>
-                  <div class="flex justify-end gap-2"><AppButton type="button" size="sm" color="neutral" variant="ghost" @click="discoveryVisible = false">Close</AppButton><AppButton type="button" size="sm" color="primary" :disabled="!selectedDiscovered.length" @click="applyDiscoveredModels">Apply</AppButton></div>
+                  <div class="flex justify-end gap-2"><AppButton type="button" size="sm" color="neutral" variant="ghost" @click="discoveryVisible = false">{{ t('common.close') }}</AppButton><AppButton type="button" size="sm" color="primary" :disabled="!selectedDiscovered.length" @click="applyDiscoveredModels">{{ t('common.apply') }}</AppButton></div>
                 </div>
               </AdminModalCard>
               <AdminModalCard v-for="(model, index) in providerForm.models" :key="index" nested class="space-y-2">
-                <div class="grid gap-2 sm:grid-cols-2"><UFormField label="Model ID"><UInputMenu v-model="model.name" :items="modelSuggestions" create-item class="w-full" placeholder="Search catalog or enter model" @create="model.name = $event.trim()" /></UFormField><UFormField label="Alias"><UInput v-model="model.alias" class="w-full" /></UFormField><UFormField v-if="supportsModelMapping" label="Display name"><UInput v-model="model['display-name']" class="w-full" /></UFormField><div class="flex items-end justify-between gap-2"><UCheckbox v-if="supportsModelMapping" v-model="model['force-mapping']" label="Force response model mapping" /><AppButton type="button" color="error" variant="ghost" icon="i-tabler-trash" aria-label="Remove model" :disabled="providerForm.models.length <= 1" @click="removeProviderModel(index)" /></div></div>
+                <div class="grid gap-2 sm:grid-cols-2"><UFormField :label="t('upstream.providers.modelId')"><UInputMenu v-model="model.name" :items="modelSuggestions" create-item class="w-full" :placeholder="t('upstream.providers.searchCatalog')" @create="model.name = $event.trim()" /></UFormField><UFormField :label="t('upstream.providers.alias')"><UInput v-model="model.alias" class="w-full" /></UFormField><UFormField v-if="supportsModelMapping" :label="t('upstream.providers.displayName')"><UInput v-model="model['display-name']" class="w-full" /></UFormField><div class="flex items-end justify-between gap-2"><UCheckbox v-if="supportsModelMapping" v-model="model['force-mapping']" :label="t('upstream.providers.forceMapping')" /><AppButton type="button" color="error" variant="ghost" icon="i-tabler-trash" :aria-label="t('upstream.providers.removeModel')" :disabled="providerForm.models.length <= 1" @click="removeProviderModel(index)" /></div></div>
                 <details class="rounded-md border border-[var(--ui-border)] p-3">
-                  <summary class="cursor-pointer text-sm font-medium">Model capabilities</summary>
+                  <summary class="cursor-pointer text-sm font-medium">{{ t('upstream.providers.modelCapabilities') }}</summary>
                   <div class="mt-3 space-y-3">
-                    <UFormField v-if="supportsContextLimit" label="Context limit (tokens)" hint="Blank uses the backend default; configured limits must be positive.">
+                    <UFormField v-if="supportsContextLimit" :label="t('upstream.providers.contextLimit')" :hint="t('upstream.providers.contextLimitHint')">
                       <UInput v-model="model['max-context-length']" type="number" min="1" step="1" class="w-full" />
                     </UFormField>
-                    <UCheckbox v-if="supportsContextLimit" v-model="model['is-compat']" label="Retain thinking blocks with empty signatures" />
-                    <UCheckbox v-if="selectedProviderRoute === 'codex-api-key'" v-model="model['support-configuration-update']" label="Support Responses configuration_update" />
-                    <UCheckbox :model-value="model.thinking != null" label="Override thinking capability" @update:model-value="model.thinking = $event ? (model.thinking || {}) : undefined" />
+                    <UCheckbox v-if="supportsContextLimit" v-model="model['is-compat']" :label="t('upstream.providers.retainThinking')" />
+                    <UCheckbox v-if="selectedProviderRoute === 'codex-api-key'" v-model="model['support-configuration-update']" :label="t('upstream.providers.configurationUpdate')" />
+                    <UCheckbox :model-value="model.thinking != null" :label="t('upstream.providers.overrideThinking')" @update:model-value="model.thinking = $event ? (model.thinking || {}) : undefined" />
                     <div v-if="model.thinking != null" class="grid gap-3 sm:grid-cols-2">
-                      <UFormField label="Minimum thinking budget"><UInput v-model="model.thinking.min" type="number" min="0" step="1" class="w-full" /></UFormField>
-                      <UFormField label="Maximum thinking budget"><UInput v-model="model.thinking.max" type="number" min="0" step="1" class="w-full" /></UFormField>
-                      <UCheckbox v-model="model.thinking['zero-allowed']" label="Allow zero budget" />
-                      <UCheckbox v-model="model.thinking['dynamic-allowed']" label="Allow dynamic budget" />
-                      <UFormField label="Thinking levels" hint="Comma-separated; levels replace budget-based reasoning. none allows zero; auto allows dynamic." class="sm:col-span-2">
+                      <UFormField :label="t('upstream.providers.minBudget')"><UInput v-model="model.thinking.min" type="number" min="0" step="1" class="w-full" /></UFormField>
+                      <UFormField :label="t('upstream.providers.maxBudget')"><UInput v-model="model.thinking.max" type="number" min="0" step="1" class="w-full" /></UFormField>
+                      <UCheckbox v-model="model.thinking['zero-allowed']" :label="t('upstream.providers.allowZero')" />
+                      <UCheckbox v-model="model.thinking['dynamic-allowed']" :label="t('upstream.providers.allowDynamic')" />
+                      <UFormField :label="t('upstream.providers.thinkingLevels')" :hint="t('upstream.providers.thinkingLevelsHint')" class="sm:col-span-2">
                         <UInput :model-value="(model.thinking.levels || []).join(', ')" class="w-full" @update:model-value="model.thinking.levels = splitModelList($event)" />
                       </UFormField>
                     </div>
                     <template v-if="isCompat">
-                      <UCheckbox v-model="model.image" label="Image model" />
-                      <UCheckbox v-model="model['use-max-completion-tokens']" label="Send max_completion_tokens instead of max_tokens" />
-                      <UFormField v-for="field in ['input-modalities', 'output-modalities']" :key="field" :label="field === 'input-modalities' ? 'Input modalities' : 'Output modalities'" hint="Comma-separated; blank uses the backend default.">
+                      <UCheckbox v-model="model.image" :label="t('upstream.providers.imageModel')" />
+                      <UCheckbox v-model="model['use-max-completion-tokens']" :label="t('upstream.providers.maxCompletionTokens')" />
+                      <UFormField v-for="field in ['input-modalities', 'output-modalities']" :key="field" :label="field === 'input-modalities' ? t('upstream.providers.inputModalities') : t('upstream.providers.outputModalities')" :hint="t('upstream.providers.modalitiesHint')">
                         <UInput :model-value="(model[field] || []).join(', ')" class="w-full" placeholder="text, image" @update:model-value="model[field] = splitModelList($event)" />
                       </UFormField>
                     </template>
@@ -251,47 +251,47 @@
                 </details>
               </AdminModalCard>
             </AdminModalCard>
-            <AdminModalCard v-if="!isCompat" as="details"><summary class="cursor-pointer font-medium">Excluded models</summary><UTextarea v-model="excludedModelsText" :rows="3" class="mt-3 w-full" placeholder="Separate model IDs with commas or new lines" /></AdminModalCard>
+            <AdminModalCard v-if="!isCompat" as="details"><summary class="cursor-pointer font-medium">{{ t('upstream.providers.excludedModels') }}</summary><UTextarea v-model="excludedModelsText" :rows="3" class="mt-3 w-full" :placeholder="t('upstream.providers.excludedPlaceholder')" /></AdminModalCard>
             <AdminModalCard as="details" class="space-y-3">
-              <summary class="cursor-pointer font-medium">Request headers</summary>
+              <summary class="cursor-pointer font-medium">{{ t('upstream.providers.requestHeaders') }}</summary>
               <div class="mt-3 space-y-3">
-                <div class="flex justify-end"><AppButton type="button" size="sm" color="neutral" variant="outline" icon="i-tabler-plus" @click="headerRows.push({ name: '', value: '' })">Add header</AppButton></div>
+                <div class="flex justify-end"><AppButton type="button" size="sm" color="neutral" variant="outline" icon="i-tabler-plus" @click="headerRows.push({ name: '', value: '' })">{{ t('upstream.providers.addHeader') }}</AppButton></div>
                 <div v-for="(header, index) in headerRows" :key="index" class="flex items-end gap-2">
-                <UFormField label="Header name" class="flex-1"><UInput v-model="header.name" class="w-full" /></UFormField>
-                <UFormField label="Header value" class="flex-1"><UInput v-model="header.value" class="w-full" /></UFormField>
-                <AppButton type="button" color="error" variant="ghost" icon="i-tabler-trash" aria-label="Remove header" :disabled="headerRows.length <= 1" @click="headerRows.splice(index, 1)" />
+                <UFormField :label="t('upstream.providers.headerName')" class="flex-1"><UInput v-model="header.name" class="w-full" /></UFormField>
+                <UFormField :label="t('upstream.providers.headerValue')" class="flex-1"><UInput v-model="header.value" class="w-full" /></UFormField>
+                <AppButton type="button" color="error" variant="ghost" icon="i-tabler-trash" :aria-label="t('upstream.providers.removeHeader')" :disabled="headerRows.length <= 1" @click="headerRows.splice(index, 1)" />
               </div>
               </div>
             </AdminModalCard>
             <AdminModalCard v-if="supportsTest" class="space-y-3">
-              <UFormField label="Test model"><USelect v-model="testModel" :items="testModelOptions" value-key="value" label-key="label" class="w-full" /></UFormField>
-              <AppButton type="button" color="neutral" variant="outline" :loading="testingConnection" @click="testProviderConnection">Test connectivity</AppButton>
-              <UAlert v-if="testError" color="error" variant="subtle" title="Connectivity test failed" :description="testError" />
-              <UAlert v-if="testSuccess" color="success" variant="subtle" title="Connectivity test succeeded" />
+              <UFormField :label="t('upstream.providers.testModel')"><USelect v-model="testModel" :items="testModelOptions" value-key="value" label-key="label" class="w-full" /></UFormField>
+              <AppButton type="button" color="neutral" variant="outline" :loading="testingConnection" @click="testProviderConnection">{{ t('upstream.providers.testConnectivity') }}</AppButton>
+              <UAlert v-if="testError" color="error" variant="subtle" :title="t('upstream.providers.testFailed')" :description="testError" />
+              <UAlert v-if="testSuccess" color="success" variant="subtle" :title="t('upstream.providers.testSucceeded')" />
             </AdminModalCard>
           <div class="flex items-center justify-between border-t border-[var(--ui-border)] pt-4">
-            <span class="text-xs text-[var(--ui-text-muted)]">Leave the key blank when editing to keep it.</span>
+            <span class="text-xs text-[var(--ui-text-muted)]">{{ t('upstream.providers.keepKeyFooter') }}</span>
             <div class="flex gap-3">
-              <AppButton color="neutral" variant="ghost" type="button" @click="providerEditorOpen = false">Cancel</AppButton>
-              <AppButton color="primary" type="submit" :loading="savingProvider">Save entry</AppButton>
+              <AppButton color="neutral" variant="ghost" type="button" @click="providerEditorOpen = false">{{ t('common.cancel') }}</AppButton>
+              <AppButton color="primary" type="submit" :loading="savingProvider">{{ t('upstream.providers.saveEntry') }}</AppButton>
             </div>
           </div>
         </form>
     </AdminModalForm>
 
-    <AppModal v-model:open="deleteOpen" title="Delete provider entry">
+    <AppModal v-model:open="deleteOpen" :title="t('upstream.providers.deleteTitle')">
       <template #body>
         <div class="space-y-5">
           <UAlert
             color="warning"
             variant="subtle"
             icon="i-tabler-alert-triangle"
-            title="Requests using this provider entry may stop working"
+            :title="t('upstream.providers.deleteWarning')"
             :description="deleteDescription"
           />
           <div class="flex justify-end gap-3">
-            <AppButton color="neutral" variant="ghost" @click="deleteOpen = false">Cancel</AppButton>
-            <AppButton color="error" :loading="deleting" @click="performDelete">Delete</AppButton>
+            <AppButton color="neutral" variant="ghost" @click="deleteOpen = false">{{ t('common.cancel') }}</AppButton>
+            <AppButton color="error" :loading="deleting" @click="performDelete">{{ t('common.delete') }}</AppButton>
           </div>
         </div>
       </template>
@@ -306,27 +306,41 @@ const props = defineProps({ syncRequest: { type: Number, default: 0 } })
 const emit = defineEmits(['changed'])
 const { fetchAPI } = useApi()
 const toast = useToast()
+const { t } = useAdminI18n()
 const rowValue = row => row?.original || row
 const providerRowActions = entry => [
-  { id: 'view', label: 'View', ariaLabel: 'View provider', icon: 'i-tabler-eye', onSelect: () => openProviderDetail(entry) },
-  { id: 'edit', label: 'Edit', ariaLabel: 'Edit provider', icon: 'i-tabler-pencil', onSelect: () => openProviderEdit(entry) },
-  { id: 'duplicate', label: 'Duplicate', ariaLabel: 'Duplicate provider', icon: 'i-tabler-copy', onSelect: () => duplicateProvider(entry) },
-  { id: 'delete', label: 'Delete', ariaLabel: 'Delete provider', icon: 'i-tabler-trash', destructive: true, onSelect: () => confirmProviderDelete(entry) }
+  { id: 'view', label: t('common.view'), ariaLabel: t('upstream.providers.viewAria'), icon: 'i-tabler-eye', onSelect: () => openProviderDetail(entry) },
+  { id: 'edit', label: t('common.edit'), ariaLabel: t('upstream.providers.editAria'), icon: 'i-tabler-pencil', onSelect: () => openProviderEdit(entry) },
+  { id: 'duplicate', label: t('upstream.providers.duplicate'), ariaLabel: t('upstream.providers.duplicateAria'), icon: 'i-tabler-copy', onSelect: () => duplicateProvider(entry) },
+  { id: 'delete', label: t('common.delete'), ariaLabel: t('upstream.providers.deleteAria'), icon: 'i-tabler-trash', destructive: true, onSelect: () => confirmProviderDelete(entry) }
 ]
 
 const providerCategories = [
-  { label: 'Gemini API keys', value: 'gemini-api-key', path: '/config/api-keys/gemini', template: { 'api-key': '', 'base-url': '', priority: 0, weight: 1, prefix: '', 'proxy-url': '', models: [], headers: {}, 'excluded-models': [] } },
-  { label: 'Gemini Interactions', value: 'interactions-api-key', path: '/config/api-keys/interactions', template: { 'api-key': '', 'base-url': '', priority: 0, weight: 1, prefix: '', 'proxy-url': '', models: [], headers: {}, 'excluded-models': [] } },
-  { label: 'Claude API keys', value: 'claude-api-key', path: '/config/api-keys/claude', template: { 'api-key': '', 'base-url': '', priority: 0, weight: 1, prefix: '', 'proxy-url': '', models: [], headers: {}, 'excluded-models': [] } },
-  { label: 'Codex API keys', value: 'codex-api-key', path: '/config/api-keys/codex', template: { 'api-key': '', 'base-url': '', priority: 0, weight: 1, prefix: '', 'proxy-url': '', models: [], headers: {}, websockets: false } },
-  { label: 'xAI API keys', value: 'xai-api-key', path: '/config/api-keys/xai', template: { 'api-key': '', 'base-url': 'https://api.x.ai/v1', priority: 0, weight: 1, prefix: '', 'proxy-url': '', models: [], headers: {}, websockets: false } },
-  { label: 'Meta API keys', value: 'meta-api-key', path: '/config/api-keys/meta', template: { 'api-key': '', 'base-url': '', priority: 0, weight: 1, prefix: '', 'proxy-url': '', models: [], headers: {} } },
-  { label: 'Vertex compatibility', value: 'vertex-api-key', path: '/config/api-keys/vertex', template: { 'api-key': '', 'base-url': '', priority: 0, weight: 1, prefix: '', 'proxy-url': '', models: [], headers: {} } },
-  { label: 'OpenAI compatibility', value: 'openai-compatibility', path: '/config/api-keys/openai-compatibility', template: { name: '', 'base-url': '', priority: 0, weight: 1, disabled: false, prefix: '', 'api-key-entries': [], models: [], headers: {} } }
+  { value: 'gemini-api-key', path: '/config/api-keys/gemini', template: { 'api-key': '', 'base-url': '', priority: 0, weight: 1, prefix: '', 'proxy-url': '', models: [], headers: {}, 'excluded-models': [] } },
+  { value: 'interactions-api-key', path: '/config/api-keys/interactions', template: { 'api-key': '', 'base-url': '', priority: 0, weight: 1, prefix: '', 'proxy-url': '', models: [], headers: {}, 'excluded-models': [] } },
+  { value: 'claude-api-key', path: '/config/api-keys/claude', template: { 'api-key': '', 'base-url': '', priority: 0, weight: 1, prefix: '', 'proxy-url': '', models: [], headers: {}, 'excluded-models': [] } },
+  { value: 'codex-api-key', path: '/config/api-keys/codex', template: { 'api-key': '', 'base-url': '', priority: 0, weight: 1, prefix: '', 'proxy-url': '', models: [], headers: {}, websockets: false } },
+  { value: 'xai-api-key', path: '/config/api-keys/xai', template: { 'api-key': '', 'base-url': 'https://api.x.ai/v1', priority: 0, weight: 1, prefix: '', 'proxy-url': '', models: [], headers: {}, websockets: false } },
+  { value: 'meta-api-key', path: '/config/api-keys/meta', template: { 'api-key': '', 'base-url': '', priority: 0, weight: 1, prefix: '', 'proxy-url': '', models: [], headers: {} } },
+  { value: 'vertex-api-key', path: '/config/api-keys/vertex', template: { 'api-key': '', 'base-url': '', priority: 0, weight: 1, prefix: '', 'proxy-url': '', models: [], headers: {} } },
+  { value: 'openai-compatibility', path: '/config/api-keys/openai-compatibility', template: { name: '', 'base-url': '', priority: 0, weight: 1, disabled: false, prefix: '', 'api-key-entries': [], models: [], headers: {} } }
 ]
 
 const providerMarks = ['G', 'G', 'C', 'Cx', 'xAI', 'M', 'V', 'AI']
 providerCategories.forEach((category, index) => { category.mark = providerMarks[index] })
+
+function categoryLabel(category) {
+  return ({
+    'gemini-api-key': t('upstream.providers.category.gemini'),
+    'interactions-api-key': t('upstream.providers.category.interactions'),
+    'claude-api-key': t('upstream.providers.category.claude'),
+    'codex-api-key': t('upstream.providers.category.codex'),
+    'xai-api-key': t('upstream.providers.category.xai'),
+    'meta-api-key': t('upstream.providers.category.meta'),
+    'vertex-api-key': t('upstream.providers.category.vertex'),
+    'openai-compatibility': t('upstream.providers.category.openaiCompat')
+  })[category?.value] || category?.value || ''
+}
 
 const selectedProviderRoute = ref(providerCategories[0].value)
 const providerSearch = ref('')
@@ -351,13 +365,13 @@ const cloakMode = ref(unsetCloakMode)
 const cloakStrictMode = ref(false)
 const cloakSensitiveWordsText = ref('')
 const cloakCacheUserID = ref('inherit')
-const cloakModeOptions = [{ label: 'Not set', value: unsetCloakMode }, { label: 'Auto', value: 'auto' }, { label: 'Always', value: 'always' }, { label: 'Never', value: 'never' }]
-const cloakCacheOptions = [{ label: 'Use default', value: 'inherit' }, { label: 'Cache per API key', value: 'enabled' }, { label: 'Generate for each request', value: 'disabled' }]
+const cloakModeOptions = computed(() => [{ label: t('upstream.providers.cloakNotSet'), value: unsetCloakMode }, { label: t('upstream.providers.cloakAuto'), value: 'auto' }, { label: t('upstream.providers.cloakAlways'), value: 'always' }, { label: t('upstream.providers.cloakNever'), value: 'never' }])
+const cloakCacheOptions = computed(() => [{ label: t('upstream.providers.cacheDefault'), value: 'inherit' }, { label: t('upstream.providers.cachePerKey'), value: 'enabled' }, { label: t('upstream.providers.cachePerRequest'), value: 'disabled' }])
 const requestRetryText = ref('')
 const coolingPolicy = ref('inherit')
-const coolingPolicyOptions = [{ label: 'Inherit', value: 'inherit' }, { label: 'Disable cooling', value: 'disabled' }, { label: 'Enable cooling', value: 'enabled' }]
+const coolingPolicyOptions = computed(() => [{ label: t('upstream.providers.coolingInherit'), value: 'inherit' }, { label: t('upstream.providers.coolingDisable'), value: 'disabled' }, { label: t('upstream.providers.coolingEnable'), value: 'enabled' }])
 const codexCloakingPolicy = ref('inherit')
-const codexCloakingOptions = [{ label: 'Unset (backend default)', value: 'inherit' }, { label: 'Disable Codex identity headers', value: 'disabled' }, { label: 'Use Codex identity headers', value: 'enabled' }]
+const codexCloakingOptions = computed(() => [{ label: t('upstream.providers.codexUnset'), value: 'inherit' }, { label: t('upstream.providers.codexDisable'), value: 'disabled' }, { label: t('upstream.providers.codexUse'), value: 'enabled' }])
 const requestScopedErrorsText = ref('')
 const supportsRequestScopedErrors = computed(() => selectedProviderRoute.value !== 'vertex-api-key')
 const supportsContextLimit = computed(() => selectedProviderRoute.value !== 'vertex-api-key')
@@ -366,13 +380,13 @@ const isCompat = computed(() => selectedProviderRoute.value === 'openai-compatib
 const supportsWebsockets = computed(() => ['codex-api-key', 'xai-api-key'].includes(selectedProviderRoute.value))
 const supportsTest = computed(() => ['claude-api-key', 'openai-compatibility'].includes(selectedProviderRoute.value))
 const testModel = ref(automaticTestModel)
-const testModelOptions = computed(() => [{ label: 'Auto (first custom model)', value: automaticTestModel }, ...providerForm.value.models.filter(model => String(model.name || '').trim()).map(model => ({ label: model.alias?.trim() ? `${model.name} · ${model.alias}` : model.name, value: model.name }))])
+const testModelOptions = computed(() => [{ label: t('upstream.providers.testAuto'), value: automaticTestModel }, ...providerForm.value.models.filter(model => String(model.name || '').trim()).map(model => ({ label: model.alias?.trim() ? `${model.name} · ${model.alias}` : model.name, value: model.name }))])
 const testError = useWorkspaceState('admin:upstream-providers:testError', () => (''))
 const testSuccess = useWorkspaceState('admin:upstream-providers:testSuccess', () => (false))
 const testingConnection = useWorkspaceState('admin:upstream-providers:testingConnection', () => (false))
 const supportsModelMapping = computed(() => true)
 const requiresBaseURL = computed(() => ['codex-api-key', 'xai-api-key', 'openai-compatibility'].includes(selectedProviderRoute.value))
-const supportsDiscovery = computed(() => ['gemini-api-key', 'interactions-api-key', 'claude-api-key', 'codex-api-key', 'openai-compatibility'].includes(selectedProviderRoute.value))
+const supportsDiscovery = computed(() => ['gemini-api-key', 'interactions-api-key', 'claude-api-key', 'codex-api-key', 'meta-api-key', 'openai-compatibility'].includes(selectedProviderRoute.value))
 const discoveredModels = useWorkspaceState('admin:upstream-providers:discoveredModels', () => ([]))
 const discoverySearch = ref('')
 const discoveryVisible = ref(false)
@@ -396,7 +410,7 @@ const discoveryAuthIndex = computed(() => {
   return String(entry?.auth_index || entry?.id || '').trim()
 })
 const discoveryHeaders = computed(() => Object.fromEntries(headerRows.value.filter(row => row.name.trim()).map(row => [row.name.trim(), row.value])))
-const discoveryAuthLabel = computed(() => primaryProviderKey.value ? 'Entered key' : discoveryAuthIndex.value ? 'Saved credential' : hasProviderAuthHeader.value ? 'Authentication header' : 'Authentication required')
+const discoveryAuthLabel = computed(() => primaryProviderKey.value ? t('upstream.providers.authEnteredKey') : discoveryAuthIndex.value ? t('upstream.providers.authSavedCredential') : hasProviderAuthHeader.value ? t('upstream.providers.authHeader') : t('upstream.providers.authRequired'))
 const hasProviderAuthHeader = computed(() => Object.entries(discoveryHeaders.value).some(([name, value]) =>
   name.toLowerCase() === (['gemini-api-key', 'interactions-api-key'].includes(selectedProviderRoute.value) ? 'x-goog-api-key' : selectedProviderRoute.value === 'claude-api-key' ? 'x-api-key' : 'authorization') && String(value).trim()))
 const discoveryReady = computed(() => (primaryProviderKey.value || discoveryAuthIndex.value || hasProviderAuthHeader.value) && (!requiresBaseURL.value || String(providerForm.value['base-url'] || '').trim()))
@@ -408,6 +422,7 @@ const defaultDiscoveryURL = computed(() => {
   const route = selectedProviderRoute.value
   if (['gemini-api-key', 'interactions-api-key'].includes(route)) return `${(base || 'https://generativelanguage.googleapis.com').replace(/\/v1beta(?:\/.*)?$/i, '')}/v1beta/models`
   if (route === 'claude-api-key') return `${(base || 'https://api.anthropic.com').replace(/\/v1(?:\/.*)?$/i, '')}/v1/models`
+  if (route === 'meta-api-key') return /\/models$/i.test(base) ? base : `${base || 'https://api.meta.ai/v1'}/models`
   if (!base) return ''
   if (route === 'codex-api-key') return /\/v1\/models$/i.test(base) ? base : /\/v1$/i.test(base) ? `${base}/models` : `${base}/v1/models`
   return /\/models$/i.test(base) ? base : `${base}/models`
@@ -420,17 +435,18 @@ const deleteTarget = ref(null)
 const deleting = useWorkspaceState('admin:upstream-providers:deleting', () => (false))
 
 
-const providerColumns = [
-  { accessorKey: 'identity', header: 'Key' },
-  { accessorKey: 'endpoint', header: 'Base URL' },
-  { accessorKey: 'prefix', header: 'Prefix' },
-  { accessorKey: 'models', header: 'Models' },
-  { accessorKey: 'status', header: 'Status' },
-  { accessorKey: 'actions', header: 'Actions', meta: { class: { th: 'table-action-head', td: 'table-action-cell' } } }
-]
+const providerColumns = computed(() => [
+  { accessorKey: 'identity', header: t('upstream.providers.columnKey') },
+  { accessorKey: 'endpoint', header: t('upstream.providers.baseUrl') },
+  { accessorKey: 'prefix', header: t('upstream.providers.prefix') },
+  { accessorKey: 'models', header: t('common.models') },
+  { accessorKey: 'status', header: t('common.status') },
+  { accessorKey: 'actions', header: t('common.actions'), meta: { class: { th: 'table-action-head', td: 'table-action-cell' } } }
+])
 
 const selectedProvider = computed(() => providerCategories.find(item => item.value === selectedProviderRoute.value) || providerCategories[0])
-const providerOptions = providerCategories.map(item => ({ label: item.label, value: item.value }))
+const selectedProviderLabel = computed(() => categoryLabel(selectedProvider.value))
+const providerOptions = computed(() => providerCategories.map(item => ({ label: categoryLabel(item), value: item.value })))
 
 const v8GroupFields = ['name', 'base-url', 'priority', 'disabled', 'prefix', 'proxy-url', 'headers', 'models', 'excluded-models', 'disable-cooling', 'request-retry', 'request-scoped-errors', 'support-prompt-cache-key']
 const v8NativeKeyFields = ['id', 'uuid', 'api-key', 'weight', 'priority', 'prefix', 'proxy-url', 'headers', 'models', 'excluded-models', 'disable-cooling', 'request-retry', 'request-scoped-errors', 'websockets', 'alpha-search', 'disable-codex-cloaking', 'cloak', 'experimental-cch-signing', 'rebuild-mid-system-message', 'fingerprint-profile', 'native-tool-search']
@@ -522,7 +538,7 @@ async function loadWorkspace() {
     const providerResponse = await fetchAPI(providerApiPath(providerCategories.find(category => category.value === providerRoute)))
     return { providerResponse, providerRoute }
   } catch (error) {
-    pageError.value = error?.message || 'Could not load provider entries. Check the Management API connection and try again.'
+    pageError.value = error?.message || t('upstream.providers.loadFailed')
     return { providerResponse: null, providerRoute }
   }
 }
@@ -559,30 +575,30 @@ const filteredProviderEntries = computed(() => {
   return providerEntries.value.filter(entry => [entry.name, entry.prefix, entry.id, entry.uuid, entry.auth_index, entry['base-url'], ...(Array.isArray(entry.models) ? entry.models.flatMap(model => [model.name, model.alias]) : [])]
     .some(value => String(value || '').toLowerCase().includes(query)))
 })
-const deleteDescription = computed(() => deleteTarget.value ? `This entry will be removed from ${selectedProvider.value.label}.` : '')
+const deleteDescription = computed(() => deleteTarget.value ? t('upstream.providers.deleteDescription', { provider: selectedProviderLabel.value }) : '')
 const providerDetailFields = computed(() => {
   const entry = editingProviderEntry.value || {}
   return [
-    { label: 'Identifier', value: providerEntryLabel(entry) },
-    { label: 'Base URL', value: safeEndpoint(entry['base-url'] || entry.base_url) },
-    { label: 'Proxy URL', value: safeEndpoint(entry['proxy-url'] || entry.proxy_url) },
-    { label: 'Prefix', value: entry.prefix || 'None' },
-    { label: 'Models', value: String(entry.models?.length || 0) },
-    { label: 'Headers', value: String(Object.keys(entry.headers || {}).length) }
+    { label: t('upstream.providers.identifier'), value: providerEntryLabel(entry) },
+    { label: t('upstream.providers.baseUrl'), value: safeEndpoint(entry['base-url'] || entry.base_url) },
+    { label: t('upstream.providers.proxyUrl'), value: safeEndpoint(entry['proxy-url'] || entry.proxy_url) },
+    { label: t('upstream.providers.prefix'), value: entry.prefix || t('common.none') },
+    { label: t('common.models'), value: String(entry.models?.length || 0) },
+    { label: t('upstream.providers.headers'), value: String(Object.keys(entry.headers || {}).length) }
   ]
 })
 const providerMetadataFields = computed(() => {
   const entry = editingProviderEntry.value || {}
   return [
-    { label: 'Auth index', value: entry.auth_index || 'Not available' },
-    ...(isCompat.value ? [] : [{ label: 'Excluded models', value: String(entry['excluded-models']?.length || 0) }]),
-    { label: 'API key entries', value: String(entry['api-key-entries']?.length || 0) },
-    { label: 'Priority', value: entry.priority ?? 'Not set' },
-    { label: 'Weight', value: entry.weight ?? 'Default (1)' },
-    { label: 'Request retry', value: entry['request-retry'] ?? 'Inherited' },
-    { label: 'Cooling disabled', value: entry['disable-cooling'] ? 'Yes' : 'No' },
-    ...(isCompat.value ? [{ label: 'Prompt cache key', value: entry['support-prompt-cache-key'] ? 'Supported' : 'Not enabled' }] : []),
-    ...(supportsWebsockets.value ? [{ label: 'WebSockets', value: entry.websockets ? 'Enabled' : 'Disabled' }] : [])
+    { label: t('upstream.providers.authIndex'), value: entry.auth_index || t('upstream.providers.notAvailable') },
+    ...(isCompat.value ? [] : [{ label: t('upstream.providers.excludedModels'), value: String(entry['excluded-models']?.length || 0) }]),
+    { label: t('upstream.providers.keyEntries'), value: String(entry['api-key-entries']?.length || 0) },
+    { label: t('upstream.providers.priority'), value: entry.priority ?? t('upstream.providers.notSet') },
+    { label: t('upstream.providers.weight'), value: entry.weight ?? t('upstream.providers.weightDefault') },
+    { label: t('upstream.providers.requestRetry'), value: entry['request-retry'] ?? t('upstream.providers.inherited') },
+    { label: t('upstream.providers.coolingDisabled'), value: entry['disable-cooling'] ? t('common.yes') : t('common.no') },
+    ...(isCompat.value ? [{ label: t('upstream.providers.promptCacheKey'), value: entry['support-prompt-cache-key'] ? t('upstream.providers.supported') : t('upstream.providers.notEnabled') }] : []),
+    ...(supportsWebsockets.value ? [{ label: 'WebSockets', value: entry.websockets ? t('common.enabled') : t('common.disabled') }] : [])
   ]
 })
 
@@ -654,7 +670,7 @@ async function discoverModels() {
     url = new URL(defaultDiscoveryURL.value)
     if (!['http:', 'https:'].includes(url.protocol) || !url.hostname || url.username || url.password || url.hash) throw new Error()
   } catch {
-    discoveryError.value = 'Enter a valid HTTP or HTTPS Base URL without embedded credentials.'
+    discoveryError.value = t('upstream.providers.invalidBaseUrl')
     return
   }
   const header = { ...discoveryHeaders.value }
@@ -679,17 +695,17 @@ async function discoverModels() {
       let response
       try {
         response = await request(header, authIndex)
-        if (!response?.status_code || response.status_code < 200 || response.status_code >= 300) throw new Error(`Upstream returned HTTP ${response?.status_code || 'error'}.`)
+        if (!response?.status_code || response.status_code < 200 || response.status_code >= 300) throw new Error(upstreamStatusError(response))
       } catch (error) {
         if (route !== 'openai-compatibility' || !(key || authIndex || Object.keys(header).length)) throw error
         response = await request({}, '')
       }
       if (generation !== discoveryGeneration || !providerEditorOpen.value) return
-      if (!response?.status_code || response.status_code < 200 || response.status_code >= 300) throw new Error(`Upstream returned HTTP ${response?.status_code || 'error'}.`)
+      if (!response?.status_code || response.status_code < 200 || response.status_code >= 300) throw new Error(upstreamStatusError(response))
       let payload
-      try { payload = JSON.parse(response.body) } catch { throw new Error('Upstream did not return JSON.') }
+      try { payload = JSON.parse(response.body) } catch { throw new Error(t('upstream.providers.notJson')) }
       const list = Array.isArray(payload) ? payload : Array.isArray(payload?.data) ? payload.data : payload?.models
-      if (!Array.isArray(list)) throw new Error('Expected a data or models array in the upstream response.')
+      if (!Array.isArray(list)) throw new Error(t('upstream.providers.expectedArray'))
       for (const item of list) {
         const name = typeof item === 'string' ? item : item && typeof item === 'object' ? (item.id || item.name || item.model || item.value) : ''
         const normalized = typeof name === 'string' ? (['gemini-api-key', 'interactions-api-key'].includes(route) ? name.replace(/^\/?models\//i, '') : name).trim() : ''
@@ -706,7 +722,7 @@ async function discoverModels() {
     discoveredModels.value = models
     discoveryLoaded.value = true
   } catch (error) {
-    if (generation === discoveryGeneration) discoveryError.value = error?.message || 'Could not discover models.'
+    if (generation === discoveryGeneration) discoveryError.value = error?.message || t('upstream.providers.discoverFailed')
   } finally {
     if (generation === discoveryGeneration) discovering.value = false
   }
@@ -722,10 +738,10 @@ async function testProviderConnection() {
   const headers = Object.fromEntries(headerRows.value.filter(row => row.name.trim()).map(row => [row.name.trim(), row.value]))
   const hasAuthHeader = Object.entries(headers).some(([name, value]) =>
     (selectedProviderRoute.value === 'claude-api-key' ? name.toLowerCase() === 'x-api-key' : name.toLowerCase() === 'authorization') && String(value).trim())
-  if (!model) { testError.value = 'Select a model to test.'; return }
-  if (!key && !authIndex && !hasAuthHeader) { testError.value = 'Enter a model service key or authentication header.'; return }
+  if (!model) { testError.value = t('upstream.providers.selectTestModel'); return }
+  if (!key && !authIndex && !hasAuthHeader) { testError.value = t('upstream.providers.needAuth'); return }
   const base = String(providerForm.value['base-url'] || '').trim().replace(/\/+$/, '')
-  if (isCompat.value && !base) { testError.value = 'Base URL is required.'; return }
+  if (isCompat.value && !base) { testError.value = t('upstream.providers.baseUrlRequired'); return }
   const claude = selectedProviderRoute.value === 'claude-api-key'
   const endpoint = claude
     ? `${(base || 'https://api.anthropic.com').replace(/\/v1\/messages$/i, '').replace(/\/v1(?:\/.*)?$/i, '')}/v1/messages`
@@ -733,7 +749,7 @@ async function testProviderConnection() {
   try {
     const url = new URL(endpoint)
     if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password || url.hash) throw new Error()
-  } catch { testError.value = 'Enter a valid HTTP or HTTPS Base URL without embedded credentials.'; return }
+  } catch { testError.value = t('upstream.providers.invalidBaseUrl'); return }
   const header = { 'Content-Type': 'application/json', ...headers }
   const authHeader = claude ? 'x-api-key' : 'Authorization'
   if (!Object.keys(header).some(name => name.toLowerCase() === authHeader.toLowerCase())) header[authHeader] = key ? claude ? key : `Bearer ${key}` : '$TOKEN$'
@@ -742,13 +758,17 @@ async function testProviderConnection() {
   testingConnection.value = true
   try {
     const response = await fetchAPI('/requests/api-call', { method: 'POST', body: { auth_index: authIndex || undefined, method: 'POST', url: endpoint, header, data: JSON.stringify(data) } })
-    if (!response?.status_code || response.status_code < 200 || response.status_code >= 300) throw new Error(`Upstream returned HTTP ${response?.status_code || 'error'}.`)
+    if (!response?.status_code || response.status_code < 200 || response.status_code >= 300) throw new Error(upstreamStatusError(response))
     testSuccess.value = true
   } catch (error) {
-    testError.value = error?.message || 'Connection failed.'
+    testError.value = error?.message || t('upstream.providers.connectionFailed')
   } finally {
     testingConnection.value = false
   }
+}
+
+function upstreamStatusError(response) {
+  return response?.status_code ? t('upstream.providers.upstreamHttp', { status: response.status_code }) : t('upstream.providers.upstreamError')
 }
 
 function clearDiscoveryResults() {
@@ -829,18 +849,18 @@ function guidedEntry() {
   const value = JSON.parse(JSON.stringify(providerForm.value))
   const priority = value.priority === '' || value.priority == null ? 0 : Number(value.priority)
   if (!Number.isSafeInteger(priority)) {
-    editorError.value = 'Priority must be a whole number.'
+    editorError.value = t('upstream.providers.priorityInvalid')
     return null
   }
   value.priority = priority
   const weight = value.weight === '' || value.weight == null ? 1 : Number(value.weight)
   if (!Number.isSafeInteger(weight)) {
-    editorError.value = 'Weight must be a whole number.'
+    editorError.value = t('upstream.providers.weightInvalid')
     return null
   }
   value.weight = weight
   const retry = requestRetryText.value.trim()
-  if (retry && (!/^-?\d+$/.test(retry) || !Number.isSafeInteger(Number(retry)))) { editorError.value = 'Request retry must be a whole number; negative values inherit the global setting.'; return null }
+  if (retry && (!/^-?\d+$/.test(retry) || !Number.isSafeInteger(Number(retry)))) { editorError.value = t('upstream.providers.retryInvalid'); return null }
   if (retry) value['request-retry'] = Number(retry)
   else if (providerEditorMode.value === 'edit') value['request-retry'] = null
   else delete value['request-retry']
@@ -854,27 +874,27 @@ function guidedEntry() {
         || ['match', 'match-regexr'].some(field => rule[field] != null && (!Array.isArray(rule[field]) || rule[field].some(pattern => typeof pattern !== 'string')))
         || !['stop', 'stop-and-cooldown', 'continue', 'continue-and-cooldown'].includes(rule.action)))) throw new Error()
       value['request-scoped-errors'] = rules
-    } catch { editorError.value = 'Enter a valid request-scoped error rule array with supported actions, status codes, and string pattern lists.'; return null }
+    } catch { editorError.value = t('upstream.providers.rulesInvalid'); return null }
   }
   for (const model of value.models) {
     if (!String(model.name || '').trim() && Object.entries(model).some(([field, setting]) => field !== 'name' && setting != null && setting !== false && setting !== '' && (!Array.isArray(setting) || setting.length))) {
-      editorError.value = 'Model ID is required when a model row has other values.'
+      editorError.value = t('upstream.providers.modelIdRequired')
       return null
     }
   }
   for (const model of value.models) {
     for (const field of supportsContextLimit.value ? ['max-context-length'] : []) {
       if (model[field] === '' || model[field] == null) delete model[field]
-      else if (!Number.isSafeInteger(Number(model[field])) || Number(model[field]) <= 0) { editorError.value = 'Model context limits must be positive whole numbers.'; return null }
+      else if (!Number.isSafeInteger(Number(model[field])) || Number(model[field]) <= 0) { editorError.value = t('upstream.providers.contextLimitInvalid'); return null }
       else model[field] = Number(model[field])
     }
     if (model.thinking != null) {
       for (const field of ['min', 'max']) {
         if (model.thinking[field] === '' || model.thinking[field] == null) delete model.thinking[field]
-        else if (!Number.isSafeInteger(Number(model.thinking[field])) || Number(model.thinking[field]) < 0) { editorError.value = 'Thinking budgets must be non-negative whole numbers.'; return null }
+        else if (!Number.isSafeInteger(Number(model.thinking[field])) || Number(model.thinking[field]) < 0) { editorError.value = t('upstream.providers.budgetInvalid'); return null }
         else model.thinking[field] = Number(model.thinking[field])
       }
-      if (model.thinking.max > 0 && model.thinking.min > model.thinking.max) { editorError.value = 'Minimum thinking budget cannot exceed the maximum.'; return null }
+      if (model.thinking.max > 0 && model.thinking.min > model.thinking.max) { editorError.value = t('upstream.providers.budgetRange'); return null }
     }
     if (isCompat.value) {
       for (const field of ['input-modalities', 'output-modalities']) {
@@ -894,14 +914,14 @@ function guidedEntry() {
   value.headers = {}
   for (const header of headerRows.value) {
     const name = header.name.trim()
-    if (!name && header.value.trim()) { editorError.value = 'Header name is required when a value is entered.'; return null }
+    if (!name && header.value.trim()) { editorError.value = t('upstream.providers.headerNameRequired'); return null }
     if (name) value.headers[name] = header.value
   }
   if (selectedProviderRoute.value === 'claude-api-key') {
     const selectedCloakMode = cloakMode.value === unsetCloakMode ? '' : cloakMode.value
     if (selectedCloakMode || cloakStrictMode.value || cloakCacheUserID.value !== 'inherit' || cloakSensitiveWordsText.value.trim()) {
-      if (!cloakModeOptions.some(option => option.value === cloakMode.value)) {
-        editorError.value = 'Select a valid cloaking mode.'
+      if (!cloakModeOptions.value.some(option => option.value === cloakMode.value)) {
+        editorError.value = t('upstream.providers.cloakModeInvalid')
         return null
       }
       const cloak = value.cloak && typeof value.cloak === 'object' && !Array.isArray(value.cloak) ? value.cloak : {}
@@ -925,19 +945,19 @@ function guidedEntry() {
     if (value['proxy-url']) {
       try {
         if (!['http:', 'https:', 'socks5:', 'socks5h:'].includes(new URL(value['proxy-url']).protocol)) throw new Error()
-      } catch { editorError.value = 'Proxy URL must use http, https, socks5, or socks5h.'; return null }
+      } catch { editorError.value = t('upstream.providers.proxyInvalid'); return null }
     }
   }
   if (isCompat.value && !String(value.name || '').trim()) {
-    editorError.value = 'Provider name is required.'
+    editorError.value = t('upstream.providers.nameRequired')
     return null
   }
   if (requiresBaseURL.value && !String(value['base-url'] || '').trim()) {
-    editorError.value = 'Base URL is required for this provider.'
+    editorError.value = t('upstream.providers.baseUrlRequiredProvider')
     return null
   }
   if (!isCompat.value && providerEditorMode.value === 'create' && !providerKey.value.trim()) {
-    editorError.value = 'Model service key is required.'
+    editorError.value = t('upstream.providers.serviceKeyRequired')
     return null
   }
   if (isCompat.value) {
@@ -949,20 +969,20 @@ function guidedEntry() {
     for (const [index, row] of compatKeyRows.value.entries()) {
       const key = cloneValue(row.source)
       const secret = row.secret.trim() || key['api-key'] || ''
-      if (!secret) { editorError.value = `Enter an API key for key ${index + 1}, or remove the row.`; return null }
+      if (!secret) { editorError.value = t('upstream.providers.keyApiKeyRequired', { n: index + 1 }); return null }
       key['api-key'] = secret
       const proxy = row.proxy.trim()
       if (proxy && proxy !== 'direct') {
         try {
           if (!['http:', 'https:', 'socks5:', 'socks5h:'].includes(new URL(proxy).protocol)) throw new Error()
-        } catch { editorError.value = `Proxy for key ${index + 1} must be direct or use http, https, socks5, or socks5h.`; return null }
+        } catch { editorError.value = t('upstream.providers.keyProxyInvalid', { n: index + 1 }); return null }
       }
       if (proxy) key['proxy-url'] = proxy
       else delete key['proxy-url']
       if (row.weight === '' || row.weight == null) delete key.weight
       else {
         const keyWeight = Number(row.weight)
-        if (!Number.isSafeInteger(keyWeight) || keyWeight > 1000000) { editorError.value = `Weight for key ${index + 1} must be a whole number no greater than 1000000.`; return null }
+        if (!Number.isSafeInteger(keyWeight) || keyWeight > 1000000) { editorError.value = t('upstream.providers.keyWeightInvalid', { n: index + 1 }); return null }
         key.weight = keyWeight
       }
       value['api-key-entries'].push(key)
@@ -996,7 +1016,7 @@ async function saveProviderEntry() {
   const value = guidedEntry()
   if (!value) return
   if (isCompat.value && !String(value.name || '').trim()) {
-    editorError.value = 'Provider name is required.'
+    editorError.value = t('upstream.providers.nameRequired')
     return
   }
   if (savingProvider.value) return
@@ -1008,7 +1028,7 @@ async function saveProviderEntry() {
     if (providerEditorMode.value === 'create') entries.push(value)
     else {
       const targetIndex = entries.findIndex(candidate => providerEntryMatches(candidate, editingProviderEntry.value))
-      if (targetIndex < 0) throw new Error('Provider entry is no longer present. Reload and try again.')
+      if (targetIndex < 0) throw new Error(t('upstream.providers.entryMissing'))
       if (isCompat.value) {
         // One edited row now owns the complete key list; remove its flattened siblings.
         const groupIndex = editingProviderEntry.value.__v8GroupIndex
@@ -1022,9 +1042,9 @@ async function saveProviderEntry() {
     await refreshWorkspace()
     void refreshCategoryStats()
     emit('changed')
-    toast.add({ title: providerEditorMode.value === 'create' ? 'Provider entry created' : 'Provider entry updated', color: 'success', icon: 'i-tabler-circle-check' })
+    toast.add({ title: providerEditorMode.value === 'create' ? t('upstream.providers.created') : t('upstream.providers.updated'), color: 'success', icon: 'i-tabler-circle-check' })
   } catch (error) {
-    editorError.value = error?.data?.message || error?.data?.error || error?.message || 'Could not save the provider entry. Check the fields and try again.'
+    editorError.value = error?.data?.message || error?.data?.error || error?.message || t('upstream.providers.saveFailed')
   } finally {
     savingProvider.value = false
   }
@@ -1046,16 +1066,16 @@ async function performDelete() {
   deleting.value = true
   try {
     const targetIndex = providerEntries.value.findIndex(candidate => providerEntryMatches(candidate, deleteTarget.value))
-    if (targetIndex < 0) throw new Error('Provider entry is no longer present. Reload the provider list and try again.')
+    if (targetIndex < 0) throw new Error(t('upstream.providers.entryMissingList'))
     const remaining = providerEntries.value.filter((_, index) => index !== targetIndex)
     await fetchAPI(providerApiPath(), { method: 'PUT', body: remaining.length ? v8GroupsFromEntries(remaining) : [] })
     deleteOpen.value = false
     await refreshWorkspace()
     void refreshCategoryStats()
     emit('changed')
-    toast.add({ title: 'Provider entry deleted', color: 'success', icon: 'i-tabler-circle-check' })
+    toast.add({ title: t('upstream.providers.deletedToast'), color: 'success', icon: 'i-tabler-circle-check' })
   } catch (error) {
-    toast.add({ title: 'Delete failed', description: error?.data?.message || error?.data?.error || error?.message || 'Could not delete the provider entry.', color: 'error' })
+    toast.add({ title: t('upstream.providers.deleteFailed'), description: error?.data?.message || error?.data?.error || error?.message || t('upstream.providers.deleteFailedDetail'), color: 'error' })
   } finally {
     deleting.value = false
   }
@@ -1063,16 +1083,16 @@ async function performDelete() {
 
 
 function providerEntryLabel(entry) {
-  return entry?.name || entry?.identifier || entry?.auth_index || entry?.id || `${selectedProvider.value.label} entry`
+  return entry?.name || entry?.identifier || entry?.auth_index || entry?.id || t('upstream.providers.entryLabel', { provider: selectedProviderLabel.value })
 }
 
 function safeEndpoint(value) {
-  if (!value) return 'Default endpoint'
+  if (!value) return t('upstream.providers.defaultEndpoint')
   try {
     const url = new URL(value)
     return `${url.origin}${url.pathname.replace(/\/$/, '')}`
   } catch {
-    return 'Custom endpoint'
+    return t('upstream.providers.customEndpoint')
   }
 }
 

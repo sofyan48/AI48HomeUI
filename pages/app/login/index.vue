@@ -10,26 +10,26 @@
       </template>
 
       <form class="space-y-4" @submit.prevent="submit">
-        <UAlert v-if="error" ref="errorAlert" color="error" variant="subtle" title="Sign in failed" :description="error" role="alert" tabindex="-1" />
-        <UFormField label="Username" required><UInput v-model="form.username" class="w-full" autocomplete="username" icon="i-tabler-user" :readonly="needsTOTP || passkeyRequired" autofocus /></UFormField>
-        <UFormField v-if="!passkeyRequired" label="Password" required>
+        <UAlert v-if="error" ref="errorAlert" color="error" variant="subtle" :title="t('login.failed')" :description="error" role="alert" tabindex="-1" />
+        <UFormField :label="t('auth.username')" required><UInput v-model="form.username" class="w-full" autocomplete="username" icon="i-tabler-user" :readonly="needsTOTP || passkeyRequired" autofocus /></UFormField>
+        <UFormField v-if="!passkeyRequired" :label="t('auth.password')" required>
           <UInput v-model="form.password" class="w-full" :type="passwordVisible ? 'text' : 'password'" autocomplete="current-password" icon="i-tabler-lock" :ui="{ trailing: 'pe-1' }">
             <template #trailing>
-              <AppButton type="button" size="xs" color="neutral" variant="ghost" :icon="passwordVisible ? 'i-tabler-eye-off' : 'i-tabler-eye'" :aria-label="passwordVisible ? 'Hide password' : 'Show password'" :title="passwordVisible ? 'Hide password' : 'Show password'" :aria-pressed="passwordVisible" @click="passwordVisible = !passwordVisible" />
+              <AppButton type="button" size="xs" color="neutral" variant="ghost" :icon="passwordVisible ? 'i-tabler-eye-off' : 'i-tabler-eye'" :aria-label="passwordVisible ? t('login.hidePassword') : t('login.showPassword')" :title="passwordVisible ? t('login.hidePassword') : t('login.showPassword')" :aria-pressed="passwordVisible" @click="passwordVisible = !passwordVisible" />
             </template>
           </UInput>
         </UFormField>
-        <UFormField v-if="needsTOTP" label="Authenticator code" required><UInput v-model="form.totp" class="w-full font-mono tracking-[0.3em]" inputmode="numeric" autocomplete="one-time-code" placeholder="123456" autofocus /></UFormField>
-        <UAlert v-if="passkeyRequired" color="warning" variant="subtle" title="Passkey required" description="This account requires one of its registered passkeys to sign in." />
-        <div v-if="!needsTOTP && !passkeyRequired" class="flex justify-end"><NuxtLink to="/app/forgot-password" class="text-sm font-medium text-primary-500">Forgot password?</NuxtLink></div>
-        <UCheckbox v-model="remember" label="Remember me on this browser" :disabled="loading || passkeyLoading" />
-        <p class="text-xs leading-5 text-[var(--ui-text-muted)]">{{ remember ? 'Stay signed in until your session expires or you log out. Use only on a trusted device.' : 'Stay signed in for this tab session, until your session expires or you log out.' }}</p>
-        <AppButton v-if="passkeyRequired" type="button" color="primary" block icon="i-tabler-fingerprint" :loading="passkeyLoading" :disabled="!passkeysSupported || loading" @click="passkeyLogin">Use passkey</AppButton>
-        <AppButton v-else type="submit" color="primary" block :loading="loading" :disabled="passkeyLoading">{{ needsTOTP ? 'Verify and sign in' : 'Sign in' }}</AppButton>
-        <AppButton v-if="!needsTOTP && !passkeyRequired && passkeysSupported" type="button" color="neutral" variant="outline" block icon="i-tabler-fingerprint" :loading="passkeyLoading" :disabled="loading" @click="passkeyLogin">Sign in with passkey</AppButton>
+        <UFormField v-if="needsTOTP" :label="t('login.totpCode')" required><UInput v-model="form.totp" class="w-full font-mono tracking-[0.3em]" inputmode="numeric" autocomplete="one-time-code" placeholder="123456" autofocus /></UFormField>
+        <UAlert v-if="passkeyRequired" color="warning" variant="subtle" :title="t('login.passkeyRequired')" :description="t('login.passkeyRequiredDesc')" />
+        <div v-if="!needsTOTP && !passkeyRequired" class="flex justify-end"><NuxtLink to="/app/forgot-password" class="text-sm font-medium text-primary-500">{{ t('login.forgot') }}</NuxtLink></div>
+        <UCheckbox v-model="remember" :label="t('login.remember')" :disabled="loading || passkeyLoading" />
+        <p class="text-xs leading-5 text-[var(--ui-text-muted)]">{{ remember ? t('login.rememberOn') : t('login.rememberOff') }}</p>
+        <AppButton v-if="passkeyRequired" type="button" color="primary" block icon="i-tabler-fingerprint" :loading="passkeyLoading" :disabled="!passkeysSupported || loading" @click="passkeyLogin">{{ t('login.usePasskey') }}</AppButton>
+        <AppButton v-else type="submit" color="primary" block :loading="loading" :disabled="passkeyLoading">{{ needsTOTP ? t('login.verifyAndSignIn') : t('shell.signIn') }}</AppButton>
+        <AppButton v-if="!needsTOTP && !passkeyRequired && passkeysSupported" type="button" color="neutral" variant="outline" block icon="i-tabler-fingerprint" :loading="passkeyLoading" :disabled="loading" @click="passkeyLogin">{{ t('login.withPasskey') }}</AppButton>
 
       </form>
-      <template #footer><p class="text-center text-sm text-[var(--ui-text-muted)]">Need an account? <NuxtLink to="/app/register" class="font-medium text-primary-500">Create account</NuxtLink></p></template>
+      <template #footer><p class="text-center text-sm text-[var(--ui-text-muted)]">{{ t('login.needAccount') }} <NuxtLink to="/app/register" class="font-medium text-primary-500">{{ t('login.createAccount') }}</NuxtLink></p></template>
     </AppCard>
   </div>
 </template>
@@ -37,6 +37,7 @@
 <script setup lang="ts">
 import { useWorkspaceState } from '~/composables/useWorkspaceState'
 definePageMeta({ layout: 'app' })
+const { t } = usePortalI18n()
 const route = useRoute()
 const router = useRouter()
 const { token, login, loginWithPasskey, hydrateSession, loadCurrentUser, clearSession } = useUserApi()
@@ -50,17 +51,17 @@ const passkeyLoading = useWorkspaceState('user:login:passkey-loading', () => fal
 const error = useWorkspaceState('user:login:error', () => '')
 const errorAlert = ref<HTMLElement | null>(null)
 const passkeysSupported = ref(false)
-const title = computed(() => needsTOTP.value ? 'Authenticator verification' : passkeyRequired.value ? 'Passkey sign in' : 'User login')
-const description = computed(() => needsTOTP.value ? 'Enter the current code from your authenticator app.' : passkeyRequired.value ? 'Continue using a passkey registered to this account.' : 'Sign in to access your workspace, billing, and API keys.')
+const title = computed(() => needsTOTP.value ? t('login.titleTotp') : passkeyRequired.value ? t('login.titlePasskey') : t('login.title'))
+const description = computed(() => needsTOTP.value ? t('login.descTotp') : passkeyRequired.value ? t('login.descPasskey') : t('login.desc'))
 const destination = computed(() => typeof route.query.redirect === 'string' && route.query.redirect.startsWith('/app') && route.query.redirect !== '/app/login' ? route.query.redirect : '/app')
 
 async function focusError() { await nextTick(); errorAlert.value?.focus?.() }
 async function submit() {
   if (loading.value || passkeyLoading.value) return
   error.value = ''
-  if (!form.username.trim()) { error.value = 'Username is required.'; return focusError() }
-  if (!form.password) { error.value = 'Password is required.'; return focusError() }
-  if (needsTOTP.value && !form.totp.trim()) { error.value = 'Authenticator code is required.'; return focusError() }
+  if (!form.username.trim()) { error.value = t('auth.usernameRequired'); return focusError() }
+  if (!form.password) { error.value = t('auth.passwordRequired'); return focusError() }
+  if (needsTOTP.value && !form.totp.trim()) { error.value = t('login.totpRequired'); return focusError() }
   loading.value = true
   try {
     await login(form.username.trim(), form.password, needsTOTP.value ? form.totp.trim() : undefined, remember.value)
@@ -68,15 +69,15 @@ async function submit() {
   } catch (cause: any) {
     if (cause?.code === 'totp_required') { needsTOTP.value = true; passkeyRequired.value = false; form.totp = '' }
     else if (cause?.code === 'passkey_required') { passkeyRequired.value = true; needsTOTP.value = false; error.value = '' }
-    else { error.value = cause?.message || 'Unable to sign in.'; await focusError() }
+    else { error.value = cause?.message || t('login.unable'); await focusError() }
   } finally { loading.value = false }
 }
 async function passkeyLogin() {
   if (loading.value || passkeyLoading.value) return
-  if (!form.username.trim()) { error.value = 'Username is required.'; return focusError() }
+  if (!form.username.trim()) { error.value = t('auth.usernameRequired'); return focusError() }
   error.value = ''; passkeyLoading.value = true
   try { await loginWithPasskey(form.username.trim(), remember.value); await router.replace(destination.value) }
-  catch (cause: any) { error.value = cause?.name === 'NotAllowedError' ? 'Passkey authentication was cancelled.' : (cause?.message || 'Passkey authentication failed.'); await focusError() }
+  catch (cause: any) { error.value = cause?.name === 'NotAllowedError' ? t('login.passkeyCancelled') : (cause?.message || t('login.passkeyFailed')); await focusError() }
   finally { passkeyLoading.value = false }
 }
 onMounted(async () => {

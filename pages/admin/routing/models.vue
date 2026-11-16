@@ -1,102 +1,106 @@
 <template>
-  <div class="space-y-6">
+  <div class="space-y-4">
     <UAlert
       v-if="pageError"
       color="error"
       variant="subtle"
       icon="i-tabler-alert-triangle"
-      title="Unable to load models"
+      :title="t('models.loadFailed')"
       :description="pageError"
     />
 
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-      <AppCard>
-        <p class="text-xs font-semibold uppercase tracking-wide text-[var(--ui-text-muted)]">Shown</p>
-        <p class="mt-2 text-2xl font-bold">{{ filteredModels.length }}</p>
-      </AppCard>
-      <AppCard>
-        <p class="text-xs font-semibold uppercase tracking-wide text-[var(--ui-text-muted)]">Providers</p>
-        <p class="mt-2 text-2xl font-bold">{{ providerCount }}</p>
-      </AppCard>
-      <AppCard>
-        <p class="text-xs font-semibold uppercase tracking-wide text-[var(--ui-text-muted)]">Channels</p>
-        <p class="mt-2 text-2xl font-bold">{{ channelCount }}</p>
-      </AppCard>
-    </div>
+    <section class="catalog" :aria-label="t('models.summaryLabel')">
+      <div class="min-w-0">
+        <p class="catalog__count">{{ filteredModels.length }}<span>{{ t('models.countOf', { total: modelsList.length }) }}</span></p>
+        <p class="text-xs text-[var(--ui-text-muted)]">{{ t('models.providersChannels', { providers: providerCount, channels: channelCount }) }}</p>
+      </div>
+      <div v-if="providerSpectrum.length" class="min-w-0 flex-1">
+        <div class="catalog__spectrum" role="img" :aria-label="providerSpectrum.map(item => `${item.name} ${item.count}`).join(', ')">
+          <span v-for="item in providerSpectrum" :key="item.name" :style="{ flexGrow: item.count, background: item.color }" :title="t('models.spectrumTitle', { name: item.name, count: item.count })" />
+        </div>
+        <div class="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-[var(--ui-text-muted)]">
+          <span v-for="item in providerSpectrum" :key="item.name" class="inline-flex items-center gap-1"><span class="size-2 rounded-full" :style="{ background: item.color }" />{{ item.name }} {{ item.count }}</span>
+        </div>
+      </div>
+    </section>
 
-    <div class="flex flex-col gap-3 lg:flex-row lg:items-end">
-      <UFormField label="Catalog" class="w-full lg:w-48">
+    <div class="app-surface flex flex-col gap-3 p-3 lg:flex-row lg:items-end">
+      <UFormField :label="t('models.catalog')" class="w-full lg:w-48">
         <USelect v-model="scope" :items="scopeOptions" value-key="value" label-key="label" class="w-full" />
       </UFormField>
-      <UFormField v-if="scope === 'static'" label="Channel" class="w-full lg:w-56">
-        <USelectMenu :model-value="channel || allChannelsValue" @update:model-value="channel = $event === allChannelsValue ? '' : $event" :items="channelOptions" value-key="value" label-key="label" class="w-full" :search-input="{ placeholder: 'Search channels...' }" />
+      <UFormField v-if="scope === 'static'" :label="t('models.channel')" class="w-full lg:w-56">
+        <USelectMenu :model-value="channel || allChannelsValue" @update:model-value="channel = $event === allChannelsValue ? '' : $event" :items="channelOptions" value-key="value" label-key="label" class="w-full" :search-input="{ placeholder: t('models.searchChannels') }" />
       </UFormField>
-      <UFormField label="Search" class="w-full lg:max-w-md lg:flex-1">
-        <UInput v-model="search" icon="i-tabler-search" placeholder="Model ID, name, provider, or channel..." class="w-full" />
+      <UFormField :label="t('common.search')" class="w-full lg:flex-1">
+        <UInput v-model="search" icon="i-tabler-search" :placeholder="t('models.searchPlaceholder')" class="w-full" />
       </UFormField>
     </div>
 
-    <div v-if="pending && !modelsList.length" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      <USkeleton v-for="index in 8" :key="index" class="h-52 rounded-xl" />
+    <div v-if="pending && !modelsList.length" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+      <USkeleton v-for="index in 8" :key="index" class="h-24 rounded-2xl" />
     </div>
-    <div v-else-if="filteredModels.length" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      <AppCard v-for="model in filteredModels" :key="`${model.channel}:${model.id}`" class="min-w-0">
-        <div class="flex items-start justify-between gap-2">
-          <div class="min-w-0">
-            <h2 class="truncate font-semibold text-[var(--ui-text-highlighted)]" :title="model.display_name || model.id">{{ model.display_name || model.id }}</h2>
-            <p class="mt-1 break-all font-mono text-xs text-[var(--ui-text-muted)]">{{ model.id }}</p>
-          </div>
+    <div v-else-if="filteredModels.length" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+      <button
+        v-for="model in filteredModels"
+        :key="`${model.channel}:${model.id}`"
+        type="button"
+        class="model-tile app-surface group flex min-w-0 flex-col gap-3 p-3.5 text-left"
+        :aria-label="t('models.viewDetails', { id: model.id })"
+        @click="showDetails(model)"
+      >
+        <span class="flex min-w-0 items-start gap-3">
+          <span class="model-tile__mark" aria-hidden="true">{{ String(model.providers[0] || model.owned_by || model.id || '?').slice(0, 2).toUpperCase() }}</span>
+          <span class="min-w-0 flex-1">
+            <span class="block truncate text-sm font-semibold text-[var(--ui-text-highlighted)]" :title="model.display_name || model.id">{{ model.display_name || model.id }}</span>
+            <span class="block truncate font-mono text-[11px] text-[var(--ui-text-muted)]" :title="model.id">{{ model.id }}</span>
+          </span>
+          <UIcon name="i-tabler-arrow-up-right" class="size-4 shrink-0 text-[var(--ui-text-dimmed)] opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100" aria-hidden="true" />
+        </span>
+        <span class="flex min-w-0 flex-wrap items-center gap-1">
           <UBadge v-if="model.channel" color="primary" variant="subtle" size="sm">{{ model.channel }}</UBadge>
-        </div>
-        <div class="mt-4">
-          <p class="text-xs font-medium text-[var(--ui-text-muted)]">Providers</p>
-          <div v-if="model.providers.length" class="mt-2 flex flex-wrap gap-1">
-            <UBadge v-for="provider in model.providers" :key="provider" color="neutral" variant="subtle" size="sm">{{ provider }}</UBadge>
-          </div>
-          <p v-else class="mt-2 text-xs text-[var(--ui-text-muted)]">No provider information</p>
-        </div>
-        <div class="mt-4 flex items-center justify-between gap-2 border-t border-[var(--ui-border)] pt-3">
-          <span class="truncate text-xs text-[var(--ui-text-muted)]">{{ model.type || model.owned_by || '—' }}</span>
-          <AppButton color="neutral" variant="outline" size="xs" :aria-label="`View details for ${model.id}`" @click="showDetails(model)">Details</AppButton>
-        </div>
-      </AppCard>
+          <UBadge v-for="provider in model.providers.slice(0, 3)" :key="provider" color="neutral" variant="subtle" size="sm">{{ provider }}</UBadge>
+          <span v-if="model.providers.length > 3" class="text-[11px] text-[var(--ui-text-muted)]">+{{ model.providers.length - 3 }}</span>
+          <span v-if="!model.providers.length && !model.channel" class="text-[11px] text-[var(--ui-text-muted)]">{{ t('models.noProviderInfo') }}</span>
+          <span class="ml-auto truncate text-[11px] text-[var(--ui-text-muted)]">{{ model.type || model.owned_by || '' }}</span>
+        </span>
+      </button>
     </div>
-    <div v-else-if="!pending" class="rounded-xl border border-dashed border-[var(--ui-border)] px-6 py-14 text-center">
+    <div v-else-if="!pending" class="app-surface border-dashed px-6 py-8 text-center">
       <UIcon name="i-tabler-box" class="mx-auto mb-3 size-8 text-[var(--ui-text-muted)]" />
-      <p class="font-medium">{{ search ? 'No matching models' : 'No models found' }}</p>
-      <p class="mt-1 text-sm text-[var(--ui-text-muted)]">Try another catalog, channel, or search term.</p>
+      <p class="font-medium">{{ search ? t('models.noMatching') : t('models.noModels') }}</p>
+      <p class="mt-1 text-sm text-[var(--ui-text-muted)]">{{ t('models.emptyHint') }}</p>
     </div>
 
-    <USlideover v-model:open="detailsOpen" side="right" title="Model details" description="Model metadata returned by the management API." :ui="{ content: 'sm:max-w-xl' }">
+    <USlideover v-model:open="detailsOpen" side="right" :title="t('models.detailsTitle')" :description="t('models.detailsDescription')" :ui="{ content: 'sm:max-w-xl' }">
       <template #body>
         <div v-if="selectedModel" class="space-y-5">
           <div class="rounded-xl bg-[var(--ui-bg-muted)] p-4">
             <p class="font-mono text-lg font-semibold">{{ selectedModel.id }}</p>
-            <p class="mt-1 text-sm text-[var(--ui-text-muted)]">{{ selectedModel.display_name || 'No display name' }}</p>
+            <p class="mt-1 text-sm text-[var(--ui-text-muted)]">{{ selectedModel.display_name || t('models.noDisplayName') }}</p>
           </div>
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <DetailItem label="Channel" :value="selectedModel.channel || 'Runtime registry'" />
-            <DetailItem label="Object" :value="selectedModel.object || '—'" />
-            <DetailItem label="Type" :value="selectedModel.type || '—'" />
-            <DetailItem label="Owned by" :value="selectedModel.owned_by || '—'" />
-            <DetailItem label="Name" :value="selectedModel.name || '—'" />
-            <DetailItem label="Version" :value="selectedModel.version || '—'" />
-            <DetailItem label="Created" :value="selectedModel.created ? formatCreated(selectedModel.created) : '—'" />
-            <DetailItem label="Context length" :value="formatLimit(selectedModel.context_length || selectedModel.inputTokenLimit)" />
-            <DetailItem label="Input token limit" :value="formatLimit(selectedModel.inputTokenLimit)" />
-            <DetailItem label="Output token limit" :value="formatLimit(selectedModel.outputTokenLimit || selectedModel.max_completion_tokens)" />
-            <DetailItem label="Max completion tokens" :value="formatLimit(selectedModel.max_completion_tokens)" />
-            <DetailItem label="Configuration updates" :value="selectedModel.support_configuration_update ? 'Supported' : 'Not declared'" />
+            <DetailItem :label="t('models.channel')" :value="selectedModel.channel || t('models.runtimeRegistry')" />
+            <DetailItem :label="t('models.object')" :value="selectedModel.object || '—'" />
+            <DetailItem :label="t('common.type')" :value="selectedModel.type || '—'" />
+            <DetailItem :label="t('models.ownedBy')" :value="selectedModel.owned_by || '—'" />
+            <DetailItem :label="t('common.name')" :value="selectedModel.name || '—'" />
+            <DetailItem :label="t('models.version')" :value="selectedModel.version || '—'" />
+            <DetailItem :label="t('common.created')" :value="selectedModel.created ? formatCreated(selectedModel.created) : '—'" />
+            <DetailItem :label="t('models.contextLength')" :value="formatLimit(selectedModel.context_length || selectedModel.inputTokenLimit)" />
+            <DetailItem :label="t('models.inputTokenLimit')" :value="formatLimit(selectedModel.inputTokenLimit)" />
+            <DetailItem :label="t('models.outputTokenLimit')" :value="formatLimit(selectedModel.outputTokenLimit || selectedModel.max_completion_tokens)" />
+            <DetailItem :label="t('models.maxCompletionTokens')" :value="formatLimit(selectedModel.max_completion_tokens)" />
+            <DetailItem :label="t('models.configurationUpdates')" :value="selectedModel.support_configuration_update ? t('models.supported') : t('models.notDeclared')" />
           </div>
           <div v-if="selectedModel.description">
-            <p class="mb-2 text-sm font-medium">Description</p>
+            <p class="mb-2 text-sm font-medium">{{ t('models.description') }}</p>
             <p class="whitespace-pre-wrap text-sm text-[var(--ui-text-muted)]">{{ selectedModel.description }}</p>
           </div>
           <div>
-            <p class="mb-2 text-sm font-medium">Authoritative providers</p>
+            <p class="mb-2 text-sm font-medium">{{ t('models.authoritativeProviders') }}</p>
             <div class="flex flex-wrap gap-2">
               <UBadge v-for="provider in selectedModel.providers" :key="provider" color="primary" variant="subtle">{{ provider }}</UBadge>
-              <span v-if="!selectedModel.providers.length" class="text-sm text-[var(--ui-text-muted)]">No billing provider identity</span>
+              <span v-if="!selectedModel.providers.length" class="text-sm text-[var(--ui-text-muted)]">{{ t('models.noBillingProvider') }}</span>
             </div>
           </div>
           <div v-for="group in modelMetadataGroups" :key="group.label">
@@ -106,11 +110,11 @@
             </div>
           </div>
           <details v-if="hasCapabilityMetadata" class="rounded-xl border border-[var(--ui-border)] px-4 py-3 text-sm">
-            <summary class="cursor-pointer font-medium">Capability metadata</summary>
+            <summary class="cursor-pointer font-medium">{{ t('models.capabilityMetadata') }}</summary>
             <pre class="mt-3 max-h-72 overflow-auto whitespace-pre-wrap break-words text-xs text-[var(--ui-text-muted)]">{{ capabilityMetadata }}</pre>
           </details>
           <div class="flex justify-end border-t border-[var(--ui-border)] pt-4">
-            <AppButton color="neutral" variant="ghost" @click="detailsOpen = false">Close</AppButton>
+            <AppButton color="neutral" variant="ghost" @click="detailsOpen = false">{{ t('common.close') }}</AppButton>
           </div>
         </div>
       </template>
@@ -122,6 +126,7 @@
 import { useWorkspaceState } from '~/composables/useWorkspaceState'
 import { useStoreData } from '~/composables/useStoreData'
 const { fetchAPI } = useApi()
+const { t, intlLocale } = useAdminI18n()
 
 const scope = ref('available')
 const channel = ref('')
@@ -131,10 +136,10 @@ const detailsOpen = ref(false)
 const selectedModel = ref(null)
 
 const allChannelsValue = '__all_channels__'
-const scopeOptions = [
-  { label: 'Available now', value: 'available' },
-  { label: 'Static catalog', value: 'static' }
-]
+const scopeOptions = computed(() => [
+  { label: t('models.scopeAvailable'), value: 'available' },
+  { label: t('models.scopeStatic'), value: 'static' }
+])
 
 async function loadModels() {
   pageError.value = ''
@@ -161,7 +166,7 @@ const modelsList = computed(() => {
     .map(model => ({ ...model, providers: Array.isArray(model.providers) ? model.providers : [], channel: catalogChannel })))
 })
 const channelOptions = computed(() => [
-  { label: 'All static channels', value: allChannelsValue },
+  { label: t('models.allStaticChannels'), value: allChannelsValue },
   ...[...new Set(modelsList.value.map(model => model.channel).filter(Boolean))].sort().map(value => ({ label: value, value }))
 ])
 const filteredModels = computed(() => {
@@ -173,15 +178,25 @@ const filteredModels = computed(() => {
       .some(value => String(value || '').toLowerCase().includes(query))
   })
 })
+// Provider share across the full catalog; top six plus "other".
+const providerSpectrum = computed(() => {
+  const palette = ['#8b5cf6', '#3b82f6', '#d946ef', '#10b981', '#f59e0b', '#06b6d4']
+  const counts = new Map()
+  for (const model of modelsList.value) for (const provider of (model.providers?.length ? model.providers : [t('common.unknown')])) counts.set(provider, (counts.get(provider) || 0) + 1)
+  const sorted = [...counts].sort((a, b) => b[1] - a[1])
+  const top = sorted.slice(0, 6).map(([name, count], index) => ({ name, count, color: palette[index] }))
+  const rest = sorted.slice(6).reduce((sum, [, count]) => sum + count, 0)
+  return rest ? [...top, { name: t('models.otherProviders'), count: rest, color: '#a1a1aa' }] : top
+})
 const providerCount = computed(() => new Set(modelsList.value.flatMap(model => model.providers || [])).size)
 const channelCount = computed(() => new Set(modelsList.value.map(model => model.channel).filter(Boolean)).size)
 const modelMetadataGroups = computed(() => {
   if (!selectedModel.value) return []
   return [
-    { label: 'Generation methods', values: selectedModel.value.supportedGenerationMethods },
-    { label: 'Supported parameters', values: selectedModel.value.supported_parameters },
-    { label: 'Input modalities', values: selectedModel.value.supportedInputModalities },
-    { label: 'Output modalities', values: selectedModel.value.supportedOutputModalities }
+    { label: t('models.generationMethods'), values: selectedModel.value.supportedGenerationMethods },
+    { label: t('models.supportedParameters'), values: selectedModel.value.supported_parameters },
+    { label: t('models.inputModalities'), values: selectedModel.value.supportedInputModalities },
+    { label: t('models.outputModalities'), values: selectedModel.value.supportedOutputModalities }
   ].filter(group => Array.isArray(group.values) && group.values.length)
 })
 const capabilityMetadata = computed(() => JSON.stringify({
@@ -196,13 +211,39 @@ function showDetails(row) {
 }
 function formatCreated(value) {
   const date = new Date(Number(value) * 1000)
-  return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleDateString()
+  return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleDateString(intlLocale.value)
 }
 function formatLimit(value) {
   const limit = Number(value)
-  return Number.isFinite(limit) && limit > 0 ? limit.toLocaleString() : '—'
+  return Number.isFinite(limit) && limit > 0 ? limit.toLocaleString(intlLocale.value) : '—'
 }
 function errorMessage(error) {
-  return error?.data?.message || error?.data?.error || error?.response?._data?.message || error?.response?._data?.error || error?.message || 'Unexpected request error.'
+  return error?.data?.message || error?.data?.error || error?.response?._data?.message || error?.response?._data?.error || error?.message || t('routing.unexpectedError')
 }
 </script>
+
+<style scoped>
+/* Models signature: provider spectrum across the catalog. */
+.catalog { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 2rem; padding: 1rem 1.25rem; border: 1px solid var(--admin-panel-border); border-radius: 0.875rem; background: radial-gradient(ellipse 50% 140% at 0% 50%, color-mix(in oklch, var(--page-accent) 12%, transparent), transparent 70%), var(--admin-panel-bg); box-shadow: 0 1px 2px rgb(24 24 27 / 4%); }
+.catalog__count { font-family: var(--admin-display-font); font-size: 1.5rem; line-height: 2rem; font-weight: 800; letter-spacing: -0.02em; color: var(--ui-text-highlighted); }
+.catalog__count span { font-size: 0.875rem; font-weight: 500; letter-spacing: normal; color: var(--ui-text-muted); }
+.catalog__spectrum { display: flex; height: 0.625rem; gap: 2px; overflow: hidden; border-radius: 9999px; }
+.catalog__spectrum > span { flex-basis: 0; min-width: 3px; }
+.model-tile { transition: border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease; }
+.model-tile:hover { transform: translateY(-1px); border-color: color-mix(in oklch, var(--ui-primary) 35%, var(--admin-panel-border)) !important; }
+.model-tile:focus-visible { outline: 2px solid var(--ui-primary); outline-offset: 2px; }
+.model-tile__mark {
+  display: flex;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.75rem;
+  background: var(--admin-selected);
+  color: var(--ui-primary);
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+@media (prefers-reduced-motion: reduce) { .model-tile { transition: none; } .model-tile:hover { transform: none; } }
+</style>

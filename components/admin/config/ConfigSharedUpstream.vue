@@ -5,7 +5,7 @@
         <div>
           <h2 class="font-semibold text-[var(--ui-text-highlighted)]">{{ section.title }}</h2>
           <p class="mt-1 text-xs text-[var(--ui-text-muted)]">{{ section.description }}</p>
-          <p class="mt-1 text-xs text-[var(--ui-text-muted)]">Backend default removes the explicit setting. Configured empty strings, zeroes, disabled booleans and empty objects remain explicit values.</p>
+          <p class="mt-1 text-xs text-[var(--ui-text-muted)]">{{ t('config.shared.note') }}</p>
         </div>
       </template>
       <div class="divide-y divide-[var(--ui-border-muted)]">
@@ -32,12 +32,12 @@
               :model-value="draft[field.key] == null ? 'default' : 'configured'"
               :items="textOptions"
               :disabled="loading"
-              :aria-label="`${field.label} source`"
+              :aria-label="t('config.shared.source', { label: field.label })"
               class="w-full sm:w-48"
-              @update:model-value="updateField(field.key, $event === 'default' ? null : field.type === 'number' ? 0 : field.type === 'json' ? '{}' : '')"
+              @update:model-value="updateField(field.key, $event === 'default' ? null : field.type === 'number' ? 0 : isConfigJsonField(field.type) ? (field.type === 'json' ? '{}' : '[]') : field.type === 'image-mode' ? false : '')"
             />
             <UTextarea
-              v-if="field.type === 'json' && draft[field.key] != null"
+              v-if="isConfigJsonField(field.type) && draft[field.key] != null"
               :model-value="String(draft[field.key])"
               :disabled="loading"
               :aria-label="field.label"
@@ -46,6 +46,15 @@
               spellcheck="false"
               @update:model-value="updateField(field.key, String($event ?? ''))"
             />
+            <USelect
+              v-else-if="field.type === 'image-mode' && draft[field.key] != null"
+              :model-value="String(draft[field.key])"
+              :items="imageOptions"
+              :disabled="loading"
+              :aria-label="field.label"
+              class="min-w-0 flex-1"
+              @update:model-value="updateField(field.key, $event === 'true' ? true : $event === 'false' ? false : $event)"
+            />
             <UInput
               v-else-if="draft[field.key] != null"
               :model-value="String(draft[field.key])"
@@ -53,7 +62,7 @@
               :aria-label="field.label"
               :type="field.type === 'number' ? 'number' : 'text'"
               :step="field.type === 'number' ? 1 : undefined"
-              :placeholder="field.placeholder || (field.type === 'duration' ? '20s (empty means unlimited)' : 'Explicit value (may be empty)')"
+              :placeholder="field.placeholder || (field.type === 'duration' ? t('config.shared.durationPlaceholder') : t('config.shared.explicitPlaceholder'))"
               class="min-w-0 flex-1"
               @update:model-value="updateField(field.key, field.type === 'number' && $event !== '' && $event != null ? Number($event) : String($event ?? ''))"
             />
@@ -65,6 +74,15 @@
 </template>
 
 <script setup lang="ts">
+import { isConfigJsonField } from '~/composables/configParity'
+
+const { t } = useAdminI18n()
+const imageOptions = computed(() => [
+  { label: t('config.shared.image.enabled'), value: 'false' },
+  { label: t('config.shared.image.disabled'), value: 'true' },
+  { label: t('config.shared.image.chat'), value: 'chat' },
+  { label: t('config.shared.image.passthrough'), value: 'passthrough' },
+])
 type DraftValue = string | number | boolean | null | undefined
 type SharedSection = {
   id: string
@@ -90,15 +108,15 @@ withDefaults(defineProps<{
 })
 
 const draft = defineModel<Record<string, DraftValue>>('draft', { required: true })
-const booleanOptions = [
-  { label: 'Backend default (unset)', value: 'default' },
-  { label: 'Enabled (true)', value: 'true' },
-  { label: 'Disabled (false)', value: 'false' }
-]
-const textOptions = [
-  { label: 'Backend default (unset)', value: 'default' },
-  { label: 'Configured value', value: 'configured' }
-]
+const booleanOptions = computed(() => [
+  { label: t('config.changes.unset'), value: 'default' },
+  { label: t('config.shared.optTrue'), value: 'true' },
+  { label: t('config.shared.optFalse'), value: 'false' }
+])
+const textOptions = computed(() => [
+  { label: t('config.changes.unset'), value: 'default' },
+  { label: t('config.shared.optConfigured'), value: 'configured' }
+])
 
 function updateField(key: string, value: DraftValue) {
   draft.value = { ...draft.value, [key]: value }

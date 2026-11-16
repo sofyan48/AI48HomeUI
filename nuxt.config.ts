@@ -6,13 +6,16 @@ export default defineNuxtConfig({
 
   app: {
     head: {
-      title: "CPAHome",
+      title: "AI48Hub",
       meta: [
         { name: "viewport", content: "width=device-width, initial-scale=1" },
-        { name: "theme-color", content: "#0f172a" },
+        { name: "theme-color", content: "#7c3aed" },
       ],
       link: [
-        { rel: "icon", type: "image/png", href: "/favicon.png" }
+        { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
+        { rel: "icon", type: "image/png", sizes: "128x128", href: "/favicon.png" },
+        { rel: "alternate icon", href: "/favicon.ico" },
+        { rel: "apple-touch-icon", href: "/apple-touch-icon.png" }
       ]
     }
   },
@@ -22,6 +25,11 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
 
   modules: ["@pinia/nuxt", "@nuxt/ui"],
+
+  // Brand display face for headings and figures; bundled locally by @nuxt/fonts.
+  fonts: {
+    families: [{ name: "Plus Jakarta Sans", weights: [500, 600, 700, 800] }],
+  },
 
   runtimeConfig: {
     public: {

@@ -1,0 +1,56 @@
+name: ci
+
+# Verifies the embedded bundle, then asks AI48Home to publish a fresh :edge image.
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.3.0'
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Request telemetry tests
+        run: bun test scripts/request-telemetry.test.ts
+      - name: Build embedded bundle
+        run: bun run build:embedded
+      - name: Verify bundle entry points
+        run: |
+          test -s dist/index.html
+          test -s dist/management.html
+          test -s dist/user.html
+
+  trigger-home-image:
+    name: trigger Home :edge image
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch panel-updated to AI48Home
+        env:
+          # Fine-grained PAT with "Contents: read and write" (or classic "repo") on sofyan48/AI48Home.
+          HOME_DISPATCH_TOKEN: ${{ secrets.HOME_DISPATCH_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${HOME_DISPATCH_TOKEN}" ]]; then
+            echo "::notice::HOME_DISPATCH_TOKEN is not set; skipping the Home image rebuild."
+            exit 0
+          fi
+          curl -fsS -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${HOME_DISPATCH_TOKEN}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            https://api.github.com/repos/sofyan48/AI48Home/dispatches \
+            -d "{\"event_type\":\"panel-updated\",\"client_payload\":{\"ref\":\"main\",\"sha\":\"${GITHUB_SHA}\"}}"
+          echo "Requested ghcr.io/sofyan48/ai48home:edge for panel ${GITHUB_SHA::7}"

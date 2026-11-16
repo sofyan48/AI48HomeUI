@@ -1,42 +1,38 @@
 <template>
-    <div class="space-y-6">
+    <div class="space-y-4">
         <UAlert
             v-if="pageError"
             color="error"
             variant="subtle"
-            title="Plugin data could not be loaded"
+            :title="t('plugins.loadFailed')"
             :description="pageError"
         />
-        <div class="grid gap-4 sm:grid-cols-3">
-            <AppCard
-                ><p
-                    class="text-xs font-semibold uppercase text-[var(--ui-text-muted)]"
-                >
-                    Configured / registered
-                </p>
-                <p class="mt-2 text-2xl font-bold">
-                    {{ installed.length }}
-                </p></AppCard
-            ><AppCard
-                ><p
-                    class="text-xs font-semibold uppercase text-[var(--ui-text-muted)]"
-                >
-                    Store entries
-                </p>
-                <p class="mt-2 text-2xl font-bold">
-                    {{ store.length }}
-                </p></AppCard
-            ><AppCard
-                ><p
-                    class="text-xs font-semibold uppercase text-[var(--ui-text-muted)]"
-                >
-                    Auth rules
-                </p>
-                <p class="mt-2 text-2xl font-bold">
-                    {{ authRules.length }}
-                </p></AppCard
-            >
-        </div>
+        <section class="bay" :aria-label="t('plugins.summaryAria')">
+            <div class="bay__slots" aria-hidden="true">
+                <span
+                    v-for="(plugin, index) in installed.slice(0, 12)"
+                    :key="plugin.id || index"
+                    class="bay__slot"
+                    :class="plugin.effective_enabled ? 'bay__slot--on' : plugin.enabled ? 'bay__slot--idle' : ''"
+                    :title="plugin.id"
+                />
+                <span v-for="index in Math.max(0, 6 - installed.length)" :key="`empty-${index}`" class="bay__slot bay__slot--empty" />
+            </div>
+            <dl class="bay__stats">
+                <div>
+                    <dt>{{ t('plugins.stats.installed') }}</dt>
+                    <dd>{{ installed.length }}<span>{{ t('plugins.stats.effective', { count: installed.filter((plugin) => plugin.effective_enabled).length }) }}</span></dd>
+                </div>
+                <div>
+                    <dt>{{ t('plugins.stats.inStore') }}</dt>
+                    <dd>{{ store.length }}<span>{{ t('plugins.stats.availableToInstall') }}</span></dd>
+                </div>
+                <div>
+                    <dt>{{ t('plugins.stats.authRules') }}</dt>
+                    <dd>{{ authRules.length }}<span>{{ t('plugins.stats.accessRules') }}</span></dd>
+                </div>
+            </dl>
+        </section>
         <UAlert
             v-if="operation"
             :color="operation.error ? 'error' : 'info'"
@@ -47,20 +43,20 @@
         <AppCard v-if="operation?.response && !operation.error"
             ><div class="space-y-1 text-sm">
                 <p>
-                    Configuration status:
+                    {{ t('plugins.response.configStatus') }}
                     <strong>{{ operation.response.status }}</strong
                     ><span v-if="operation.response.version">
-                        · version {{ operation.response.version }}</span
+                        · {{ t('plugins.response.version', { version: operation.response.version }) }}</span
                     ><span v-if="operation.response.source_name">
                         · {{ operation.response.source_name }}</span
                     >
                 </p>
                 <p v-if="operation.response.task">
-                    Delete task #{{ operation.response.task.id }} ·
-                    {{ operation.response.task.operation }} · target
+                    {{ t('plugins.response.deleteTask', { id: operation.response.task.id }) }} ·
+                    {{ operation.response.task.operation }} ·
                     {{
-                        operation.response.target_node_type ||
-                        operation.response.task.target_node_type
+                        t('plugins.response.target', { target: operation.response.target_node_type ||
+                        operation.response.task.target_node_type })
                     }}<span
                         v-if="
                             operation.response.target_node_id ||
@@ -75,33 +71,28 @@
                     >
                 </p>
                 <p v-if="operation.response.configured_removed !== undefined">
-                    Configuration removed:
-                    {{ operation.response.configured_removed ? "yes" : "no" }}
+                    {{ t('plugins.response.configRemoved', { value: operation.response.configured_removed ? t('common.yes') : t('common.no') }) }}
                 </p>
                 <p v-if="operation.response.plugins_enabled === false">
-                    Plugins are globally disabled.
+                    {{ t('plugins.response.globallyDisabled') }}
                 </p>
                 <p v-if="operation.response.restart_required">
-                    Restart required.
+                    {{ t('plugins.response.restartRequired') }}
                 </p>
                 <p v-if="operation.response.task">
-                    Task created; node completion is not reported by this
-                    response.
+                    {{ t('plugins.response.taskCreated') }}
                 </p>
                 <p v-else>
-                    Configuration updated; node rollout is not reported by this
-                    response.
+                    {{ t('plugins.response.configUpdated') }}
                 </p>
             </div></AppCard
         >
         <AppCard>
             <div class="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                    <h2 class="font-semibold">CPA plugin reports</h2>
+                    <h2 class="font-semibold">{{ t('plugins.reports.title') }}</h2>
                     <p class="text-xs text-[var(--ui-text-muted)]">
-                        Self-reported observations from active nodes, not proof
-                        of rollout completion. Delete reports may remain after
-                        uninstall.
+                        {{ t('plugins.reports.description') }}
                     </p>
                 </div>
                 <AppButton
@@ -111,7 +102,7 @@
                     icon="i-tabler-refresh"
                     :loading="nodesLoading"
                     @click="startNodePolling"
-                    >Refresh reports</AppButton
+                    >{{ t('plugins.reports.refresh') }}</AppButton
                 >
             </div>
             <UAlert
@@ -119,24 +110,23 @@
                 class="mt-3"
                 color="error"
                 variant="subtle"
-                title="Node reports could not be loaded"
+                :title="t('plugins.reports.loadFailed')"
                 :description="nodesError"
             />
             <div v-if="nodesResponse" class="mt-4 space-y-3 text-sm">
                 <p class="text-[var(--ui-text-muted)]">
                     {{
                         nodesResponse.plugin_report_required
-                            ? "Plugin reports required by current configuration"
-                            : "No plugin reports required by current configuration"
+                            ? t('plugins.reports.required')
+                            : t('plugins.reports.notRequired')
                     }}
-                    · {{ activeNodes.length }} active CPA nodes
+                    · {{ t('plugins.reports.activeNodes', { count: activeNodes.length }) }}
                 </p>
                 <p
                     v-if="!activeNodes.length"
                     class="text-[var(--ui-text-muted)]"
                 >
-                    No active CPA nodes to report rollout. Previously stored
-                    reports do not confirm current deployment.
+                    {{ t('plugins.reports.noActiveNodes') }}
                 </p>
                 <div
                     v-for="(node, index) in activeNodes"
@@ -148,7 +138,7 @@
                             node.node_name ||
                             node.node_id ||
                             node.ip ||
-                            "Unknown node"
+                            t('plugins.reports.unknownNode')
                         }}</strong
                         ><span
                             v-if="node.node_name && node.node_id"
@@ -162,7 +152,7 @@
                             v-if="!node.healthy"
                             color="warning"
                             variant="subtle"
-                            >node unhealthy</UBadge
+                            >{{ t('plugins.reports.nodeUnhealthy') }}</UBadge
                         >
                     </div>
                     <div
@@ -173,8 +163,8 @@
                         class="mt-2 break-words text-xs text-[var(--ui-text-muted)]"
                     >
                         <p>
-                            {{ report.task || "Plugin task" }} ·
-                            {{ report.status || "unknown"
+                            {{ report.task || t('plugins.reports.pluginTask') }} ·
+                            {{ report.status || t('plugins.reports.unknown')
                             }}<span v-if="report.phase">
                                 · {{ report.phase }}</span
                             ><span v-if="report.updated_at">
@@ -186,9 +176,9 @@
                             :key="itemIndex"
                             class="pl-3"
                         >
-                            {{ item.id }} · install:
-                            {{ item.install_status || "unknown" }} · load:
-                            {{ item.load_status || "unknown"
+                            {{ item.id }} ·
+                            {{ t('plugins.reports.install', { status: item.install_status || t('plugins.reports.unknown') }) }} ·
+                            {{ t('plugins.reports.load', { status: item.load_status || t('plugins.reports.unknown') })
                             }}<span v-if="item.error"> · {{ item.error }}</span>
                         </p>
                         <p v-if="report.error" class="pl-3">
@@ -200,8 +190,7 @@
                     v-if="pollExpired"
                     class="text-xs text-[var(--ui-text-muted)]"
                 >
-                    Automatic report refresh has stopped. Refresh reports to
-                    check again.
+                    {{ t('plugins.reports.pollExpired') }}
                 </p>
             </div>
         </AppCard>
@@ -223,8 +212,8 @@
                 v-if="pluginsResponse && !pluginsResponse.plugins_enabled"
                 color="warning"
                 variant="subtle"
-                title="Plugins are globally disabled"
-                description="Configured plugins will not become effective until the runtime plugin switch is enabled."
+                :title="t('plugins.globallyDisabledTitle')"
+                :description="t('plugins.globallyDisabledInstalled')"
             />
             <div class="grid gap-4 lg:grid-cols-2">
                 <AppCard v-for="plugin in installed" :key="plugin.id"
@@ -243,10 +232,10 @@
                                     variant="subtle"
                                     >{{
                                         plugin.effective_enabled
-                                            ? "effective"
+                                            ? t('plugins.badge.effective')
                                             : plugin.enabled
-                                              ? "enabled"
-                                              : "disabled"
+                                              ? t('plugins.badge.enabled')
+                                              : t('plugins.badge.disabled')
                                     }}</UBadge
                                 >
                             </div>
@@ -262,7 +251,7 @@
                                 v-if="plugin.metadata?.author"
                                 class="mt-2 text-sm text-[var(--ui-text-muted)]"
                             >
-                                by {{ plugin.metadata.author }}
+                                {{ t('plugins.byAuthor', { author: plugin.metadata.author }) }}
                             </p>
                         </div>
                         <AppButton
@@ -273,7 +262,7 @@
                             icon="i-tabler-trash"
                             :loading="busyPlugin === plugin.id"
                             :disabled="!!busyPlugin"
-                            aria-label="Uninstall plugin"
+                            :aria-label="t('plugins.uninstallAria')"
                             @click="uninstall(plugin.id)"
                         />
                     </div>
@@ -282,24 +271,24 @@
                             v-if="plugin.registered"
                             color="info"
                             variant="subtle"
-                            >registered</UBadge
+                            >{{ t('plugins.badge.registered') }}</UBadge
                         ><UBadge
                             v-if="plugin.configured"
                             color="neutral"
                             variant="subtle"
-                            >configured</UBadge
+                            >{{ t('plugins.badge.configured') }}</UBadge
                         ><UBadge
                             v-if="plugin.supports_oauth"
                             color="primary"
                             variant="subtle"
                             >OAuth:
-                            {{ plugin.oauth_provider || "supported" }}</UBadge
+                            {{ plugin.oauth_provider || t('plugins.badge.oauthSupported') }}</UBadge
                         >
                     </div>
                     <div class="mt-4 flex flex-wrap items-center gap-3">
                         <USwitch
                             :model-value="plugin.enabled === true"
-                            :label="`Enable ${plugin.metadata?.name || plugin.id}`"
+                            :label="t('plugins.enableNamed', { name: plugin.metadata?.name || plugin.id })"
                             :loading="busyPlugin === plugin.id"
                             :disabled="!!busyPlugin || configOpen"
                             @update:model-value="togglePlugin(plugin, $event)"
@@ -311,14 +300,14 @@
                             icon="i-tabler-settings"
                             :disabled="!!busyPlugin || configOpen"
                             @click="openPluginConfig(plugin)"
-                        >Configure</AppButton>
+                        >{{ t('plugins.configure') }}</AppButton>
                     </div>
                     <UAlert
                         v-if="pluginMutationError?.id === plugin.id"
                         class="mt-3"
                         color="error"
                         variant="subtle"
-                        title="Plugin update failed"
+                        :title="t('plugins.updateFailed')"
                         :description="pluginMutationError.message"
                     />
                     <AppButton
@@ -332,8 +321,8 @@
                         "
                         >{{
                             selectedInstalled === plugin.id
-                                ? "Hide details"
-                                : "Details"
+                                ? t('plugins.hideDetails')
+                                : t('common.details')
                         }}</AppButton
                     >
                     <div
@@ -341,17 +330,13 @@
                         class="mt-3 space-y-2 break-words text-sm text-[var(--ui-text-muted)]"
                     >
                         <p>
-                            Configured: {{ plugin.configured ? "yes" : "no" }} ·
-                            Registered on Home:
-                            {{ plugin.registered ? "yes" : "no" }} · Enabled:
-                            {{ plugin.enabled ? "yes" : "no" }} · Effective:
-                            {{ plugin.effective_enabled ? "yes" : "no" }}
+                            {{ t('plugins.details.installedFlags', { configured: yesNo(plugin.configured), registered: yesNo(plugin.registered), enabled: yesNo(plugin.enabled), effective: yesNo(plugin.effective_enabled) }) }}
                         </p>
                         <p v-if="plugin.path">
-                            Path: <code>{{ plugin.path }}</code>
+                            {{ t('plugins.details.path') }} <code>{{ plugin.path }}</code>
                         </p>
                         <p v-if="plugin.metadata?.github_repository">
-                            Repository:
+                            {{ t('plugins.details.repository') }}
                             <a
                                 v-if="
                                     safeURL(plugin.metadata.github_repository)
@@ -376,12 +361,11 @@
                             >
                                 — {{ field.description }}</span
                             ><span v-if="field.enum_values?.length">
-                                · options:
-                                {{ field.enum_values.join(", ") }}</span
+                                · {{ t('plugins.details.options', { list: field.enum_values.join(", ") }) }}</span
                             >
                         </p>
                         <p v-for="menu in plugin.menus || []" :key="menu.path">
-                            Menu: {{ menu.menu }} · {{ menu.path
+                            {{ t('plugins.details.menu', { menu: menu.menu }) }} · {{ menu.path
                             }}<span v-if="menu.description">
                                 — {{ menu.description }}</span
                             >
@@ -392,7 +376,7 @@
                     v-if="!installed.length"
                     class="py-12 text-center text-sm text-[var(--ui-text-muted)] lg:col-span-2"
                 >
-                    No plugins are configured or registered.
+                    {{ t('plugins.installedEmpty') }}
                 </p>
             </div>
         </section>
@@ -402,47 +386,47 @@
                 v-if="storeResponse && !storeResponse.plugins_enabled"
                 color="warning"
                 variant="subtle"
-                title="Plugins are globally disabled"
-                description="Installing a manifest does not enable plugins globally."
+                :title="t('plugins.globallyDisabledTitle')"
+                :description="t('plugins.globallyDisabledStore')"
             />
             <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <UInput
                     v-model="storeSearch"
                     icon="i-tabler-search"
-                    placeholder="Search store..."
+                    :placeholder="t('plugins.store.searchPlaceholder')"
                     class="w-full"
                 /><USelect
                     v-model="sourceFilter"
                     :items="sourceOptions"
                     value-key="value"
                     label-key="label"
-                    aria-label="Catalog source"
+                    :aria-label="t('plugins.store.sourceAria')"
                     class="w-full"
                 /><USelect
                     v-model="statusFilter"
                     :items="statusOptions"
                     value-key="value"
                     label-key="label"
-                    aria-label="Plugin status"
+                    :aria-label="t('plugins.store.statusAria')"
                     class="w-full"
                 /><USelect
                     v-model="installFilter"
                     :items="installOptions"
                     value-key="value"
                     label-key="label"
-                    aria-label="Install type"
+                    :aria-label="t('plugins.store.installTypeAria')"
                     class="w-full"
                 />
             </div>
             <p class="text-xs text-[var(--ui-text-muted)]">
-                {{ filteredStore.length }} of {{ store.length }} entries ·
+                {{ t('plugins.store.entries', { shown: filteredStore.length, total: store.length }) }} ·
                 {{ storeResponse?.plugins_dir || "plugins" }}
             </p>
             <div
                 v-if="storeResponse?.sources?.length"
                 class="flex flex-wrap gap-2 text-xs"
             >
-                <span class="text-[var(--ui-text-muted)]">Sources:</span
+                <span class="text-[var(--ui-text-muted)]">{{ t('plugins.store.sources') }}</span
                 ><span v-for="source in storeResponse.sources" :key="source.id"
                     >{{ source.name || source.id
                     }}<span
@@ -458,7 +442,7 @@
                 :key="failure.source_id"
                 color="warning"
                 variant="subtle"
-                :title="`Store source failed: ${failure.source_name || failure.source_id}`"
+                :title="t('plugins.store.sourceFailed', { name: failure.source_name || failure.source_id })"
                 :description="failure.message"
             />
             <div class="grid gap-4 lg:grid-cols-2">
@@ -476,14 +460,14 @@
                                         v-if="plugin.update_available"
                                         color="warning"
                                         variant="subtle"
-                                        >update</UBadge
+                                        >{{ t('plugins.badge.update') }}</UBadge
                                     >
                                 </div>
                                 <p
                                     class="mt-1 text-xs text-[var(--ui-text-muted)]"
                                 >
-                                    {{ plugin.author || "Unknown author" }} ·
-                                    {{ plugin.version || "unversioned" }} ·
+                                    {{ plugin.author || t('plugins.store.unknownAuthor') }} ·
+                                    {{ plugin.version || t('plugins.store.unversioned') }} ·
                                     {{ plugin.source_name || plugin.source_id }}
                                 </p>
                             </div>
@@ -494,7 +478,7 @@
                                 variant="subtle"
                                 >{{
                                     plugin.installed
-                                        ? `installed ${plugin.installed_version}`
+                                        ? t('plugins.badge.installedVersion', { version: plugin.installed_version })
                                         : plugin.install_type
                                 }}</UBadge
                             >
@@ -503,7 +487,7 @@
                             class="mt-3 flex-1 text-sm text-[var(--ui-text-muted)]"
                         >
                             {{
-                                plugin.description || "No description provided."
+                                plugin.description || t('plugins.store.noDescription')
                             }}
                         </p>
                         <div class="mt-4 flex flex-wrap gap-1">
@@ -519,7 +503,7 @@
                                 color="warning"
                                 variant="subtle"
                                 size="sm"
-                                >auth required</UBadge
+                                >{{ t('plugins.badge.authRequired') }}</UBadge
                             >
                         </div>
                         <div
@@ -542,8 +526,8 @@
                                     selectedStore ===
                                     (plugin.store_id ||
                                         `${plugin.source_id}/${plugin.id}`)
-                                        ? "Hide details"
-                                        : "Details"
+                                        ? t('plugins.hideDetails')
+                                        : t('common.details')
                                 }}</AppButton
                             >
                             <div class="flex gap-2">
@@ -555,7 +539,7 @@
                                     :loading="busyPlugin === plugin.id"
                                     :disabled="!!busyPlugin"
                                     @click="uninstall(plugin.id)"
-                                    >Uninstall</AppButton
+                                    >{{ t('plugins.store.uninstall') }}</AppButton
                                 ><AppButton
                                     v-if="
                                         !plugin.installed ||
@@ -567,8 +551,8 @@
                                     @click="install(plugin)"
                                     >{{
                                         plugin.update_available
-                                            ? "Update"
-                                            : "Install"
+                                            ? t('plugins.store.update')
+                                            : t('plugins.store.install')
                                     }}</AppButton
                                 >
                             </div>
@@ -576,7 +560,7 @@
                         <div v-if="plugin.installed || plugin.configured" class="mt-3 flex flex-wrap items-center gap-3">
                             <USwitch
                                 :model-value="plugin.enabled === true"
-                                :label="`Enable ${plugin.name || plugin.id}`"
+                                :label="t('plugins.enableNamed', { name: plugin.name || plugin.id })"
                                 :loading="busyPlugin === plugin.id"
                                 :disabled="!!busyPlugin || configOpen"
                                 @update:model-value="togglePlugin(plugin, $event)"
@@ -588,12 +572,12 @@
                                 icon="i-tabler-settings"
                                 :disabled="!!busyPlugin || configOpen"
                                 @click="openPluginConfig(plugin)"
-                            >Configure</AppButton>
+                            >{{ t('plugins.configure') }}</AppButton>
                             <UAlert
                                 v-if="pluginMutationError?.id === plugin.id"
                                 color="error"
                                 variant="subtle"
-                                title="Plugin update failed"
+                                :title="t('plugins.updateFailed')"
                                 :description="pluginMutationError.message"
                                 class="w-full"
                             />
@@ -607,49 +591,40 @@
                             class="mt-3 space-y-2 break-words text-sm text-[var(--ui-text-muted)]"
                         >
                             <p>
-                                ID: <code>{{ plugin.id }}</code> · Source:
+                                {{ t('plugins.details.id') }} <code>{{ plugin.id }}</code> · {{ t('plugins.details.source') }}
                                 {{ plugin.source_name || plugin.source_id
                                 }}<span v-if="plugin.source_url">
                                     · {{ plugin.source_url }}</span
                                 >
                             </p>
                             <p>
-                                Install type: {{ plugin.install_type }} ·
-                                Configured:
-                                {{ plugin.configured ? "yes" : "no" }} ·
-                                Registered:
-                                {{ plugin.registered ? "yes" : "no" }} ·
-                                Enabled: {{ plugin.enabled ? "yes" : "no" }} ·
-                                Effective:
-                                {{ plugin.effective_enabled ? "yes" : "no" }}
+                                {{ t('plugins.details.storeFlags', { type: plugin.install_type, configured: yesNo(plugin.configured), registered: yesNo(plugin.registered), enabled: yesNo(plugin.enabled), effective: yesNo(plugin.effective_enabled) }) }}
                             </p>
                             <p v-if="plugin.installed">
-                                Installed version:
-                                {{ plugin.installed_version || "unknown" }}
+                                {{ t('plugins.details.installedVersion', { version: plugin.installed_version || t('plugins.reports.unknown') }) }}
                             </p>
                             <p v-if="plugin.platforms?.length">
-                                Platforms:
                                 {{
-                                    plugin.platforms
+                                    t('plugins.details.platforms', { list: plugin.platforms
                                         .map(
                                             (platform) =>
                                                 `${platform.goos}/${platform.goarch}`,
                                         )
-                                        .join(", ")
+                                        .join(", ") })
                                 }}
                             </p>
                             <p v-if="plugin.license">
-                                License: {{ plugin.license }}
+                                {{ t('plugins.details.license', { license: plugin.license }) }}
                             </p>
                             <p v-if="plugin.path">
-                                Path: <code>{{ plugin.path }}</code>
+                                {{ t('plugins.details.path') }} <code>{{ plugin.path }}</code>
                             </p>
                             <p
                                 v-for="link in ['repository', 'homepage']"
                                 :key="link"
                                 v-show="plugin[link]"
                             >
-                                {{ link }}:
+                                {{ link === 'repository' ? t('plugins.details.repository') : t('plugins.details.homepage') }}
                                 <a
                                     v-if="safeURL(plugin[link])"
                                     :href="safeURL(plugin[link])"
@@ -666,7 +641,7 @@
                     v-if="!filteredStore.length"
                     class="py-12 text-center text-sm text-[var(--ui-text-muted)] lg:col-span-2"
                 >
-                    No matching store plugins.
+                    {{ t('plugins.store.empty') }}
                 </p>
             </div>
         </section>
@@ -674,11 +649,11 @@
         <section v-else class="space-y-4">
             <div class="flex justify-end">
                 <AppButton icon="i-tabler-plus" @click="openAuthCreate"
-                    >New auth rule</AppButton
+                    >{{ t('plugins.auth.newRule') }}</AppButton
                 >
             </div>
             <AppCard :ui="{ body: 'p-0' }"
-                ><AppTable :columns="authColumns" :data="authRules"
+                ><AppTable :columns="authColumns" :data="authRules" searchable :search-placeholder="t('plugins.auth.searchPlaceholder')"
                     ><template #identity-cell="{ row }"
                         ><div>
                             <p class="font-medium">{{ value(row).name }}</p>
@@ -708,11 +683,11 @@
                                 color="info"
                                 variant="subtle"
                                 size="sm"
-                                >{{ scope }}</UBadge
+                                >{{ scopeLabel(scope) }}</UBadge
                             ><span
                                 v-if="!value(row).apply_to?.length"
                                 class="text-sm text-[var(--ui-text-muted)]"
-                                >All requests</span
+                                >{{ t('plugins.auth.allRequests') }}</span
                             >
                         </div></template
                     ><template #status-cell="{ row }"
@@ -720,32 +695,53 @@
                             :color="value(row).enabled ? 'success' : 'neutral'"
                             variant="subtle"
                             >{{
-                                value(row).enabled ? "enabled" : "disabled"
+                                value(row).enabled ? t('plugins.badge.enabled') : t('plugins.badge.disabled')
                             }}</UBadge
                         ></template
                     ><template #actions-cell="{ row }"
                         ><div class="flex justify-end gap-1">
                             <AdminTableAction
                                 action="edit"
-                                label="Edit authentication rule"
+                                :label="t('plugins.auth.editAria')"
                                 @click="openAuthEdit(value(row))"
                             /><AdminTableAction
                                 action="delete"
-                                label="Delete authentication rule"
+                                :label="t('plugins.auth.deleteAria')"
                                 destructive
                                 @click="deleteAuth(value(row))"
                             /></div></template
                     ><template #empty
                         ><div
-                            class="py-14 text-center text-sm text-[var(--ui-text-muted)]"
+                            class="py-8 text-center text-sm text-[var(--ui-text-muted)]"
                         >
-                            No plugin-store authentication rules.
+                            {{ t('plugins.auth.empty') }}
                         </div></template
                     ></AppTable
                 ></AppCard
             >
         </section>
 
+        <AppModal v-model:open="confirmationOpen" :title="confirmationTitle" :dismissible="!confirmationBusy" :close="!confirmationBusy">
+          <template #body>
+            <form class="space-y-4" @submit.prevent="performConfirmedAction">
+              <p class="text-sm">{{ confirmationDescription }}</p>
+              <template v-if="confirmation?.kind === 'install'">
+                <p class="break-all text-sm">{{ t('plugins.confirm.source', { source: confirmation.plugin.source_name || confirmation.plugin.source_id, url: confirmation.plugin.source_url }) }}</p>
+                <UFormField :label="t('plugins.confirm.version')" :hint="t('plugins.confirm.versionHint')">
+                  <UInput v-model="installVersion" :placeholder="confirmation.plugin.version || t('plugins.confirm.latestRelease')" :disabled="confirmationBusy" class="w-full" />
+                </UFormField>
+                <UAlert color="warning" variant="subtle" :title="t('plugins.confirm.trustTitle')" :description="t('plugins.confirm.trustDescription')" />
+                <UFormField :label="t('plugins.confirm.typeId', { id: installTrust.confirmation })">
+                  <UInput v-model="typedConfirmation" :disabled="confirmationBusy" :spellcheck="false" autocomplete="off" class="w-full" />
+                </UFormField>
+              </template>
+              <div class="flex justify-end gap-3">
+                <AppButton type="button" color="neutral" variant="outline" :disabled="confirmationBusy" @click="confirmationOpen = false">{{ t('common.cancel') }}</AppButton>
+                <AppButton type="submit" :color="confirmation?.kind === 'install' ? 'primary' : 'error'" :loading="confirmationBusy" :disabled="!canConfirmAction">{{ confirmation?.kind === 'install' ? t('plugins.store.install') : confirmation?.kind === 'uninstall' ? t('plugins.store.uninstall') : t('plugins.confirm.deleteRule') }}</AppButton>
+              </div>
+            </form>
+          </template>
+        </AppModal>
         <AdminPluginConfigEditor
             v-model:open="configOpen"
             :plugin="configPlugin"
@@ -755,17 +751,17 @@
         <AppModal
             v-model:open="authOpen"
             :title="
-                editingAuth ? 'Edit store auth rule' : 'Create store auth rule'
+                editingAuth ? t('plugins.auth.editTitle') : t('plugins.auth.createTitle')
             "
-            description="Secrets are write-only and are never returned by the API."
+            :description="t('plugins.auth.modalDescription')"
             ><template #body
                 ><form class="space-y-4" @submit.prevent="saveAuth">
                     <div class="grid gap-4 sm:grid-cols-2">
-                        <UFormField label="Name" required
+                        <UFormField :label="t('common.name')" required
                             ><UInput
                                 v-model="authForm.name"
                                 class="w-full" /></UFormField
-                        ><UFormField label="URL match" required
+                        ><UFormField :label="t('plugins.auth.urlMatch')" required
                             ><UInput
                                 v-model="authForm.match"
                                 class="w-full"
@@ -773,7 +769,7 @@
                         /></UFormField>
                     </div>
                     <div class="grid gap-4 sm:grid-cols-2">
-                        <UFormField label="Authentication type" required
+                        <UFormField :label="t('plugins.auth.authType')" required
                             ><USelect
                                 v-model="authForm.auth_type"
                                 :items="authTypes"
@@ -783,18 +779,18 @@
                         /></UFormField>
                     </div>
                     <fieldset class="space-y-2">
-                        <legend class="text-sm font-medium">Apply to</legend>
+                        <legend class="text-sm font-medium">{{ t('plugins.auth.applyTo') }}</legend>
                         <div class="flex flex-wrap gap-4">
                             <UCheckbox
                                 v-for="scope in authScopes"
                                 :key="scope"
                                 :model-value="authForm.apply_to.includes(scope)"
-                                :label="scope"
+                                :label="scopeLabel(scope)"
                                 @update:model-value="toggleScope(scope, $event)"
                             />
                         </div>
                         <p class="text-xs text-[var(--ui-text-muted)]">
-                            Select none to apply to all requests.
+                            {{ t('plugins.auth.applyToHint') }}
                         </p>
                     </fieldset>
                     <UFormField
@@ -803,14 +799,14 @@
                                 authForm.auth_type,
                             )
                         "
-                        label="Token"
+                        :label="t('plugins.auth.token')"
                         ><UInput
                             v-model="authForm.token"
                             type="password"
                             class="w-full"
                             :placeholder="
                                 editingAuth
-                                    ? 'Leave blank to keep existing'
+                                    ? t('plugins.auth.keepExisting')
                                     : ''
                             "
                     /></UFormField>
@@ -818,18 +814,18 @@
                         v-if="authForm.auth_type === 'basic'"
                         class="grid gap-4 sm:grid-cols-2"
                     >
-                        <UFormField label="Username"
+                        <UFormField :label="t('plugins.auth.username')"
                             ><UInput
                                 v-model="authForm.username"
                                 class="w-full" /></UFormField
-                        ><UFormField label="Password"
+                        ><UFormField :label="t('plugins.auth.password')"
                             ><UInput
                                 v-model="authForm.password"
                                 type="password"
                                 class="w-full"
                                 :placeholder="
                                     editingAuth
-                                        ? 'Leave blank to keep existing'
+                                        ? t('plugins.auth.keepExisting')
                                         : ''
                                 "
                         /></UFormField>
@@ -838,25 +834,25 @@
                         v-if="authForm.auth_type === 'header'"
                         class="grid gap-4 sm:grid-cols-2"
                     >
-                        <UFormField label="Header name"
+                        <UFormField :label="t('plugins.auth.headerName')"
                             ><UInput
                                 v-model="authForm.header_name"
                                 class="w-full" /></UFormField
-                        ><UFormField label="Header value"
+                        ><UFormField :label="t('plugins.auth.headerValue')"
                             ><UInput
                                 v-model="authForm.header_value"
                                 type="password"
                                 class="w-full"
                                 :placeholder="
                                     editingAuth
-                                        ? 'Leave blank to keep existing'
+                                        ? t('plugins.auth.keepExisting')
                                         : ''
                                 "
                         /></UFormField>
                     </div>
                     <UCheckbox
                         v-model="authForm.enabled"
-                        label="Enabled"
+                        :label="t('common.enabled')"
                     /><UAlert
                         v-if="authError"
                         color="error"
@@ -869,9 +865,9 @@
                             variant="ghost"
                             type="button"
                             @click="authOpen = false"
-                            >Cancel</AppButton
+                            >{{ t('common.cancel') }}</AppButton
                         ><AppButton type="submit" :loading="savingAuth"
-                            >Save</AppButton
+                            >{{ t('common.save') }}</AppButton
                         >
                     </div>
                 </form></template
@@ -884,15 +880,18 @@
 import { useWorkspaceState } from '~/composables/useWorkspaceState'
 import { useDataSync } from '~/composables/useDataSync'
 import { useStoreData } from '~/composables/useStoreData'
+import { pluginInstallTrust } from '~/composables/pluginInstallTrust'
 const { fetchAPI, token } = useApi();
+const { t } = useAdminI18n();
 const toast = useToast();
 const value = (row) => row?.original ?? row;
+const yesNo = (flag) => (flag ? t('common.yes') : t('common.no'));
 const section = ref("installed");
-const sections = [
-    { label: "Installed", value: "installed" },
-    { label: "Store", value: "store" },
-    { label: "Store authentication", value: "auth" },
-];
+const sections = computed(() => [
+    { label: t('plugins.section.installed'), value: "installed" },
+    { label: t('plugins.section.store'), value: "store" },
+    { label: t('plugins.section.auth'), value: "auth" },
+]);
 const pageError = useWorkspaceState('admin:plugins:pageError', () => (""));
 const storeSearch = ref("");
 const sourceFilter = ref("all");
@@ -903,7 +902,47 @@ const selectedStore = ref("");
 const configOpen = ref(false);
 const configPlugin = ref(null);
 const pluginMutationError = ref(null);
+const confirmationOpen = ref(false);
+const confirmation = ref(null);
+const confirmationBusy = ref(false);
+const installVersion = ref('');
+const typedConfirmation = ref('');
+const installTrust = computed(() => pluginInstallTrust(confirmation.value?.plugin || { id: '' }));
+const canConfirmAction = computed(() => Boolean(confirmation.value) && (confirmation.value.kind !== 'install' || Boolean(installTrust.value.confirmation) && typedConfirmation.value.trim() === installTrust.value.confirmation));
+const confirmationTitle = computed(() => confirmation.value?.kind === 'install' ? t('plugins.confirm.installTitle') : confirmation.value?.kind === 'uninstall' ? t('plugins.confirm.uninstallTitle') : t('plugins.confirm.deleteAuthTitle'));
+const confirmationDescription = computed(() => {
+    const action = confirmation.value;
+    if (!action) return '';
+    if (action.kind === 'install') return t('plugins.confirm.installDescription', { name: action.plugin.name || action.plugin.id });
+    if (action.kind === 'uninstall') return t('plugins.confirm.uninstallDescription', { id: action.id });
+    return t('plugins.confirm.deleteAuthDescription', { name: action.rule.name });
+});
+function requestConfirmation(action) {
+    if (busyPlugin.value || confirmationBusy.value) return;
+    confirmation.value = action;
+    installVersion.value = '';
+    typedConfirmation.value = '';
+    confirmationOpen.value = true;
+}
+const install = plugin => requestConfirmation({ kind: 'install', plugin });
+const uninstall = id => requestConfirmation({ kind: 'uninstall', id });
+const deleteAuth = rule => requestConfirmation({ kind: 'auth', rule });
+async function performConfirmedAction() {
+    if (confirmationBusy.value || !canConfirmAction.value) return;
+    const action = confirmation.value;
+    confirmationBusy.value = true;
+    try {
+        if (action.kind === 'install') await performInstall(action.plugin, installVersion.value.trim());
+        else if (action.kind === 'uninstall') await performUninstall(action.id);
+        else await performDeleteAuth(action.rule);
+        confirmationOpen.value = false;
+    } finally {
+        confirmationBusy.value = false;
+    }
+}
 watch(token, () => {
+    confirmationOpen.value = false;
+    confirmation.value = null;
     configOpen.value = false;
     configPlugin.value = null;
     pluginMutationError.value = null;
@@ -926,8 +965,8 @@ async function togglePlugin(plugin, enabled) {
         });
         if (activeToken !== token.value) return;
         toast.add({
-            title: enabled ? "Plugin enabled" : "Plugin disabled",
-            description: enabled ? "Effective status also depends on the global plugin switch and runtime registration." : plugin.id,
+            title: enabled ? t('plugins.toggle.enabled') : t('plugins.toggle.disabled'),
+            description: enabled ? t('plugins.toggle.enabledDescription') : plugin.id,
             color: "success",
         });
         await refreshAll();
@@ -935,7 +974,7 @@ async function togglePlugin(plugin, enabled) {
         if (activeToken !== token.value) return;
         pluginMutationError.value = {
             id: plugin.id,
-            message: `${message(error)} Refresh to verify persisted state before retrying; a reload failure may occur after the write is committed.`,
+            message: t('plugins.toggle.failed', { message: message(error) }),
         };
     } finally {
         if (activeToken === token.value) busyPlugin.value = "";
@@ -960,25 +999,31 @@ const emptyAuth = () => ({
     enabled: true,
 });
 const authForm = reactive(emptyAuth());
-const authTypes = [
-    { label: "No authentication", value: "none" },
-    { label: "Bearer token", value: "bearer" },
-    { label: "Basic authentication", value: "basic" },
-    { label: "Custom header", value: "header" },
-    { label: "GitHub token", value: "github-token" },
-];
+const authTypes = computed(() => [
+    { label: t('plugins.auth.typeNone'), value: "none" },
+    { label: t('plugins.auth.typeBearer'), value: "bearer" },
+    { label: t('plugins.auth.typeBasic'), value: "basic" },
+    { label: t('plugins.auth.typeHeader'), value: "header" },
+    { label: t('plugins.auth.typeGithub'), value: "github-token" },
+]);
 const authScopes = ["registry", "metadata", "artifact"];
-const authColumns = [
-    { accessorKey: "identity", header: "Rule" },
-    { accessorKey: "type", header: "Type" },
-    { accessorKey: "scope", header: "Scope" },
-    { accessorKey: "status", header: "Status" },
+function scopeLabel(scope) {
+    if (scope === "registry") return t('plugins.auth.scopeRegistry');
+    if (scope === "metadata") return t('plugins.auth.scopeMetadata');
+    if (scope === "artifact") return t('plugins.auth.scopeArtifact');
+    return scope;
+}
+const authColumns = computed(() => [
+    { accessorKey: "identity", header: t('plugins.auth.colRule') },
+    { accessorKey: "type", header: t('plugins.auth.colType') },
+    { accessorKey: "scope", header: t('plugins.auth.colScope') },
+    { accessorKey: "status", header: t('plugins.auth.colStatus') },
     {
         accessorKey: "actions",
         header: "",
         meta: { class: { th: "table-action-head", td: "table-action-cell" } },
     },
-];
+]);
 async function loadAll() {
     pageError.value = "";
     const result = {};
@@ -1020,12 +1065,12 @@ let pollGeneration = 0;
 function reportLabel(state) {
     return (
         {
-            not_required: "Not required",
-            missing_report: "Pending report",
-            reported_partial: "Partial report",
-            reported_failed: "Failed report",
-            reported_ok: "Reported OK",
-        }[state] || "Report unavailable"
+            not_required: t('plugins.reports.state.notRequired'),
+            missing_report: t('plugins.reports.state.missing'),
+            reported_partial: t('plugins.reports.state.partial'),
+            reported_failed: t('plugins.reports.state.failed'),
+            reported_ok: t('plugins.reports.state.ok'),
+        }[state] || t('plugins.reports.state.unavailable')
     );
 }
 function reportColor(state) {
@@ -1119,22 +1164,22 @@ const authRules = computed(() =>
     Array.isArray(data.value?.auth?.items) ? data.value.auth.items : [],
 );
 const sourceOptions = computed(() => [
-    { label: "All sources", value: "all" },
+    { label: t('plugins.store.allSources'), value: "all" },
     ...(storeResponse.value?.sources || []).map((source) => ({
         label: source.name || source.id,
         value: source.id,
     })),
 ]);
-const statusOptions = [
-    { label: "All statuses", value: "all" },
-    { label: "Installed", value: "installed" },
-    { label: "Not installed", value: "available" },
-    { label: "Updates available", value: "updates" },
-    { label: "Effective", value: "effective" },
-    { label: "Disabled", value: "disabled" },
-];
+const statusOptions = computed(() => [
+    { label: t('plugins.store.allStatuses'), value: "all" },
+    { label: t('plugins.store.statusInstalled'), value: "installed" },
+    { label: t('plugins.store.statusAvailable'), value: "available" },
+    { label: t('plugins.store.statusUpdates'), value: "updates" },
+    { label: t('plugins.store.statusEffective'), value: "effective" },
+    { label: t('plugins.store.statusDisabled'), value: "disabled" },
+]);
 const installOptions = computed(() => [
-    { label: "All install types", value: "all" },
+    { label: t('plugins.store.allInstallTypes'), value: "all" },
     ...[
         ...new Set(
             store.value.map((item) => item.install_type).filter(Boolean),
@@ -1181,18 +1226,12 @@ function safeURL(raw) {
         return "";
     }
 }
-async function install(plugin) {
-    if (
-        busyPlugin.value ||
-        !confirm(
-            `${plugin.update_available ? "Update" : "Install"} ${plugin.name || plugin.id} from ${plugin.source_name || plugin.source_id}${plugin.version ? ` (version ${plugin.version})` : " (latest release)"}? This updates the shared plugin configuration; node rollout is not reported by this operation.`,
-        )
-    )
-        return;
+async function performInstall(plugin, version) {
+    if (busyPlugin.value) return;
     busyPlugin.value = plugin.id;
     operation.value = {
-        title: `Installing ${plugin.name || plugin.id}`,
-        detail: "Waiting for Home…",
+        title: t('plugins.op.installing', { name: plugin.name || plugin.id }),
+        detail: t('plugins.op.waiting'),
     };
     try {
         const response = await fetchAPI(
@@ -1200,7 +1239,7 @@ async function install(plugin) {
             {
                 method: "POST",
                 query: { source: plugin.source_id || undefined },
-                body: plugin.version ? { version: plugin.version } : {},
+                body: version ? { version } : {},
             },
         );
         operation.value = {
@@ -1210,14 +1249,14 @@ async function install(plugin) {
         toast.add({
             title: `${plugin.name || plugin.id}: ${response.status}`,
             description:
-                "Configuration updated; check CPA plugin reports for node observations.",
+                t('plugins.op.installedDescription'),
             color: "info",
         });
         await refreshAll();
     } catch (error) {
-        operation.value = { title: "Install failed", error: message(error) };
+        operation.value = { title: t('plugins.op.installFailed'), error: message(error) };
         toast.add({
-            title: "Install failed",
+            title: t('plugins.op.installFailed'),
             description: message(error),
             color: "error",
         });
@@ -1225,18 +1264,12 @@ async function install(plugin) {
         busyPlugin.value = "";
     }
 }
-async function uninstall(id) {
-    if (
-        busyPlugin.value ||
-        !confirm(
-            `Uninstall ${id} from the entire Home/CPA cluster? This removes its shared configuration and creates a delete task for all nodes.`,
-        )
-    )
-        return;
+async function performUninstall(id) {
+    if (busyPlugin.value) return;
     busyPlugin.value = id;
     operation.value = {
-        title: `Uninstalling ${id}`,
-        detail: "Waiting for Home…",
+        title: t('plugins.op.uninstalling', { id }),
+        detail: t('plugins.op.waiting'),
     };
     try {
         const response = await fetchAPI(
@@ -1247,14 +1280,14 @@ async function uninstall(id) {
         toast.add({
             title: `${id}: ${response.status}`,
             description:
-                "Configuration updated; node completion is not confirmed.",
+                t('plugins.op.uninstalledDescription'),
             color: "info",
         });
         await refreshAll();
     } catch (error) {
-        operation.value = { title: "Uninstall failed", error: message(error) };
+        operation.value = { title: t('plugins.op.uninstallFailed'), error: message(error) };
         toast.add({
-            title: "Uninstall failed",
+            title: t('plugins.op.uninstallFailed'),
             description: message(error),
             color: "error",
         });
@@ -1290,7 +1323,7 @@ function toggleScope(scope, checked) {
         : authForm.apply_to.filter((value) => value !== scope);
 }
 function validateAuth() {
-    if (!authForm.name.trim()) return "Name is required.";
+    if (!authForm.name.trim()) return t('plugins.auth.errName');
     const match = authForm.match.trim();
     try {
         const url = new URL(match);
@@ -1304,17 +1337,17 @@ function validateAuth() {
             match.includes("?") ||
             match.includes("#")
         )
-            return "URL match must be an absolute HTTPS URL without credentials, query, or fragment.";
+            return t('plugins.auth.errUrlParts');
     } catch {
-        return "URL match must be an absolute HTTPS URL.";
+        return t('plugins.auth.errUrl');
     }
-    if (!authTypes.some((type) => type.value === authForm.auth_type))
-        return "Select a valid authentication type.";
+    if (!authTypes.value.some((type) => type.value === authForm.auth_type))
+        return t('plugins.auth.errType');
     if (
         !Array.isArray(authForm.apply_to) ||
         authForm.apply_to.some((scope) => !authScopes.includes(scope))
     )
-        return "Select valid request scopes.";
+        return t('plugins.auth.errScopes');
     const needsCredentials =
         !editingAuth.value ||
         editingAuth.value.auth_type !== authForm.auth_type ||
@@ -1324,21 +1357,21 @@ function validateAuth() {
         needsCredentials &&
         !authForm.token
     )
-        return "Token is required.";
+        return t('plugins.auth.errToken');
     if (
         authForm.auth_type === "basic" &&
         needsCredentials &&
         (!authForm.username || !authForm.password)
     )
-        return "Username and password are required.";
+        return t('plugins.auth.errBasic');
     if (authForm.auth_type === "header") {
         if (
             !authForm.header_name.trim() ||
             !/^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/.test(authForm.header_name.trim())
         )
-            return "Enter a valid HTTP header name.";
+            return t('plugins.auth.errHeaderName');
         if (needsCredentials && !authForm.header_value)
-            return "Header value is required.";
+            return t('plugins.auth.errHeaderValue');
     }
     const secret = ["bearer", "github-token"].includes(authForm.auth_type)
         ? authForm.token
@@ -1346,7 +1379,7 @@ function validateAuth() {
           ? authForm.header_value
           : "";
     if (/[\x00-\x08\x0A-\x1F\x7F]/.test(secret))
-        return "Token or header value contains invalid HTTP header characters.";
+        return t('plugins.auth.errHeaderChars');
     return "";
 }
 function authPayload() {
@@ -1389,22 +1422,21 @@ async function saveAuth() {
             });
         authOpen.value = false;
         await refreshAll();
-        toast.add({ title: "Store auth rule saved", color: "success" });
+        toast.add({ title: t('plugins.auth.saved'), color: "success" });
     } catch (error) {
         authError.value = message(error);
     } finally {
         savingAuth.value = false;
     }
 }
-async function deleteAuth(rule) {
-    if (!confirm(`Delete auth rule ${rule.name}?`)) return;
+async function performDeleteAuth(rule) {
     try {
         await fetchAPI(`/plugin-store-auth/${rule.id}`, { method: "DELETE" });
         await refreshAll();
-        toast.add({ title: "Store auth rule deleted", color: "success" });
+        toast.add({ title: t('plugins.auth.deleted'), color: "success" });
     } catch (error) {
         toast.add({
-            title: "Delete failed",
+            title: t('plugins.auth.deleteFailed'),
             description: message(error),
             color: "error",
         });
@@ -1415,7 +1447,44 @@ function message(error) {
         error?.data?.message ||
         error?.data?.error ||
         error?.message ||
-        "Unexpected request error."
+        t('plugins.unexpectedError')
     );
 }
 </script>
+
+<style scoped>
+/* Plugins signature: module bay of slot LEDs, one per installed plugin. */
+.bay {
+    display: grid;
+    gap: 1rem 2rem;
+    padding: 1rem 1.25rem;
+    border: 1px solid var(--admin-panel-border);
+    border-radius: 0.875rem;
+    background:
+        radial-gradient(ellipse 60% 140% at 0% 50%, color-mix(in oklch, var(--page-accent) 12%, transparent), transparent 70%),
+        var(--admin-panel-bg);
+    box-shadow: 0 1px 2px rgb(24 24 27 / 4%);
+}
+@media (min-width: 64rem) { .bay { grid-template-columns: auto minmax(0, 1fr); align-items: center; } }
+.bay__slots {
+    display: grid;
+    width: fit-content;
+    grid-template-columns: repeat(6, 1.75rem);
+    gap: 0.375rem;
+    padding: 0.5rem;
+    border-radius: 0.75rem;
+    background: oklch(0.2 0.02 270);
+}
+.bay__slot { position: relative; height: 1.75rem; border-radius: 0.375rem; background: rgb(255 255 255 / 8%); }
+.bay__slot::after { position: absolute; top: 0.3125rem; left: 0.3125rem; width: 0.3125rem; height: 0.3125rem; border-radius: 9999px; background: rgb(255 255 255 / 20%); content: ''; }
+.bay__slot--on { background: color-mix(in oklch, var(--page-accent) 35%, rgb(255 255 255 / 6%)); }
+.bay__slot--on::after { background: var(--color-emerald-400); box-shadow: 0 0 6px var(--color-emerald-400); }
+.bay__slot--idle::after { background: var(--color-amber-400); }
+.bay__slot--empty { background: transparent; outline: 1px dashed rgb(255 255 255 / 14%); outline-offset: -1px; }
+.bay__slot--empty::after { display: none; }
+.bay__stats { display: grid; gap: 0.75rem 1.5rem; }
+@media (min-width: 40rem) { .bay__stats { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.bay__stats dt { font-size: 0.75rem; color: var(--ui-text-muted); }
+.bay__stats dd { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem; font-family: var(--admin-display-font); font-size: 1.5rem; line-height: 2rem; font-weight: 800; color: var(--ui-text-highlighted); }
+.bay__stats dd span { font-family: inherit; font-size: 0.75rem; font-weight: 500; color: var(--ui-text-muted); }
+</style>

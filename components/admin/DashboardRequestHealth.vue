@@ -1,13 +1,13 @@
 <template>
-  <AppCard class="border-white/40 bg-white/40 dark:border-white/10 dark:bg-neutral-900/40" aria-labelledby="request-health-title">
+  <AppCard aria-labelledby="request-health-title">
     <template #header>
       <div class="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
         <div class="flex items-center gap-2.5">
           <UIcon name="i-tabler-activity-heartbeat" class="size-5 text-[var(--ui-text-muted)]" />
-          <h2 id="request-health-title" class="text-lg font-semibold text-[var(--ui-text-highlighted)]">Request health</h2>
+          <h2 id="request-health-title" class="text-lg font-semibold text-[var(--ui-text-highlighted)]">{{ t('dashboard.health.cardTitle') }}</h2>
         </div>
         <p class="text-sm text-[var(--ui-text-muted)]">
-          {{ activeCount }} / {{ buckets.length }} active intervals · {{ number.format(totalRequests) }} requests · {{ overallSuccessRate }} success
+          {{ t('dashboard.health.cardSummary', { active: activeCount, total: buckets.length, requests: number.format(totalRequests), rate: overallSuccessRate }) }}
         </p>
       </div>
     </template>
@@ -17,7 +17,7 @@
         class="rounded-md outline-none focus-visible:ring-2 focus-visible:ring-primary"
         role="group"
         tabindex="0"
-        aria-label="Request health activity. Use left and right arrow keys to inspect intervals."
+        :aria-label="t('dashboard.health.aria')"
         @keydown="onKeydown"
       >
         <p class="text-sm font-semibold text-[var(--ui-text-highlighted)]">{{ rangeLabel }} · {{ intervalLabel }}</p>
@@ -39,19 +39,19 @@
 
         <p class="mt-3 min-h-6 text-sm text-[var(--ui-text-muted)]" aria-live="polite" aria-atomic="true">
           <template v-if="selectedBucket">
-            {{ statusLabel(selectedBucket.status) }} · {{ bucketRange(selectedBucket) }}: {{ number.format(selectedBucket.requests) }} requests · {{ successRate(selectedBucket) }} success
+            {{ description(selectedBucket) }}
           </template>
         </p>
       </div>
 
-      <div class="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm text-[var(--ui-text-muted)]" aria-label="Request health legend">
+      <div class="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm text-[var(--ui-text-muted)]" :aria-label="t('dashboard.health.legendAria')">
         <span v-for="item in visibleLegend" :key="item.status" class="inline-flex items-center gap-2">
           <span class="size-3 rounded-sm" :class="colors[item.status]" aria-hidden="true" />{{ item.label }}
         </span>
       </div>
     </template>
 
-    <p v-else class="flex min-h-48 items-center justify-center text-center text-sm text-[var(--ui-text-muted)]">No request activity is available for this range.</p>
+    <p v-else class="flex min-h-48 items-center justify-center text-center text-sm text-[var(--ui-text-muted)]">{{ t('dashboard.health.empty') }}</p>
   </AppCard>
 </template>
 
@@ -68,22 +68,24 @@ type Health = 'healthy' | 'degraded' | 'unavailable' | 'empty' | 'unknown'
 interface Bucket { index: number; bucket_start: string; bucket_end?: string; requests: number; successes: number; status: Health }
 
 const props = withDefaults(defineProps<{ activity?: ActivityEntry[] | null; range?: Range | null }>(), { activity: () => [] })
+const { t, intlLocale } = useAdminI18n()
 const activeIndex = ref<number | null>(null)
-const number = new Intl.NumberFormat()
-const legend: { status: Health; label: string }[] = [
-  { status: 'healthy', label: 'Healthy' },
-  { status: 'degraded', label: 'Degraded' },
-  { status: 'unavailable', label: 'Unavailable' },
-  { status: 'empty', label: 'No traffic' },
-  { status: 'unknown', label: 'Unknown' }
-]
-const visibleLegend = legend.filter(item => item.status !== 'unknown')
+const numberFormat = computed(() => new Intl.NumberFormat(intlLocale.value))
+const number = { format: (value: number) => numberFormat.value.format(value) }
+const legend = computed<{ status: Health; label: string }[]>(() => [
+  { status: 'healthy', label: t('dashboard.health.healthy') },
+  { status: 'degraded', label: t('dashboard.health.degraded') },
+  { status: 'unavailable', label: t('dashboard.health.unavailable') },
+  { status: 'empty', label: t('dashboard.health.noTraffic') },
+  { status: 'unknown', label: t('common.unknown') }
+])
+const visibleLegend = computed(() => legend.value.filter(item => item.status !== 'unknown'))
 const colors: Record<Health, string> = {
   healthy: 'bg-emerald-500',
   degraded: 'bg-amber-500',
   unavailable: 'bg-rose-500',
   empty: 'border border-[var(--ui-border)] bg-[var(--ui-bg-muted)]',
-  unknown: 'bg-slate-400'
+  unknown: 'bg-zinc-400 dark:bg-zinc-500'
 }
 const safeCount = (value: number | null | undefined) => Number.isFinite(value) ? Math.max(0, Number(value)) : 0
 const buckets = computed<Bucket[]>(() => (Array.isArray(props.activity) ? props.activity : [])
@@ -119,23 +121,23 @@ const rangeLabel = computed(() => props.range?.from && props.range?.to
   ? `${date(props.range.from, { month: 'short', day: 'numeric' })}–${date(props.range.to, { month: 'short', day: 'numeric' })}`
   : buckets.value.length
     ? `${date(buckets.value[0]?.bucket_start, { month: 'short', day: 'numeric' })}–${date(buckets.value.at(-1)?.bucket_end || buckets.value.at(-1)?.bucket_start, { month: 'short', day: 'numeric' })}`
-    : 'Selected range')
+    : t('dashboard.health.selectedRange'))
 const intervalLabel = computed(() => {
   const interval = String(props.range?.interval || '').trim().toLowerCase()
   if (interval) return interval[0]!.toUpperCase() + interval.slice(1)
-  if (buckets.value.length < 2) return 'Interval'
+  if (buckets.value.length < 2) return t('dashboard.health.interval')
   const duration = Date.parse(buckets.value[0]!.bucket_end || '') - Date.parse(buckets.value[0]!.bucket_start)
-  if (duration >= 86_400_000) return 'Daily'
-  if (duration >= 3_600_000) return 'Hourly'
-  return 'Interval'
+  if (duration >= 86_400_000) return t('dashboard.health.daily')
+  if (duration >= 3_600_000) return t('dashboard.health.hourly')
+  return t('dashboard.health.interval')
 })
 
 function date(value: string | undefined, options: Intl.DateTimeFormatOptions) {
-  if (!value) return 'Unknown time'
+  if (!value) return t('dashboard.unknownTime')
   const parsed = new Date(value)
-  return Number.isNaN(parsed.getTime()) ? 'Unknown time' : new Intl.DateTimeFormat(undefined, { ...options, timeZone: timezone.value }).format(parsed)
+  return Number.isNaN(parsed.getTime()) ? t('dashboard.unknownTime') : new Intl.DateTimeFormat(intlLocale.value, { ...options, timeZone: timezone.value }).format(parsed)
 }
-function statusLabel(status: Health) { return legend.find(item => item.status === status)?.label || 'Unknown' }
+function statusLabel(status: Health) { return legend.value.find(item => item.status === status)?.label || t('common.unknown') }
 function bucketRange(bucket: Bucket) {
   return `${date(bucket.bucket_start, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })} – ${date(bucket.bucket_end, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}`
 }
@@ -144,7 +146,7 @@ function successRate(bucket: Bucket) {
   return `${Math.min(100, Math.max(0, bucket.successes / bucket.requests * 100)).toFixed(1)}%`
 }
 function description(bucket: Bucket) {
-  return `${statusLabel(bucket.status)} · ${bucketRange(bucket)}: ${number.format(bucket.requests)} requests · ${successRate(bucket)} success`
+  return t('dashboard.health.bucket', { status: statusLabel(bucket.status), range: bucketRange(bucket), requests: number.format(bucket.requests), rate: successRate(bucket) })
 }
 function onKeydown(event: KeyboardEvent) {
   if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return

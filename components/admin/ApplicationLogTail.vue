@@ -11,6 +11,7 @@ const props = defineProps<{
   truncated: boolean
 }>()
 const emit = defineEmits(['following', 'accept', 'older', 'detail'])
+const { t } = useAdminI18n()
 const viewport = ref<HTMLElement | null>(null)
 const chronologicalRows = computed(() => [...props.rows].reverse())
 watch(() => props.rows, async (rows, previous) => {
@@ -37,22 +38,22 @@ const onScroll = () => {
   <div class="space-y-3 p-4">
     <div class="flex flex-wrap items-center gap-2">
       <AppButton color="neutral" variant="outline" :aria-pressed="following" :disabled="disabled" @click="emit('following', !following)">
-        Follow bottom {{ following ? 'on' : 'off' }}
+        {{ following ? t('logs.tail.followOn') : t('logs.tail.followOff') }}
       </AppButton>
-      <AppButton color="neutral" variant="outline" :disabled="disabled || !canLoadOlder" :loading="busy" @click="emit('older')">Load older</AppButton>
-      <AppButton v-if="pendingCount" color="primary" variant="outline" :disabled="disabled" @click="emit('accept')">Show {{ pendingCount }} new lines</AppButton>
-      <span role="status" class="text-xs text-[var(--ui-text-muted)]">{{ rows.length }} loaded · oldest first · {{ following ? 'following latest' : 'reading position preserved' }}</span>
+      <AppButton color="neutral" variant="outline" :disabled="disabled || !canLoadOlder" :loading="busy" @click="emit('older')">{{ t('logs.tail.loadOlder') }}</AppButton>
+      <AppButton v-if="pendingCount" color="primary" variant="outline" :disabled="disabled" @click="emit('accept')">{{ t('logs.tail.showNew', { count: pendingCount }) }}</AppButton>
+      <span role="status" class="text-xs text-[var(--ui-text-muted)]">{{ following ? t('logs.tail.statusFollowing', { count: rows.length }) : t('logs.tail.statusPreserved', { count: rows.length }) }}</span>
     </div>
-    <p class="text-xs text-[var(--ui-text-muted)]">Live refresh polls a recent window every 15 seconds. It may miss lines during bursts or late arrivals; use pages and Refresh for history.</p>
-    <p v-if="truncated" role="status" class="text-xs text-amber-600 dark:text-amber-400">The recent window or 2,000-line viewer limit was exceeded. Some lines may be missing; use pages or restart from latest logs.</p>
-    <div ref="viewport" tabindex="0" role="region" aria-label="Application log tail, oldest first" class="h-96 overflow-auto rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] [overflow-anchor:none]" @scroll.passive="onScroll">
-      <p v-if="!rows.length" class="p-4 text-sm text-[var(--ui-text-muted)]">{{ busy ? 'Loading application logs…' : 'No application logs match these filters.' }}</p>
+    <p class="text-xs text-[var(--ui-text-muted)]">{{ t('logs.tail.pollNote') }}</p>
+    <p v-if="truncated" role="status" class="text-xs text-amber-600 dark:text-amber-400">{{ t('logs.tail.truncated') }}</p>
+    <div ref="viewport" tabindex="0" role="region" :aria-label="t('logs.tail.regionLabel')" class="h-96 overflow-auto rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] [overflow-anchor:none]" @scroll.passive="onScroll">
+      <p v-if="!rows.length" class="p-4 text-sm text-[var(--ui-text-muted)]">{{ busy ? t('logs.tail.loading') : t('logs.applicationEmpty') }}</p>
       <div v-for="row in chronologicalRows" :key="String(row.id)" class="border-b border-[var(--ui-border)] p-3 last:border-0">
         <div class="mb-1 flex flex-wrap items-center gap-2 text-xs text-[var(--ui-text-muted)]">
           <span>{{ row.timestamp }}</span>
-          <UBadge color="neutral" variant="subtle" size="sm">{{ row.level || 'unknown' }}</UBadge>
-          <span>{{ row.home_ip || 'Unknown Home' }} · {{ row.request_id || 'No request ID' }}</span>
-          <AppButton size="sm" color="neutral" variant="ghost" @click="emit('detail', row)">Details</AppButton>
+          <UBadge color="neutral" variant="subtle" size="sm">{{ row.level || t('common.unknown') }}</UBadge>
+          <span>{{ row.home_ip || t('logs.unknownHome') }} · {{ row.request_id || t('logs.noRequestId') }}</span>
+          <AdminTableAction action="view" :label="t('logs.viewLogDetails')" @click="emit('detail', row)" />
         </div>
         <p class="whitespace-pre-wrap break-words font-mono text-xs">{{ row.line || '—' }}</p>
       </div>

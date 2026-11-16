@@ -1,9 +1,11 @@
 <template>
-  <section class="grid w-full gap-5">
-    <header
-      class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
-    >
-    </header>
+  <section class="grid w-full gap-4">
+    <AdminStatGrid
+      v-if="hasLoaded && !primaryError"
+      :label="t('keys.summaryLabel')"
+      :items="keySummary"
+      :columns="4"
+    />
 
     <AppCard v-if="primaryError">
       <div
@@ -11,10 +13,10 @@
       >
         <div>
           <h2 class="font-semibold text-[var(--ui-text-highlighted)]">
-            Access keys could not be loaded
+            {{ t('keys.loadErrorTitle') }}
           </h2>
           <p class="mt-1 text-sm text-[var(--ui-text-muted)]">
-            Check the management endpoint, key, and /access/api-keys route.
+            {{ t('keys.loadErrorHint') }}
           </p>
         </div>
         <AppButton
@@ -23,7 +25,7 @@
           icon="i-tabler-refresh"
           :loading="loading"
           @click="syncData"
-          >Retry</AppButton
+          >{{ t('common.retry') }}</AppButton
         >
       </div>
     </AppCard>
@@ -31,30 +33,29 @@
     <AppCard v-else-if="loading && !hasLoaded">
       <div class="py-8 text-center">
         <h2 class="font-semibold text-[var(--ui-text-highlighted)]">
-          Loading access keys
+          {{ t('keys.loadingTitle') }}
         </h2>
         <p class="mt-1 text-sm text-[var(--ui-text-muted)]">
-          Reading client access keys and related ownership metadata from the
-          Management API.
+          {{ t('keys.loadingHint') }}
         </p>
       </div>
     </AppCard>
 
     <AdminTablePanel
       v-else
-      title="Access keys"
-      :description="`${filteredResources.length} of ${resources.length} keys`"
+      :title="t('keys.title')"
+      :description="t('keys.countOf', { shown: filteredResources.length, total: resources.length })"
     >
       <template #actions>
         <UInput
           v-model="search"
           icon="i-tabler-search"
-          placeholder="Search name, key, owner, or scope"
-          aria-label="Search access keys"
+          :placeholder="t('keys.searchPlaceholder')"
+          :aria-label="t('keys.searchAria')"
           class="w-full sm:w-72"
         />
         <AccessKeyReplaceList @replaced="handleListReplaced" />
-        <AppButton icon="i-tabler-plus" @click="openCreate">New access key</AppButton>
+        <AppButton icon="i-tabler-plus" @click="openCreate">{{ t('keys.new') }}</AppButton>
       </template>
 
       <template v-if="selectedIDs.size" #bulk>
@@ -62,7 +63,7 @@
           class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
         >
           <span class="text-sm font-medium"
-            >{{ selectedIDs.size }} keys selected</span
+            >{{ t('keys.selectedCount', { count: selectedIDs.size }) }}</span
           >
           <div class="flex flex-wrap gap-2">
             <AppButton
@@ -71,7 +72,7 @@
               size="sm"
               :disabled="bulkDeleting"
               @click="clearSelection"
-              >Clear selection</AppButton
+              >{{ t('keys.clearSelection') }}</AppButton
             >
             <AppButton
               color="error"
@@ -80,7 +81,7 @@
               icon="i-tabler-trash"
               :disabled="bulkDeleting"
               @click="openBulkDelete"
-              >Delete selected</AppButton
+              >{{ t('keys.deleteSelected') }}</AppButton
             >
           </div>
         </div>
@@ -97,7 +98,7 @@
             :model-value="allFilteredSelected"
             :indeterminate="someFilteredSelected"
             :disabled="loading || bulkDeleting || !filteredResources.length"
-            aria-label="Select all keys in the current list"
+            :aria-label="t('keys.selectAllAria')"
             @update:model-value="toggleAllFiltered(Boolean($event))"
           />
         </template>
@@ -106,27 +107,19 @@
           <UCheckbox
             :model-value="selectedIDs.has(rowValue(row).id)"
             :disabled="bulkDeleting"
-            :aria-label="`Select access key ${resourceSummary(rowValue(row))}`"
+            :aria-label="t('keys.selectOneAria', { name: resourceSummary(rowValue(row)) })"
             @update:model-value="toggleSelected(rowValue(row), Boolean($event))"
           />
         </template>
 
         <template #number-cell="{ row }">
-          <span class="font-mono text-xs text-[var(--ui-text-muted)]"
-            >#{{ rowValue(row).index + 1 }}</span
-          >
+          <span class="app-table-number">{{ rowValue(row).index + 1 }}</span>
         </template>
 
         <template #identity-header>
           <div class="flex items-center gap-1.5">
-            <span>Name / key</span>
-            <UTooltip
-              :text="[
-                'The display name is an editable label and does not affect authentication.',
-                'The stable identifier (api-key-N) survives renames and key rotations,',
-                'and links the same key across usage, billing, and request records.'
-              ].join(' ')"
-            >
+            <span>{{ t('keys.colIdentity') }}</span>
+            <UTooltip :text="t('keys.identityTooltip')">
               <UIcon
                 name="i-tabler-info-circle"
                 class="size-4 text-[var(--ui-text-muted)]"
@@ -152,13 +145,13 @@
                 variant="ghost"
                 size="xs"
                 icon="i-tabler-clipboard"
-                :aria-label="`Copy identifier ${rowValue(row).identifier}`"
-                :title="`Copy identifier ${rowValue(row).identifier}`"
-                @click.stop="copyText(rowValue(row).identifier, 'Access-key identifier copied.')"
+                :aria-label="t('keys.copyIdentifierAria', { id: rowValue(row).identifier })"
+                :title="t('keys.copyIdentifierAria', { id: rowValue(row).identifier })"
+                @click.stop="copyText(rowValue(row).identifier, t('keys.identifierCopied'))"
               />
             </div>
             <p v-else class="truncate text-xs text-[var(--ui-text-muted)]">
-              No stable identifier
+              {{ t('keys.noIdentifier') }}
             </p>
             <div class="mt-1 flex min-w-0 items-center gap-1.5">
               <p
@@ -171,8 +164,8 @@
                 variant="ghost"
                 size="xs"
                 icon="i-tabler-clipboard"
-                :aria-label="`Copy key ${rowValue(row).maskedValue}`"
-                @click="copyText(rowValue(row).value, 'Access key copied.')"
+                :aria-label="t('keys.copyKeyAria', { key: rowValue(row).maskedValue })"
+                @click="copyText(rowValue(row).value, t('keys.keyCopied'))"
               />
             </div>
           </div>
@@ -208,14 +201,14 @@
             ><UIcon
               name="i-tabler-circle-check"
               class="mr-1 size-3"
-            />Accepted</UBadge
+            />{{ t('keys.accepted') }}</UBadge
           >
         </template>
 
         <template #actions-cell="{ row }">
           <AdminRowActions
             :actions="rowActions(rowValue(row))"
-            :menu-label="`access key ${resourceSummary(rowValue(row))}`"
+            :menu-label="t('keys.menuLabel', { name: resourceSummary(rowValue(row)) })"
           />
         </template>
 
@@ -223,7 +216,7 @@
           <div
             class="px-6 py-12 text-center text-sm text-[var(--ui-text-muted)]"
           >
-            No access keys match the current filter.
+            {{ t('keys.emptyFiltered') }}
           </div>
         </template>
       </AppTable>
@@ -246,25 +239,25 @@
             v-if="sheetMode === 'create'"
             class="text-xs font-semibold uppercase tracking-wide text-[var(--ui-text-muted)]"
           >
-            Create access key
+            {{ t('keys.createHeading') }}
           </p>
 
           <UFormField
             v-if="supportsDisplayNames"
-            label="Display name"
-            hint="Optional, up to 128 characters. Renaming does not change the key value, owner, or scopes."
+            :label="t('keys.displayName')"
+            :hint="t('keys.displayNameHint')"
             :error="displayNameError"
           >
             <UInput
               v-model="form.displayName"
               class="w-full"
-              placeholder="e.g. Production key"
+              :placeholder="t('keys.displayNamePlaceholder')"
               :disabled="submitting"
               @input="displayNameError = ''"
             />
           </UFormField>
 
-          <UFormField label="Key value" required :error="keyValueError">
+          <UFormField :label="t('keys.keyValue')" required :error="keyValueError">
             <div class="flex gap-2">
               <UInput
                 v-model="form.value"
@@ -279,7 +272,7 @@
                 color="neutral"
                 variant="outline"
                 :icon="formSecretVisible ? 'i-tabler-eye-off' : 'i-tabler-eye'"
-                :aria-label="formSecretVisible ? 'Hide' : 'Reveal'"
+                :aria-label="formSecretVisible ? t('keys.hide') : t('keys.reveal')"
                 @click="formSecretVisible = !formSecretVisible"
               />
             </div>
@@ -293,13 +286,13 @@
             :disabled="submitting"
             @click="generateKey"
           >
-            Generate key
+            {{ t('keys.generate') }}
           </AppButton>
 
           <UFormField
             v-if="supports('users', true)"
-            label="Owner"
-            :hint="ownerUnavailable ? 'The current owner is unavailable. Leave it unchanged to preserve the binding, or explicitly reassign or unassign it.' : undefined"
+            :label="t('keys.owner')"
+            :hint="ownerUnavailable ? t('keys.ownerUnavailableHint') : undefined"
           >
             <USelect
               :model-value="form.userId == null ? 'unassigned' : String(form.userId)"
@@ -312,9 +305,9 @@
 
           <template v-if="supports('access_groups', true)">
             <p v-if="supplementalError" role="status" class="text-sm text-[var(--ui-text-muted)]">
-              {{ supplementalError }} Existing bindings are preserved unless you change them.
+              {{ t('keys.supplementalError') }}
             </p>
-            <UFormField label="Credential scope" hint="No groups selected means unrestricted credential selection.">
+            <UFormField :label="t('keys.credentialScope')" :hint="t('keys.credentialScopeHint')">
               <div class="grid gap-2">
                 <UCheckbox
                   v-for="group in scopeOptions(channelGroups, form.channelGroupIds)"
@@ -324,10 +317,10 @@
                   :disabled="submitting"
                   @update:model-value="toggleFormGroup('channelGroupIds', group.id, $event)"
                 />
-                <p v-if="!scopeOptions(channelGroups, form.channelGroupIds).length" class="text-sm text-[var(--ui-text-muted)]">No credential groups available.</p>
+                <p v-if="!scopeOptions(channelGroups, form.channelGroupIds).length" class="text-sm text-[var(--ui-text-muted)]">{{ t('keys.noCredentialGroups') }}</p>
               </div>
             </UFormField>
-            <UFormField label="Model scope" hint="No groups selected means no model filtering. Model access is scoped to this key, not its owner.">
+            <UFormField :label="t('keys.modelScope')" :hint="t('keys.modelScopeHint')">
               <div class="grid gap-2">
                 <UCheckbox
                   v-for="group in scopeOptions(modelGroups, form.modelGroupIds)"
@@ -337,11 +330,11 @@
                   :disabled="submitting"
                   @update:model-value="toggleFormGroup('modelGroupIds', group.id, $event)"
                 />
-                <p v-if="!scopeOptions(modelGroups, form.modelGroupIds).length" class="text-sm text-[var(--ui-text-muted)]">No model groups available.</p>
+                <p v-if="!scopeOptions(modelGroups, form.modelGroupIds).length" class="text-sm text-[var(--ui-text-muted)]">{{ t('keys.noModelGroups') }}</p>
               </div>
             </UFormField>
             <p class="text-xs text-[var(--ui-text-muted)]">
-              Model-specific credential groups intersect this key's credential scope. Disabled groups do not grant access. Deleting a group removes its bindings; removing the last binding makes that scope unrestricted.
+              {{ t('keys.scopeNote') }}
             </p>
           </template>
 
@@ -352,17 +345,17 @@
               variant="outline"
               :disabled="submitting"
               @click="cancelForm"
-              >Cancel</AppButton
+              >{{ t('common.cancel') }}</AppButton
             >
             <AppButton type="submit" :loading="submitting">{{
-              sheetMode === "edit" ? "Save key" : "Create key"
+              sheetMode === "edit" ? t('keys.saveKey') : t('keys.createKey')
             }}</AppButton>
           </div>
         </form>
 
         <div v-else-if="selectedResource" class="space-y-5">
           <div class="rounded-md border border-[var(--ui-border)] p-3">
-            <p class="text-xs text-[var(--ui-text-muted)]">Secret value</p>
+            <p class="text-xs text-[var(--ui-text-muted)]">{{ t('keys.secretValue') }}</p>
             <p class="mt-2 break-all font-mono text-sm">
               {{
                 detailSecretVisible
@@ -380,15 +373,15 @@
                 "
                 @click="detailSecretVisible = !detailSecretVisible"
               >
-                {{ detailSecretVisible ? "Hide" : "Reveal" }}
+                {{ detailSecretVisible ? t('keys.hide') : t('keys.reveal') }}
               </AppButton>
               <AppButton
                 color="neutral"
                 variant="outline"
                 size="sm"
                 icon="i-tabler-clipboard"
-                @click="copyText(selectedResource.value, 'Access key copied.')"
-                >Copy</AppButton
+                @click="copyText(selectedResource.value, t('keys.keyCopied'))"
+                >{{ t('common.copy') }}</AppButton
               >
             </div>
           </div>
@@ -398,15 +391,15 @@
               v-if="supportsDisplayNames"
               class="rounded-md border border-[var(--ui-border)] px-3 py-2.5"
             >
-              <dt class="text-xs text-[var(--ui-text-muted)]">Display name</dt>
+              <dt class="text-xs text-[var(--ui-text-muted)]">{{ t('keys.displayName') }}</dt>
               <dd class="mt-1 break-words font-mono text-xs">
-                {{ selectedResource.displayName || "No display name" }}
+                {{ selectedResource.displayName || t('keys.noDisplayName') }}
               </dd>
             </div>
             <div
               class="rounded-md border border-[var(--ui-border)] px-3 py-2.5"
             >
-              <dt class="text-xs text-[var(--ui-text-muted)]">Prefix</dt>
+              <dt class="text-xs text-[var(--ui-text-muted)]">{{ t('keys.prefix') }}</dt>
               <dd class="mt-1 break-words font-mono text-xs">
                 {{ selectedResource.prefix }}
               </dd>
@@ -414,7 +407,7 @@
             <div
               class="rounded-md border border-[var(--ui-border)] px-3 py-2.5"
             >
-              <dt class="text-xs text-[var(--ui-text-muted)]">Suffix</dt>
+              <dt class="text-xs text-[var(--ui-text-muted)]">{{ t('keys.suffix') }}</dt>
               <dd class="mt-1 break-words font-mono text-xs">
                 {{ selectedResource.suffix }}
               </dd>
@@ -422,7 +415,7 @@
             <div
               class="rounded-md border border-[var(--ui-border)] px-3 py-2.5"
             >
-              <dt class="text-xs text-[var(--ui-text-muted)]">Length</dt>
+              <dt class="text-xs text-[var(--ui-text-muted)]">{{ t('keys.length') }}</dt>
               <dd class="mt-1 break-words font-mono text-xs">
                 {{ selectedResource.length }}
               </dd>
@@ -430,7 +423,7 @@
             <div
               class="rounded-md border border-[var(--ui-border)] px-3 py-2.5"
             >
-              <dt class="text-xs text-[var(--ui-text-muted)]">Owner</dt>
+              <dt class="text-xs text-[var(--ui-text-muted)]">{{ t('keys.owner') }}</dt>
               <dd class="mt-1 break-words font-mono text-xs">
                 {{ ownerName(selectedResource) }}
               </dd>
@@ -439,7 +432,7 @@
               class="rounded-md border border-[var(--ui-border)] px-3 py-2.5"
             >
               <dt class="text-xs text-[var(--ui-text-muted)]">
-                Credential scope
+                {{ t('keys.credentialScope') }}
               </dt>
               <dd class="mt-1 break-words font-mono text-xs">
                 {{ credentialScope(selectedResource) }}
@@ -448,7 +441,7 @@
             <div
               class="rounded-md border border-[var(--ui-border)] px-3 py-2.5"
             >
-              <dt class="text-xs text-[var(--ui-text-muted)]">Model scope</dt>
+              <dt class="text-xs text-[var(--ui-text-muted)]">{{ t('keys.modelScope') }}</dt>
               <dd class="mt-1 break-words font-mono text-xs">
                 {{ modelScope(selectedResource) }}
               </dd>
@@ -457,14 +450,14 @@
 
           <div class="grid gap-2">
             <AppButton icon="i-tabler-pencil" @click="openEdit(selectedResource)"
-              >Edit</AppButton
+              >{{ t('common.edit') }}</AppButton
             >
             <AppButton
               color="error"
               variant="outline"
               icon="i-tabler-trash"
               @click="openDelete(selectedResource)"
-              >Delete</AppButton
+              >{{ t('common.delete') }}</AppButton
             >
           </div>
         </div>
@@ -483,7 +476,7 @@
             variant="outline"
             :disabled="confirmationBusy"
             @click="closeConfirmation"
-            >Cancel</AppButton
+            >{{ t('common.cancel') }}</AppButton
           >
           <AppButton
             color="error"
@@ -504,6 +497,7 @@ import { useDataSync } from '~/composables/useDataSync'
 const { fetchAPI, fetchRaw } = useApi();
 const { supports } = useCapabilities();
 const toast = useToast();
+const { t } = useAdminI18n();
 
 const MAX_DISPLAY_NAME_LENGTH = 128;
 const rowValue = (row) => row?.original ?? row;
@@ -532,13 +526,13 @@ const displayNameError = ref("");
 const form = reactive({ value: "", displayName: "", userId: null, channelGroupIds: [], modelGroupIds: [] });
 const supplementalError = useWorkspaceState('admin:access-keys:supplementalError', () => (""));
 const ownerOptions = computed(() => {
-  const options = [{ label: "Unassigned", value: "unassigned" }];
+  const options = [{ label: t('keys.unassigned'), value: "unassigned" }];
   for (const user of users.value) {
     if (!user.deletedAt || user.id === form.userId)
-      options.push({ label: `${user.name}${user.deletedAt ? ' (deleted)' : ''}`, value: String(user.id) });
+      options.push({ label: user.deletedAt ? t('keys.deletedSuffix', { name: user.name }) : user.name, value: String(user.id) });
   }
   if (form.userId != null && !users.value.some((user) => user.id === form.userId))
-    options.push({ label: `#${form.userId} (unavailable)`, value: String(form.userId) });
+    options.push({ label: t('keys.unavailableId', { id: form.userId }), value: String(form.userId) });
   return options;
 });
 const ownerUnavailable = computed(() => form.userId != null &&
@@ -550,13 +544,13 @@ const confirmationResources = ref([]);
 const deleting = useWorkspaceState('admin:access-keys:deleting', () => (false));
 const bulkDeleting = useWorkspaceState('admin:access-keys:bulkDeleting', () => (false));
 
-const compactColumns = [
+const compactColumns = computed(() => [
   { accessorKey: "select", header: "" },
-  { accessorKey: "identity", header: "Name / key" },
-  { accessorKey: "status", header: "Status" },
+  { accessorKey: "identity", header: t('keys.colIdentity') },
+  { accessorKey: "status", header: t('common.status') },
   {
     id: "actions",
-    header: "Actions",
+    header: t('common.actions'),
     meta: {
       class: {
         th: "w-px whitespace-nowrap text-right",
@@ -564,20 +558,20 @@ const compactColumns = [
       },
     },
   },
-];
+]);
 
-const fullColumns = [
+const fullColumns = computed(() => [
   { accessorKey: "select", header: "" },
-  { accessorKey: "number", header: "No." },
-  { accessorKey: "identity", header: "Name / key" },
-  { accessorKey: "owner", header: "Owner" },
-  { accessorKey: "credential-scope", header: "Credential scope" },
-  { accessorKey: "model-scope", header: "Model scope" },
-  { accessorKey: "length", header: "Length" },
-  { accessorKey: "status", header: "Status" },
+  { accessorKey: "number", header: t('keys.colNumber'), meta: { class: { th: "app-table-number-head", td: "app-table-number-cell" } } },
+  { accessorKey: "identity", header: t('keys.colIdentity') },
+  { accessorKey: "owner", header: t('keys.owner') },
+  { accessorKey: "credential-scope", header: t('keys.credentialScope') },
+  { accessorKey: "model-scope", header: t('keys.modelScope') },
+  { accessorKey: "length", header: t('keys.length') },
+  { accessorKey: "status", header: t('common.status') },
   {
     id: "actions",
-    header: "Actions",
+    header: t('common.actions'),
     meta: {
       class: {
         th: "w-px whitespace-nowrap text-right",
@@ -585,23 +579,45 @@ const fullColumns = [
       },
     },
   },
-];
+]);
 
 const columns = computed(() =>
-  wideTable.value ? fullColumns : compactColumns,
+  wideTable.value ? fullColumns.value : compactColumns.value,
 );
 const detailTitle = computed(() =>
   sheetMode.value === "create"
-    ? "New downstream key"
+    ? t('keys.sheetNew')
     : sheetMode.value === "edit"
-      ? "Update downstream key"
-      : "Key detail",
+      ? t('keys.sheetUpdate')
+      : t('keys.sheetDetail'),
 );
 const detailDescription = computed(() => {
-  if (sheetMode.value === "create") return "Create access key";
+  if (sheetMode.value === "create") return t('keys.createHeading');
   return selectedResource.value
     ? resourceSummary(selectedResource.value)
-    : "Select a key or create a new one.";
+    : t('keys.selectOrCreate');
+});
+
+const keySummary = computed(() => {
+  const total = resources.value.length;
+  const owned = resources.value.filter((resource) => resource.userId != null).length;
+  const credentialScoped = resources.value.filter((resource) => resource.channelGroupIds.length).length;
+  const modelScoped = resources.value.filter((resource) => resource.modelGroupIds.length).length;
+  const ratio = (value) => (total ? value / total : 0);
+  // Every card carries the same parts (value, one-line detail, ratio bar) so the row stays even.
+  return [
+    { label: t('keys.title'), value: total, detail: t('keys.statUnrestricted', { count: keyCoverage.value.open }), icon: "i-tabler-key", tone: "violet", ratio: ratio(keyCoverage.value.scoped), warning: keyCoverage.value.open > 0 && keyCoverage.value.scoped === 0 },
+    { label: t('keys.statAssigned'), value: owned, detail: t('keys.statUnassigned', { count: total - owned }), icon: "i-tabler-user-check", tone: "blue", ratio: ratio(owned) },
+    { label: t('keys.statCredentialScoped'), value: credentialScoped, detail: t('keys.groupsAvailable', { count: channelGroups.value.length }), icon: "i-tabler-route", tone: "emerald", ratio: ratio(credentialScoped) },
+    { label: t('keys.statModelScoped'), value: modelScoped, detail: t('keys.groupsAvailable', { count: modelGroups.value.length }), icon: "i-tabler-box-multiple", tone: "amber", ratio: ratio(modelScoped) },
+  ];
+});
+
+// Keys with neither credential nor model groups can reach every upstream and model.
+const keyCoverage = computed(() => {
+  const total = resources.value.length;
+  const scoped = resources.value.filter((resource) => resource.channelGroupIds.length || resource.modelGroupIds.length).length;
+  return { scoped, open: total - scoped, restricted: total ? Math.round((scoped / total) * 100) : 0 };
 });
 
 const filteredResources = computed(() => {
@@ -645,17 +661,17 @@ const someFilteredSelected = computed(
 const confirmationBusy = computed(() => deleting.value || bulkDeleting.value);
 const confirmationTitle = computed(() =>
   confirmationType.value === "bulk"
-    ? "Delete selected access keys?"
-    : "Delete access key?",
+    ? t('keys.confirmBulkTitle')
+    : t('keys.confirmDeleteTitle'),
 );
 const confirmationDescription = computed(() => {
   if (confirmationType.value === "bulk")
-    return `Delete ${confirmationResources.value.length} selected access keys?`;
+    return t('keys.confirmBulkDesc', { count: confirmationResources.value.length });
   const resource = confirmationResources.value[0];
-  return resource ? `Delete access key ${resourceSummary(resource)}?` : "";
+  return resource ? t('keys.confirmDeleteDesc', { name: resourceSummary(resource) }) : "";
 });
 const confirmationActionLabel = computed(() =>
-  confirmationType.value === "bulk" ? "Delete selected" : "Delete",
+  confirmationType.value === "bulk" ? t('keys.deleteSelected') : t('common.delete'),
 );
 
 let mediaQuery;
@@ -955,12 +971,12 @@ function handleDetailOpen(open) {
 function validateForm() {
   const value = form.value.trim();
   const displayName = form.displayName.trim();
-  if (!value) keyValueError.value = "Key value is required.";
+  if (!value) keyValueError.value = t('keys.keyRequired');
   if (
     supportsDisplayNames.value &&
     Array.from(displayName).length > MAX_DISPLAY_NAME_LENGTH
   ) {
-    displayNameError.value = "The display name must not exceed 128 characters.";
+    displayNameError.value = t('keys.displayNameTooLong', { max: MAX_DISPLAY_NAME_LENGTH });
   }
   return Boolean(value) && !displayNameError.value;
 }
@@ -985,12 +1001,12 @@ async function submitKey() {
           (resource) => resource.id === selectedResource.value?.id,
         ) ?? null;
       sheetMode.value = "detail";
-      toast.add({ title: "Access key updated.", color: "success" });
+      toast.add({ title: t('keys.updated'), color: "success" });
     } else {
       await createResource();
       detailOpen.value = false;
       await syncData();
-      toast.add({ title: "Access key created.", color: "success" });
+      toast.add({ title: t('keys.created'), color: "success" });
     }
   } catch (error) {
     showErrorToast(error);
@@ -1116,7 +1132,7 @@ async function deleteOne() {
     detailOpen.value = false;
     closeConfirmation();
     await syncData();
-    toast.add({ title: "Access key deleted.", color: "success" });
+    toast.add({ title: t('keys.deleted'), color: "success" });
   } catch (error) {
     showErrorToast(error);
   } finally {
@@ -1139,7 +1155,7 @@ async function deleteSelected() {
     closeConfirmation();
     await syncData();
     toast.add({
-      title: `${targets.length} access keys deleted.`,
+      title: t('keys.bulkDeleted', { count: targets.length }),
       color: "success",
     });
   } catch (error) {
@@ -1153,28 +1169,28 @@ function rowActions(resource) {
   return [
     {
       id: "view",
-      label: "View",
-      ariaLabel: "View access key",
+      label: t('common.view'),
+      ariaLabel: t('keys.viewAria'),
       icon: "i-tabler-eye",
       onSelect: () => openDetail(resource),
     },
     {
       id: "edit",
-      label: "Edit",
-      ariaLabel: "Edit access key",
+      label: t('common.edit'),
+      ariaLabel: t('keys.editAria'),
       icon: "i-tabler-pencil",
       onSelect: () => openEdit(resource),
     },
     resource.identifier && {
       id: "copy",
-      label: "Copy identifier",
+      label: t('keys.copyIdentifier'),
       icon: "i-tabler-copy",
-      onSelect: () => copyText(resource.identifier, "Identifier copied."),
+      onSelect: () => copyText(resource.identifier, t('keys.identifierCopiedShort')),
     },
     {
       id: "delete",
-      label: "Delete",
-      ariaLabel: "Delete access key",
+      label: t('common.delete'),
+      ariaLabel: t('keys.deleteAria'),
       icon: "i-tabler-trash",
       destructive: true,
       onSelect: () => openDelete(resource),
@@ -1251,11 +1267,11 @@ function sameGroupIds(left, right) {
 function scopeOptions(groups, selected) {
   const options = groups.map((group) => ({
     id: group.id,
-    label: `${group.name}${group.disabled ? ' (disabled)' : ''}`,
+    label: group.disabled ? t('keys.disabledSuffix', { name: group.name }) : group.name,
   }));
   for (const id of selected) {
     if (!groups.some((group) => group.id === id))
-      options.push({ id, label: `#${id} (unavailable)` });
+      options.push({ id, label: t('keys.unavailableId', { id }) });
   }
   return options;
 }
@@ -1267,7 +1283,7 @@ function toggleFormGroup(field, id, checked) {
 }
 
 function ownerName(resource) {
-  if (resource.userId == null || resource.userId === 0) return "Unassigned";
+  if (resource.userId == null || resource.userId === 0) return t('keys.unassigned');
   return (
     users.value.find((user) => user.id === resource.userId)?.name ||
     String(resource.userId)
@@ -1283,7 +1299,7 @@ function credentialScope(resource) {
     ? resource.channelGroupIds
         .map((id) => groupName(id, channelGroups.value))
         .join(", ")
-    : "Unrestricted";
+    : t('keys.unrestricted');
 }
 
 function modelScope(resource) {
@@ -1291,13 +1307,13 @@ function modelScope(resource) {
     ? resource.modelGroupIds
         .map((id) => groupName(id, modelGroups.value))
         .join(", ")
-    : "Unrestricted";
+    : t('keys.unrestricted');
 }
 
 function errorMessage(error) {
   return typeof error?.message === "string" && error.message.trim()
     ? error.message
-    : "Management API request failed";
+    : t('keys.requestFailed');
 }
 
 function showErrorToast(error) {
@@ -1325,3 +1341,4 @@ await syncData();
   white-space: nowrap;
 }
 </style>
+

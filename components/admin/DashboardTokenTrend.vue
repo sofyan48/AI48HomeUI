@@ -1,12 +1,12 @@
 <template>
-  <AppCard class="border-white/40 bg-white/40 dark:border-white/10 dark:bg-neutral-900/40" aria-labelledby="token-trend-title">
+  <AppCard aria-labelledby="token-trend-title">
     <template #header>
       <div class="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
         <div class="flex items-center gap-2.5">
           <UIcon name="i-tabler-gauge" class="size-5 text-[var(--ui-text-muted)]" />
-          <h2 id="token-trend-title" class="text-lg font-semibold text-[var(--ui-text-highlighted)]">Overall consumption trend</h2>
+          <h2 id="token-trend-title" class="text-lg font-semibold text-[var(--ui-text-highlighted)]">{{ t('dashboard.trend.title') }}</h2>
         </div>
-        <p class="text-sm text-[var(--ui-text-muted)]">{{ points.length }} intervals · {{ compact(totalTokens) }} tokens total</p>
+        <p class="text-sm text-[var(--ui-text-muted)]">{{ t('dashboard.trend.summary', { count: points.length, tokens: compact(totalTokens) }) }}</p>
       </div>
     </template>
 
@@ -15,7 +15,7 @@
         class="relative h-56 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-primary sm:h-64"
         role="group"
         tabindex="0"
-        aria-label="Token consumption trend. Use left and right arrow keys to inspect intervals."
+        :aria-label="t('dashboard.trend.aria')"
         @keydown="onKeydown"
         @pointermove="onPointerMove"
         @pointerleave="activeIndex = null"
@@ -53,16 +53,16 @@
         >
           <p class="font-semibold text-[var(--ui-text-highlighted)]">{{ formatDate(selectedPoint.bucket_start) }}</p>
           <dl class="mt-3 grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-2 text-sm">
-            <dt class="text-[var(--ui-text-muted)]">Token consumption</dt>
-            <dd class="text-right font-semibold tabular-nums">{{ compact(selectedPoint.tokens) }} tokens</dd>
-            <dt class="text-[var(--ui-text-muted)]">Requests</dt>
+            <dt class="text-[var(--ui-text-muted)]">{{ t('dashboard.trend.tokenConsumption') }}</dt>
+            <dd class="text-right font-semibold tabular-nums">{{ t('dashboard.tokensCount', { count: compact(selectedPoint.tokens) }) }}</dd>
+            <dt class="text-[var(--ui-text-muted)]">{{ t('common.requests') }}</dt>
             <dd class="text-right font-semibold tabular-nums">{{ number.format(selectedPoint.requests) }}</dd>
           </dl>
         </div>
       </div>
     </div>
 
-    <p v-else class="flex min-h-56 items-center justify-center text-center text-sm text-[var(--ui-text-muted)]">No token trend is available for this range.</p>
+    <p v-else class="flex min-h-56 items-center justify-center text-center text-sm text-[var(--ui-text-muted)]">{{ t('dashboard.trend.empty') }}</p>
   </AppCard>
 </template>
 
@@ -76,8 +76,10 @@ interface TrendEntry {
 interface Range { from?: string; to?: string; timezone?: string; interval?: string }
 
 const props = withDefaults(defineProps<{ trend?: TrendEntry[] | null; range?: Range | null }>(), { trend: () => [] })
+const { t, intlLocale } = useAdminI18n()
 const gradientId = `token-trend-${useId().replace(/:/g, '')}`
-const number = new Intl.NumberFormat()
+const numberFormat = computed(() => new Intl.NumberFormat(intlLocale.value))
+const number = { format: (value: number) => numberFormat.value.format(value) }
 const activeIndex = ref<number | null>(null)
 const chartBounds = { left: 12, right: 708, top: 18, bottom: 202, width: 696, height: 184 }
 const gridLines = [18, 79.33, 140.67, 202]
@@ -148,16 +150,16 @@ const tooltipStyle = computed(() => {
 })
 
 function compact(value: number) {
-  return new Intl.NumberFormat(undefined, { notation: 'compact', maximumFractionDigits: 1 }).format(Number(value) || 0)
+  return new Intl.NumberFormat(intlLocale.value, { notation: 'compact', maximumFractionDigits: 1 }).format(Number(value) || 0)
 }
 function formatDate(value?: string) {
-  if (!value) return 'Unknown time'
+  if (!value) return t('dashboard.unknownTime')
   const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return 'Unknown time'
+  if (Number.isNaN(date.getTime())) return t('dashboard.unknownTime')
   try {
-    return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: props.range?.timezone || 'UTC' }).format(date)
+    return new Intl.DateTimeFormat(intlLocale.value, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: props.range?.timezone || 'UTC' }).format(date)
   } catch {
-    return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'UTC' }).format(date)
+    return new Intl.DateTimeFormat(intlLocale.value, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'UTC' }).format(date)
   }
 }
 function onKeydown(event: KeyboardEvent) {

@@ -45,7 +45,8 @@ function mountInput(initial: Record<string, string | boolean>) {
     .replace(/import \{([^}]+)\} from ["']vue["'];?/g, (_, names) => `const { ${names.replace(/ as /g, ': ')} } = Vue;`)
     .replace(/import .* from ["']~\/composables\/dateRange["'];?/, 'const { dateInputBounds, dateRangeError, sanitizeDateInput } = dates;')
     .replace('export default', 'return')
-  const component = new Function('Vue', 'dates', `const { computed, useId, useAttrs } = Vue; ${js}`)(Vue, dates)
+  const useAdminI18n = () => ({ t: (key: string) => key })
+  const component = new Function('Vue', 'dates', 'useAdminI18n', `const { computed, useId, useAttrs } = Vue; ${js}`)(Vue, dates, useAdminI18n)
   const inputs = new Map<string, any>()
   const state = Vue.reactive({ modelValue: '', ...initial })
   const renderer = Vue.createRenderer<any, any>({

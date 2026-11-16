@@ -1,15 +1,15 @@
 <template>
-  <AppModal v-model:open="open" :dismissible="!saving" :title="`Reset allowance · ${user?.username || 'User'}`">
+  <AppModal v-model:open="open" :dismissible="!saving" :title="`${t('users.resetAllowance')} · ${user?.username || t('common.user')}`">
     <template #body>
       <form class="space-y-4" @submit.prevent="submit">
-        <p class="text-sm text-[var(--ui-text-muted)]">One reset clears usage for all enabled period limits together. Credits, configured limits, and usage history remain unchanged.</p>
+        <p class="text-sm text-[var(--ui-text-muted)]">{{ t('users.resetAllowanceIntro') }}</p>
         <UAlert v-if="error" color="error" variant="subtle" :description="error" />
-        <UFormField label="Mode"><USelect v-model="mode" :items="modes" value-key="value" label-key="label" :disabled="saving" class="w-full" /></UFormField>
-        <UFormField :label="mode === 'monthly' ? 'Resets per month' : 'Number of resets'"><UInput v-model="amount" type="number" min="0" step="1" :disabled="saving" class="w-full" /></UFormField>
-        <UFormField v-if="mode === 'one_time'" label="Expires at (optional)" description="Date and time use your browser's local timezone."><UInput v-model="expiresAt" type="datetime-local" :disabled="saving" class="w-full" /></UFormField>
-        <p class="text-xs text-[var(--ui-text-muted)]">{{ mode === 'monthly' ? 'Renews on the first day of each month at 00:00 in the user’s timezone. Unused resets do not carry over.' : 'Granted once, with no automatic renewal.' }}</p>
-        <UAlert color="warning" variant="subtle" description="Saving replaces the existing allowance and immediately grants the entered amount. Enter 0 to disable resets." />
-        <div class="flex justify-end gap-2"><AppButton type="button" color="neutral" variant="outline" :disabled="saving" @click="open = false">Cancel</AppButton><AppButton type="submit" :loading="saving" :disabled="saving">Save allowance</AppButton></div>
+        <UFormField :label="t('users.mode')"><USelect v-model="mode" :items="modes" value-key="value" label-key="label" :disabled="saving" class="w-full" /></UFormField>
+        <UFormField :label="mode === 'monthly' ? t('users.resetsPerMonth') : t('users.numberOfResets')"><UInput v-model="amount" type="number" min="0" step="1" :disabled="saving" class="w-full" /></UFormField>
+        <UFormField v-if="mode === 'one_time'" :label="t('users.expiresAtOptional')" :description="t('users.localTimezoneHint')"><UInput v-model="expiresAt" type="datetime-local" :disabled="saving" class="w-full" /></UFormField>
+        <p class="text-xs text-[var(--ui-text-muted)]">{{ mode === 'monthly' ? t('users.monthlyRenewHint') : t('users.oneTimeHint') }}</p>
+        <UAlert color="warning" variant="subtle" :description="t('users.allowanceReplaceWarning')" />
+        <div class="flex justify-end gap-2"><AppButton type="button" color="neutral" variant="outline" :disabled="saving" @click="open = false">{{ t('common.cancel') }}</AppButton><AppButton type="submit" :loading="saving" :disabled="saving">{{ t('users.saveAllowance') }}</AppButton></div>
       </form>
     </template>
   </AppModal>
@@ -21,12 +21,13 @@ const props = defineProps<{ user: any }>()
 const emit = defineEmits<{ saved: [] }>()
 const { fetchAPI } = useApi()
 const toast = useToast()
+const { t } = useAdminI18n()
 const mode = ref('one_time')
 const amount = ref('0')
 const expiresAt = ref('')
 const saving = ref(false)
 const error = ref('')
-const modes = [{ label: 'One-time', value: 'one_time' }, { label: 'Monthly', value: 'monthly' }]
+const modes = computed(() => [{ label: t('users.oneTime'), value: 'one_time' }, { label: t('users.monthly'), value: 'monthly' }])
 const controller = new AbortController()
 onScopeDispose(() => controller.abort())
 watch(open, (value) => {
@@ -49,14 +50,14 @@ async function submit() {
   error.value = ''
   const count = Number(amount.value)
   if (String(amount.value).trim() === '' || !Number.isSafeInteger(count) || count < 0) {
-    error.value = 'Enter a whole number greater than or equal to 0.'
+    error.value = t('users.wholeNumberInvalid')
     return
   }
   let expiry: string | null = null
   if (mode.value === 'one_time' && expiresAt.value) {
     const date = new Date(expiresAt.value)
     if (!Number.isFinite(date.getTime()) || date.getTime() <= Date.now()) {
-      error.value = 'Expiry must be a valid future date.'
+      error.value = t('users.expiryInvalid')
       return
     }
     expiry = date.toISOString()
@@ -68,10 +69,10 @@ async function submit() {
     })
     if (controller.signal.aborted) return
     open.value = false
-    toast.add({ title: 'Reset allowance saved.', color: 'success' })
+    toast.add({ title: t('users.resetAllowanceSaved'), color: 'success' })
     emit('saved')
   } catch (cause: any) {
-    if (!controller.signal.aborted) error.value = cause?.message || 'Unable to save reset allowance.'
+    if (!controller.signal.aborted) error.value = cause?.message || t('users.resetAllowanceSaveFailed')
   } finally { saving.value = false }
 }
 </script>

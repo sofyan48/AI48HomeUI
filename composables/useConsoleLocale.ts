@@ -4,24 +4,28 @@ import en from '~/locales/en'
 import zhCN from '~/locales/zh-CN'
 import zhTW from '~/locales/zh-TW'
 import ru from '~/locales/ru'
+import id from '~/locales/id'
 import type { ConsoleMessageKey, ConsoleMessages } from '~/locales/en'
 
-export type ConsoleLocale = 'en' | 'zh-CN' | 'zh-TW' | 'ru'
+export type ConsoleLocale = 'en' | 'id' | 'zh-CN' | 'zh-TW' | 'ru'
 
 export const consoleLanguages: ReadonlyArray<{ value: ConsoleLocale; label: string }> = [
   { value: 'en', label: 'English' },
+  { value: 'id', label: 'Bahasa Indonesia' },
   { value: 'zh-CN', label: '简体中文' },
   { value: 'zh-TW', label: '繁體中文' },
   { value: 'ru', label: 'Русский' }
 ]
 
-const messages: Record<ConsoleLocale, ConsoleMessages> = { en, 'zh-CN': zhCN, 'zh-TW': zhTW, ru }
+const messages: Record<ConsoleLocale, ConsoleMessages> = { en, id, 'zh-CN': zhCN, 'zh-TW': zhTW, ru }
 const storageKey = 'cpahome:console-locale'
 
 export function resolveConsoleLocale(language: string): ConsoleLocale | undefined {
   const tag = language.trim().replace(/_/g, '-').toLowerCase()
   if (tag === 'en' || tag.startsWith('en-')) return 'en'
   if (tag === 'ru' || tag.startsWith('ru-')) return 'ru'
+  // "in" is the legacy ISO 639 code some older browsers still report for Indonesian.
+  if (tag === 'id' || tag.startsWith('id-') || tag === 'in' || tag.startsWith('in-')) return 'id'
   if (tag === 'zh' || tag.startsWith('zh-')) {
     const subtags = tag.split('-')
     if (subtags.includes('hant')) return 'zh-TW'

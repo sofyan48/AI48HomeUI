@@ -2,28 +2,28 @@
   <div class="mx-auto max-w-md py-12">
     <AppCard>
       <template #header>
-        <h1 class="text-2xl font-bold text-[var(--ui-text-highlighted)]">Create your account</h1>
-        <p class="mt-1 text-sm text-[var(--ui-text-muted)]">Start using models through CPAHome.</p>
+        <h1 class="text-2xl font-bold text-[var(--ui-text-highlighted)]">{{ t('register.title') }}</h1>
+        <p class="mt-1 text-sm text-[var(--ui-text-muted)]">{{ t('register.desc') }}</p>
       </template>
-      <UAlert v-if="approvalPending" color="warning" variant="subtle" icon="i-tabler-clock" title="Account awaiting approval" description="Your account has been created. An administrator must approve it before you can sign in to the user dashboard." />
+      <UAlert v-if="approvalPending" color="warning" variant="subtle" icon="i-tabler-clock" :title="t('register.pendingTitle')" :description="t('register.pendingDesc')" />
             <form v-else class="space-y-5" @submit.prevent="submit">
-        <UAlert v-if="error" color="error" variant="subtle" title="Registration failed" :description="error" />
-        <UFormField label="Username" required>
+        <UAlert v-if="error" color="error" variant="subtle" :title="t('register.failed')" :description="error" />
+        <UFormField :label="t('auth.username')" required>
           <UInput v-model="form.username" class="w-full" autocomplete="username" icon="i-tabler-user" />
         </UFormField>
-        <UFormField v-if="emailEnabled" label="Email" hint="Optional, used for verification and recovery">
+        <UFormField v-if="emailEnabled" :label="t('auth.email')" :hint="t('register.emailHint')">
           <UInput v-model="form.email" class="w-full" type="email" autocomplete="email" icon="i-tabler-mail" />
         </UFormField>
-        <UFormField label="Password" required hint="Maximum 72 bytes">
+        <UFormField :label="t('auth.password')" required :hint="t('register.passwordHint')">
           <UInput v-model="form.password" class="w-full" type="password" autocomplete="new-password" icon="i-tabler-lock" />
         </UFormField>
-        <UFormField label="Confirm password" required>
+        <UFormField :label="t('auth.confirmPassword')" required>
           <UInput v-model="form.confirmPassword" class="w-full" type="password" autocomplete="new-password" icon="i-tabler-lock" />
         </UFormField>
-        <p class="text-xs text-[var(--ui-text-muted)]">New accounts require administrator approval before you can sign in.</p>
-        <AppButton type="submit" color="primary" block size="lg" :loading="loading">Create account</AppButton>
+        <p class="text-xs text-[var(--ui-text-muted)]">{{ t('register.approvalNote') }}</p>
+        <AppButton type="submit" color="primary" block size="lg" :loading="loading">{{ t('register.submit') }}</AppButton>
       </form>
-      <template #footer><p class="text-center text-sm text-[var(--ui-text-muted)]">Already registered? <NuxtLink to="/app/login" class="font-medium text-primary-500">Sign in</NuxtLink></p></template>
+      <template #footer><p class="text-center text-sm text-[var(--ui-text-muted)]">{{ t('register.alreadyRegistered') }} <NuxtLink to="/app/login" class="font-medium text-primary-500">{{ t('shell.signIn') }}</NuxtLink></p></template>
     </AppCard>
   </div>
 </template>
@@ -31,6 +31,7 @@
 <script setup lang="ts">
 import { useWorkspaceState } from '~/composables/useWorkspaceState'
 definePageMeta({ layout: 'app' })
+const { t } = usePortalI18n()
 const router = useRouter()
 const { fetchAPI, saveSession, capabilities, loadCapabilities } = useUserApi()
 const approvalPending = ref(false)
@@ -43,9 +44,9 @@ const emailEnabled = computed(() => capabilityLoaded.value && capabilities.value
 async function submit() {
   if (loading.value || approvalPending.value) return
   error.value = ''
-  if (!form.username.trim()) return void (error.value = 'Username is required.')
-  if (!form.password) return void (error.value = 'Password is required.')
-  if (form.password !== form.confirmPassword) return void (error.value = 'Passwords do not match.')
+  if (!form.username.trim()) return void (error.value = t('auth.usernameRequired'))
+  if (!form.password) return void (error.value = t('auth.passwordRequired'))
+  if (form.password !== form.confirmPassword) return void (error.value = t('auth.passwordsMismatch'))
   loading.value = true
   try {
     const session = await fetchAPI<UserSessionResponse | { approval_pending: true; message: string }>('/register', { method: 'POST', auth: false, body: { username: form.username.trim(), password: form.password, ...(form.email.trim() ? { email: form.email.trim() } : {}) } })
@@ -58,7 +59,7 @@ async function submit() {
     saveSession(session as UserSessionResponse)
     await router.replace('/app')
   } catch (cause: any) {
-    error.value = cause?.message || 'Unable to create account.'
+    error.value = cause?.message || t('register.unable')
   } finally { loading.value = false }
 }
 

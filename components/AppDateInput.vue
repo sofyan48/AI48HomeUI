@@ -14,7 +14,7 @@
       @input="onInput"
     />
     <div class="mt-2 min-w-0 max-w-full">
-      <label :for="pickerId" class="mb-1 block text-xs text-[var(--ui-text-muted)]">{{ type === 'date' ? 'Choose date' : 'Choose date and time' }}</label>
+      <label :for="pickerId" class="mb-1 block text-xs text-[var(--ui-text-muted)]">{{ type === 'date' ? t('shared.date.chooseDate') : t('shared.date.chooseDateTime') }}</label>
       <UInput
         :id="pickerId"
         :type="type"
@@ -41,15 +41,17 @@ defineOptions({ inheritAttrs: false })
 const props = withDefaults(defineProps<{ modelValue?: string; type?: DateInputType; min?: string; max?: string; disabled?: boolean; readonly?: boolean }>(), { modelValue: '', type: 'date', min: '', max: '', disabled: false, readonly: false })
 const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
 const attrs = useAttrs()
+const { t } = useAdminI18n()
 const errorId = useId()
 const pickerId = `${errorId}-picker`
 const describedBy = computed(() => [attrs['aria-describedby'], error.value ? errorId : ''].filter(Boolean).join(' ') || undefined)
 const bounds = computed(() => dateInputBounds(props.type, props.min, props.max))
 const error = computed(() => {
   const invalid = dateRangeError(props.modelValue, '', props.type)
-  if (invalid || !props.modelValue) return invalid
-  if (props.modelValue < bounds.value.min) return `Enter a value on or after ${bounds.value.min}.`
-  if (props.modelValue > bounds.value.max) return `Enter a value on or before ${bounds.value.max}.`
+  if (invalid) return props.type === 'date' ? t('shared.date.invalidDate') : t('shared.date.invalidDateTime')
+  if (!props.modelValue) return ''
+  if (props.modelValue < bounds.value.min) return t('shared.date.minValue', { min: bounds.value.min })
+  if (props.modelValue > bounds.value.max) return t('shared.date.maxValue', { max: bounds.value.max })
   return ''
 })
 const pickerValue = computed(() => error.value ? '' : props.modelValue)

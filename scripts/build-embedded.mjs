@@ -11,6 +11,8 @@ const assetsDir = resolve(distDir, "assets");
 const rewriteEmbeddedPaths = (content) => content
   .replaceAll("/_nuxt/", "/assets/")
   .replaceAll("/_fonts/", "/assets/fonts/")
+  .replaceAll("/favicon.svg", "/assets/favicon.svg")
+  .replaceAll("/apple-touch-icon.png", "/assets/apple-touch-icon.png")
   .replaceAll("/favicon.png", "/assets/favicon.png")
   .replaceAll("/favicon.ico", "/assets/favicon.ico");
 
@@ -34,6 +36,8 @@ await cp(generatedAssetsDir, assetsDir, { recursive: true });
 await cp(generatedFontsDir, resolve(assetsDir, "fonts"), { recursive: true });
 await cp(resolve(generatedDir, "favicon.png"), resolve(assetsDir, "favicon.png"));
 await cp(resolve(generatedDir, "favicon.ico"), resolve(assetsDir, "favicon.ico"));
+await cp(resolve(generatedDir, "favicon.svg"), resolve(assetsDir, "favicon.svg"));
+await cp(resolve(generatedDir, "apple-touch-icon.png"), resolve(assetsDir, "apple-touch-icon.png"));
 await rewriteAssetFiles(assetsDir);
 
 const sourceHTML = await readFile(resolve(generatedDir, "index.html"), "utf8");

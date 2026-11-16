@@ -1,17 +1,17 @@
 <template>
-  <section class="grid gap-5">
+  <section class="grid gap-4">
     <UAlert
       v-if="capabilitiesError"
       color="warning"
       variant="subtle"
-      title="Capability discovery failed"
+      :title="t('users.capabilityFailed')"
       :description="capabilitiesError"
     />
     <UAlert
       v-if="pageErrors.length"
       color="warning"
       variant="subtle"
-      title="Some data could not be loaded"
+      :title="t('users.partialLoadFailed')"
       :description="pageErrors.join(' · ')"
     />
 
@@ -19,27 +19,52 @@
       v-if="!usersSupported"
       color="info"
       variant="subtle"
-      title="This runtime does not expose user management"
-      description="The connected runtime did not declare user management support. The page will not load user management tables or invent users, key ownership, or access scopes."
+      :title="t('users.unsupportedTitle')"
+      :description="t('users.unsupportedDescription')"
     />
 
     <template v-else>
-      <AppPanelTabs v-model="activeTab" :items="tabs" label="Users & Access" />
+      <section class="members" :aria-label="t('users.summaryAria')" :aria-busy="loading && !users.length">
+        <div class="members__lead">
+          <span class="members__icon" aria-hidden="true"><UIcon name="i-tabler-users" class="size-4" /></span>
+          <div class="min-w-0">
+            <p class="members__count">{{ loading && !users.length ? '—' : compactNumber(liveUsers.length) }}<span> {{ t('users.membersSuffix') }}</span></p>
+            <p class="truncate text-[11px] text-[var(--ui-text-muted)]">{{ t('users.membersSummary', { credits: userSummary[2].value, keys: compactNumber(keys.length), unassigned: compactNumber(unassignedKeyCount) }) }}</p>
+          </div>
+        </div>
+        <div class="members__segments" role="group" :aria-label="t('users.filterByStatus')">
+          <button
+            v-for="segment in userSegments"
+            :key="segment.value"
+            type="button"
+            class="members__segment"
+            :class="[`members__segment--${segment.tone}`, { 'members__segment--active': userSegment === segment.value }]"
+            :aria-pressed="userSegment === segment.value"
+            :disabled="segment.value !== 'all' && !segment.count"
+            @click="selectSegment(segment.value)"
+          >
+            <span class="members__dot" aria-hidden="true" />
+            <span>{{ segment.label }}</span>
+            <strong class="tabular-nums">{{ compactNumber(segment.count) }}</strong>
+          </button>
+        </div>
+      </section>
+      <AppPanelTabs v-model="activeTab" :items="tabs" :label="t('users.tabsLabel')" />
 
       <AdminTablePanel
         v-if="activeTab === 'users'"
-        title="Users"
-        :description="`${filteredUsers.length} of ${users.length} users`"
+        :title="t('common.users')"
+        :description="`${t('users.usersCount', { shown: compactNumber(filteredUsers.length), total: compactNumber(users.length) })}${userSegment !== 'all' ? ` · ${userSegments.find(item => item.value === userSegment)?.label}` : ''}`"
       >
         <template #actions>
           <UInput
             v-model="search"
             icon="i-tabler-search"
-            placeholder="Search users or scopes"
-            aria-label="Search users"
+            :placeholder="t('users.searchUsersPlaceholder')"
+            :aria-label="t('users.searchUsers')"
             class="w-full sm:w-72"
           />
-          <AppButton icon="i-tabler-plus" @click="openUserCreate">New user</AppButton>
+          <AppButton icon="i-tabler-user-plus" @click="openUserCreate">{{ t('users.newUser') }}</AppButton>
         </template>
 
         <template v-if="selectedUsers.length" #bulk>
@@ -48,10 +73,10 @@
           >
             <div>
               <p class="text-sm font-medium">
-                {{ selectedUsers.length }} users selected
+                {{ t('users.usersSelected', { count: selectedUsers.length }) }}
               </p>
               <p class="mt-0.5 text-xs text-[var(--ui-text-muted)]">
-                Bulk operations create separate balance records for each user.
+                {{ t('users.bulkHint') }}
               </p>
             </div>
             <div class="flex flex-wrap gap-2">
@@ -60,14 +85,14 @@
                 color="neutral"
                 variant="ghost"
                 @click="selectedUserIds = new Set()"
-                >Clear selection</AppButton
+                >{{ t('users.clearSelection') }}</AppButton
               ><AppButton
                 size="sm"
                 color="neutral"
                 variant="ghost"
                 icon="i-tabler-cash-banknote"
                 @click="openBalance(selectedUsers)"
-                >Balance operation</AppButton
+                >{{ t('users.balanceOperation') }}</AppButton
               >
             </div>
           </div>
@@ -78,17 +103,16 @@
           :data="filteredUsers"
           :virtualize="{ estimateSize: 64, overscan: 8 }"
           :get-row-id="(user) => String(user.id)"
-          class="max-h-[65dvh]"
-          :ui="{ base: 'w-full table-fixed lg:min-w-[90rem]', thead: 'sticky top-0 z-10 bg-[var(--ui-bg)]' }"
+          :ui="{ base: 'w-full table-fixed lg:min-w-[90rem]' }"
           :loading="loading"
-          empty="No users match the current filter."
+          :empty="t('users.noUsersMatch')"
         >
           <template #select-header>
             <UCheckbox
               :model-value="allFilteredUsersSelected"
               :indeterminate="someFilteredUsersSelected"
               :disabled="!operableFilteredUsers.length"
-              aria-label="Select operable users in the current list"
+              :aria-label="t('users.selectOperableUsers')"
               @update:model-value="toggleAllFilteredUsers(Boolean($event))"
             />
           </template>
@@ -96,14 +120,14 @@
             ><UCheckbox
               :model-value="selectedUserIds.has(row.original.id)"
               :disabled="!isOperableUser(row.original)"
-              :aria-label="`Select user ${row.original.username}`"
+              :aria-label="t('users.selectUser', { name: row.original.username })"
               @update:model-value="
                 toggleUserSelection(row.original.id, Boolean($event))
               "
           /></template>
           <template #user-cell="{ row }"
             ><p class="truncate font-medium" :title="row.original.username">{{ row.original.username }}</p>
-            <p v-if="row.original.pending_topup" class="text-xs text-[var(--ui-text-muted)]">Topup pending</p></template
+            <p v-if="row.original.pending_topup" class="text-xs text-[var(--ui-text-muted)]">{{ t('users.topupPending') }}</p></template
           >
           <template #status-cell="{ row }"
             ><UBadge
@@ -118,25 +142,25 @@
             }}</span></template
           >
           <template #pendingTopup-cell="{ row }">
-            <UBadge v-if="row.original.pending_topup" color="warning" variant="subtle">{{ formatCredits(row.original.pending_topup.amount) }} credits</UBadge>
+            <UBadge v-if="row.original.pending_topup" color="warning" variant="subtle">{{ t('users.creditsAmount', { amount: formatCredits(row.original.pending_topup.amount) }) }}</UBadge>
             <span v-else class="text-[var(--ui-text-muted)]">—</span>
           </template>
           <template #periodLimits-cell="{ row }"
             ><span
               v-if="zeroPeriodWindows(row.original).length"
               class="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400"
-              :title="`Blocked: ${zeroPeriodWindows(row.original).join(', ')}`"
-              ><UIcon name="i-tabler-lock" class="size-3.5" />Blocked</span
+              :title="t('users.blockedWindows', { windows: zeroPeriodWindows(row.original).join(', ') })"
+              ><UIcon name="i-tabler-lock" class="size-3.5" />{{ t('users.blocked') }}</span
             ><span
               v-else-if="periodWindows(row.original).length"
               class="tabular-nums"
-              >{{ periodWindows(row.original).length }} windows</span
+              >{{ t('users.windowsCount', { count: periodWindows(row.original).length }) }}</span
             ><span v-else class="text-[var(--ui-text-muted)]">—</span></template
           >
           <template #resetAllowance-cell="{ row }">
             <div v-if="resetAllowanceSupported && row.original.reset_allowance" class="min-w-0">
-              <p class="tabular-nums">{{ row.original.reset_allowance.available }} available <span class="text-xs text-[var(--ui-text-muted)]">· {{ row.original.reset_allowance.mode === 'monthly' ? `${row.original.reset_allowance.amount}/mo` : 'one-time' }}</span></p>
-              <p v-if="row.original.reset_allowance.renews_at || row.original.reset_allowance.expires_at" class="truncate text-xs text-[var(--ui-text-muted)]" :title="formatDate(row.original.reset_allowance.renews_at || row.original.reset_allowance.expires_at)">{{ row.original.reset_allowance.mode === 'monthly' ? 'Renews' : 'Expires' }} {{ formatDate(row.original.reset_allowance.renews_at || row.original.reset_allowance.expires_at) }}</p>
+              <p class="tabular-nums">{{ t('users.resetsAvailable', { count: row.original.reset_allowance.available }) }} <span class="text-xs text-[var(--ui-text-muted)]">· {{ row.original.reset_allowance.mode === 'monthly' ? t('users.perMonth', { count: row.original.reset_allowance.amount }) : t('users.oneTimeLower') }}</span></p>
+              <p v-if="row.original.reset_allowance.renews_at || row.original.reset_allowance.expires_at" class="truncate text-xs text-[var(--ui-text-muted)]" :title="formatDate(row.original.reset_allowance.renews_at || row.original.reset_allowance.expires_at)">{{ row.original.reset_allowance.mode === 'monthly' ? t('users.renews') : t('users.expires') }} {{ formatDate(row.original.reset_allowance.renews_at || row.original.reset_allowance.expires_at) }}</p>
             </div>
             <span v-else class="text-[var(--ui-text-muted)]">—</span>
           </template>
@@ -180,18 +204,18 @@
 
       <AdminTablePanel
         v-else-if="activeTab === 'keys'"
-        title="Client keys"
-        :description="`${filteredKeys.length} of ${keys.length} keys`"
+        :title="t('users.clientKeys')"
+        :description="t('users.keysCount', { shown: filteredKeys.length, total: keys.length })"
       >
         <template #actions>
           <UInput
             v-model="search"
             icon="i-tabler-search"
-            placeholder="Search keys, owners, or scopes"
-            aria-label="Search client keys"
+            :placeholder="t('users.searchKeysPlaceholder')"
+            :aria-label="t('users.searchKeys')"
             class="w-full sm:w-72"
           />
-          <AppButton icon="i-tabler-plus" @click="openKeyCreate">New key</AppButton>
+          <AppButton icon="i-tabler-plus" @click="openKeyCreate">{{ t('users.newKey') }}</AppButton>
         </template>
         <AppTable
           :columns="keyColumns"
@@ -205,7 +229,7 @@
                 {{ maskKey(rowValue(row).api_key) }}
               </p>
               <p class="mt-1 text-xs text-[var(--ui-text-muted)]">
-                Sequence {{ keySequence(rowValue(row)) }}
+                {{ t('users.sequence', { sequence: keySequence(rowValue(row)) }) }}
               </p>
             </div></template
           >
@@ -214,7 +238,7 @@
               userById(rowValue(row).user_id).username
             }}</span
             ><span v-else class="text-[var(--ui-text-muted)]"
-              >Unassigned</span
+              >{{ t('users.unassigned') }}</span
             ></template
           >
           <template #credentialScope-cell="{ row }"
@@ -234,25 +258,25 @@
             ><div class="flex justify-end gap-1">
               <AdminTableAction
                 action="edit"
-                label="Edit client key"
+                :label="t('users.editClientKey')"
                 @click="openKeyEdit(rowValue(row))"
               /><AdminTableAction
                 action="delete"
-                label="Delete client key"
+                :label="t('users.deleteClientKey')"
                 destructive
                 @click="confirmKeyDelete(rowValue(row))"
               /></div
           ></template>
           <template #empty
-            ><EmptyState icon="i-tabler-key" text="No client keys yet."
+            ><EmptyState icon="i-tabler-key" :text="t('users.noClientKeys')"
           /></template>
         </AppTable>
       </AdminTablePanel>
 
       <AdminDataPanel
         v-else-if="activeTab === 'channelGroups'"
-        title="Credential scopes"
-        :description="`${filteredChannelGroups.length} scopes`"
+        :title="t('users.credentialScopes')"
+        :description="t('users.scopesCount', { count: filteredChannelGroups.length })"
         content-class="p-4"
       >
         <template #actions
@@ -261,7 +285,7 @@
             size="sm"
             icon="i-tabler-plus"
             @click="openGroupForm('channel')"
-            >New credential scope</AppButton
+            >{{ t('users.newCredentialScope') }}</AppButton
           ></template
         >
         <UnsupportedScopes v-if="!accessGroupsSupported" />
@@ -282,32 +306,32 @@
 
       <AdminDataPanel
         v-else
-        title="Model scopes"
-        :description="`${filteredModelGroups.length} scopes`"
+        :title="t('users.modelScopes')"
+        :description="t('users.scopesCount', { count: filteredModelGroups.length })"
         content-class="p-4"
       >
         <UnsupportedScopes v-if="!accessGroupsSupported" />
         <section v-else class="grid gap-4 xl:grid-cols-[240px_minmax(0,1fr)]">
           <aside
             class="self-start rounded-lg border border-[var(--ui-border)] bg-[var(--glass-card)] p-3 max-xl:hidden"
-            aria-label="Model scopes"
+            :aria-label="t('users.modelScopes')"
           >
             <div class="flex items-center justify-between px-2 pb-2">
               <p
                 class="text-xs font-medium uppercase text-[var(--ui-text-muted)]"
               >
-                Model scopes
+                {{ t('users.modelScopes') }}
               </p>
               <AppButton
                 size="xs"
                 color="neutral"
                 variant="ghost"
                 icon="i-tabler-plus"
-                aria-label="New model scope"
+                :aria-label="t('users.newModelScope')"
                 @click="openGroupForm('model')"
               />
             </div>
-            <nav class="grid gap-1" aria-label="Model scopes">
+            <nav class="grid gap-1" :aria-label="t('users.modelScopes')">
               <button
                 v-for="group in filteredModelGroups"
                 :key="group.id"
@@ -339,7 +363,7 @@
                     }}</span
                     ><span
                       class="mt-0.5 block text-xs text-[var(--ui-text-muted)]"
-                      >{{ modelDetailsFor(group.id).length }} models</span
+                      >{{ t('users.modelsCount', { count: modelDetailsFor(group.id).length }) }}</span
                     ></span
                   ></span
                 >
@@ -357,18 +381,18 @@
                 v-if="!filteredModelGroups.length"
                 class="px-3 py-8 text-center text-sm text-[var(--ui-text-muted)]"
               >
-                No model scopes match.
+                {{ t('users.noModelScopesMatch') }}
               </p>
             </nav>
           </aside>
 
           <div class="min-w-0">
             <AdminDataPanel
-              :title="selectedModelGroup?.group_name || 'Model scopes'"
+              :title="selectedModelGroup?.group_name || t('users.modelScopes')"
               :description="
                 selectedModelGroup
-                  ? `Scope #${selectedModelGroup.id} · ${selectedModelBindings.length} model bindings`
-                  : 'Select or create a model scope'
+                  ? t('users.scopeBindingsSummary', { id: selectedModelGroup.id, count: selectedModelBindings.length })
+                  : t('users.selectOrCreateModelScope')
               "
             >
               <template #actions>
@@ -377,7 +401,7 @@
                   :items="modelScopeOptions"
                   value-key="value"
                   label-key="label"
-                  :search-input="{ placeholder: 'Search model scopes...' }"
+                  :search-input="{ placeholder: t('users.searchModelScopes') }"
                   class="w-56 xl:hidden"
                 />
                 <AppButton
@@ -386,7 +410,7 @@
                   color="neutral"
                   variant="outline"
                   icon="i-tabler-pencil"
-                  aria-label="Edit model scope"
+                  :aria-label="t('users.editModelScope')"
                   @click="openGroupForm('model', selectedModelGroup)"
                 />
                 <AppButton
@@ -395,7 +419,7 @@
                   color="error"
                   variant="ghost"
                   icon="i-tabler-trash"
-                  aria-label="Delete model scope"
+                  :aria-label="t('users.deleteModelScope')"
                   @click="confirmGroupDelete('model', selectedModelGroup)"
                 />
                 <AppButton
@@ -407,7 +431,7 @@
                       : openGroupForm('model')
                   "
                   >{{
-                    selectedModelGroup ? "Add models" : "New scope"
+                    selectedModelGroup ? t('users.addModels') : t('users.newScope')
                   }}</AppButton
                 >
               </template>
@@ -445,7 +469,7 @@
                     ><div class="flex justify-end">
                       <AdminTableAction
                         action="remove"
-                        label="Remove model from scope"
+                        :label="t('users.removeModelFromScope')"
                         destructive
                         @click="confirmDetailDelete('model', rowValue(row))"
                       /></div
@@ -455,8 +479,8 @@
                       icon="i-tabler-cube"
                       :text="
                         selectedModelGroup
-                          ? 'No models are bound to this scope.'
-                          : 'Select a model scope.'
+                          ? t('users.noModelsBound')
+                          : t('users.selectModelScope')
                       "
                   /></template>
                 </AppTable>
@@ -469,11 +493,11 @@
 
     <USlideover
       v-model:open="userFormOpen"
-      :title="editingUser ? 'Edit user' : 'New user'"
+      :title="editingUser ? t('users.editUser') : t('users.newUser')"
       :description="
         editingUser
-          ? 'Username stays fixed after creation. This only updates password and other maintainable fields.'
-          : 'Create an access subject that can own client keys. Password can be left blank.'
+          ? t('users.editUserDescription')
+          : t('users.newUserDescription')
       "
       :ui="{ content: 'sm:max-w-xl' }"
     >
@@ -485,7 +509,7 @@
             variant="subtle"
             :description="formError"
           />
-          <UFormField label="Username" :error="fieldError('username')"
+          <UFormField :label="t('users.username')" :error="fieldError('username')"
             ><UInput
               v-model="userForm.username"
               class="w-full"
@@ -496,22 +520,21 @@
               v-if="editingUser"
               class="mt-1 text-xs text-[var(--ui-text-muted)]"
             >
-              Username identifies the access subject and is locked after
-              creation. Delete and recreate the user to change it.
+              {{ t('users.usernameLocked') }}
             </p></UFormField
           >
           <UFormField
             :label="
-              editingUser ? 'New password (optional)' : 'Initial password'
+              editingUser ? t('users.newPasswordOptional') : t('users.initialPassword')
             "
             ><UInput
               v-model="userForm.password"
               type="password"
               class="w-full"
-              placeholder="Optional. Leave blank to create the user without a password."
+              :placeholder="t('users.passwordPlaceholder')"
               :disabled="saving"
           /></UFormField>
-          <UFormField label="Credits"
+          <UFormField :label="t('users.credits')"
             ><UInput
               v-model="userForm.credits"
               type="text"
@@ -524,8 +547,8 @@
             <p class="mt-1 text-xs text-[var(--ui-text-muted)]">
               {{
                 periodLimitsSupported && userForm.credits_unlimited
-                  ? "Unlimited mode is on: the stored balance is preserved but not enforced."
-                  : "Client keys bound to this user are blocked when credits are 0 or lower. Dot and comma decimal separators are accepted."
+                  ? t('users.unlimitedOnHint')
+                  : t('users.creditsHint')
               }}
             </p></UFormField
           >
@@ -534,20 +557,18 @@
             class="grid gap-3 rounded-md border border-[var(--ui-border)] p-4"
           >
             <div>
-              <h3 class="text-sm font-semibold">Period limits</h3>
+              <h3 class="text-sm font-semibold">{{ t('users.periodLimits') }}</h3>
               <p class="mt-1 text-xs text-[var(--ui-text-muted)]">
-                Enabled windows are enforced together for every client key owned
-                by this user.
+                {{ t('users.periodLimitsHint') }}
               </p>
             </div>
             <div
               class="flex items-center justify-between gap-3 rounded-md border border-[var(--ui-border)] px-3 py-2.5"
             >
               <div>
-                <p class="text-sm font-medium">Unlimited total balance</p>
+                <p class="text-sm font-medium">{{ t('users.unlimitedBalance') }}</p>
                 <p class="text-xs text-[var(--ui-text-muted)]">
-                  The total balance is not enforced or deducted; enabled period
-                  limits still apply.
+                  {{ t('users.unlimitedBalanceHint') }}
                 </p>
               </div>
               <USwitch
@@ -573,13 +594,13 @@
                 v-if="userForm.periods[window].enabled"
                 class="grid gap-3 sm:grid-cols-2"
               >
-                <UFormField label="Credits limit"
+                <UFormField :label="t('users.creditsLimit')"
                   ><UInput
                     v-model="userForm.periods[window].limit"
                     type="text"
                     inputmode="decimal"
                     class="w-full" /></UFormField
-                ><UFormField label="Window mode"
+                ><UFormField :label="t('users.windowMode')"
                   ><USelect
                     v-model="userForm.periods[window].mode"
                     :items="periodModeOptions(window)"
@@ -595,7 +616,7 @@
                 "
                 class="text-xs text-amber-600 dark:text-amber-400"
               >
-                A limit of 0 blocks new requests immediately.
+                {{ t('users.zeroLimitWarning') }}
               </p>
               <div
                 v-if="
@@ -605,14 +626,14 @@
                 "
                 class="grid gap-3 sm:grid-cols-2"
               >
-                <UFormField label="Week starts on"
+                <UFormField :label="t('users.weekStartsOn')"
                   ><USelect
                     v-model="userForm.week_reset_day"
                     :items="weekDayOptions"
                     value-key="value"
                     label-key="label"
                     class="w-full" /></UFormField
-                ><UFormField label="Week start hour (0–23)"
+                ><UFormField :label="t('users.weekStartHour')"
                   ><UInput
                     v-model="userForm.week_reset_hour"
                     type="number"
@@ -623,16 +644,15 @@
                 /></UFormField>
               </div>
             </div>
-            <UFormField label="Timezone"
+            <UFormField :label="t('users.timezone')"
               ><UInputMenu
                 v-model="userForm.timezone"
                 :items="timezoneOptions"
                 class="w-full"
-                :search-input="{ placeholder: 'Search IANA timezones…' }"
+                :search-input="{ placeholder: t('users.searchTimezones') }"
               />
               <p class="mt-1 text-xs text-[var(--ui-text-muted)]">
-                IANA timezone used by calendar windows. New users default to
-                this device's timezone.
+                {{ t('users.timezoneHint') }}
               </p></UFormField
             >
           </div>
@@ -640,8 +660,7 @@
             v-else
             class="rounded-md border border-dashed border-[var(--ui-border)] px-3 py-2.5 text-xs text-[var(--ui-text-muted)]"
           >
-            This runtime does not expose period-limit management. Period-limit
-            fields will not be sent.
+            {{ t('users.periodLimitsUnsupported') }}
           </div>
           <div
             class="flex justify-end gap-2 border-t border-[var(--ui-border)] pt-4"
@@ -651,9 +670,9 @@
               color="neutral"
               variant="outline"
               @click="userFormOpen = false"
-              >Cancel</AppButton
+              >{{ t('common.cancel') }}</AppButton
             ><AppButton type="submit" :loading="saving">{{
-              editingUser ? "Save changes" : "Create user"
+              editingUser ? t('users.saveChanges') : t('users.createUser')
             }}</AppButton>
           </div>
         </form></template
@@ -662,8 +681,8 @@
 
     <USlideover
       v-model:open="userDetailOpen"
-      title="User detail"
-      description="Review this user profile, client key count, and assigned access scopes."
+      :title="t('users.userDetail')"
+      :description="t('users.userDetailDescription')"
       :ui="{ content: 'sm:max-w-xl' }"
     >
       <template #body
@@ -678,20 +697,20 @@
                 v-if="userDetail.password_set || userDetail.has_password"
                 color="neutral"
                 variant="subtle"
-                >Password stored</UBadge
+                >{{ t('users.passwordStored') }}</UBadge
               >
             </div>
             <p class="mt-3 font-semibold">{{ userDetail.username }}</p>
             <p class="mt-1 text-xs text-[var(--ui-text-muted)]">
-              User ID: {{ userDetail.id }}
+              {{ t('users.userId', { id: userDetail.id }) }}
             </p>
           </div>
-          <DetailSection title="Profile" :items="profileItems(userDetail)" />
-                    <DetailSection title="Pending topup" :items="topupDetailItems(userDetail)" />
-                    <DetailSection v-if="resetAllowanceSupported" title="Reset allowance" :items="resetAllowanceItems(userDetail)" />
+          <DetailSection :title="t('users.profile')" :items="profileItems(userDetail)" />
+                    <DetailSection :title="t('users.pendingTopup')" :items="topupDetailItems(userDetail)" />
+                    <DetailSection v-if="resetAllowanceSupported" :title="t('users.resetAllowance')" :items="resetAllowanceItems(userDetail)" />
           <section class="grid gap-3">
             <div class="flex items-center justify-between gap-3">
-              <h3 class="text-sm font-semibold">Period limits</h3>
+              <h3 class="text-sm font-semibold">{{ t('users.periodLimits') }}</h3>
               <AppButton
                 v-if="periodLimitsSupported"
                 size="sm"
@@ -700,7 +719,7 @@
                 icon="i-tabler-refresh"
                 :disabled="saving || !detailPeriods || !!detailPeriodError"
                 @click="openPeriodReset(userDetail)"
-                >Reset…</AppButton
+                >{{ t('users.resetEllipsis') }}</AppButton
               >
             </div>
             <div
@@ -718,7 +737,7 @@
               class="grid gap-2 rounded-md border border-red-300 bg-red-50 px-3 py-2.5 dark:border-red-900 dark:bg-red-950"
             >
               <p class="text-sm text-red-700 dark:text-red-300">
-                Period-limit status could not be loaded.
+                {{ t('users.periodStatusFailed') }}
               </p>
               <p class="break-words text-xs text-red-600 dark:text-red-400">
                 {{ detailPeriodError }}
@@ -729,14 +748,14 @@
                   color="neutral"
                   variant="outline"
                   @click="loadUserPeriods(userDetail)"
-                  >Retry</AppButton
+                  >{{ t('common.retry') }}</AppButton
                 >
               </div>
             </div>
             <div v-else-if="detailPeriods" class="grid gap-3">
               <div class="flex flex-wrap gap-2">
                 <UBadge color="neutral" variant="subtle"
-                  >Timezone:
+                  >{{ t('users.timezoneLabel') }}
                   {{
                     detailPeriods.timezone ||
                     userDetail.timezone ||
@@ -750,7 +769,7 @@
                   "
                   color="info"
                   variant="subtle"
-                  >Unlimited total balance</UBadge
+                  >{{ t('users.unlimitedBalance') }}</UBadge
                 >
               </div>
               <PeriodCard
@@ -763,11 +782,11 @@
               v-else
               class="rounded-md border border-dashed border-[var(--ui-border)] px-3 py-2.5 text-xs text-[var(--ui-text-muted)]"
             >
-              This runtime does not expose period-limit status.
+              {{ t('users.periodStatusUnsupported') }}
             </div>
           </section>
           <DetailSection
-            title="Access scope"
+            :title="t('users.accessScope')"
             :items="accessItems(userDetail)"
           /></div
       ></template>
@@ -775,11 +794,11 @@
 
     <USlideover
       v-model:open="keyFormOpen"
-      :title="editingKey ? 'Edit key access' : 'New client key'"
+      :title="editingKey ? t('users.editKeyAccess') : t('users.newClientKey')"
       :description="
         editingKey
-          ? 'Adjust this key owner and access scopes. The key value itself is unchanged.'
-          : 'Generate a client access key and optionally bind a user, credential scopes, and model scopes.'
+          ? t('users.editKeyDescription')
+          : t('users.newKeyDescription')
       "
       :ui="{ content: 'sm:max-w-xl' }"
     >
@@ -790,38 +809,37 @@
             color="error"
             variant="subtle"
             :description="formError"
-          /><UFormField label="Key value"
+          /><UFormField :label="t('users.keyValue')"
             ><UInput
               v-model="keyForm.api_key"
               class="w-full font-mono text-xs"
               :disabled="saving || !!editingKey" /></UFormField
-          ><UFormField label="Owner"
+          ><UFormField :label="t('users.owner')" :hint="keyOwnerUnavailable ? t('users.ownerUnavailableHint') : undefined"
             ><USelectMenu
               v-model="keyForm.user_id"
               :items="userOptions"
               value-key="value"
               label-key="label"
               class="w-full"
-              :search-input="{ placeholder: 'Search users…' }"
+              :search-input="{ placeholder: t('users.searchUsersEllipsis') }"
           /></UFormField>
           <div class="grid gap-4">
             <ScopePicker
-              title="Credential scope"
-              empty-label="No credential scopes have been created yet."
+              :title="t('users.credentialScope')"
+              :empty-label="t('users.noCredentialScopesCreated')"
               :items="channelOptions"
               :selected="keyForm.channels"
               @toggle="toggleId(keyForm.channels, $event)"
             /><ScopePicker
-              title="Model scope"
-              empty-label="No model scopes have been created yet."
+              :title="t('users.modelScope')"
+              :empty-label="t('users.noModelScopesCreated')"
               :items="modelGroupOptions"
               :selected="keyForm.model_groups"
               @toggle="toggleId(keyForm.model_groups, $event)"
             />
           </div>
           <p class="text-sm leading-6 text-[var(--ui-text-muted)]">
-            When no scope is selected, this key does not add credential or model
-            restrictions.
+            {{ t('users.noScopeHint') }}
           </p>
           <div
             class="flex justify-end gap-2 border-t border-[var(--ui-border)] pt-4"
@@ -832,9 +850,9 @@
               variant="outline"
               :disabled="saving"
               @click="keyFormOpen = false"
-              >Cancel</AppButton
+              >{{ t('common.cancel') }}</AppButton
             ><AppButton type="submit" :loading="saving">{{
-              editingKey ? "Save changes" : "Create key"
+              editingKey ? t('users.saveChanges') : t('users.createKey')
             }}</AppButton>
           </div>
         </form></template
@@ -845,13 +863,13 @@
       v-model:open="bindingOpen"
       :title="
         bindingKind === 'credential'
-          ? 'Add credential binding'
-          : 'Add model binding'
+          ? t('users.addCredentialBinding')
+          : t('users.addModelBinding')
       "
       :description="
         bindingKind === 'credential'
-          ? 'Search for and select one or more account credentials to add to this scope. Client keys bound to this scope can use those credentials.'
-          : 'Search for and select one or more models to add to this scope. Client keys bound to this scope can use those models.'
+          ? t('users.addCredentialBindingDescription')
+          : t('users.addModelBindingDescription')
       "
       :ui="{ content: 'sm:max-w-xl' }"
     >
@@ -864,7 +882,7 @@
             :description="formError"
           />
           <div>
-            <p class="text-sm font-medium">Scope</p>
+            <p class="text-sm font-medium">{{ t('users.scope') }}</p>
             <div
               class="mt-2 rounded-md border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-2 text-sm"
             >
@@ -905,8 +923,8 @@
           />
           <ScopePicker
             v-if="bindingKind === 'model' && modelChannelBindingsSupported"
-            title="Credential scope"
-            empty-label="No credential scopes yet."
+            :title="t('users.credentialScope')"
+            :empty-label="t('users.noCredentialScopes')"
             :items="channelOptions"
             :selected="bindingChannels"
             @toggle="toggleId(bindingChannels, $event)"
@@ -915,9 +933,7 @@
             v-if="bindingKind === 'model' && modelChannelBindingsSupported"
             class="text-xs text-[var(--ui-text-muted)]"
           >
-            With nothing selected, this model binding inherits the credential
-            scope of the client key; selections restrict dispatch to the chosen
-            scopes.
+            {{ t('users.inheritScopeHint') }}
           </p>
           <div
             class="flex justify-end gap-2 border-t border-[var(--ui-border)] pt-4"
@@ -928,12 +944,12 @@
               variant="outline"
               :disabled="saving"
               @click="bindingOpen = false"
-              >Cancel</AppButton
+              >{{ t('common.cancel') }}</AppButton
             ><AppButton
               type="submit"
               :loading="saving"
               :disabled="bindingSubmitDisabled"
-              >Add binding</AppButton
+              >{{ t('users.addBinding') }}</AppButton
             >
           </div>
         </form></template
@@ -944,13 +960,13 @@
       v-model:open="balanceOpen"
       :title="
         balanceTargets.length > 1
-          ? 'Batch balance operation'
-          : 'Balance operation'
+          ? t('users.batchBalanceOperation')
+          : t('users.balanceOperation')
       "
       :description="
         balanceTargets.length > 1
-          ? 'Operations are submitted one user at a time, and each user receives a separate balance record.'
-          : 'The target user is set from the table action. Enter an amount to create a balance record.'
+          ? t('users.batchBalanceDescription')
+          : t('users.balanceDescription')
       "
       :ui="{ content: 'sm:max-w-xl' }"
     >
@@ -963,18 +979,18 @@
             :description="formError"
           />
           <div>
-            <p class="text-sm font-medium">Target</p>
+            <p class="text-sm font-medium">{{ t('users.target') }}</p>
             <div
               class="mt-2 grid gap-2 rounded-md border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-2.5 text-sm"
             >
               <SummaryRow
-                :label="balanceTargets.length === 1 ? 'User' : 'Users'"
+                :label="balanceTargets.length === 1 ? t('common.user') : t('common.users')"
                 :value="balanceTargetLabel"
               /><SummaryRow
-                label="Current balance total"
+                :label="t('users.currentBalanceTotal')"
                 :value="formatCredits(balanceCurrentTotal)"
               /><SummaryRow
-                label="Balance total after"
+                :label="t('users.balanceTotalAfter')"
                 :value="
                   balanceAfterTotal == null
                     ? '—'
@@ -987,11 +1003,10 @@
               v-if="balanceTargets.length > 1"
               class="mt-2 text-xs text-[var(--ui-text-muted)]"
             >
-              The same amount and note will be used for each user, with separate
-              records on the backend.
+              {{ t('users.batchSameAmountHint') }}
             </p>
           </div>
-          <UFormField label="Operation type"
+          <UFormField :label="t('users.operationType')"
             ><div class="grid grid-cols-2 gap-2">
               <AppButton
                 type="button"
@@ -999,22 +1014,22 @@
                 :variant="balanceForm.type === 'recharge' ? 'solid' : 'outline'"
                 icon="i-tabler-plus"
                 @click="balanceForm.type = 'recharge'"
-                >Recharge</AppButton
+                >{{ t('users.recharge') }}</AppButton
               ><AppButton
                 type="button"
                 :color="balanceForm.type === 'deduct' ? 'warning' : 'neutral'"
                 :variant="balanceForm.type === 'deduct' ? 'solid' : 'outline'"
                 icon="i-tabler-minus"
                 @click="balanceForm.type = 'deduct'"
-                >Deduct</AppButton
+                >{{ t('users.deduct') }}</AppButton
               >
             </div></UFormField
           ><UAlert
             v-if="negativeBalanceCount"
             color="warning"
             variant="subtle"
-            :description="`${negativeBalanceCount} users will have negative balances after this deduction. Home allows negative balances, but confirm this is intended.`"
-          /><UFormField label="Amount"
+            :description="t('users.negativeAfterDeduction', { count: negativeBalanceCount })"
+          /><UFormField :label="t('users.amount')"
             ><UInput
               v-model="balanceForm.amount"
               type="number"
@@ -1025,12 +1040,12 @@
             <p class="mt-1 text-xs text-[var(--ui-text-muted)]">
               {{
                 balanceTargets.length > 1
-                  ? "The amount applies to each selected user."
-                  : "The amount applies to the current user."
+                  ? t('users.amountEachHint')
+                  : t('users.amountCurrentHint')
               }}
             </p></UFormField
           ><UFormField
-            :label="balanceForm.type === 'deduct' ? 'Note, required' : 'Note'"
+            :label="balanceForm.type === 'deduct' ? t('users.noteRequired') : t('users.note')"
             ><UTextarea v-model="balanceForm.note" class="w-full"
           /></UFormField>
           <div
@@ -1041,12 +1056,12 @@
               color="neutral"
               variant="outline"
               @click="balanceOpen = false"
-              >Cancel</AppButton
+              >{{ t('common.cancel') }}</AppButton
             ><AppButton
               type="submit"
               :color="balanceForm.type === 'deduct' ? 'warning' : 'primary'"
               >{{
-                balanceForm.type === "deduct" ? "Deduct" : "Recharge"
+                balanceForm.type === 'deduct' ? t('users.deduct') : t('users.recharge')
               }}</AppButton
             >
           </div>
@@ -1059,10 +1074,10 @@
       :title="balanceConfirmTitle"
       :description="
         balanceTargets.length > 1
-          ? 'Requests will be submitted for each selected user. Confirm the user count, per-user amount, and balance totals.'
+          ? t('users.confirmBatchDescription')
           : balanceForm.type === 'deduct'
-            ? 'Deduction creates a balance record. Confirm the user, amount, and resulting balance.'
-            : 'Submitting creates a balance record. Confirm the user and resulting balance.'
+            ? t('users.confirmDeductDescription')
+            : t('users.confirmRechargeDescription')
       "
       ><template #body
         ><div class="space-y-4">
@@ -1070,34 +1085,34 @@
             class="grid gap-2 rounded-md border border-[var(--ui-border)] bg-[var(--ui-bg-muted)] px-3 py-2.5 text-sm"
           >
             <SummaryRow
-              :label="balanceTargets.length === 1 ? 'User' : 'Users'"
+              :label="balanceTargets.length === 1 ? t('common.user') : t('common.users')"
               :value="balanceTargetLabel"
             /><SummaryRow
-              label="Amount per user"
+              :label="t('users.amountPerUser')"
               :value="signedBalanceAmount"
               :warning="balanceForm.type === 'deduct'"
             /><SummaryRow
               v-if="balanceTargets.length > 1"
-              label="Total change"
+              :label="t('users.totalChange')"
               :value="signedBalanceTotal"
               :warning="balanceForm.type === 'deduct'"
             /><SummaryRow
-              label="Current balance total"
+              :label="t('users.currentBalanceTotal')"
               :value="formatCredits(balanceCurrentTotal)"
             /><SummaryRow
-              label="Balance total after"
+              :label="t('users.balanceTotalAfter')"
               :value="formatCredits(balanceAfterTotal)"
               :warning="balanceAfterTotal < 0"
             />
             <div class="border-t border-[var(--ui-border)] pt-2">
-              <p class="text-xs text-[var(--ui-text-muted)]">Note</p>
+              <p class="text-xs text-[var(--ui-text-muted)]">{{ t('users.note') }}</p>
               <p class="mt-1 break-words">{{ balanceForm.note || "—" }}</p>
             </div>
             <UAlert
               v-if="negativeBalanceCount"
               color="warning"
               variant="subtle"
-              :description="`${negativeBalanceCount} users will have negative balances after this operation. Home allows negative balances, but confirm this is intended.`"
+              :description="t('users.negativeAfterOperation', { count: negativeBalanceCount })"
             />
           </div>
           <div class="flex justify-end gap-2">
@@ -1105,12 +1120,12 @@
               color="neutral"
               variant="outline"
               @click="balanceConfirmOpen = false"
-              >Cancel</AppButton
+              >{{ t('common.cancel') }}</AppButton
             ><AppButton
               :color="balanceForm.type === 'deduct' ? 'warning' : 'primary'"
               :loading="saving"
               @click="applyBalance"
-              >Confirm</AppButton
+              >{{ t('common.confirm') }}</AppButton
             >
           </div>
         </div></template
@@ -1131,8 +1146,8 @@
           /><UFormField
             :label="
               groupFormKind === 'channel'
-                ? 'Credential scope name'
-                : 'Model scope name'
+                ? t('users.credentialScopeName')
+                : t('users.modelScopeName')
             "
             ><UInput
               v-model="groupForm.name"
@@ -1142,10 +1157,9 @@
               " /></UFormField
           ><label class="flex items-start gap-2 text-sm"
             ><UCheckbox v-model="groupForm.disabled" /><span
-              ><span class="font-medium">Disabled</span
+              ><span class="font-medium">{{ t('common.disabled') }}</span
               ><span class="block text-[var(--ui-text-muted)]"
-                >Disabled scopes are not used by the backend for access
-                matching.</span
+                >{{ t('users.disabledScopeHint') }}</span
               ></span
             ></label
           >
@@ -1155,13 +1169,13 @@
               color="neutral"
               variant="outline"
               @click="groupFormOpen = false"
-              >Cancel</AppButton
+              >{{ t('common.cancel') }}</AppButton
             ><AppButton type="submit" :loading="saving">{{
               editingGroup
-                ? "Save changes"
-                : groupFormKind === "channel"
-                  ? "Create credential scope"
-                  : "Create model scope"
+                ? t('users.saveChanges')
+                : groupFormKind === 'channel'
+                  ? t('users.createCredentialScope')
+                  : t('users.createModelScope')
             }}</AppButton>
           </div>
         </form></template
@@ -1170,8 +1184,8 @@
 
     <AppModal
       v-model:open="periodResetOpen"
-      title="Reset period counters"
-      :description="`Soft-reset period counters for ${periodResetUser?.username || ''}. Billing history is preserved, and enabled limits keep enforcing new requests.`"
+      :title="t('users.resetPeriodCounters')"
+      :description="t('users.resetPeriodDescription', { name: periodResetUser?.username || '' })"
       ><template #body
         ><div class="space-y-4">
           <UAlert
@@ -1181,7 +1195,7 @@
             :description="formError"
           />
           <div>
-            <p class="mb-2 text-sm font-medium">Windows to reset</p>
+            <p class="mb-2 text-sm font-medium">{{ t('users.windowsToReset') }}</p>
             <div class="grid gap-2 sm:grid-cols-2">
               <label
                 v-for="window in periodWindowIds"
@@ -1195,13 +1209,13 @@
                 ><span
                   v-if="detailWindow(window)?.enabled"
                   class="text-xs text-[var(--ui-text-muted)]"
-                  >enabled</span
+                  >{{ t('users.enabledLower') }}</span
                 ></label
               >
             </div>
           </div>
           <div>
-            <p class="mb-2 text-sm font-medium">Reset mode</p>
+            <p class="mb-2 text-sm font-medium">{{ t('users.resetMode') }}</p>
             <div class="grid gap-2">
               <label
                 v-for="option in resetModeOptions"
@@ -1226,9 +1240,9 @@
               color="neutral"
               variant="outline"
               @click="periodResetOpen = false"
-              >Cancel</AppButton
+              >{{ t('common.cancel') }}</AppButton
             ><AppButton :loading="saving" @click="resetPeriods"
-              >Reset counters</AppButton
+              >{{ t('users.resetCounters') }}</AppButton
             >
           </div>
         </div></template
@@ -1237,29 +1251,29 @@
 
     <AppModal
       v-model:open="approvalOpen"
-      title="Approve user"
-      description="Choose the model scope for this account before approving access."
+      :title="t('users.approveUser')"
+      :description="t('users.approveUserDescription')"
       :dismissible="approvingUserId === null"
       :close="approvingUserId === null"
     >
       <template #body>
         <form class="space-y-4" @submit.prevent="approveUser">
-          <p class="text-sm">User: <span class="font-semibold">{{ approvalUser?.username }}</span></p>
+          <p class="text-sm">{{ t('users.userLabel') }} <span class="font-semibold">{{ approvalUser?.username }}</span></p>
           <UAlert v-if="approvalError" color="error" variant="subtle" :description="approvalError" />
-          <UAlert v-if="!accessGroupsSupported" color="warning" variant="subtle" title="Model scopes unavailable" description="This server does not support model scopes. Approval with a model scope is unavailable." />
+          <UAlert v-if="!accessGroupsSupported" color="warning" variant="subtle" :title="t('users.modelScopesUnavailable')" :description="t('users.modelScopesUnavailableDescription')" />
           <fieldset v-else :disabled="approvingUserId !== null">
             <ScopePicker
-              title="Model scope"
-              empty-label="No enabled model scopes are available. Create or enable one in Model scopes first."
+              :title="t('users.modelScope')"
+              :empty-label="t('users.noEnabledModelScopes')"
               :items="approvalModelOptions"
               :selected="approvalModelGroups"
               @toggle="toggleId(approvalModelGroups, $event)"
             />
           </fieldset>
-          <p class="text-xs text-[var(--ui-text-muted)]">Select at least one scope. It will be applied to the user's client keys. If the user has no key, an initial key will be created and available in their API keys dashboard.</p>
+          <p class="text-xs text-[var(--ui-text-muted)]">{{ t('users.approveHint') }}</p>
           <div class="flex justify-end gap-2">
-            <AppButton type="button" color="neutral" variant="outline" :disabled="approvingUserId !== null" @click="approvalOpen = false">Cancel</AppButton>
-            <AppButton type="submit" color="success" icon="i-tabler-user-check" :loading="approvingUserId !== null" :disabled="!accessGroupsSupported || loading || !approvalModelGroups.length">Approve user</AppButton>
+            <AppButton type="button" color="neutral" variant="outline" :disabled="approvingUserId !== null" @click="approvalOpen = false">{{ t('common.cancel') }}</AppButton>
+            <AppButton type="submit" color="success" icon="i-tabler-user-check" :loading="approvingUserId !== null" :disabled="!accessGroupsSupported || loading || !approvalModelGroups.length">{{ t('users.approveUser') }}</AppButton>
           </div>
         </form>
       </template>
@@ -1267,8 +1281,8 @@
 
     <AppModal
       v-model:open="topupApprovalOpen"
-      title="Approve topup"
-      description="Confirm this topup request to credit the user's balance."
+      :title="t('users.approveTopup')"
+      :description="t('users.approveTopupDescription')"
       :dismissible="approvingTopupUserId === null"
       :close="approvingTopupUserId === null"
     >
@@ -1276,16 +1290,16 @@
         <form v-if="topupApprovalUser" class="space-y-4" @submit.prevent="approveTopup">
           <UAlert v-if="topupApprovalError" color="error" variant="subtle" :description="topupApprovalError" />
           <div class="space-y-2 rounded-md border border-[var(--ui-border)] p-3">
-            <SummaryRow label="User" :value="topupApprovalUser.username" />
-            <SummaryRow label="Request ID" :value="String(topupApprovalUser.request.id)" />
-            <SummaryRow label="Amount" :value="`${formatCredits(topupApprovalUser.request.amount)} credits`" />
-            <SummaryRow label="Requested" :value="formatDate(topupApprovalUser.request.created_at)" />
+            <SummaryRow :label="t('common.user')" :value="topupApprovalUser.username" />
+            <SummaryRow :label="t('users.requestId')" :value="String(topupApprovalUser.request.id)" />
+            <SummaryRow :label="t('users.amount')" :value="t('users.creditsAmount', { amount: formatCredits(topupApprovalUser.request.amount) })" />
+            <SummaryRow :label="t('users.requested')" :value="formatDate(topupApprovalUser.request.created_at)" />
           </div>
           <p v-if="topupApprovalUser.request.note" class="break-words text-sm text-[var(--ui-text-muted)]">{{ topupApprovalUser.request.note }}</p>
-          <p class="text-xs text-[var(--ui-text-muted)]">Verify the topup before approving. Credits are added only after approval.</p>
+          <p class="text-xs text-[var(--ui-text-muted)]">{{ t('users.approveTopupHint') }}</p>
           <div class="flex justify-end gap-2">
-            <AppButton type="button" color="neutral" variant="outline" :disabled="approvingTopupUserId !== null" @click="topupApprovalOpen = false">Cancel</AppButton>
-            <AppButton type="submit" color="success" icon="i-tabler-coins" :loading="approvingTopupUserId !== null">Approve topup</AppButton>
+            <AppButton type="button" color="neutral" variant="outline" :disabled="approvingTopupUserId !== null" @click="topupApprovalOpen = false">{{ t('common.cancel') }}</AppButton>
+            <AppButton type="submit" color="success" icon="i-tabler-coins" :loading="approvingTopupUserId !== null">{{ t('users.approveTopup') }}</AppButton>
           </div>
         </form>
       </template>
@@ -1293,7 +1307,7 @@
 
     <UsersResetAllowance v-model:open="resetAllowanceOpen" :user="resetAllowanceUser" @saved="syncAll" />
 
-    <AppModal v-model:open="deleteOpen" title="Confirm deletion"
+    <AppModal v-model:open="deleteOpen" :title="t('users.confirmDeletion')"
       ><template #body
         ><div class="space-y-4">
           <p class="text-sm">{{ deleteDescription }}</p>
@@ -1302,9 +1316,9 @@
               color="neutral"
               variant="outline"
               @click="deleteOpen = false"
-              >Cancel</AppButton
+              >{{ t('common.cancel') }}</AppButton
             ><AppButton color="error" :loading="saving" @click="performDelete"
-              >Delete</AppButton
+              >{{ t('common.delete') }}</AppButton
             >
           </div>
         </div></template
@@ -1316,6 +1330,7 @@
 <script setup>
 import { useWorkspaceState } from '~/composables/useWorkspaceState'
 import { useDataSync } from '~/composables/useDataSync'
+import { changedUsersKeyBindings, usersKeyOwnerOptions } from '~/composables/usersKeyBindings'
 import EmptyState from "@/components/admin/users/UsersEmptyState.vue";
 
 import UnsupportedScopes from "@/components/admin/users/UsersUnsupportedScopes.vue";
@@ -1335,14 +1350,15 @@ const {
   error: capabilitiesError,
 } = useCapabilities();
 const toast = useToast();
+const { t, intlLocale } = useAdminI18n();
 
 const activeTab = ref("users");
-const tabs = [
-  { label: "Users", value: "users" },
-  { label: "Client keys", value: "keys" },
-  { label: "Credential scopes", value: "channelGroups" },
-  { label: "Model scopes", value: "modelGroups" },
-];
+const tabs = computed(() => [
+  { label: t("common.users"), value: "users" },
+  { label: t("users.clientKeys"), value: "keys" },
+  { label: t("users.credentialScopes"), value: "channelGroups" },
+  { label: t("users.modelScopes"), value: "modelGroups" },
+]);
 const search = ref(""),
   loading = useWorkspaceState('admin:users:loading', () => (false)),
   saving = useWorkspaceState('admin:users:saving', () => (false)),
@@ -1374,8 +1390,60 @@ const unassignedKeyCount = computed(
     keys.value.filter((key) => key.user_id == null || Number(key.user_id) === 0)
       .length,
 );
+const userSummary = computed(() => {
+  const live = users.value.filter((user) => !user.deleted_at);
+  const pendingApproval = live.filter((user) => user.approval_pending).length;
+  const pendingTopups = live.filter((user) => user.pending_topup).length;
+  const totalCredits = live.reduce((sum, user) => sum + (Number(user.credits) || 0), 0);
+  return [
+    { key: "users", label: t("common.users"), value: live.length, detail: t("users.summaryUsersDetail", { active: live.length - pendingApproval, pending: pendingApproval }), icon: "i-tabler-users", tone: "violet", action: true, ariaLabel: t("users.showUsers"), ratio: live.length ? (live.length - pendingApproval) / live.length : null },
+    { key: "pending", label: t("users.needsReview"), value: pendingApproval + pendingTopups, detail: t("users.summaryReviewDetail", { signups: pendingApproval, topups: pendingTopups }), icon: "i-tabler-user-exclamation", tone: "amber", action: true, ariaLabel: t("users.showUsersNeedingReview"), warning: pendingApproval + pendingTopups > 0 },
+    { key: "credits", label: t("users.creditsHeld"), value: formatCredits(totalCredits), detail: t("users.totalBalanceAcrossUsers"), icon: "i-tabler-wallet", tone: "emerald" },
+    { key: "keys", label: t("users.clientKeys"), value: keys.value.length, detail: t("users.unassignedCount", { count: unassignedKeyCount.value }), icon: "i-tabler-key", tone: "blue", action: true, ariaLabel: t("users.showClientKeys") },
+  ];
+});
+const liveUsers = computed(() => users.value.filter((user) => !user.deleted_at));
+// Status segments: counts are computed once per data change, so they stay cheap with thousands of users.
+const userSegment = ref("all");
+const segmentCounts = computed(() => {
+  const counts = { all: 0, active: 0, approval: 0, topup: 0, deleted: 0 };
+  for (const user of users.value) {
+    counts.all++;
+    if (user.deleted_at) { counts.deleted++; continue; }
+    if (user.approval_pending) counts.approval++;
+    else counts.active++;
+    if (user.pending_topup) counts.topup++;
+  }
+  return counts;
+});
+const userSegments = computed(() => [
+  { value: "all", label: t("common.all"), tone: "neutral", count: segmentCounts.value.all },
+  { value: "active", label: t("common.active"), tone: "emerald", count: segmentCounts.value.active },
+  { value: "approval", label: t("users.pendingApproval"), tone: "amber", count: segmentCounts.value.approval },
+  { value: "topup", label: t("users.topupRequests"), tone: "blue", count: segmentCounts.value.topup },
+  ...(segmentCounts.value.deleted ? [{ value: "deleted", label: t("users.deleted"), tone: "rose", count: segmentCounts.value.deleted }] : []),
+]);
+function inSegment(user) {
+  switch (userSegment.value) {
+    case "active": return !user.deleted_at && !user.approval_pending;
+    case "approval": return !user.deleted_at && Boolean(user.approval_pending);
+    case "topup": return !user.deleted_at && Boolean(user.pending_topup);
+    case "deleted": return Boolean(user.deleted_at);
+    default: return true;
+  }
+}
+function selectSegment(value) {
+  userSegment.value = value;
+  activeTab.value = "users";
+}
+const compactFormatter = computed(() => new Intl.NumberFormat(intlLocale.value, { notation: "compact", maximumFractionDigits: 1 }));
+const compactNumber = (value) => (Number(value) >= 10000 ? compactFormatter.value.format(Number(value)) : new Intl.NumberFormat(intlLocale.value).format(Number(value) || 0));
+function selectSummary(key) {
+  activeTab.value = key === "keys" ? "keys" : "users";
+  if (key === "pending") userSegment.value = "approval";
+}
 const rowValue = (row) => row?.original ?? row;
-const userStatus = (user) => user.deleted_at ? "Deleted" : user.approval_pending ? "Pending approval" : "Active";
+const userStatus = (user) => user.deleted_at ? t("users.deleted") : user.approval_pending ? t("users.pendingApproval") : t("common.active");
 const resetAllowanceSupported = computed(() => supports("user_reset_allowance", false));
 const resetAllowanceOpen = ref(false), resetAllowanceUser = ref(null);
 function openResetAllowance(user) {
@@ -1405,7 +1473,7 @@ async function approveTopup() {
     });
     topupApprovalOpen.value = false;
     await syncAll();
-    toast.add({ title: "Topup approved.", description: `${user.username}'s request for ${formatCredits(user.request.amount)} credits has been approved.`, color: "success" });
+    toast.add({ title: t("users.topupApproved"), description: t("users.topupApprovedDescription", { name: user.username, amount: formatCredits(user.request.amount) }), color: "success" });
   } catch (error) {
     topupApprovalError.value = errorMessage(error);
   } finally {
@@ -1433,7 +1501,7 @@ async function approveUser() {
   if (approvingUserId.value !== null || loading.value || !user?.approval_pending || user.deleted_at) return;
   approvalError.value = "";
   if (!accessGroupsSupported.value || !approvalModelGroups.value.length) {
-    approvalError.value = "Select at least one enabled model scope.";
+    approvalError.value = t("users.selectEnabledModelScope");
     return;
   }
   approvingUserId.value = user.id;
@@ -1443,24 +1511,24 @@ async function approveUser() {
     });
     approvalOpen.value = false;
     await syncAll();
-    toast.add({ title: "User approved.", description: `${user.username} can now sign in with the selected model scope.`, color: "success" });
+    toast.add({ title: t("users.userApproved"), description: t("users.userApprovedDescription", { name: user.username }), color: "success" });
   } catch (error) {
     approvalError.value = errorMessage(error);
   } finally {
     approvingUserId.value = null;
   }
 }
-const userColumns = [
+const userColumns = computed(() => [
   { id: "select", header: "", meta: { class: { th: 'w-12', td: 'w-12' } } },
-  { accessorKey: "user", header: "User" },
-  { accessorKey: "status", header: "Status", meta: { class: { th: 'w-28', td: 'w-28' } } },
-  { accessorKey: "credits", header: "Credits" },
-  { accessorKey: "pendingTopup", header: "Pending topup" },
-  { accessorKey: "periodLimits", header: "Period limits" },
-  { accessorKey: "resetAllowance", header: "Reset allowance" },
-  { accessorKey: "keys", header: "Client keys" },
-  { accessorKey: "credentialScope", header: "Credential scope" },
-  { accessorKey: "modelScope", header: "Model scope" },
+  { accessorKey: "user", header: t("common.user") },
+  { accessorKey: "status", header: t("common.status"), meta: { class: { th: 'w-28', td: 'w-28' } } },
+  { accessorKey: "credits", header: t("users.credits") },
+  { accessorKey: "pendingTopup", header: t("users.pendingTopup") },
+  { accessorKey: "periodLimits", header: t("users.periodLimits") },
+  { accessorKey: "resetAllowance", header: t("users.resetAllowance") },
+  { accessorKey: "keys", header: t("users.clientKeys") },
+  { accessorKey: "credentialScope", header: t("users.credentialScope") },
+  { accessorKey: "modelScope", header: t("users.modelScope") },
 
   {
     id: "actions",
@@ -1472,11 +1540,11 @@ const userColumns = [
       },
     },
   },
-];
+]);
 const compactUsers = ref(false);
 const visibleUserColumns = computed(() => compactUsers.value
-  ? userColumns.filter((column) => ['select', 'user', 'status', 'actions'].includes(column.id || column.accessorKey))
-  : userColumns);
+  ? userColumns.value.filter((column) => ['select', 'user', 'status', 'actions'].includes(column.id || column.accessorKey))
+  : userColumns.value);
 let usersMedia;
 const updateUsersLayout = () => { compactUsers.value = usersMedia.matches; };
 onMounted(() => {
@@ -1486,15 +1554,15 @@ onMounted(() => {
 });
 onBeforeUnmount(() => usersMedia?.removeEventListener('change', updateUsersLayout));
 
-const keyColumns = [
-  { accessorKey: "key", header: "Client key" },
-  { accessorKey: "owner", header: "Owner" },
-  { accessorKey: "credentialScope", header: "Credential scope" },
-  { accessorKey: "modelScope", header: "Model scope" },
-  { accessorKey: "length", header: "Length" },
+const keyColumns = computed(() => [
+  { accessorKey: "key", header: t("users.clientKey") },
+  { accessorKey: "owner", header: t("users.owner") },
+  { accessorKey: "credentialScope", header: t("users.credentialScope") },
+  { accessorKey: "modelScope", header: t("users.modelScope") },
+  { accessorKey: "length", header: t("users.length") },
   {
     id: "actions",
-    header: "Actions",
+    header: t("common.actions"),
     meta: {
       class: {
         th: "w-px whitespace-nowrap text-right",
@@ -1502,14 +1570,14 @@ const keyColumns = [
       },
     },
   },
-];
+]);
 const normalize = (value) => String(value ?? "").toLowerCase();
 const matches = (values) => {
   const query = normalize(search.value).trim();
   return !query || values.some((value) => normalize(value).includes(query));
 };
 const filteredUsers = computed(() =>
-  users.value.filter((user) => matches([user.id, user.username, userStatus(user)])),
+  users.value.filter((user) => inSegment(user) && matches([user.id, user.username, userStatus(user)])),
 );
 
 const filteredKeys = computed(() =>
@@ -1543,7 +1611,7 @@ const filteredModelGroups = computed(() =>
 );
 const modelScopeOptions = computed(() =>
   filteredModelGroups.value.map((group) => ({
-    label: `${group.group_name} · ${modelDetailsFor(group.id).length} models`,
+    label: `${group.group_name} · ${t("users.modelsCount", { count: modelDetailsFor(group.id).length })}`,
     value: Number(group.id),
   })),
 );
@@ -1558,13 +1626,13 @@ const selectedModelGroup = computed(
 const selectedModelBindings = computed(() =>
   selectedModelGroup.value ? modelDetailsFor(selectedModelGroup.value.id) : [],
 );
-const modelBindingColumns = [
-  { accessorKey: "model", header: "Model ID" },
-  { accessorKey: "channels", header: "Credential scope" },
-  { accessorKey: "updated", header: "Updated" },
+const modelBindingColumns = computed(() => [
+  { accessorKey: "model", header: t("users.modelId") },
+  { accessorKey: "channels", header: t("users.credentialScope") },
+  { accessorKey: "updated", header: t("common.updated") },
   {
     id: "actions",
-    header: "Actions",
+    header: t("common.actions"),
     meta: {
       class: {
         th: "w-px whitespace-nowrap text-right",
@@ -1572,7 +1640,7 @@ const modelBindingColumns = [
       },
     },
   },
-];
+]);
 watch(
   filteredModelGroups,
   (groups) => {
@@ -1614,7 +1682,7 @@ async function syncAll(notify = false) {
     }
 
     const tasks = [
-      safeLoad("Users", () => fetchAPI("/users"), { users: [] }).then(
+      safeLoad(t("common.users"), () => fetchAPI("/users"), { users: [] }).then(
         (value) => {
           usersData.value = Array.isArray(value)
             ? value
@@ -1625,7 +1693,7 @@ async function syncAll(notify = false) {
               [];
         },
       ),
-      safeLoad("Client keys", () => fetchAPI("/access/api-keys"), {
+      safeLoad(t("users.clientKeys"), () => fetchAPI("/access/api-keys"), {
         items: [],
       }).then((value) => {
         keysData.value = keyEntries(value).map(normalizeKey);
@@ -1633,25 +1701,25 @@ async function syncAll(notify = false) {
     ];
     if (accessGroupsSupported.value) {
       tasks.push(
-        safeLoad("Credential scopes", () => fetchAPI("/channel-groups"), {
+        safeLoad(t("users.credentialScopes"), () => fetchAPI("/channel-groups"), {
           channel_groups: [],
         }).then((value) => {
           channelGroupsData.value = value?.channel_groups || value?.items || [];
         }),
         safeLoad(
-          "Credential bindings",
+          t("users.credentialBindings"),
           () => fetchAPI("/channel-group-details"),
           { channel_group_details: [] },
         ).then((value) => {
           channelDetailsData.value =
             value?.channel_group_details || value?.items || [];
         }),
-        safeLoad("Model scopes", () => fetchAPI("/model-groups"), {
+        safeLoad(t("users.modelScopes"), () => fetchAPI("/model-groups"), {
           model_groups: [],
         }).then((value) => {
           modelGroupsData.value = value?.model_groups || value?.items || [];
         }),
-        safeLoad("Model bindings", () => fetchAPI("/model-group-details"), {
+        safeLoad(t("users.modelBindings"), () => fetchAPI("/model-group-details"), {
           model_group_details: [],
         }).then((value) => {
           modelDetailsData.value =
@@ -1665,7 +1733,7 @@ async function syncAll(notify = false) {
       modelDetailsData.value = [];
     }
     await Promise.all(tasks);
-    if (notify) toast.add({ title: "Data synchronized", color: "success" });
+    if (notify) toast.add({ title: t("users.dataSynchronized"), color: "success" });
   } finally {
     loading.value = false;
   }
@@ -1857,7 +1925,7 @@ function effectiveModelScopes(id) {
   return [...new Set(owned.flatMap(keyModelNames))];
 }
 function scopeSummary(names) {
-  return names.length ? names.join(", ") : "Unrestricted";
+  return names.length ? names.join(", ") : t("users.unrestricted");
 }
 function channelDetailsFor(id) {
   return channelDetailsData.value.filter(
@@ -1871,7 +1939,7 @@ function modelDetailsFor(id) {
 }
 function modelBindingChannelLabel(detail) {
   const ids = Array.isArray(detail?.channels) ? detail.channels : [];
-  return ids.length ? ids.map(channelName).join(", ") : "Inherits key scope";
+  return ids.length ? ids.map(channelName).join(", ") : t("users.inheritsKeyScope");
 }
 function periodWindows(user) {
   return (
@@ -1904,18 +1972,18 @@ function parseLocalizedNumber(value) {
   return Number(input.replace(",", "."));
 }
 function formatCredits(value) {
-  return new Intl.NumberFormat(undefined, {
+  return new Intl.NumberFormat(intlLocale.value, {
     minimumFractionDigits: 2,
     maximumFractionDigits: 6,
   }).format(Number(value || 0));
 }
 function formatDate(value) {
   return value
-    ? new Intl.DateTimeFormat(undefined, {
+    ? new Intl.DateTimeFormat(intlLocale.value, {
         dateStyle: "medium",
         timeStyle: "short",
       }).format(new Date(value))
-    : "Not returned";
+    : t("users.notReturned");
 }
 function maskKey(value) {
   const text = String(value || "").trim();
@@ -1948,7 +2016,7 @@ function errorMessage(error) {
     error?.response?._data?.message ||
     error?.response?._data?.error ||
     error?.message ||
-    "Unexpected request error."
+    t("users.unexpectedError")
   );
 }
 function clearFormError() {
@@ -2030,27 +2098,26 @@ const timezoneOptions = (() => {
       .sort((left, right) => left.localeCompare(right));
   }
 })();
-const weekDayOptions = [
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-  "Sunday",
-].map((label, index) => ({ label, value: index + 1 }));
+const weekDayOptions = computed(() => [
+  t("users.monday"),
+  t("users.tuesday"),
+  t("users.wednesday"),
+  t("users.thursday"),
+  t("users.friday"),
+  t("users.saturday"),
+  t("users.sunday"),
+].map((label, index) => ({ label, value: index + 1 })));
 const periodWindowLabel = (id) =>
-  ({ "5h": "5 hours", "1d": "1 day", "7d": "7 days", "30d": "30 days" })[id];
+  ({ "5h": t("users.window5h"), "1d": t("users.window1d"), "7d": t("users.window7d"), "30d": t("users.window30d") })[id];
+const periodModeLabel = (value) =>
+  value === "sliding" ? t("users.modeSliding") : value === "calendar" ? t("users.modeCalendar") : t("users.modeFirstUse");
 const periodModeOptions = (id) =>
   (id === "5h"
     ? ["first_use", "sliding"]
     : ["first_use", "sliding", "calendar"]
   ).map((value) => ({
     value,
-    label:
-      value === "first_use"
-        ? "First use"
-        : value[0].toUpperCase() + value.slice(1),
+    label: periodModeLabel(value),
   }));
 const newPeriods = () =>
   Object.fromEntries(
@@ -2088,7 +2155,7 @@ async function openUserEdit(user) {
     userFormOpen.value = true;
   } catch (error) {
     toast.add({
-      title: "Could not load user",
+      title: t("users.loadUserFailed"),
       description: errorMessage(error),
       color: "error",
     });
@@ -2116,10 +2183,10 @@ async function submitUser() {
   clearFormError();
   const username = userForm.value.username.trim();
   const credits = parseLocalizedNumber(userForm.value.credits);
-  if (!username) return void (formError.value = "Username is required.");
+  if (!username) return void (formError.value = t("users.usernameRequired"));
   if (!Number.isFinite(credits) || credits < 0)
     return void (formError.value =
-      "Credits must be a number greater than or equal to 0.");
+      t("users.creditsInvalid"));
   const body = {
     username,
     credits,
@@ -2131,17 +2198,17 @@ async function submitUser() {
     const timezone = userForm.value.timezone.trim();
     const weekResetDay = Number(userForm.value.week_reset_day);
     const weekResetHour = Number(userForm.value.week_reset_hour);
-    if (!timezone) return void (formError.value = "Timezone is required.");
+    if (!timezone) return void (formError.value = t("users.timezoneRequired"));
     if (!Number.isInteger(weekResetDay) || weekResetDay < 1 || weekResetDay > 7)
       return void (formError.value =
-        "Week start day must be an integer between 1 and 7.");
+        t("users.weekDayInvalid"));
     if (
       !Number.isInteger(weekResetHour) ||
       weekResetHour < 0 ||
       weekResetHour > 23
     )
       return void (formError.value =
-        "Week start hour must be an integer between 0 and 23.");
+        t("users.weekHourInvalid"));
     body.timezone = timezone;
     body.week_reset_day = weekResetDay;
     body.week_reset_hour = weekResetHour;
@@ -2149,7 +2216,7 @@ async function submitUser() {
       const period = userForm.value.periods[id];
       const limit = parseLocalizedNumber(period.limit);
       if (period.enabled && (!Number.isFinite(limit) || limit < 0))
-        return void (formError.value = `The ${periodWindowLabel(id)} limit must be a number greater than or equal to 0.`);
+        return void (formError.value = t("users.periodLimitInvalid", { window: periodWindowLabel(id) }));
       body[`limit_${id}_credits`] = period.enabled ? limit : null;
       body[`window_mode_${id}`] = period.mode;
     }
@@ -2165,7 +2232,7 @@ async function submitUser() {
     userFormOpen.value = false;
     await syncAll();
     toast.add({
-      title: editingUser.value ? "User updated." : "User created.",
+      title: editingUser.value ? t("users.userUpdated") : t("users.userCreated"),
       color: "success",
     });
   } catch (error) {
@@ -2213,21 +2280,21 @@ async function loadUserPeriods(user) {
 function topupDetailItems(user) {
   const request = user.pending_topup;
   return request ? [
-    { label: 'Request ID', value: String(request.id) },
-    { label: 'Amount', value: `${formatCredits(request.amount)} credits` },
-    { label: 'Requested', value: formatDate(request.created_at) },
-    { label: 'Note', value: request.note || '—' },
-  ] : [{ label: 'Request', value: 'None' }];
+    { label: t('users.requestId'), value: String(request.id) },
+    { label: t('users.amount'), value: t('users.creditsAmount', { amount: formatCredits(request.amount) }) },
+    { label: t('users.requested'), value: formatDate(request.created_at) },
+    { label: t('users.note'), value: request.note || '—' },
+  ] : [{ label: t('users.request'), value: t('common.none') }];
 }
 function resetAllowanceItems(user) {
   const allowance = user.reset_allowance;
   return allowance ? [
-    { label: 'Available', value: String(allowance.available) },
-    { label: 'Mode', value: allowance.mode === 'monthly' ? 'Monthly' : 'One-time' },
-    { label: 'Amount', value: String(allowance.amount) },
-    { label: 'Renews', value: formatDate(allowance.renews_at) },
-    { label: 'Expires', value: formatDate(allowance.expires_at) },
-  ] : [{ label: 'Allowance', value: 'Not configured' }];
+    { label: t('users.available'), value: String(allowance.available) },
+    { label: t('users.mode'), value: allowance.mode === 'monthly' ? t('users.monthly') : t('users.oneTime') },
+    { label: t('users.amount'), value: String(allowance.amount) },
+    { label: t('users.renews'), value: formatDate(allowance.renews_at) },
+    { label: t('users.expires'), value: formatDate(allowance.expires_at) },
+  ] : [{ label: t('users.allowance'), value: t('users.notConfigured') }];
 }
 function profileItems(user) {
   const mfa = Array.isArray(user.mfa)
@@ -2243,26 +2310,26 @@ function profileItems(user) {
         ? 1
         : Number(user.passkey_count || 0);
   return [
-    { label: "Created", value: formatDate(user.created_at) },
-    { label: "Updated", value: formatDate(user.updated_at) },
+    { label: t("common.created"), value: formatDate(user.created_at) },
+    { label: t("common.updated"), value: formatDate(user.updated_at) },
     {
-      label: "Deleted at",
-      value: user.deleted_at ? formatDate(user.deleted_at) : "Not deleted",
+      label: t("users.deletedAt"),
+      value: user.deleted_at ? formatDate(user.deleted_at) : t("users.notDeleted"),
     },
-    { label: "Credits", value: user.credits_unlimited ? 'Unlimited' : formatCredits(user.credits) },
-    { label: "MFA", value: mfa ? "Enabled" : "Disabled" },
-    { label: "Passkeys", value: String(passkeys) },
+    { label: t("users.credits"), value: user.credits_unlimited ? t('users.unlimited') : formatCredits(user.credits) },
+    { label: "MFA", value: mfa ? t("common.enabled") : t("common.disabled") },
+    { label: t("users.passkeys"), value: String(passkeys) },
   ];
 }
 function accessItems(user) {
   return [
-    { label: "Client keys", value: String(keysForUser(user.id).length) },
+    { label: t("users.clientKeys"), value: String(keysForUser(user.id).length) },
     {
-      label: "Credential scope",
+      label: t("users.credentialScope"),
       value: scopeSummary(effectiveChannelScopes(user.id)),
     },
     {
-      label: "Model scope",
+      label: t("users.modelScope"),
       value: scopeSummary(effectiveModelScopes(user.id)),
     },
   ];
@@ -2292,35 +2359,37 @@ const normalizedDetailWindows = computed(() => {
           : 100;
     const mode =
       item.mode === "sliding" || item.mode === "rolling"
-        ? "Sliding"
+        ? "sliding"
         : item.mode === "calendar" && id !== "5h"
-          ? "Calendar"
-          : "First use";
+          ? "calendar"
+          : "first_use";
     const start = item.window_start || item.windowStart;
     const end = item.window_end || item.windowEnd;
     const reset = item.reset_at || item.resetAt;
     const state =
       active && start && end
         ? `${formatDate(start)} – ${formatDate(end)}`
-        : !active && mode === "First use"
-          ? "window opens on the first billable charge"
+        : !active && mode === "first_use"
+          ? t("users.windowOpensOnCharge")
           : "";
+    const status = !enabled
+      ? "Disabled"
+      : exhausted
+        ? "Exhausted"
+        : active
+          ? "Active"
+          : "Not started";
     return {
       id,
       label: periodWindowLabel(id),
       enabled,
-      status: !enabled
-        ? "Disabled"
-        : exhausted
-          ? "Exhausted"
-          : active
-            ? "Active"
-            : "Not started",
+      status,
+      statusLabel: status === "Disabled" ? t("common.disabled") : status === "Exhausted" ? t("users.exhausted") : status === "Active" ? t("common.active") : t("users.notStarted"),
       progress,
       used: formatCredits(used),
       limit: limit == null ? "—" : formatCredits(limit),
       remaining: remainingNumber == null ? "—" : formatCredits(remainingNumber),
-      description: `${mode}${state ? ` · ${state}` : ""}${reset ? ` · resets ${formatDate(reset)}` : ""}`,
+      description: `${periodModeLabel(mode)}${state ? ` · ${state}` : ""}${reset ? ` · ${t("users.resetsAt", { date: formatDate(reset) })}` : ""}`,
     };
   });
 });
@@ -2328,12 +2397,9 @@ const normalizedDetailWindows = computed(() => {
 const keyFormOpen = ref(false),
   editingKey = ref(null),
   keyForm = ref({});
-const userOptions = computed(() => [
-  { label: "Unassigned", value: 0 },
-  ...users.value
-    .filter((user) => !user.deleted_at)
-    .map((user) => ({ label: user.username, value: Number(user.id) })),
-]);
+const userOptions = computed(() => usersKeyOwnerOptions(users.value, Number(keyForm.value.user_id) || 0));
+const keyOwnerUnavailable = computed(() => Number(keyForm.value.user_id) > 0 &&
+  !users.value.some((user) => Number(user.id) === Number(keyForm.value.user_id) && !user.deleted_at));
 const channelOptions = computed(() =>
     channelGroups.value.map((group) => ({
       label: group.channel_name,
@@ -2374,8 +2440,9 @@ function openKeyEdit(key) {
   keyFormOpen.value = true;
 }
 async function submitKey() {
+  if (saving.value) return;
   if (!keyForm.value.api_key.trim())
-    return void (formError.value = "Key value is required.");
+    return void (formError.value = t("users.keyValueRequired"));
   const channels = [
     ...new Set(
       (keyForm.value.channels || [])
@@ -2399,13 +2466,18 @@ async function submitKey() {
       model_groups: modelGroups,
     };
     if (editingKey.value) {
+      const changed = changedUsersKeyBindings(editingKey.value, bindings);
+      if (!Object.keys(changed).length) {
+        keyFormOpen.value = false;
+        return;
+      }
       await fetchAPI("/access/api-keys", {
         method: "PATCH",
         body: {
           ...(editingKey.value.numeric_id != null
             ? { id: editingKey.value.numeric_id }
             : { api_key: editingKey.value.api_key }),
-          ...bindings,
+          ...changed,
         },
       });
     } else {
@@ -2435,7 +2507,7 @@ async function submitKey() {
     keyFormOpen.value = false;
     await syncAll();
     toast.add({
-      title: editingKey.value ? "Key access updated." : "Client key created.",
+      title: editingKey.value ? t("users.keyAccessUpdated") : t("users.clientKeyCreated"),
       color: "success",
     });
   } catch (error) {
@@ -2459,13 +2531,13 @@ const groupFormOpen = ref(false),
   groupForm = ref({ name: "", disabled: false });
 const groupFormTitle = computed(() =>
   editingGroup.value
-    ? `Edit ${groupFormKind.value === "channel" ? "credential" : "model"} scope`
-    : `New ${groupFormKind.value === "channel" ? "credential" : "model"} scope`,
+    ? groupFormKind.value === "channel" ? t("users.editCredentialScope") : t("users.editModelScope")
+    : groupFormKind.value === "channel" ? t("users.newCredentialScope") : t("users.newModelScope"),
 );
 const groupFormDescription = computed(() =>
   editingGroup.value
-    ? `Maintain the ${groupFormKind.value === "channel" ? "credential" : "model"} scope name and enabled state.`
-    : `Create a ${groupFormKind.value === "channel" ? "credential" : "model"} scope that client keys can reference.`,
+    ? groupFormKind.value === "channel" ? t("users.editCredentialScopeDescription") : t("users.editModelScopeDescription")
+    : groupFormKind.value === "channel" ? t("users.newCredentialScopeDescription") : t("users.newModelScopeDescription"),
 );
 function openGroupForm(kind, group = null) {
   groupFormKind.value = kind;
@@ -2483,7 +2555,7 @@ function openGroupForm(kind, group = null) {
 }
 async function submitGroup() {
   const name = groupForm.value.name.trim();
-  if (!name) return void (formError.value = "Scope name is required.");
+  if (!name) return void (formError.value = t("users.scopeNameRequired"));
   const channel = groupFormKind.value === "channel",
     base = channel ? "/channel-groups" : "/model-groups";
   saving.value = true;
@@ -2501,7 +2573,7 @@ async function submitGroup() {
     groupFormOpen.value = false;
     await syncAll();
     toast.add({
-      title: editingGroup.value ? "Scope updated." : "Scope created.",
+      title: editingGroup.value ? t("users.scopeUpdated") : t("users.scopeCreated"),
       color: "success",
     });
   } catch (error) {
@@ -2742,7 +2814,7 @@ async function addModelBindings(targets) {
     modelDetailsFor(groupId).map((item) => String(item.model_id).trim()),
   );
   if (targets.some((target) => nowBound.has(target)))
-    throw new Error("This model is already bound to the current scope.");
+    throw new Error(t("users.modelAlreadyBound"));
   const channels = modelChannelBindingsSupported.value
     ? [
         ...new Set(
@@ -2761,7 +2833,7 @@ async function addModelBindings(targets) {
     await fetchAPI("/model-group-details", { method: "POST", body: bodies[0] });
     await refreshModelScopeData(groupId);
     bindingOpen.value = false;
-    toast.add({ title: "Binding added.", color: "success" });
+    toast.add({ title: t("users.bindingAdded"), color: "success" });
     return;
   }
   const results = await Promise.allSettled(
@@ -2779,20 +2851,20 @@ async function addModelBindings(targets) {
   if (failed.length) {
     if (created)
       toast.add({
-        title: `${created} bindings added, ${failed.length} failed.`,
+        title: t("users.bindingsPartiallyAdded", { created, failed: failed.length }),
         color: "warning",
       });
     throw new Error(
-      `${failed.length} bindings failed: ${failed[0].target}: ${failed[0].message}`,
+      t("users.bindingsFailedDetail", { count: failed.length, target: failed[0].target, message: failed[0].message }),
     );
   }
   bindingOpen.value = false;
-  toast.add({ title: `${created} bindings added.`, color: "success" });
+  toast.add({ title: t("users.bindingsAdded", { count: created }), color: "success" });
 }
 async function addBindings() {
   if (!bindingGroup.value?.id)
     return void (formError.value =
-      "Select a valid scope before adding bindings.");
+      t("users.selectValidScope"));
   const targets = [
     ...new Set(
       bindingSelection.value
@@ -2803,8 +2875,8 @@ async function addBindings() {
   if (!targets.length)
     return void (formError.value =
       bindingKind.value === "credential"
-        ? "Select at least one credential."
-        : "Select at least one model.");
+        ? t("users.selectAtLeastOneCredential")
+        : t("users.selectAtLeastOneModel"));
   saving.value = true;
   clearFormError();
   try {
@@ -2832,8 +2904,8 @@ async function addBindings() {
     if (failed.length) {
       if (created)
         toast.add({
-          title: `${created} binding(s) added`,
-          description: `${failed.length} failed.`,
+          title: t("users.bindingsAddedCount", { count: created }),
+          description: t("users.failedCount", { count: failed.length }),
           color: "warning",
         });
       formError.value = failed.join(" | ");
@@ -2841,7 +2913,7 @@ async function addBindings() {
     }
     bindingOpen.value = false;
     toast.add({
-      title: created === 1 ? "Binding added." : `${created} bindings added.`,
+      title: created === 1 ? t("users.bindingAdded") : t("users.bindingsAdded", { count: created }),
       color: "success",
     });
   } catch (error) {
@@ -2885,12 +2957,12 @@ const balanceCurrentTotal = computed(() =>
 const balanceTargetLabel = computed(() =>
   balanceTargets.value.length === 1
     ? `${balanceTargets.value[0].username} (#${balanceTargets.value[0].id})`
-    : `${balanceTargets.value.length} users`,
+    : t("users.usersCountShort", { count: balanceTargets.value.length }),
 );
 const balanceConfirmTitle = computed(() =>
   balanceTargets.value.length > 1
-    ? `Confirm batch ${balanceForm.value.type === "deduct" ? "deduction" : "recharge"}?`
-    : `Confirm ${balanceForm.value.type === "deduct" ? "deduction" : "recharge"}?`,
+    ? balanceForm.value.type === "deduct" ? t("users.confirmBatchDeduction") : t("users.confirmBatchRecharge")
+    : balanceForm.value.type === "deduct" ? t("users.confirmDeduction") : t("users.confirmRecharge"),
 );
 const signedBalanceAmount = computed(
     () =>
@@ -2909,9 +2981,9 @@ function openBalance(targets) {
 function reviewBalance() {
   const amount = Number(balanceForm.value.amount);
   if (!Number.isFinite(amount) || amount <= 0)
-    return void (formError.value = "Amount must be greater than 0.");
+    return void (formError.value = t("users.amountInvalid"));
   if (balanceForm.value.type === "deduct" && !balanceForm.value.note.trim())
-    return void (formError.value = "Deduction requires a note.");
+    return void (formError.value = t("users.deductionNoteRequired"));
   balanceConfirmOpen.value = true;
 }
 async function applyBalance() {
@@ -2938,8 +3010,8 @@ async function applyBalance() {
   if (failed.length)
     toast.add({
       title: succeeded
-        ? `${succeeded} users completed, ${failed.length} failed: ${failed[0]}`
-        : `${failed.length} user operations failed: ${failed[0]}`,
+        ? t("users.balancePartialFailed", { succeeded, failed: failed.length, message: failed[0] })
+        : t("users.balanceAllFailed", { count: failed.length, message: failed[0] }),
       color: "error",
     });
   else
@@ -2947,9 +3019,9 @@ async function applyBalance() {
       title:
         balanceTargets.value.length === 1
           ? balanceForm.value.type === "recharge"
-            ? "Recharge submitted."
-            : "Deduction submitted."
-          : `Balance operation completed for ${succeeded} users.`,
+            ? t("users.rechargeSubmitted")
+            : t("users.deductionSubmitted")
+          : t("users.balanceCompleted", { count: succeeded }),
       color: "success",
     });
   if (succeeded) {
@@ -2963,18 +3035,18 @@ const periodResetOpen = ref(false),
   periodResetUser = ref(null),
   resetWindows = ref(new Set(periodWindowIds)),
   resetMode = ref("counter");
-const resetModeOptions = [
+const resetModeOptions = computed(() => [
   {
-    label: "Reset counters",
+    label: t("users.resetCounters"),
     value: "counter",
-    hint: "Usage restarts from now; first-use windows reopen on the next charge.",
+    hint: t("users.resetCountersHint"),
   },
   {
-    label: "Reset window start only",
+    label: t("users.resetWindowStartOnly"),
     value: "window_only",
-    hint: "Clears active window start times; sliding and calendar windows also restart usage.",
+    hint: t("users.resetWindowStartOnlyHint"),
   },
-];
+]);
 function openPeriodReset(user) {
   periodResetUser.value = user;
   resetWindows.value = new Set(periodWindowIds);
@@ -2994,7 +3066,7 @@ function detailWindow(id) {
 }
 async function resetPeriods() {
   if (!resetWindows.value.size)
-    return void (formError.value = "Select at least one window.");
+    return void (formError.value = t("users.selectAtLeastOneWindow"));
   saving.value = true;
   try {
     const response = await fetchAPI(
@@ -3010,7 +3082,7 @@ async function resetPeriods() {
     detailPeriods.value = response?.limits || response || null;
     periodResetOpen.value = false;
     await syncAll();
-    toast.add({ title: "Period counters reset.", color: "success" });
+    toast.add({ title: t("users.periodCountersReset"), color: "success" });
   } catch (error) {
     formError.value = errorMessage(error);
   } finally {
@@ -3025,12 +3097,12 @@ const deleteDescription = computed(() => {
   const target = deleteTarget.value;
   if (!target) return "";
   if (deleteKind.value === "user")
-    return `Delete user “${target.username}”? This will not automatically delete global credentials.`;
+    return t("users.deleteUserConfirm", { name: target.username });
   if (deleteKind.value === "key")
-    return `Delete client key ${maskKey(target.api_key)}? Linked clients will stop working immediately.`;
+    return t("users.deleteKeyConfirm", { key: maskKey(target.api_key) });
   if (deleteKind.value === "detail")
-    return `Delete binding “${target.auth_id || target.model_id}”?`;
-  return `Delete scope “${target.channel_name || target.group_name}”? Bound keys will lose this scope reference.`;
+    return t("users.deleteBindingConfirm", { name: target.auth_id || target.model_id });
+  return t("users.deleteScopeConfirm", { name: target.channel_name || target.group_name });
 });
 function openDelete(kind, target, subkind = "") {
   deleteKind.value = kind;
@@ -3069,17 +3141,17 @@ async function performDelete() {
     toast.add({
       title:
         deleteKind.value === "detail"
-          ? "Binding deleted."
+          ? t("users.bindingDeleted")
           : deleteKind.value === "group"
-            ? "Scope deleted."
+            ? t("users.scopeDeleted")
             : deleteKind.value === "key"
-              ? "Client key deleted."
-              : "User deleted.",
+              ? t("users.clientKeyDeleted")
+              : t("users.userDeleted"),
       color: "success",
     });
   } catch (error) {
     toast.add({
-      title: "Delete failed",
+      title: t("users.deleteFailed"),
       description: errorMessage(error),
       color: "error",
     });
@@ -3088,3 +3160,55 @@ async function performDelete() {
   }
 }
 </script>
+
+<style scoped>
+/* Users signature: compact lead plus status segments that double as table filters.
+   Fixed-size content, so it stays the same with ten users or ten thousand. */
+.members {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+  padding: 0.75rem 0.875rem;
+  border: 1px solid var(--admin-panel-border);
+  border-radius: 0.875rem;
+  background:
+    linear-gradient(135deg, color-mix(in oklch, var(--page-accent) 6%, transparent), transparent 55%),
+    var(--admin-panel-bg);
+  box-shadow: 0 1px 2px rgb(24 24 27 / 4%);
+}
+.members__lead { display: flex; min-width: 0; align-items: center; gap: 0.75rem; }
+.members__icon { display: flex; width: 2rem; height: 2rem; flex-shrink: 0; align-items: center; justify-content: center; border-radius: 0.625rem; background: color-mix(in oklch, var(--page-accent) 12%, transparent); color: var(--page-accent); }
+.members__count { font-size: 1.1875rem; line-height: 1.5rem; font-weight: 650; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; color: var(--ui-text-highlighted); }
+.members__count span { font-size: 0.8125rem; font-weight: 500; letter-spacing: normal; color: var(--ui-text-muted); }
+.members__segments { display: flex; min-width: 0; flex-wrap: wrap; gap: 0.375rem; }
+.members__segment {
+  --seg: var(--color-zinc-400);
+  display: inline-flex;
+  min-height: 2rem !important;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0 0.75rem;
+  border: 1px solid var(--admin-panel-border);
+  border-radius: 9999px !important;
+  background: var(--admin-panel-bg);
+  font-size: 0.75rem;
+  color: var(--ui-text-toned);
+  transition: background-color 140ms ease, border-color 140ms ease;
+}
+.members__segment strong { color: var(--ui-text-highlighted); }
+.members__segment--emerald { --seg: var(--color-emerald-500); }
+.members__segment--amber { --seg: var(--color-amber-500); }
+.members__segment--blue { --seg: var(--color-blue-500); }
+.members__segment--rose { --seg: var(--color-rose-500); }
+.members__dot { width: 0.4375rem; height: 0.4375rem; border-radius: 9999px; background: var(--seg); }
+.members__segment:hover:not(:disabled) { border-color: color-mix(in oklch, var(--seg) 45%, var(--admin-panel-border)); }
+.members__segment:disabled { opacity: 0.5; cursor: default; }
+.members__segment--active {
+  border-color: color-mix(in oklch, var(--seg) 55%, transparent);
+  background: color-mix(in oklch, var(--seg) 12%, var(--admin-panel-bg));
+}
+.members__segment:focus-visible { outline: 2px solid var(--ui-primary); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .members__segment { transition: none; } }
+</style>
