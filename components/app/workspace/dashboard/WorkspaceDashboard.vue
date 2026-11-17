@@ -114,14 +114,17 @@ const copyText = useWorkspaceClipboard()
     </section>
 
     <!-- Single place for activity numbers. -->
-    <AppCard class="dashboard-panel dashboard-usage min-w-0" :ui="{ header: 'pb-4', body: 'pt-0' }">
+    <AppCard class="dashboard-panel dashboard-usage min-w-0" :ui="{ header: 'px-4 pt-4 pb-3', body: 'px-4 pt-0 pb-4' }">
       <template #header>
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div class="flex min-w-0 items-center gap-3">
             <span class="dashboard-usage-emblem" aria-hidden="true"><AppIcon name="i-tabler-chart-bar" class="size-5" /></span>
             <div class="min-w-0">
               <h2 class="text-sm font-semibold">{{ t('ws.dashboard.usage') }}</h2>
-              <p class="mt-1 flex items-center gap-1.5 text-xs text-[var(--ui-text-muted)]"><AppIcon name="i-tabler-calendar" class="size-3.5 shrink-0" aria-hidden="true" /><span>{{ appliedRange.from === appliedRange.to ? appliedRange.from : `${appliedRange.from} – ${appliedRange.to}` }}</span></p>
+              <p class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[var(--ui-text-muted)]">
+                <span>{{ appliedRange.from === appliedRange.to ? appliedRange.from : `${appliedRange.from} – ${appliedRange.to}` }}</span>
+                <span v-if="monthOverview && !billingLoading">· {{ t('ws.dashboard.creditsThisMonth', { amount: formatCredits(monthOverview.total_charge_amount ?? monthOverview.month_spend) }) }}</span>
+              </p>
             </div>
           </div>
           <form class="dashboard-usage-controls flex flex-wrap items-center gap-2" @submit.prevent="applyBillingRange">
@@ -142,15 +145,13 @@ const copyText = useWorkspaceClipboard()
             <span>{{ metric.label }}</span>
             <span class="dashboard-usage-metric-icon" aria-hidden="true"><AppIcon :name="metric.icon" class="size-4" /></span>
           </dt>
-          <dd class="dashboard-usage-value mt-4 break-words text-3xl font-bold tabular-nums tracking-tight text-[var(--ui-text-highlighted)]">
-            <PortalSkeleton v-if="billingLoading" class="h-9 w-24 max-w-full rounded-md" />
+          <dd class="dashboard-usage-value mt-1.5 break-words text-2xl font-bold tabular-nums tracking-tight text-[var(--ui-text-highlighted)]">
+            <PortalSkeleton v-if="billingLoading" class="h-7 w-20 max-w-full rounded-md" />
             <template v-else>{{ metric.value }}</template>
           </dd>
         </div>
       </dl>
-      <div v-if="monthOverview && !billingLoading" class="mt-4 flex flex-wrap items-center gap-2 text-xs text-[var(--ui-text-muted)]">
-        <PortalBadge color="neutral" variant="subtle" class="rounded-full"><AppIcon name="i-tabler-calendar-stats" class="size-3.5" aria-hidden="true" />{{ t('ws.dashboard.creditsThisMonth', { amount: formatCredits(monthOverview.total_charge_amount ?? monthOverview.month_spend) }) }}</PortalBadge>
-      </div>
+
       <PortalAlert v-if="billingError" class="mt-3" color="error" variant="subtle" :title="t('ws.dashboard.usageError')" :description="billingError" />
     </AppCard>
   </div>
@@ -283,13 +284,13 @@ const copyText = useWorkspaceClipboard()
 .user-dashboard .dashboard-panel :deep([data-slot="header"]) { border-bottom: 0; }
 .user-dashboard .dashboard-panel:not(.dashboard-usage) :deep([data-slot="header"]) { padding-bottom: 0.25rem; }
 .user-dashboard .dashboard-panel h2 { font-size: 0.9375rem; letter-spacing: -0.01em; }
-.dashboard-usage :deep([data-slot="header"]) { padding-bottom: 1.25rem; }
+.dashboard-usage :deep([data-slot="header"]) { padding-bottom: 0.75rem; }
 .dashboard-usage-emblem {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2.75rem;
-  height: 2.75rem;
+  width: 2rem;
+  height: 2rem;
   flex-shrink: 0;
   border: 1px solid color-mix(in oklch, var(--ui-primary) 20%, var(--ui-border));
   border-radius: 0.875rem;
@@ -299,13 +300,13 @@ const copyText = useWorkspaceClipboard()
 .dashboard-usage-strip {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 .dashboard-usage-item {
   min-width: 0;
-  padding: 1rem;
+  padding: 0.625rem 0.875rem;
   border: 1px solid var(--ui-border);
-  border-radius: 0.875rem;
+  border-radius: 0.625rem;
   background: var(--user-inset-bg);
 }
 .dashboard-usage-item--featured {
@@ -316,11 +317,11 @@ const copyText = useWorkspaceClipboard()
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2rem;
-  height: 2rem;
+  width: 1.5rem;
+  height: 1.5rem;
   flex-shrink: 0;
   border: 1px solid var(--ui-border);
-  border-radius: 0.625rem;
+  border-radius: 0.375rem;
   color: var(--ui-text-muted);
   background: var(--user-panel-bg);
 }
@@ -332,12 +333,12 @@ const copyText = useWorkspaceClipboard()
 .dashboard-usage-item--featured .dashboard-usage-value { color: var(--ui-primary); }
 @media (max-width: 639px) {
   .dashboard-usage-controls { width: 100%; }
-  .dashboard-usage-item { padding: 0.875rem; }
+  .dashboard-usage-item { padding: 0.625rem 0.75rem; }
   .dashboard-usage-value { font-size: 1.5rem; }
 }
 @media (min-width: 768px) {
   .dashboard-usage-strip { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  .dashboard-usage-item { padding: 1.25rem; }
+
 }
 @media (min-width: 1024px) {
   .dashboard-bento { grid-template-columns: repeat(12, minmax(0, 1fr)); }
