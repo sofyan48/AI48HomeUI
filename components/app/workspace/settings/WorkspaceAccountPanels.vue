@@ -7,13 +7,15 @@ import { usePortalI18n } from '~/composables/usePortalI18n'
 import { useUserApi } from '~/composables/useUserApi'
 import { useWorkspaceAccount } from '~/composables/workspace/useWorkspaceAccount'
 
+withDefaults(defineProps<{ section?: string }>(), { section: '' })
+
 const { t } = usePortalI18n()
 const { currentUser: user, capabilities } = useUserApi()
 const { passwordForm, passwordError, passwordSaving, email, emailError, emailSaving, emailDetail, changePassword, updateEmail, clearEmail, requestVerification } = useWorkspaceAccount()
 </script>
 
 <template>
-  <AppCard id="settings-password" class="settings-panel min-w-0">
+  <AppCard v-show="!section || section === 'settings-password'" id="settings-password" class="settings-panel min-w-0">
     <template #header><div class="flex items-start gap-3"><span class="settings-icon flex size-9 shrink-0 items-center justify-center rounded-xl"><AppIcon name="i-tabler-lock" class="size-5" aria-hidden="true" /></span><div><h2 class="text-sm font-semibold">{{ t('ws.settings.password') }}</h2><p class="mt-1 text-xs leading-relaxed text-[var(--ui-text-muted)]">{{ t('ws.settings.passwordDetail') }}</p></div></div></template>
     <form class="space-y-4" @submit.prevent="changePassword">
       <PortalAlert v-if="passwordError" color="error" variant="subtle" :description="passwordError" />
@@ -23,7 +25,7 @@ const { passwordForm, passwordError, passwordSaving, email, emailError, emailSav
     </form>
   </AppCard>
 
-  <AppCard id="settings-email" class="settings-panel min-w-0">
+  <AppCard v-show="!section || section === 'settings-email'" id="settings-email" class="settings-panel min-w-0">
     <template #header><div class="flex items-start gap-3"><span class="settings-icon flex size-9 shrink-0 items-center justify-center rounded-xl"><AppIcon name="i-tabler-mail" class="size-5" aria-hidden="true" /></span><div><h2 class="text-sm font-semibold">{{ t('ws.settings.recoveryEmail') }}</h2><p class="mt-1 text-xs leading-relaxed text-[var(--ui-text-muted)]">{{ emailDetail }}</p></div></div></template>
     <form v-if="capabilities.email_verification !== false" class="space-y-4" @submit.prevent="updateEmail">
       <PortalAlert v-if="emailError" color="error" variant="subtle" :description="emailError" />

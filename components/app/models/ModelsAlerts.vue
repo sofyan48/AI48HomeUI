@@ -4,7 +4,7 @@
   <PortalAlert v-if="accessibleWarning" color="warning" variant="subtle" :title="t('models.accessWarningTitle')" :description="t('models.accessWarningDescription', { warning: accessibleWarning })" />
 
   <PortalAlert v-if="token && accessLoaded && access?.reason === 'no_api_keys'" color="warning" variant="subtle" :title="t('models.noKeysTitle')" :description="t('models.noKeysDescription')" />
-  <PortalAlert v-else-if="token && accessLoaded && access?.restricted" color="info" variant="subtle" :title="t('models.restrictedTitle')" :description="t('models.restrictedDescription', { count: access.api_key_count })" />
+
 </template>
 
 <script setup lang="ts">
