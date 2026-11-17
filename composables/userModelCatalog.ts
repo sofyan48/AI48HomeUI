@@ -157,8 +157,9 @@ export function pricingMessage(model: CatalogModel, authenticated: boolean) {
   return pricingMessages[pricingMessageKind(model, authenticated)]
 }
 
-export function formatCatalogPrice(value: number | null | undefined, options: { locale?: string; notPublished?: string } = {}) {
+export function formatCatalogPrice(value: number | null | undefined, options: { locale?: string; notPublished?: string; creditsUnit?: string } = {}) {
   if (finitePrice(value) === null) return options.notPublished ?? 'Not published'
-  if (value! > 0 && value! < 0.000001) return '< $0.000001'
-  return new Intl.NumberFormat(options.locale ?? 'en', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 6 }).format(value!)
+  const formatter = new Intl.NumberFormat(options.locale ?? 'en', { minimumFractionDigits: 2, maximumFractionDigits: 6 })
+  const amount = value! > 0 && value! < 0.000001 ? `< ${formatter.format(0.000001)}` : formatter.format(value!)
+  return `${amount} ${options.creditsUnit ?? 'credits'}`
 }

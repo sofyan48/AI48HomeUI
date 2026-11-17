@@ -78,7 +78,7 @@ const tableColumns = computed(() => [
           <AppIcon :name="sort === column.label ? descending ? 'i-tabler-arrow-down' : 'i-tabler-arrow-up' : 'i-tabler-arrows-sort'" class="size-3.5" aria-hidden="true" />
           <span v-if="sort === column.label" class="sr-only">{{ descending ? '↓' : '↑' }}</span>
         </button>
-        <span class="mt-0.5 block whitespace-nowrap text-[10px] font-normal">USD {{ unitLabel(column.unit) }}</span>
+        <span class="mt-0.5 block whitespace-nowrap text-[10px] font-normal">{{ t('balance.creditsUnit') }} {{ unitLabel(column.unit) }}</span>
       </template>
       <template v-for="(column, index) in columns" :key="column.label" #[`rate-${index}-cell`]="{ row }">
         {{ price(value(row.original, column.label)) }}

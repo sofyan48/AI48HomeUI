@@ -48,7 +48,7 @@ export function useModelFormat() {
       { label: t('models.fact.owner'), value: model.owned_by || notPublished }, { label: t('models.fact.type'), value: model.type || notPublished }
     ]
   }
-  function price(value: number | null | undefined) { return formatCatalogPrice(value, { locale: intlLocale.value, notPublished: t('models.status.notPublished') }) }
+  function price(value: number | null | undefined) { return formatCatalogPrice(value, { locale: intlLocale.value, notPublished: t('models.status.notPublished'), creditsUnit: t('balance.creditsUnit') }) }
   function pricingText(model: CatalogModel) {
     const kind = pricingMessageKind(model, Boolean(token.value))
     if (kind === 'signIn') return t('models.message.signIn')

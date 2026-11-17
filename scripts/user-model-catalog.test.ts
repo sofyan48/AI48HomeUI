@@ -98,8 +98,22 @@ describe('user model catalog parity', () => {
     expect(components.find(item => item.label === 'Image')).toMatchObject({ value: 0.01, unit: '/ image' })
     expect(components.find(item => item.label === 'Reasoning')?.value).toBe(0)
     expect(formatCatalogPrice(undefined)).toBe('Not published')
-    expect(formatCatalogPrice(0)).toBe('$0.00')
-    expect(formatCatalogPrice(0.0000001)).toBe('< $0.000001')
+    expect(formatCatalogPrice(0)).toBe('0.00 credits')
+    expect(formatCatalogPrice(0.0000001)).toBe('< 0.000001 credits')
+  })
+
+  test('formats portal prices as localized credits without converting stored prices', () => {
+    expect(formatCatalogPrice(2.5)).toBe('2.50 credits')
+    expect(formatCatalogPrice(2.5, { locale: 'id-ID', creditsUnit: 'kredit' })).toBe('2,50 kredit')
+    expect(formatCatalogPrice(0.0000001, { locale: 'id-ID', creditsUnit: 'kredit' })).toBe('< 0,000001 kredit')
+    expect(formatCatalogPrice(null, { notPublished: 'Unavailable' })).toBe('Unavailable')
+    for (const value of [-1, NaN, Infinity]) expect(formatCatalogPrice(value)).toBe('Not published')
+    const table = readFileSync(new URL('../components/app/models/PriceRatesTable.vue', import.meta.url), 'utf8')
+    expect(table).not.toContain('USD')
+    expect(table).toContain("t('balance.creditsUnit')")
+    for (const path of ['models.ts', 'ru/models.ts', 'zh-CN/models.ts', 'zh-TW/models.ts']) {
+      expect(readFileSync(new URL(`../locales/portal/${path}`, import.meta.url), 'utf8')).not.toContain('USD')
+    }
   })
 
   test('explains signed-out, excluded, unknown and unpublished pricing distinctly', () => {
