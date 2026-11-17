@@ -26,7 +26,7 @@ import {
   IconPuzzle, IconReceipt, IconReceiptTax, IconRefresh, IconReload, IconRobot,
   IconRosetteDiscountCheck, IconRoute, IconSearch, IconSend, IconServer,
   IconServer2, IconSettings, IconShieldCheck, IconShieldExclamation,
-  IconShieldLock, IconSlash, IconSparkles, IconStack2,
+  IconShieldLock, IconSlash, IconSparkles, IconSquare, IconSquareCheck, IconStack2,
   IconSun, IconTag, IconTerminal2, IconTool, IconTools, IconTrash, IconUpload,
   IconUser, IconUserCheck, IconUserCircle, IconUserPlus, IconUserShield,
   IconUsers, IconWallet, IconWind, IconWorld, IconWorldShare, IconX,
@@ -171,6 +171,8 @@ export const tablerIcons = {
   'i-tabler-shield-lock': IconShieldLock,
   'i-tabler-slash': IconSlash,
   'i-tabler-sparkles': IconSparkles,
+  'i-tabler-square': IconSquare,
+  'i-tabler-square-check': IconSquareCheck,
   // Legacy name used by topology diagnostics; Tabler calls this terminal-2.
     'i-tabler-square-terminal': IconTerminal2,
   'i-tabler-stack-2': IconStack2,

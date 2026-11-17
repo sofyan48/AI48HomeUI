@@ -50,7 +50,7 @@ export function mergeCatalogs(publicModels: CatalogModel[], accessibleModels: Ca
 export function matchesCatalogFilter(model: CatalogModel, query: string, provider: string, mineOnly: boolean) {
   const text = query.trim().toLowerCase()
   return (!mineOnly || model.accessible === true) &&
-    (!provider || model.providers?.includes(provider)) &&
+    (!provider.trim() || model.providers?.some(value => value.trim().toLowerCase() === provider.trim().toLowerCase())) &&
     (!text || [model.id, model.display_name, model.description, ...(model.providers || [])]
       .some(value => value?.toLowerCase().includes(text)))
 }
