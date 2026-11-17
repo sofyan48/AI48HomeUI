@@ -123,10 +123,10 @@ const classes = computed(() => ({
   content: cn('w-full max-w-full sm:max-w-lg gap-0 bg-default divide-y divide-default border-0 sm:ring ring-default sm:shadow-lg focus:outline-none', props.transition ? 'data-[state=open]:animate-[slide-in-from-right_200ms_ease-in-out] data-[state=closed]:animate-[slide-out-to-right_200ms_ease-in-out]' : 'animate-none data-[state=open]:animate-none data-[state=closed]:animate-none', !slots.default && props.class, props.ui?.content, props.fullscreen && 'max-w-none sm:max-w-none'),
   header: cn('relative shrink-0 flex-row items-center gap-1.5 px-4 py-3 sm:px-5 min-h-(--ui-header-height)', props.ui?.header),
   wrapper: cn('min-w-0 pr-10', props.ui?.wrapper),
-  body: cn('min-h-0 flex-1 overflow-y-auto p-4 sm:p-5', props.ui?.body),
+  body: cn('min-h-0 min-w-0 flex-1 overflow-y-auto p-4 sm:p-5', props.ui?.body),
   footer: cn('mt-0 shrink-0 flex-row items-center gap-1.5 px-4 py-3 sm:px-5', props.ui?.footer),
-  title: cn('text-base font-semibold text-highlighted', props.ui?.title),
-  description: cn('mt-1 text-muted text-sm', props.ui?.description),
+  title: cn('text-base font-semibold text-foreground [overflow-wrap:anywhere]', props.ui?.title),
+  description: cn('mt-1 text-muted-foreground text-sm [overflow-wrap:anywhere]', props.ui?.description),
   close: cn('absolute top-4 end-4', props.ui?.close),
 }))
 const slotUi = computed(() => Object.fromEntries(Object.entries(classes.value).map(([name, value]) => [name, (options?: { class?: HTMLAttributes['class'] }) => cn(value, options?.class)])))
