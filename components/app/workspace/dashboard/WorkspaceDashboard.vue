@@ -24,13 +24,13 @@ const copyText = useWorkspaceClipboard()
 
 <template>
   <div class="dashboard-bento">
-    <header class="dashboard-greeting" aria-labelledby="dashboard-title">
+    <AppCard class="dashboard-greeting" aria-labelledby="dashboard-title" :ui="{ body: 'flex flex-wrap items-center justify-between gap-4' }">
       <div class="min-w-0">
         <h1 id="dashboard-title" class="break-words font-bold tracking-tight text-[var(--ui-text-highlighted)]">{{ user?.username ? t('ws.dashboard.welcomeUser', { name: user.username }) : t('ws.dashboard.welcome') }}</h1>
         <p class="mt-1 text-sm text-[var(--ui-text-muted)]">{{ dashboardStatusLine }}</p>
       </div>
       <AppButton v-if="capabilities.request_logs === true" to="/app/logs" icon="i-tabler-list-details" color="neutral" variant="ghost" size="sm" class="rounded-full">{{ t('ws.dashboard.requestLogs') }}</AppButton>
-    </header>
+    </AppCard>
 
     <!-- Spotlight 1: how to start sending requests. -->
     <section class="dashboard-connect" aria-labelledby="connect-title">
@@ -165,14 +165,7 @@ const copyText = useWorkspaceClipboard()
   gap: 1rem;
 }
 .dashboard-bento > * { min-width: 0; }
-.dashboard-greeting {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding-block: 0.25rem;
-}
+
 .dashboard-greeting h1 { font-size: 1.5rem; font-weight: 600; line-height: 1.35; letter-spacing: -0.015em; }
 .dashboard-connect,
 .dashboard-credits {

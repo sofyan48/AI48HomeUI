@@ -58,8 +58,11 @@
   --ui-border-muted: var(--color-zinc-200);
   --ui-border-accented: var(--color-zinc-300);
   --ui-focus: var(--ui-primary);
+  --ui-overlay: var(--ui-bg);
   --ui-hover: color-mix(in oklch, var(--ui-primary) 6%, var(--ui-bg-elevated));
   --user-selected: color-mix(in oklch, var(--ui-primary) 9%, var(--ui-bg));
+  --user-shell-bg: var(--color-zinc-100);
+  --user-rail-bg: oklch(0.2 0.012 292);
   --user-workspace-bg: var(--color-zinc-50);
   --user-panel-bg: var(--ui-bg);
   --user-panel-border: color-mix(in oklch, var(--color-zinc-200) 85%, transparent);
@@ -89,6 +92,8 @@
   --ui-border-accented: var(--color-zinc-700);
   --ui-hover: color-mix(in oklch, var(--ui-primary) 10%, var(--ui-bg));
   --user-selected: color-mix(in oklch, var(--ui-primary) 14%, var(--ui-bg));
+  --user-shell-bg: var(--color-zinc-950);
+  --user-rail-bg: oklch(0.17 0.01 292);
   --user-workspace-bg: var(--color-zinc-950);
   --user-panel-bg: var(--color-zinc-900);
   --user-panel-border: var(--color-zinc-800);
@@ -366,6 +371,13 @@ body:not([data-admin-console]) .workbench-main button:not([role="switch"]):not([
   -webkit-backdrop-filter: blur(18px) saturate(118%);
   backdrop-filter: blur(18px) saturate(118%);
   box-shadow: 0 16px 40px -8px rgb(24 24 27 / 20%) !important;
+}
+
+/* Portal overlays use an opaque surface, independent of the dark navigation rail. */
+:root:not([data-admin-console]) :is([data-reka-popper-content-wrapper] > *, [role="menu"], [role="listbox"]) {
+  background: var(--ui-overlay) !important;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 
 [data-highlighted] {

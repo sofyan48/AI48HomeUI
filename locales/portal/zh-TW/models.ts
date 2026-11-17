@@ -2,6 +2,9 @@ import type { PortalAreaTranslation } from '../define'
 import type area from '../models'
 
 export default {
+  'models.catalog.title': '探索模型能力',
+  'models.catalog.description': '瀏覽完整模型目錄。比較上下文視窗、模態、推理與工具能力，選擇合適的模型。起始價格僅供參考；「價格」頁面顯示可透過您的金鑰存取的模型的計費費率。',
+  'models.catalog.priceLink': '比較計費費率',
   'models.unsupportedTitle': '模型目錄無法使用',
   'models.unsupportedDescription': '此 Home 伺服器不支援公開模型目錄端點。',
   'models.capabilityErrorTitle': '無法檢查模型目錄能力',
@@ -81,6 +84,12 @@ export default {
   'models.availability.lastObserved': '最後觀測：{value}',
   'models.availability.observed': '觀測 {rate}%',
   'models.availability.insufficient': '資料不足',
+  'models.prices.title': '費率與計費',
+  'models.prices.tableTitle': '供應商費率表',
+  'models.prices.catalogLink': '探索模型能力',
+  'models.prices.description': '檢視可透過您的 API 金鑰存取的模型的計費費率。比較不同服務等級與上下文門檻下的輸入、輸出、快取、請求及工具費用。公式會取代各欄列出的費率。',
+  'models.prices.empty': '沒有可透過您的 API 金鑰存取的模型。請建立 API 金鑰或檢查其模型群組。',
+  'models.prices.retry': '重新整理價格',
   'models.pricing.title': '完整價格',
   'models.pricing.noteRungs': '價格以美元計。在所選服務等級內，請求會套用其輸入權杖數達到門檻的最後一個上下文級距。預設（*）等級涵蓋沒有定價等級的請求。',
   'models.pricing.noteFormula': '公式會取代該級距的欄位價格。擷取出的工具費率為可讀的字面項目，並非公式的完整計算結果。未列出的選用權杖維度會沿用其上層費率。',

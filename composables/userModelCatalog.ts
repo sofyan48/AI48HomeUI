@@ -104,6 +104,7 @@ export function pricingEntryPoint(pricing: ModelPricing | null | undefined) {
   return {
     input: lowest(rungs.map(rung => rung.input_price_per_million)),
     output: lowest(rungs.map(rung => rung.output_price_per_million)),
+    cacheRead: lowest(rungs.map(rung => rung.cache_read_price_per_million)),
     maxRungCount: Math.max(0, ...tiers.map(tier => tier.rungs.length)),
     providerCount: pricing.providers.length,
     serviceTiers: [...new Set(tiers.map(tier => tier.service_tier))],

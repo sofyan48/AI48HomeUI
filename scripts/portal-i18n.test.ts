@@ -27,9 +27,10 @@ const portalFiles = ['layouts/app.vue', 'layouts/playground.vue', ...vueFiles('p
 describe('user portal i18n', () => {
   test('recursive discovery covers the workspace index and every app feature route', () => {
     const routes = portalFiles.filter(file => file.startsWith('pages/app/'))
-    expect(routes).toHaveLength(13)
+    expect(routes).toHaveLength(14)
     expect(routes).toContain('pages/app/index.vue')
     expect(routes).toContain('pages/app/models/index.vue')
+        expect(routes).toContain('pages/app/models/price/index.vue')
     expect(routes.every(file => file.endsWith('/index.vue'))).toBe(true)
   })
   test('area keys do not collide', () => {

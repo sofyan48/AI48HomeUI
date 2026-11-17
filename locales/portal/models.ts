@@ -1,6 +1,9 @@
 import { definePortalMessages } from './define'
 
 export default definePortalMessages({
+  'models.catalog.title': 'Explore model capabilities',
+  'models.catalog.description': 'Browse the full model catalog. Compare context windows, modalities, reasoning, and tools to choose a model. Opening prices are a reference; Price shows billing rates for models available through your keys.',
+  'models.catalog.priceLink': 'Compare billing rates',
   'models.unsupportedTitle': 'Model catalog unavailable',
   'models.unsupportedDescription': 'This Home server does not support the public model catalog endpoint.',
   'models.capabilityErrorTitle': 'Unable to check model catalog capabilities',
@@ -80,6 +83,12 @@ export default definePortalMessages({
   'models.availability.lastObserved': 'Last observed: {value}',
   'models.availability.observed': '{rate}% observed',
   'models.availability.insufficient': 'Insufficient data',
+  'models.prices.title': 'Rates & billing',
+  'models.prices.tableTitle': 'Provider rate sheet',
+  'models.prices.catalogLink': 'Explore model capabilities',
+  'models.prices.description': 'Review billing rates for models available through your API keys. Compare input, output, cache, request, and tool charges across service tiers and context thresholds. Formulas override the listed column rates.',
+  'models.prices.empty': 'No models are available through your API keys. Create an API key or check its model groups.',
+  'models.prices.retry': 'Refresh prices',
   'models.pricing.title': 'Complete pricing',
   'models.pricing.noteRungs': 'Prices are in USD. Requests use the last context rung whose input-token threshold they reach, within the selected service tier. The default (*) tier covers requests without a priced tier.',
   'models.pricing.noteFormula': 'A formula replaces the column prices for its rung. Extracted tool rates are readable literal terms, not a complete evaluation of the formula. Optional token dimensions not listed fall back to their parent rate.',
@@ -136,6 +145,9 @@ export default definePortalMessages({
   'models.unit.perImage': '/ image',
   'models.unit.perCall': '/ call'
 }, {
+  'models.catalog.title': 'Jelajahi kemampuan model',
+  'models.catalog.description': 'Jelajahi katalog model lengkap. Bandingkan jendela context, modalitas, penalaran, dan tool untuk memilih model. Harga awal hanya sebagai referensi; Harga menampilkan tarif penagihan untuk model yang tersedia melalui API key Anda.',
+  'models.catalog.priceLink': 'Bandingkan tarif penagihan',
   'models.unsupportedTitle': 'Katalog model tidak tersedia',
   'models.unsupportedDescription': 'Server Home ini tidak mendukung endpoint katalog model publik.',
   'models.capabilityErrorTitle': 'Tidak dapat memeriksa kemampuan katalog model',
@@ -215,6 +227,12 @@ export default definePortalMessages({
   'models.availability.lastObserved': 'Terakhir diamati: {value}',
   'models.availability.observed': '{rate}% teramati',
   'models.availability.insufficient': 'Data tidak mencukupi',
+  'models.prices.title': 'Tarif & penagihan',
+  'models.prices.tableTitle': 'Daftar tarif penyedia',
+  'models.prices.catalogLink': 'Jelajahi kemampuan model',
+  'models.prices.description': 'Tinjau tarif penagihan untuk model yang tersedia melalui API key Anda. Bandingkan biaya input, output, cache, request, dan tool di berbagai service tier dan ambang context. Formula menggantikan tarif kolom yang tercantum.',
+  'models.prices.empty': 'Tidak ada model yang tersedia melalui API key Anda. Buat API key atau periksa grup modelnya.',
+  'models.prices.retry': 'Perbarui harga',
   'models.pricing.title': 'Harga lengkap',
   'models.pricing.noteRungs': 'Harga dalam USD. Request menggunakan jenjang context terakhir yang ambang token input-nya tercapai, dalam service tier yang dipilih. Tier default (*) mencakup request tanpa tier berharga.',
   'models.pricing.noteFormula': 'Formula menggantikan harga kolom untuk jenjangnya. Tarif tool yang diekstrak adalah suku literal yang terbaca, bukan evaluasi lengkap dari formula. Dimensi token opsional yang tidak tercantum mengikuti tarif induknya.',

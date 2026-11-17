@@ -1,7 +1,7 @@
 import {
   IconActivity, IconActivityHeartbeat, IconAdjustments, IconAdjustmentsHorizontal,
   IconAffiliate, IconAlertCircle, IconAlertTriangle, IconOctagonOff, IconAntennaBars5,
-  IconArrowBarToLeft, IconArrowBarToRight, IconArrowDownLeft, IconArrowRight,
+  IconArrowBarToLeft, IconArrowBarToRight, IconArrowDown, IconArrowDownLeft, IconArrowRight,
   IconArrowUp, IconArrowUpRight, IconArrowsExchange, IconArrowsHorizontal, IconArrowsSort,
   IconBattery2, IconBolt, IconBox, IconBoxMultiple, IconBoxOff,
   IconBrandAmazon, IconBrandGithub, IconBrandGoogle, IconBrandMeta,
@@ -45,6 +45,7 @@ export const tablerIcons = {
   'i-tabler-antenna-bars-5': IconAntennaBars5,
   'i-tabler-arrow-bar-to-left': IconArrowBarToLeft,
   'i-tabler-arrow-bar-to-right': IconArrowBarToRight,
+  'i-tabler-arrow-down': IconArrowDown,
   'i-tabler-arrow-down-left': IconArrowDownLeft,
   'i-tabler-arrow-right': IconArrowRight,
   'i-tabler-arrow-up': IconArrowUp,

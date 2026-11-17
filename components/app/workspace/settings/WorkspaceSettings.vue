@@ -23,13 +23,13 @@ function scrollToSection(id: string) {
 
 <template>
   <section class="workspace-settings min-w-0 space-y-5" aria-labelledby="security-title">
-    <div class="flex flex-wrap items-center justify-between gap-3">
+    <AppCard :ui="{ body: 'flex flex-wrap items-center justify-between gap-3' }">
       <div>
         <h1 id="security-title" class="text-base font-semibold tracking-tight">{{ t('ws.settings.title') }}</h1>
         <p class="mt-1 text-xs text-[var(--ui-text-muted)]">{{ t('ws.settings.subtitle') }}</p>
       </div>
       <AppButton to="/app/profile" color="neutral" variant="ghost" size="sm" class="rounded-full" trailing-icon="i-tabler-arrow-right">{{ t('ws.settings.viewProfile') }}</AppButton>
-    </div>
+    </AppCard>
     <div class="settings-layout">
       <nav class="settings-nav" :aria-label="t('ws.settings.navAria')">
         <a v-for="item in settingsSections" :key="item.id" :href="`#${item.id}`" class="settings-nav-link" @click.prevent="scrollToSection(item.id)">

@@ -2,6 +2,9 @@ import type { PortalAreaTranslation } from '../define'
 import type area from '../models'
 
 export default {
+  'models.catalog.title': '探索模型能力',
+  'models.catalog.description': '浏览完整模型目录。比较上下文窗口、模态、推理和工具能力，选择合适的模型。起始价格仅供参考；“价格”页面显示可通过您的密钥访问的模型的计费费率。',
+  'models.catalog.priceLink': '比较计费费率',
   'models.unsupportedTitle': '模型目录不可用',
   'models.unsupportedDescription': '此 Home 服务器不支持公共模型目录端点。',
   'models.capabilityErrorTitle': '无法检查模型目录能力',
@@ -81,6 +84,12 @@ export default {
   'models.availability.lastObserved': '最近观测：{value}',
   'models.availability.observed': '观测成功率 {rate}%',
   'models.availability.insufficient': '数据不足',
+  'models.prices.title': '费率与计费',
+  'models.prices.tableTitle': '提供商费率表',
+  'models.prices.catalogLink': '探索模型能力',
+  'models.prices.description': '查看可通过您的 API 密钥访问的模型的计费费率。比较不同服务档位和上下文阈值下的输入、输出、缓存、请求及工具费用。公式会覆盖各列列出的费率。',
+  'models.prices.empty': '没有可通过您的 API 密钥访问的模型。请创建 API 密钥或检查其模型组。',
+  'models.prices.retry': '刷新价格',
   'models.pricing.title': '完整价格',
   'models.pricing.noteRungs': '价格以美元计。在所选服务档位内，请求将采用其输入 Token 数达到阈值的最后一个上下文档位。默认（*）档位适用于没有定价档位的请求。',
   'models.pricing.noteFormula': '公式会替代其所在档位的各列价格。提取出的工具费率为可读的字面项，并非公式的完整计算结果。未列出的可选 Token 维度将回退到其父级费率。',

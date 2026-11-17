@@ -18,7 +18,7 @@ const isActive = (to: string) => route.path === to
 
 <template>
   <div class="flex min-h-0 flex-1 flex-col">
-    <div class="flex h-16 shrink-0 items-center justify-between gap-1 border-b border-[var(--ui-border)] px-3" :class="collapsed ? 'lg:h-auto lg:flex-col lg:justify-center lg:px-1 lg:py-3 lg:gap-2' : ''">
+    <div class="flex h-16 shrink-0 items-center justify-between gap-1 px-3" :class="collapsed ? 'lg:h-auto lg:flex-col lg:justify-center lg:px-1 lg:py-3 lg:gap-2' : ''">
       <NuxtLink to="/app" class="user-brand flex min-w-0 flex-1 items-center gap-2.5 rounded-lg" :class="collapsed ? 'lg:flex-none' : ''" @click="emit('navigate')">
         <AppBrandMark />
         <span class="min-w-0 leading-tight" :class="collapsed ? 'lg:hidden' : ''"><span class="block truncate text-[15px] font-bold tracking-tight text-[var(--ui-text-highlighted)]">AI48<span class="user-brand-accent">Hub</span></span><span class="block truncate text-[11px] text-[var(--ui-text-muted)]">{{ t('shell.userWorkspace') }}</span></span>
@@ -26,13 +26,15 @@ const isActive = (to: string) => route.path === to
       <AppButton v-if="!mobile" class="hidden shrink-0 lg:inline-flex" :icon="collapsed ? 'i-tabler-layout-sidebar-left-expand' : 'i-tabler-layout-sidebar-left-collapse'" color="neutral" variant="ghost" :aria-label="collapsed ? t('shell.expandSidebar') : t('shell.collapseSidebar')" :title="collapsed ? t('shell.expandSidebar') : t('shell.collapseSidebar')" :aria-expanded="!collapsed" aria-controls="workspace-sidebar" @click="emit('toggleCollapse')" />
       <AppButton v-else icon="i-tabler-x" color="neutral" variant="ghost" :aria-label="t('shell.closeNavigation')" @click="emit('navigate')" />
     </div>
-    <nav class="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-2 py-3" :aria-label="t('shell.userWorkspace')">
+    <div class="mx-4 h-px shrink-0 bg-[var(--ui-border)]" aria-hidden="true" />
+    <nav class="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-2.5 py-3" :aria-label="t('shell.userWorkspace')">
       <div v-for="group in groups" :key="group.key" class="mb-4 last:mb-0">
-        <p class="mb-1.5 px-3 text-[11px] font-medium text-[var(--ui-text-dimmed)]" :class="collapsed ? 'lg:sr-only' : ''">{{ group.label }}</p>
+        <p class="mb-1.5 px-3 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--ui-text-dimmed)]" :class="collapsed ? 'lg:sr-only' : ''">{{ group.label }}</p>
         <div class="flex flex-col gap-0.5" :class="collapsed ? 'lg:border-t lg:border-[var(--ui-border)] lg:pt-2' : ''">
           <NuxtLink v-for="item in group.items" :key="item.to" :to="item.to" class="user-nav-link" :class="[{ 'user-nav-link--active': isActive(item.to) }, collapsed ? 'lg:justify-center lg:px-0' : '']" :aria-label="item.label" :title="collapsed ? item.label : undefined" :aria-current="isActive(item.to) ? 'page' : undefined" @click="emit('navigate')">
-            <AppIcon :name="item.icon" class="size-[18px] shrink-0" aria-hidden="true" />
-            <span class="min-w-0 truncate" :class="collapsed ? 'lg:hidden' : ''">{{ item.label }}</span>
+            <span class="user-nav-glyph" aria-hidden="true"><AppIcon :name="item.icon" class="size-[18px]" /></span>
+            <span class="min-w-0 flex-1 truncate" :class="collapsed ? 'lg:hidden' : ''">{{ item.label }}</span>
+            <AppIcon v-if="isActive(item.to) && !collapsed" name="i-tabler-chevron-right" class="size-3.5 shrink-0 opacity-70" aria-hidden="true" />
           </NuxtLink>
         </div>
       </div>
@@ -56,32 +58,45 @@ const isActive = (to: string) => route.path === to
 
 <style scoped>
 .user-brand-accent {
-  background: var(--brand-gradient);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--ui-text-highlighted);
 }
 .user-nav-link {
   position: relative;
   display: flex;
-  min-height: 2.25rem;
+  min-height: 2.5rem;
   width: 100%;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.375rem 0.75rem;
-  border-radius: 0.625rem;
-  color: var(--ui-text-muted);
-  font-size: 0.875rem;
+  padding: 0.3125rem 0.625rem 0.3125rem 0.3125rem;
+  border-radius: 0.875rem;
+  color: var(--ui-text);
+  font-size: 0.8125rem;
   font-weight: 500;
   transition: background-color 120ms ease, color 120ms ease;
 }
 .user-nav-link:hover { background: var(--ui-hover); color: var(--ui-text-highlighted); }
 .user-nav-link--active,
 .user-nav-link--active:hover {
-  background: var(--user-selected);
-  color: var(--ui-primary);
+  background: linear-gradient(90deg, color-mix(in oklch, var(--color-violet-500) 30%, transparent), color-mix(in oklch, var(--color-fuchsia-500) 10%, transparent));
+  color: var(--color-white);
   font-weight: 600;
-  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--ui-primary) 16%, transparent);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 8%);
+}
+.user-nav-glyph {
+  display: flex;
+  width: 1.875rem;
+  height: 1.875rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.625rem;
+  background: rgb(255 255 255 / 5%);
+  color: var(--ui-text-muted);
+}
+.user-nav-link--active .user-nav-glyph {
+  background: linear-gradient(135deg, var(--color-violet-500), var(--color-fuchsia-500));
+  color: var(--color-white);
+  box-shadow: 0 6px 16px -6px color-mix(in oklch, var(--color-fuchsia-500) 70%, transparent);
 }
 .user-account .user-nav-link { padding-inline: 0.5rem; }
 .user-account .user-nav-link--active { box-shadow: none; }

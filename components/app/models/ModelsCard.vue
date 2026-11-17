@@ -18,14 +18,15 @@
     <div v-if="capabilityLabels(model).length" class="mt-3 flex flex-wrap gap-1.5">
       <PortalBadge v-for="label in capabilityLabels(model)" :key="label" color="neutral" variant="soft" size="sm" class="rounded-full">{{ label }}</PortalBadge>
     </div>
+    <dl class="mt-4 grid grid-cols-2 gap-3 rounded-lg bg-muted/40 p-3">
+      <div><dt class="text-xs text-muted-foreground">{{ t('models.fact.context') }}</dt><dd class="mt-1 text-sm font-medium tabular-nums">{{ modelLimit(model, 'context_length') }}</dd></div>
+      <div><dt class="text-xs text-muted-foreground">{{ t('models.fact.maxOutput') }}</dt><dd class="mt-1 text-sm font-medium tabular-nums">{{ modelLimit(model, 'max_output_tokens') }}</dd></div>
+    </dl>
     <div class="catalog-price mt-auto flex items-center justify-between gap-3 pt-4">
       <div class="min-w-0 space-y-1">
         <template v-if="pricingEntryPoint(model.pricing)">
           <p class="text-sm font-medium leading-6">{{ t('models.price.from', { input: price(pricingEntryPoint(model.pricing)?.input), output: price(pricingEntryPoint(model.pricing)?.output) }) }}</p>
-          <PortalBadge v-if="(pricingEntryPoint(model.pricing)?.maxRungCount || 0) > 1" color="info" variant="subtle" size="sm">{{ t('models.price.tiered', { count: pricingEntryPoint(model.pricing)?.maxRungCount }) }}</PortalBadge>
-          <p v-if="pricingEntryPoint(model.pricing)?.hasFormula" class="text-xs text-[var(--ui-text-muted)]">{{ t('models.price.formula') }}</p>
-          <p class="text-xs text-[var(--ui-text-muted)]">{{ t('models.price.openingNote') }}</p>
-          <AppButton color="primary" variant="link" size="sm" icon="i-tabler-receipt" @click="openDetails(model, $event, 'pricing')">{{ t('models.price.complete') }}<span v-if="pricingEntryPoint(model.pricing)?.toolPrices.length"> · {{ t('models.price.toolRates', { count: pricingEntryPoint(model.pricing)?.toolPrices.length }) }}</span></AppButton>
+
         </template>
         <p v-else class="text-sm leading-6 text-[var(--ui-text-muted)]">{{ pricingText(model) }}</p>
       </div>
@@ -47,7 +48,7 @@ defineProps<{ model: CatalogModel }>()
 
 const { t } = usePortalI18n()
 const { openDetails } = useModelsWorkspace()
-const { copyModelId, capabilityLabels, price, pricingText } = useModelFormat()
+const { copyModelId, capabilityLabels, modelLimit, price, pricingText } = useModelFormat()
 </script>
 
 <style scoped>
