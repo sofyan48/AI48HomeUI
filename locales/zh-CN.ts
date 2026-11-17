@@ -54,6 +54,8 @@ export default {
   'nav.pluginsDescription': '插件商店与节点报告',
   'nav.system': '系统信息',
   'nav.systemDescription': '运行状态与诊断',
+  'nav.alerting': '告警',
+  'nav.alertingDescription': 'Telegram 与 Teams 通知',
   'connect.controlPlane': '管理控制平面',
   'connect.heading': '从容管理您的 CPA 集群。',
   'connect.description': '在一个安全的控制台中监控拓扑、分析用量、管理访问，并查看每个已连接节点的状态。',
