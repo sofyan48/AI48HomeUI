@@ -78,7 +78,7 @@ import PortalSelect from '~/components/app/general/PortalSelect.vue'
 import AppUserWorkspace from '~/components/app/workspace/UserWorkspace.vue'
 import { useWorkspaceState } from '~/composables/useWorkspaceState'
 import { usePortalToast } from '~/composables/portal/usePortalToast'
-import type { BillingBalanceRecord, BillingOverview, BillingRechargeRequest } from '~/composables/useUserApi'
+import type { BillingBalanceRecord, BillingOverview, BillingRechargeRequest } from '~/stores/userSession'
 
 definePageMeta({ layout: 'app' })
 const { t, intlLocale } = usePortalI18n()

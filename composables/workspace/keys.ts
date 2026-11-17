@@ -1,4 +1,4 @@
-import type { UserApiKey } from '~/composables/useUserApi'
+import type { UserApiKey } from '~/stores/userSession'
 
 export type WorkspaceKey = Omit<UserApiKey, 'id'> & { id: number | null; index: number }
 function isObject(value: unknown): value is Record<string, any> { return Boolean(value) && typeof value === 'object' && !Array.isArray(value) }
