@@ -10,6 +10,7 @@ import { buildDraft, configWriteValue, v8YamlPaths } from './draft'
 import { useConfigPresentation } from './useConfigPresentation'
 import { useConfigValidation } from './useConfigValidation'
 import { useConfigEditors } from './useConfigEditors'
+import { useConfigScrollSpy } from './useConfigScrollSpy'
 import type { ConfigDraft } from './types'
 
 function createConfigWorkspace() {
@@ -30,6 +31,7 @@ const changesOpen = ref(false);
 const reloadConfirmOpen = ref(false);
 const saveNeedsReload = ref(false);
 const { displaySharedSections, outline, labels } = useConfigPresentation(t);
+const { activeSection } = useConfigScrollSpy(outline, loaded);
 const { validationErrors, validationCount } = useConfigValidation(draft, t);
 const editors = useConfigEditors(draft, fetchAPI, t);
 const { syncEditors, syncSpecialDrafts, loadChannelModels } = editors;
@@ -178,7 +180,7 @@ return {
   ...editors, t, loading, loaded, saving, pageError, runtimeMode, draft,
   changesOpen, reloadConfirmOpen, saveNeedsReload, updatedLabel, changes,
   dirtyCount, displaySharedSections, outline, validationErrors, validationCount,
-  scrollToSection, sectionDirty, loadWorkspace, reloadWorkspace, saveWorkspace,
+  activeSection, scrollToSection, sectionDirty, loadWorkspace, reloadWorkspace, saveWorkspace,
 };
 }
 

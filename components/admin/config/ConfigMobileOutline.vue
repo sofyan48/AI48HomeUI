@@ -7,8 +7,9 @@
             v-for="section in outline"
             :key="section.id"
             size="sm"
-            color="neutral"
-            variant="ghost"
+            :color="activeSection === section.id ? 'primary' : 'neutral'"
+            :variant="activeSection === section.id ? 'soft' : 'ghost'"
+            :aria-current="activeSection === section.id ? 'location' : undefined"
             class="shrink-0"
             @click="scrollToSection(section.id)"
             >{{ section.short }}</AppButton
@@ -18,5 +19,5 @@
 
 <script setup lang="ts">
 import { useConfigWorkspace } from '~/composables/config/useConfigWorkspace'
-const { outline, scrollToSection } = useConfigWorkspace()
+const { outline, activeSection, scrollToSection } = useConfigWorkspace()
 </script>
