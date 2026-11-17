@@ -12,6 +12,7 @@ import billing from './billing'
 import config from './config'
 import plugins from './plugins'
 import routing from './routing'
+import alerting from './alerting'
 import zhCNCommon from './zh-CN/common'
 import zhCNShared from './zh-CN/shared'
 import zhCNDashboard from './zh-CN/dashboard'
@@ -25,6 +26,7 @@ import zhCNBilling from './zh-CN/billing'
 import zhCNConfig from './zh-CN/config'
 import zhCNPlugins from './zh-CN/plugins'
 import zhCNRouting from './zh-CN/routing'
+import zhCNAlerting from './zh-CN/alerting'
 import zhTWCommon from './zh-TW/common'
 import zhTWShared from './zh-TW/shared'
 import zhTWDashboard from './zh-TW/dashboard'
@@ -38,6 +40,7 @@ import zhTWBilling from './zh-TW/billing'
 import zhTWConfig from './zh-TW/config'
 import zhTWPlugins from './zh-TW/plugins'
 import zhTWRouting from './zh-TW/routing'
+import zhTWAlerting from './zh-TW/alerting'
 import ruCommon from './ru/common'
 import ruShared from './ru/shared'
 import ruDashboard from './ru/dashboard'
@@ -51,27 +54,28 @@ import ruBilling from './ru/billing'
 import ruConfig from './ru/config'
 import ruPlugins from './ru/plugins'
 import ruRouting from './ru/routing'
+import ruAlerting from './ru/alerting'
 
-export const adminAreas = { common, shared, dashboard, upstream, credentials, users, accessKeys, usage, logs, billing, config, plugins, routing }
+export const adminAreas = { common, shared, dashboard, upstream, credentials, users, accessKeys, usage, logs, billing, config, plugins, routing, alerting }
 
 const en = {
-  ...common.en, ...shared.en, ...dashboard.en, ...upstream.en, ...credentials.en, ...users.en, ...accessKeys.en, ...usage.en, ...logs.en, ...billing.en, ...config.en, ...plugins.en, ...routing.en
+  ...common.en, ...shared.en, ...dashboard.en, ...upstream.en, ...credentials.en, ...users.en, ...accessKeys.en, ...usage.en, ...logs.en, ...billing.en, ...config.en, ...plugins.en, ...routing.en, ...alerting.en
 }
 
 export type AdminMessageKey = keyof typeof en
 type AdminTable = Record<AdminMessageKey, string>
 
 const id: AdminTable = {
-  ...common.id, ...shared.id, ...dashboard.id, ...upstream.id, ...credentials.id, ...users.id, ...accessKeys.id, ...usage.id, ...logs.id, ...billing.id, ...config.id, ...plugins.id, ...routing.id
+  ...common.id, ...shared.id, ...dashboard.id, ...upstream.id, ...credentials.id, ...users.id, ...accessKeys.id, ...usage.id, ...logs.id, ...billing.id, ...config.id, ...plugins.id, ...routing.id, ...alerting.id
 }
 const zhCN: AdminTable = {
-  ...zhCNCommon, ...zhCNShared, ...zhCNDashboard, ...zhCNUpstream, ...zhCNCredentials, ...zhCNUsers, ...zhCNAccessKeys, ...zhCNUsage, ...zhCNLogs, ...zhCNBilling, ...zhCNConfig, ...zhCNPlugins, ...zhCNRouting
+  ...zhCNCommon, ...zhCNShared, ...zhCNDashboard, ...zhCNUpstream, ...zhCNCredentials, ...zhCNUsers, ...zhCNAccessKeys, ...zhCNUsage, ...zhCNLogs, ...zhCNBilling, ...zhCNConfig, ...zhCNPlugins, ...zhCNRouting, ...zhCNAlerting
 }
 const zhTW: AdminTable = {
-  ...zhTWCommon, ...zhTWShared, ...zhTWDashboard, ...zhTWUpstream, ...zhTWCredentials, ...zhTWUsers, ...zhTWAccessKeys, ...zhTWUsage, ...zhTWLogs, ...zhTWBilling, ...zhTWConfig, ...zhTWPlugins, ...zhTWRouting
+  ...zhTWCommon, ...zhTWShared, ...zhTWDashboard, ...zhTWUpstream, ...zhTWCredentials, ...zhTWUsers, ...zhTWAccessKeys, ...zhTWUsage, ...zhTWLogs, ...zhTWBilling, ...zhTWConfig, ...zhTWPlugins, ...zhTWRouting, ...zhTWAlerting
 }
 const ru: AdminTable = {
-  ...ruCommon, ...ruShared, ...ruDashboard, ...ruUpstream, ...ruCredentials, ...ruUsers, ...ruAccessKeys, ...ruUsage, ...ruLogs, ...ruBilling, ...ruConfig, ...ruPlugins, ...ruRouting
+  ...ruCommon, ...ruShared, ...ruDashboard, ...ruUpstream, ...ruCredentials, ...ruUsers, ...ruAccessKeys, ...ruUsage, ...ruLogs, ...ruBilling, ...ruConfig, ...ruPlugins, ...ruRouting, ...ruAlerting
 }
 
 export const adminMessages: Record<ConsoleLocale, AdminTable> = { en, id, 'zh-CN': zhCN, 'zh-TW': zhTW, ru }

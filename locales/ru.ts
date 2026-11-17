@@ -54,6 +54,8 @@ export default {
   'nav.pluginsDescription': 'Магазин плагинов и отчёты узлов',
   'nav.system': 'Информация о системе',
   'nav.systemDescription': 'Работа системы и диагностика',
+  'nav.alerting': 'Оповещения',
+  'nav.alertingDescription': 'Уведомления в Telegram и Teams',
   'connect.controlPlane': 'Плоскость управления',
   'connect.heading': 'Уверенно управляйте кластером CPA.',
   'connect.description': 'Следите за топологией, анализируйте использование, управляйте доступом и контролируйте все подключённые узлы из одной защищённой консоли.',

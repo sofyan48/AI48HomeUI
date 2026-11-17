@@ -42,7 +42,8 @@ export function useAdminNavigation() {
       items: [
         { label: tc('nav.usage'), to: '/admin/usage', icon: 'i-tabler-chart-bar', subtitle: tc('nav.usageDescription'), capability: 'usage_records' },
         { label: tc('nav.diagnostics'), to: '/admin/diagnostics', icon: 'i-tabler-tools', subtitle: tc('nav.diagnosticsDescription') },
-        { label: tc('nav.logs'), to: '/admin/logs', icon: 'i-tabler-file-text', subtitle: tc('nav.logsDescription'), capability: 'logs' }
+        { label: tc('nav.logs'), to: '/admin/logs', icon: 'i-tabler-file-text', subtitle: tc('nav.logsDescription'), capability: 'logs' },
+        { label: tc('nav.alerting'), to: '/admin/alerting', icon: 'i-tabler-bell', subtitle: tc('nav.alertingDescription') }
       ]
     },
     {
