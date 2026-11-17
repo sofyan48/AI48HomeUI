@@ -1,6 +1,6 @@
 # AI48HomeUI
 
-AI48HomeUI, branded as **AI48Hub**, is the browser-based administration panel and user portal for [AI48Home](https://github.com/sofyan48/AI48Home). It provides a Web interface for operating clusters of AI gateways powered by [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI).
+AI48HomeUI, branded as **AI48Home**, is the browser-based administration panel and user portal for [AI48Home](https://github.com/sofyan48/AI48Home). It provides a Web interface for operating clusters of AI gateways powered by [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI).
 
 This project builds on [Home Management Center](https://github.com/router-for-me/Home-Management-Center). See [Credits](#credits) and [License](#license) for attribution and licensing.
 
@@ -16,7 +16,7 @@ The three projects have distinct responsibilities:
 
 ```mermaid
 flowchart TD
-    Admin[Administrators and users] --> UI[AI48HomeUI / AI48Hub]
+    Admin[Administrators and users] --> UI[AI48HomeUI / AI48Home]
     UI -->|Management and user HTTP APIs| Home[AI48Home control plane]
     Home --> DB[(Database)]
     Gateways[CLIProxyAPI gateway nodes] <-->|Configuration, credentials, usage and logs over RESP/mTLS| Home
