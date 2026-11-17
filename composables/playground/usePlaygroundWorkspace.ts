@@ -150,7 +150,7 @@ function createPlaygroundWorkspace() {
   async function send() {
     const text = draft.value.trim()
     if (!canSend.value || !text || !endpoint.value) return
-    const history = historyFor([...messages.value, { id: '', role: 'user', content: text }], systemPrompt.value)
+    const requestMessages = historyFor([...messages.value, { id: '', role: 'user', content: text }], systemPrompt.value)
     const reply: ChatMessage = { id: messageId(), role: 'assistant', content: '', reasoning: '', model: selectedModel.value, pending: true }
     messages.value = [...messages.value, { id: messageId(), role: 'user', content: text }, reply]
     draft.value = ''
@@ -158,7 +158,7 @@ function createPlaygroundWorkspace() {
     const conversationId = saveConversation(history.activeId.value)
     controller = new AbortController()
     const started = performance.now()
-    const body: Record<string, unknown> = { model: selectedModel.value, messages: history, stream: stream.value }
+    const body: Record<string, unknown> = { model: selectedModel.value, messages: requestMessages, stream: stream.value }
     const temp = parseOptionalNumber(temperature.value, 0, 2)
     const limit = parseOptionalNumber(maxTokens.value, 1, 1_000_000, true)
     if (temp !== undefined) body.temperature = temp
