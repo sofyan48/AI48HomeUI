@@ -44,6 +44,23 @@ describe('dedicated playground shell', () => {
     expect(composer.indexOf('<DropdownMenu>')).toBeLessThan(composer.indexOf('v-if="sending"'))
   })
 
+  test('composer gives typing its own full-width row above the controls at every viewport size', () => {
+    const chat = read('components/app/playground/PlaygroundChat.vue')
+    const textarea = chat.slice(chat.indexOf('<Textarea'), chat.indexOf('<DropdownMenu>'))
+    const form = chat.slice(chat.indexOf('<form'), chat.indexOf('@submit.prevent'))
+    expect(form).toContain('w-full shrink-0 px-2 pb-3 sm:px-4')
+    expect(form).not.toContain('max-w-')
+    expect(textarea).toContain('col-span-2')
+    expect(textarea).toContain('min-h-22')
+    expect(textarea).toContain('text-base')
+    expect(textarea).not.toContain('sm:min-h-11')
+    expect(textarea).not.toContain('sm:text-[15px]')
+    expect(chat).toMatch(/\.playground-composer\s*\{\s*display: grid;\s*grid-template-columns: minmax\(0, 1fr\) auto;/)
+    expect(chat).not.toMatch(/@media[^{}]*\{\s*\.playground-composer\s*\{/)
+    expect(chat).not.toContain('sm:max-w-[45%]')
+    expect(chat).toContain('min-w-0 max-w-full shrink-0 justify-self-start')
+  })
+
   test('both layouts register the shared session guard', () => {
     for (const file of ['layouts/app.vue', 'layouts/playground.vue']) {
       expect(read(file)).toContain('usePortalSessionGuard()')

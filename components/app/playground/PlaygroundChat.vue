@@ -57,14 +57,14 @@ function usePrompt(text: string) {
       </div>
     </div>
 
-    <form class="mx-auto w-full max-w-3xl shrink-0 px-3 pb-3 sm:px-6 sm:pb-4" @submit.prevent="send">
+    <form class="w-full shrink-0 px-2 pb-3 sm:px-4 sm:pb-4" @submit.prevent="send">
 
       <div class="playground-composer">
         <Textarea
           ref="input"
           v-model="draft"
           rows="1"
-          class="max-h-52 min-h-11 min-w-0 flex-1 resize-none border-0 bg-transparent px-2 py-2.5 text-[15px] shadow-none focus-visible:ring-0 dark:bg-transparent"
+          class="col-span-2 max-h-52 min-h-22 min-w-0 resize-none border-0 bg-transparent px-2 py-2.5 text-base shadow-none focus-visible:ring-0 dark:bg-transparent"
           :placeholder="ready ? t('playground.placeholder') : t('playground.placeholderDisabled')"
           :aria-label="t('playground.message')"
           :disabled="!ready"
@@ -72,7 +72,7 @@ function usePrompt(text: string) {
         />
         <DropdownMenu>
           <DropdownMenuTrigger as-child>
-            <AppButton type="button" color="neutral" variant="soft" size="sm" class="mb-1 max-w-[45%] shrink-0 rounded-full" :disabled="!ready || sending" :aria-label="`${t('playground.model')}: ${modelLabel}`" :title="modelLabel">
+            <AppButton type="button" color="neutral" variant="soft" size="sm" class="mb-1 min-w-0 max-w-full shrink-0 justify-self-start rounded-full" :disabled="!ready || sending" :aria-label="`${t('playground.model')}: ${modelLabel}`" :title="modelLabel">
               <span class="min-w-0 truncate">{{ modelLabel }}</span>
               <AppIcon name="i-tabler-chevron-down" data-icon="inline-end" aria-hidden="true" />
             </AppButton>
@@ -95,7 +95,8 @@ function usePrompt(text: string) {
 
 <style scoped>
 .playground-composer {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: flex-end;
   gap: 0.5rem;
   border: 1px solid var(--ui-border);
@@ -105,6 +106,7 @@ function usePrompt(text: string) {
   box-shadow: 0 1px 2px color-mix(in oklch, var(--ui-text) 6%, transparent);
   transition: border-color 120ms ease, box-shadow 120ms ease;
 }
+
 .playground-composer:focus-within {
   border-color: color-mix(in oklch, var(--ui-primary) 45%, var(--ui-border));
   box-shadow: 0 0 0 3px color-mix(in oklch, var(--ui-primary) 14%, transparent);
