@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import AppIcon from '~/components/AppIcon.vue'
 import PortalInput from '~/components/app/general/PortalInput.vue'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '~/components/ui/dialog'
 import PortalSkeleton from '~/components/app/general/PortalSkeleton.vue'
 import { computed, ref } from 'vue'
 import { usePortalI18n } from '~/composables/usePortalI18n'
@@ -104,14 +105,18 @@ async function confirmClear() {
     </div>
   </nav>
 
-  <AppModal v-model:open="clearOpen" :title="t('playground.clearHistoryTitle')" :description="historyMode === 'server' ? t('playground.clearHistoryServerDetail') : t('playground.clearHistoryDetail')">
-    <template #body>
-      <div class="flex justify-end gap-2">
+  <Dialog v-model:open="clearOpen">
+    <DialogContent class="sm:max-w-md">
+      <DialogHeader>
+        <DialogTitle>{{ t('playground.clearHistoryTitle') }}</DialogTitle>
+        <DialogDescription>{{ historyMode === 'server' ? t('playground.clearHistoryServerDetail') : t('playground.clearHistoryDetail') }}</DialogDescription>
+      </DialogHeader>
+      <DialogFooter>
         <AppButton color="neutral" variant="ghost" :disabled="clearing" @click="clearOpen = false">{{ t('common.cancel') }}</AppButton>
         <AppButton color="error" icon="i-tabler-trash" :loading="clearing" @click="confirmClear">{{ t('playground.clearHistory') }}</AppButton>
-      </div>
-    </template>
-  </AppModal>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <style scoped>
