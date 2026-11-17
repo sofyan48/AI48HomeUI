@@ -51,6 +51,7 @@ export interface UserCapabilities {
   user_reset_allowance?: boolean
   topup_approval?: boolean
   request_logs?: boolean
+  analytics?: boolean
   email_registration?: boolean
   email_verification?: boolean
   password_recovery?: boolean

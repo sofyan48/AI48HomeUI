@@ -8,10 +8,11 @@ import models from '../locales/portal/models'
 import account from '../locales/portal/account'
 import auth from '../locales/portal/auth'
 import playground from '../locales/portal/playground'
+import analytics from '../locales/portal/analytics'
 import { portalMessages } from '../locales/portal'
 
 const root = new URL('..', import.meta.url).pathname
-const areas = { shell, workspace, models, account, auth, playground }
+const areas = { shell, workspace, models, account, auth, playground, analytics }
 const en: Record<string, string> = Object.assign({}, ...Object.values(areas).map(area => area.en))
 const id: Record<string, string> = Object.assign({}, ...Object.values(areas).map(area => area.id))
 
@@ -27,7 +28,7 @@ const portalFiles = ['layouts/app.vue', 'layouts/playground.vue', ...vueFiles('p
 describe('user portal i18n', () => {
   test('recursive discovery covers the workspace index and every app feature route', () => {
     const routes = portalFiles.filter(file => file.startsWith('pages/app/'))
-    expect(routes).toHaveLength(14)
+    expect(routes).toHaveLength(15)
     expect(routes).toContain('pages/app/index.vue')
     expect(routes).toContain('pages/app/models/index.vue')
         expect(routes).toContain('pages/app/models/price/index.vue')
