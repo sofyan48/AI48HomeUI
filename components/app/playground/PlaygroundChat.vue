@@ -57,7 +57,7 @@ function usePrompt(text: string) {
       </div>
     </div>
 
-    <form class="w-full shrink-0 px-2 pb-3 sm:px-4 sm:pb-4" @submit.prevent="send">
+    <form class="mx-auto w-full max-w-4xl shrink-0 px-3 pb-3 sm:px-6 sm:pb-4" @submit.prevent="send">
 
       <div class="playground-composer">
         <Textarea
