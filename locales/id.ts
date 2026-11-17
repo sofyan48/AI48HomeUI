@@ -54,6 +54,8 @@ export default {
   'nav.pluginsDescription': 'Toko plugin dan laporan node',
   'nav.system': 'Info Sistem',
   'nav.systemDescription': 'Runtime dan diagnostik',
+  'nav.alerting': 'Alerting',
+  'nav.alertingDescription': 'Notifikasi Telegram dan Teams',
   'connect.controlPlane': 'Control plane manajemen',
   'connect.heading': 'Kelola cluster CPA Anda dengan percaya diri.',
   'connect.description': 'Pantau topologi, periksa penggunaan, kelola akses, dan lihat setiap node yang terhubung dari satu konsol yang aman.',
