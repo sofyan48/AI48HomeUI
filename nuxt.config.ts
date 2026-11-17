@@ -4,6 +4,8 @@ import twVite from "@tailwindcss/vite";
 export default defineNuxtConfig({
   ssr: false,
 
+  components: [{ path: "~/components", extensions: ["vue"] }],
+
   app: {
     head: {
       title: "AI48Hub",

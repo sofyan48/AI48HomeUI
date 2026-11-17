@@ -13,6 +13,8 @@
             :key="section.id"
             type="button"
             class="flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-[var(--ui-bg-elevated)]"
+            :aria-current="activeSection === section.id ? 'location' : undefined"
+            :class="activeSection === section.id ? 'bg-[var(--ui-bg-accented)] font-semibold text-[var(--ui-primary)]' : 'text-[var(--ui-text)]'"
             @click="scrollToSection(section.id)"
           >
             <span>{{ section.short }}</span
@@ -27,5 +29,5 @@
 
 <script setup lang="ts">
 import { useConfigWorkspace } from '~/composables/config/useConfigWorkspace'
-const { t, outline, scrollToSection, sectionDirty } = useConfigWorkspace()
+const { t, outline, activeSection, scrollToSection, sectionDirty } = useConfigWorkspace()
 </script>

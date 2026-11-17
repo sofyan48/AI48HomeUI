@@ -7,7 +7,7 @@ import { mergeCatalogs, matchesCatalogFilter, normalizedModelId, type AccessSumm
 import { useModelFormat } from '~/composables/models/useModelFormat'
 import {
   capabilityOrder, catalogPageSize, errorMessage, isNotFound, noFilterValue, normalizedQueryValue, openingPrice,
-  parseCapabilities, queryKeys, supportsCapability, validQueryString, validSorts,
+  parseCapabilities, parseProviders, queryKeys, matchesPriceRange, supportsCapability, validQueryString, validSorts,
   type CapabilityFilter, type DetailsSection
 } from '~/composables/models/catalog'
 
@@ -37,10 +37,12 @@ function createModelsWorkspace() {
   const access = useWorkspaceState<AccessSummary | null>('user:models:access', () => null)
   const accessLoaded = useWorkspaceState('user:models:access-loaded', () => false)
   const search = ref(validQueryString(route.query.q))
-  const provider = ref(validQueryString(route.query.provider))
+  const selectedProviders = ref(parseProviders(route.query.provider))
+  const minPrice = ref(validQueryString(route.query.minPrice))
+  const maxPrice = ref(validQueryString(route.query.maxPrice))
   const inputModality = ref(validQueryString(route.query.modality))
   const selectedCapabilities = ref<CapabilityFilter[]>(parseCapabilities(route.query.caps))
-  const mineOnly = ref(route.query.mine === 'true')
+  const mineOnly = ref(Boolean(token.value) && route.query.mine !== 'false')
   const sortBy = ref(validSorts.has(validQueryString(route.query.sort)) ? validQueryString(route.query.sort) : 'name')
   const selectedModel = ref<CatalogModel | null>(null)
   const detailOpen = ref(false)
@@ -54,8 +56,10 @@ function createModelsWorkspace() {
   const filteredModels = computed(() => {
     const query = search.value.trim().toLowerCase()
     return models.value.filter(model =>
-      matchesCatalogFilter(model, '', provider.value, mineOnly.value && accessLoaded.value) &&
+      matchesCatalogFilter(model, '', '', mineOnly.value && accessLoaded.value) &&
+            (!selectedProviders.value.length || selectedProviders.value.some(provider => matchesCatalogFilter(model, '', provider, false))) &&
       (!inputModality.value || model.modalities?.status === 'known' && model.modalities.input?.includes(inputModality.value)) &&
+      matchesPriceRange(model, minPrice.value, maxPrice.value) &&
       selectedCapabilities.value.every(capability => supportsCapability(model, capability)) &&
       (!query || [model.id, model.display_name, model.description, ...(model.providers || []), ...capabilityLabels(model)].some(value => String(value || '').toLowerCase().includes(query)))
     ).sort((a, b) => {
@@ -82,11 +86,11 @@ function createModelsWorkspace() {
     access.value = null
     accessLoaded.value = false
     accessibleWarning.value = ''
-    if (!token.value) mineOnly.value = false
+    mineOnly.value = Boolean(token.value) && route.query.mine !== 'false'
     void loadModels()
   })
   watch(() => route.query, applyRouteQuery)
-  watch([search, provider, inputModality, selectedCapabilities, mineOnly, sortBy], () => { void syncRouteQuery() }, { deep: true })
+  watch([search, selectedProviders, inputModality, selectedCapabilities, mineOnly, sortBy, minPrice, maxPrice], () => { void syncRouteQuery() }, { deep: true })
   watch(detailOpen, open => {
     if (!open && detailTrigger.value) {
       const trigger = detailTrigger.value
@@ -101,28 +105,42 @@ function createModelsWorkspace() {
     const nextCapabilities = parseCapabilities(route.query.caps)
     const nextSort = validQueryString(route.query.sort)
     search.value = nextSearch
-    provider.value = validQueryString(route.query.provider)
+    selectedProviders.value = parseProviders(route.query.provider)
+    minPrice.value = validQueryString(route.query.minPrice)
+    maxPrice.value = validQueryString(route.query.maxPrice)
     inputModality.value = nextModality
     selectedCapabilities.value = nextCapabilities
-    mineOnly.value = Boolean(token.value) && route.query.mine === 'true'
+    mineOnly.value = Boolean(token.value) && route.query.mine !== 'false'
     sortBy.value = validSorts.has(nextSort) ? nextSort : 'name'
   }
   async function syncRouteQuery() {
     const query = { ...route.query }
     for (const key of queryKeys) delete query[key]
     if (search.value) query.q = search.value
-    if (provider.value) query.provider = provider.value
+    if (selectedProviders.value.length) query.provider = selectedProviders.value.length === 1 ? selectedProviders.value[0] : [...selectedProviders.value]
+    if (minPrice.value) query.minPrice = minPrice.value
+    if (maxPrice.value) query.maxPrice = maxPrice.value
     if (inputModality.value) query.modality = inputModality.value
     if (selectedCapabilities.value.length) query.caps = capabilityOrder.filter(item => selectedCapabilities.value.includes(item)).join(',')
-    if (token.value && mineOnly.value) query.mine = 'true'
+    if (token.value && !mineOnly.value) query.mine = 'false'
     if (sortBy.value !== 'name') query.sort = sortBy.value
-    const unchanged = queryKeys.every(key => normalizedQueryValue(route.query[key]) === normalizedQueryValue(query[key]))
+    const unchanged = queryKeys.every(key => key === 'provider'
+          ? JSON.stringify(route.query[key] ?? '') === JSON.stringify(query[key] ?? '')
+          : normalizedQueryValue(route.query[key]) === normalizedQueryValue(query[key]))
     if (!unchanged) await router.replace({ query })
   }
   function validateCatalogFilters() {
     const modalities = new Set(models.value.flatMap(model => model.modalities?.input || []))
     if (inputModality.value && !modalities.has(inputModality.value)) inputModality.value = ''
-    if (provider.value && !models.value.some(model => model.providers?.includes(provider.value))) provider.value = ''
+
+  }
+  function isProviderSelected(provider: string) {
+    return selectedProviders.value.some(value => value.toLowerCase() === provider.trim().toLowerCase())
+  }
+  function toggleProvider(provider: string) {
+    selectedProviders.value = isProviderSelected(provider)
+      ? selectedProviders.value.filter(value => value.toLowerCase() !== provider.trim().toLowerCase())
+      : parseProviders([...selectedProviders.value, provider])
   }
   function setCapability(capability: CapabilityFilter, enabled: boolean) {
     const selected = new Set(selectedCapabilities.value)
@@ -215,7 +233,7 @@ function createModelsWorkspace() {
 
   return {
     token, models, loading, catalogReady, catalogUnsupported, error, capabilityError, accessibleWarning, access, accessLoaded,
-    search, provider, inputModality, selectedCapabilities, mineOnly, sortBy, providerOptions, modalityOptions, setCapability,
+    search, selectedProviders, toggleProvider, isProviderSelected, minPrice, maxPrice, inputModality, selectedCapabilities, mineOnly, sortBy, providerOptions, modalityOptions, setCapability,
     filteredModels, pagedModels, catalogPage, selectedModel, detailOpen, detailsSection, openDetails
   }
 }

@@ -223,6 +223,19 @@ describe('portal runtime focus', () => {
     } finally { view.app.unmount() }
   })
 
+  test('standalone checkbox stays compact and layout classes do not resize its control', () => {
+    const view = mount(adapter('Checkbox'), { class: 'mt-1', 'aria-label': 'Select model' })
+    try {
+      const field = view.find('field')
+      expect(field.props.class).toContain('w-auto')
+      expect(field.props.class).toContain('shrink-0')
+      expect(field.props.class).toContain('mt-1')
+      const button = view.find('checkbox')
+      expect(button.props.class ?? '').not.toContain('mt-1')
+      expect(button.props['aria-label']).toBe('Select model')
+    } finally { view.app.unmount() }
+  })
+
   test('actual focus helper safely ignores null and fragment/comment roots supplied through setup', async () => {
     let helper!: ReturnType<typeof portalField.usePortalFocus>
     const Harness = Vue.defineComponent({ setup() { helper = portalField.usePortalFocus(); return () => Vue.h('div') } })
@@ -297,7 +310,7 @@ test('portal and shared renderers contain no Nuxt UI components or imports', () 
     })
   }
   const violations: string[] = []
-  for (const file of [...files('pages/app'), ...files('components/app'), 'layouts/app.vue', 'components/AppButton.vue', 'components/AppCard.vue', 'components/AppModal.vue']) {
+  for (const file of [...files('pages/app'), ...files('components/app'), 'layouts/app.vue', 'layouts/playground.vue', 'components/AppButton.vue', 'components/AppCard.vue', 'components/AppModal.vue']) {
       expect(read(file)).not.toMatch(/from\s+['"]@nuxt\/ui(?:\/[^'"]*)?['"]/)
     const { descriptor } = parse(read(file), { filename: file })
     const walk = (node: any) => {

@@ -7,6 +7,7 @@ const source = (file: string) => readFileSync(new URL(`../${file}`, import.meta.
 describe('admin layout feature extraction', () => {
   for (const file of [
     'layouts/default.vue',
+    'components/admin/layout/ConnectionDialog.vue',
     'components/admin/layout/LayoutSidebar.vue',
     'components/admin/layout/LayoutNavigation.vue',
     'components/admin/layout/LayoutConnectionStatus.vue',
@@ -28,6 +29,28 @@ describe('admin layout feature extraction', () => {
       }
     })
   }
+
+  test('signed-out admin mounts only the login dialog over a black screen', () => {
+    const layout = source('layouts/default.vue')
+    const { descriptor } = parse(layout)
+    const template = descriptor.template!.content
+    const guardedStart = template.indexOf('<template v-if="token">')
+    const guardedEnd = template.lastIndexOf('</template>')
+    expect(guardedStart).toBeGreaterThan(-1)
+    for (const content of ['<LayoutSidebar', '<LayoutHeader', '<slot />', '<AdminCommandPalette']) {
+      expect(template.indexOf(content)).toBeGreaterThan(guardedStart)
+      expect(template.indexOf(content)).toBeLessThan(guardedEnd)
+    }
+    expect(template.indexOf('<AdminConnectionDialog')).toBeGreaterThan(guardedEnd)
+    expect(layout).toContain("'admin-shell--locked': !token")
+    expect(layout).toContain('.admin-shell--locked { background: #000; }')
+    expect(layout).toContain('const connectionOpen = ref(!token.value)')
+    expect(layout).toContain('if (!value) openConnection()')
+    const dialog = source('components/admin/layout/ConnectionDialog.vue')
+    expect(dialog).toContain(':show-close-button="!!token && !pending"')
+    expect(dialog).toContain('v-if="token" type="button" color="neutral"')
+    expect(dialog).toContain('if (pending.value || !token.value) event.preventDefault()')
+  })
 
   test('mobile focus handling receives the exposed sidebar element', () => {
     const layout = source('layouts/default.vue')

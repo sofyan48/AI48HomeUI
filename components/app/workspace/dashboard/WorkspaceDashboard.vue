@@ -6,6 +6,7 @@ import PortalInput from '~/components/app/general/PortalInput.vue'
 import PortalSelect from '~/components/app/general/PortalSelect.vue'
 import PortalAlert from '~/components/app/general/PortalAlert.vue'
 import PortalBadge from '~/components/app/general/PortalBadge.vue'
+import PortalSkeleton from '~/components/app/general/PortalSkeleton.vue'
 import AppLimitReset from './LimitReset.vue'
 import { usePortalI18n } from '~/composables/usePortalI18n'
 import { useUserApi } from '~/composables/useUserApi'
@@ -23,13 +24,13 @@ const copyText = useWorkspaceClipboard()
 
 <template>
   <div class="dashboard-bento">
-    <header class="dashboard-greeting" aria-labelledby="dashboard-title">
+    <AppCard class="dashboard-greeting" aria-labelledby="dashboard-title" :ui="{ body: 'flex flex-wrap items-center justify-between gap-4' }">
       <div class="min-w-0">
         <h1 id="dashboard-title" class="break-words font-bold tracking-tight text-[var(--ui-text-highlighted)]">{{ user?.username ? t('ws.dashboard.welcomeUser', { name: user.username }) : t('ws.dashboard.welcome') }}</h1>
         <p class="mt-1 text-sm text-[var(--ui-text-muted)]">{{ dashboardStatusLine }}</p>
       </div>
       <AppButton v-if="capabilities.request_logs === true" to="/app/logs" icon="i-tabler-list-details" color="neutral" variant="ghost" size="sm" class="rounded-full">{{ t('ws.dashboard.requestLogs') }}</AppButton>
-    </header>
+    </AppCard>
 
     <!-- Spotlight 1: how to start sending requests. -->
     <section class="dashboard-connect" aria-labelledby="connect-title">
@@ -113,11 +114,20 @@ const copyText = useWorkspaceClipboard()
     </section>
 
     <!-- Single place for activity numbers. -->
-    <AppCard class="dashboard-panel dashboard-usage min-w-0" :ui="{ body: 'pt-2' }">
+    <AppCard class="dashboard-panel dashboard-usage min-w-0" :ui="{ header: 'px-4 pt-4 pb-3', body: 'px-4 pt-0 pb-4' }">
       <template #header>
         <div class="flex flex-wrap items-center justify-between gap-3">
-          <div class="flex items-center gap-3"><span class="dashboard-icon flex size-9 items-center justify-center rounded-lg"><AppIcon name="i-tabler-chart-bar" class="size-5" aria-hidden="true" /></span><div><h2 class="text-sm font-semibold">{{ t('ws.dashboard.usage') }}</h2><p class="text-xs text-[var(--ui-text-muted)]">{{ appliedRange.from === appliedRange.to ? appliedRange.from : `${appliedRange.from} – ${appliedRange.to}` }}<template v-if="monthOverview"> · {{ t('ws.dashboard.creditsThisMonth', { amount: formatCredits(monthOverview.total_charge_amount ?? monthOverview.month_spend) }) }}</template></p></div></div>
-          <form class="flex flex-wrap items-center gap-2" @submit.prevent="applyBillingRange">
+          <div class="flex min-w-0 items-center gap-3">
+            <span class="dashboard-usage-emblem" aria-hidden="true"><AppIcon name="i-tabler-chart-bar" class="size-5" /></span>
+            <div class="min-w-0">
+              <h2 class="text-sm font-semibold">{{ t('ws.dashboard.usage') }}</h2>
+              <p class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[var(--ui-text-muted)]">
+                <span>{{ appliedRange.from === appliedRange.to ? appliedRange.from : `${appliedRange.from} – ${appliedRange.to}` }}</span>
+                <span v-if="monthOverview && !billingLoading">· {{ t('ws.dashboard.creditsThisMonth', { amount: formatCredits(monthOverview.total_charge_amount ?? monthOverview.month_spend) }) }}</span>
+              </p>
+            </div>
+          </div>
+          <form class="dashboard-usage-controls flex flex-wrap items-center gap-2" @submit.prevent="applyBillingRange">
             <PortalSelect v-model="rangePreset" :items="rangeOptions" value-key="value" label-key="label" class="w-36" :aria-label="t('ws.dashboard.timeRange')" @update:model-value="selectRange" />
             <template v-if="rangePreset === 'custom'">
               <PortalInput v-model="rangeFrom" type="date" :aria-label="t('ws.dashboard.fromUtc')" />
@@ -130,11 +140,18 @@ const copyText = useWorkspaceClipboard()
         </div>
       </template>
       <dl class="dashboard-usage-strip" :aria-busy="billingLoading">
-        <div v-for="metric in dashboardUsageMetrics" :key="metric.label" class="dashboard-usage-item">
-          <dt class="flex items-center gap-2 text-xs font-medium text-[var(--ui-text-muted)]"><AppIcon :name="metric.icon" class="size-4 dashboard-usage-icon" aria-hidden="true" />{{ metric.label }}</dt>
-          <dd class="mt-1.5 break-words text-2xl font-bold tabular-nums tracking-tight text-[var(--ui-text-highlighted)]">{{ billingLoading ? '—' : metric.value }}</dd>
+        <div v-for="(metric, index) in dashboardUsageMetrics" :key="metric.label" class="dashboard-usage-item" :class="{ 'dashboard-usage-item--featured': index === 0 }">
+          <dt class="flex min-w-0 items-center justify-between gap-2 text-xs font-medium text-[var(--ui-text-muted)]">
+            <span>{{ metric.label }}</span>
+            <span class="dashboard-usage-metric-icon" aria-hidden="true"><AppIcon :name="metric.icon" class="size-4" /></span>
+          </dt>
+          <dd class="dashboard-usage-value mt-1.5 break-words text-2xl font-bold tabular-nums tracking-tight text-[var(--ui-text-highlighted)]">
+            <PortalSkeleton v-if="billingLoading" class="h-7 w-20 max-w-full rounded-md" />
+            <template v-else>{{ metric.value }}</template>
+          </dd>
         </div>
       </dl>
+
       <PortalAlert v-if="billingError" class="mt-3" color="error" variant="subtle" :title="t('ws.dashboard.usageError')" :description="billingError" />
     </AppCard>
   </div>
@@ -148,14 +165,7 @@ const copyText = useWorkspaceClipboard()
   gap: 1rem;
 }
 .dashboard-bento > * { min-width: 0; }
-.dashboard-greeting {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding-block: 0.25rem;
-}
+
 .dashboard-greeting h1 { font-size: 1.5rem; font-weight: 600; line-height: 1.35; letter-spacing: -0.015em; }
 .dashboard-connect,
 .dashboard-credits {
@@ -264,24 +274,64 @@ const copyText = useWorkspaceClipboard()
   color: var(--ui-text-muted);
   background: var(--user-inset-bg);
 }
-.user-dashboard .dashboard-panel :deep([data-slot="header"]) { border-bottom: 0; padding-bottom: 0.25rem; }
+.user-dashboard .dashboard-panel :deep([data-slot="header"]) { border-bottom: 0; }
+.user-dashboard .dashboard-panel:not(.dashboard-usage) :deep([data-slot="header"]) { padding-bottom: 0.25rem; }
 .user-dashboard .dashboard-panel h2 { font-size: 0.9375rem; letter-spacing: -0.01em; }
+.dashboard-usage :deep([data-slot="header"]) { padding-bottom: 0.75rem; }
+.dashboard-usage-emblem {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  flex-shrink: 0;
+  border: 1px solid color-mix(in oklch, var(--ui-primary) 20%, var(--ui-border));
+  border-radius: 0.875rem;
+  color: var(--ui-primary);
+  background: color-mix(in oklch, var(--ui-primary) 9%, var(--user-panel-bg));
+}
 .dashboard-usage-strip {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  overflow: hidden;
+  gap: 0.5rem;
+}
+.dashboard-usage-item {
+  min-width: 0;
+  padding: 0.625rem 0.875rem;
+  border: 1px solid var(--ui-border);
+  border-radius: 0.625rem;
+  background: var(--user-inset-bg);
+}
+.dashboard-usage-item--featured {
+  border-color: color-mix(in oklch, var(--ui-primary) 28%, var(--ui-border));
+  background: radial-gradient(ellipse at top right, color-mix(in oklch, var(--ui-primary) 12%, transparent), transparent 75%), var(--user-inset-bg);
+}
+.dashboard-usage-metric-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  flex-shrink: 0;
   border: 1px solid var(--ui-border);
   border-radius: 0.375rem;
+  color: var(--ui-text-muted);
   background: var(--user-panel-bg);
 }
-.dashboard-usage-item { padding: 0.875rem 1rem; }
-.dashboard-usage-item:nth-child(odd) { border-right: 1px solid var(--ui-border); }
-.dashboard-usage-item:nth-child(-n + 2) { border-bottom: 1px solid var(--ui-border); }
-.dashboard-usage-icon { color: var(--ui-text-muted); }
+.dashboard-usage-item--featured .dashboard-usage-metric-icon {
+  color: var(--ui-primary);
+  border-color: color-mix(in oklch, var(--ui-primary) 20%, var(--ui-border));
+  background: color-mix(in oklch, var(--ui-primary) 8%, var(--user-panel-bg));
+}
+.dashboard-usage-item--featured .dashboard-usage-value { color: var(--ui-primary); }
+@media (max-width: 639px) {
+  .dashboard-usage-controls { width: 100%; }
+  .dashboard-usage-item { padding: 0.625rem 0.75rem; }
+  .dashboard-usage-value { font-size: 1.5rem; }
+}
 @media (min-width: 768px) {
   .dashboard-usage-strip { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  .dashboard-usage-item { border-bottom: 0 !important; }
-  .dashboard-usage-item:not(:last-child) { border-right: 1px solid var(--ui-border); }
+
 }
 @media (min-width: 1024px) {
   .dashboard-bento { grid-template-columns: repeat(12, minmax(0, 1fr)); }

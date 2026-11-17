@@ -1,5 +1,6 @@
 import { computed, inject, provide, ref, type InjectionKey, type Ref } from 'vue'
-import { useUserApi, type BillingCharge, type BillingOverview } from '~/composables/useUserApi'
+import { useUserApi } from '~/composables/useUserApi'
+import type { BillingCharge, BillingOverview } from '~/stores/userSession'
 import { usePortalI18n } from '~/composables/usePortalI18n'
 import { useWorkspaceState } from '~/composables/useWorkspaceState'
 import { errorMessage, useWorkspaceFormat } from './common'

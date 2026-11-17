@@ -61,6 +61,6 @@ export function useModelFormat() {
 
   return {
     copyModelId, capabilityLabels, availabilityLabel, modalityText, capabilityText, duration, dateText,
-    providerLimit, modelFacts, price, pricingText, componentLabel, unitLabel
+    providerLimit, modelLimit, modelFacts, price, pricingText, componentLabel, unitLabel
   }
 }

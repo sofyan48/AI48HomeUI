@@ -19,12 +19,12 @@ const { charges, chargesTotal, billingLoading, billingError, rangeOptions, pageS
     <AppCard class="finance-panel finance-usage" :ui="{ body: 'space-y-5' }">
       <template #header><div class="flex items-center gap-3"><span class="finance-icon flex size-9 shrink-0 items-center justify-center rounded-xl"><AppIcon name="i-tabler-chart-bar" class="size-5" aria-hidden="true" /></span><div><h2 id="billing-title" class="text-sm font-semibold">{{ t('ws.billing.title') }}</h2><p class="mt-0.5 text-xs text-[var(--ui-text-muted)]">{{ t('ws.billing.subtitle') }}</p></div></div></template>
       <form class="billing-range flex flex-wrap items-end gap-3" @submit.prevent="applyBillingRange">
-        <PortalField :label="t('ws.dashboard.timeRange')">
-          <PortalSelect v-model="rangePreset" :items="rangeOptions" value-key="value" label-key="label" class="w-44" @update:model-value="selectRange" />
+        <PortalField :label="t('ws.dashboard.timeRange')" class="min-w-0 flex-1 sm:w-44 sm:flex-none">
+          <PortalSelect v-model="rangePreset" :items="rangeOptions" value-key="value" label-key="label" class="w-full" @update:model-value="selectRange" />
         </PortalField>
         <template v-if="rangePreset === 'custom'">
-          <PortalField :label="t('ws.dashboard.fromUtc')"><PortalInput v-model="rangeFrom" type="date" /></PortalField>
-          <PortalField :label="t('ws.dashboard.toUtc')"><PortalInput v-model="rangeTo" type="date" /></PortalField>
+          <PortalField :label="t('ws.dashboard.fromUtc')" class="w-full sm:w-auto"><PortalInput v-model="rangeFrom" type="date" /></PortalField>
+          <PortalField :label="t('ws.dashboard.toUtc')" class="w-full sm:w-auto"><PortalInput v-model="rangeTo" type="date" /></PortalField>
           <AppButton type="submit" :loading="billingLoading">{{ t('ws.billing.applyRange') }}</AppButton>
         </template>
         <AppButton type="button" class="ml-auto shrink-0 rounded-full" color="neutral" variant="ghost" icon="i-tabler-refresh" :loading="billingLoading" @click="loadBilling">{{ t('common.refresh') }}</AppButton>
@@ -61,9 +61,7 @@ const { charges, chargesTotal, billingLoading, billingError, rangeOptions, pageS
               <h3 class="flex items-center gap-2 text-sm font-semibold"><AppIcon name="i-tabler-receipt" class="size-4 text-[var(--ui-primary)]" aria-hidden="true" /> {{ t('ws.billing.recentCharges') }}</h3>
               <p class="text-xs text-[var(--ui-text-muted)]">{{ t('ws.billing.matchingRecords', { count: formatNumber(chargesTotal) }) }}</p>
             </div>
-            <PortalField :label="t('ws.billing.rowsPerPage')">
-              <PortalSelect v-model="chargePageSize" :items="pageSizeOptions" value-key="value" label-key="label" class="w-28" @update:model-value="changePageSize" />
-            </PortalField>
+
           </div>
         </template>
         <div class="min-h-64 overflow-x-auto">
@@ -79,7 +77,12 @@ const { charges, chargesTotal, billingLoading, billingError, rangeOptions, pageS
         </div>
         <template #footer>
           <div class="flex flex-wrap items-center justify-between gap-3 text-sm">
-            <span class="text-[var(--ui-text-muted)]">{{ t('ws.billing.showing', { start: chargeRangeStart, end: chargeRangeEnd, total: formatNumber(chargesTotal) }) }}</span>
+            <div class="flex flex-wrap items-center gap-3">
+              <PortalField :label="t('ws.billing.rowsPerPage')" orientation="horizontal" class="w-auto shrink-0" :ui="{ container: 'shrink-0', label: 'whitespace-nowrap' }">
+                <PortalSelect v-model="chargePageSize" :items="pageSizeOptions" value-key="value" label-key="label" class="w-20 shrink-0" @update:model-value="changePageSize" />
+              </PortalField>
+              <span class="text-[var(--ui-text-muted)]">{{ t('ws.billing.showing', { start: chargeRangeStart, end: chargeRangeEnd, total: formatNumber(chargesTotal) }) }}</span>
+            </div>
             <div class="flex items-center gap-2">
               <AppButton size="sm" color="neutral" variant="outline" :disabled="chargePage <= 1 || billingLoading" @click="changeChargePage(-1)">{{ t('ws.billing.previous') }}</AppButton>
               <span>{{ t('ws.billing.page', { page: chargePage, pages: chargePages }) }}</span>

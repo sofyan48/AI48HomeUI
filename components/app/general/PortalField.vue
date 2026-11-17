@@ -30,12 +30,12 @@ provide(portalFieldKey, { id, controlId, required: computed(() => !!props.requir
 </script>
 
 <template>
-  <Field :data-invalid="invalid || undefined" :data-disabled="disabled || undefined" :class="ui?.root">
-    <div v-if="label || $slots.label || hint || $slots.hint" class="flex items-center justify-between gap-2" :class="ui?.container">
+  <Field :data-invalid="invalid || undefined" :data-disabled="disabled || undefined" class="min-w-0" :class="ui?.root">
+    <div v-if="label || $slots.label || hint || $slots.hint" class="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1" :class="ui?.container">
       <FieldLabel v-if="label || $slots.label" :for="controlId" :class="ui?.label">
         <slot name="label">{{ label }}</slot><span v-if="required" aria-hidden="true">*</span>
       </FieldLabel>
-      <FieldDescription v-if="hint || $slots.hint" :id="`${id}-hint`" :class="ui?.hint"><slot name="hint">{{ hint }}</slot></FieldDescription>
+      <FieldDescription v-if="hint || $slots.hint" :id="`${id}-hint`" class="min-w-0 [overflow-wrap:anywhere]" :class="ui?.hint"><slot name="hint">{{ hint }}</slot></FieldDescription>
     </div>
     <FieldDescription v-if="description || $slots.description" :id="`${id}-description`" :class="ui?.description"><slot name="description">{{ description }}</slot></FieldDescription>
     <slot :id="controlId" :error="error" />

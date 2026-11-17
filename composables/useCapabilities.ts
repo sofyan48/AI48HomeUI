@@ -1,11 +1,6 @@
 import { storeToRefs } from 'pinia'
 import { useManagementCapabilitiesStore } from '~/stores/managementCapabilities'
 
-export type {
-  ManagementCapabilities,
-  ManagementServerInfo,
-  CapabilitiesResponse
-} from '~/stores/managementCapabilities'
 
 export const useCapabilities = () => {
   const store = useManagementCapabilitiesStore()

@@ -50,7 +50,7 @@ export function mergeCatalogs(publicModels: CatalogModel[], accessibleModels: Ca
 export function matchesCatalogFilter(model: CatalogModel, query: string, provider: string, mineOnly: boolean) {
   const text = query.trim().toLowerCase()
   return (!mineOnly || model.accessible === true) &&
-    (!provider || model.providers?.includes(provider)) &&
+    (!provider.trim() || model.providers?.some(value => value.trim().toLowerCase() === provider.trim().toLowerCase())) &&
     (!text || [model.id, model.display_name, model.description, ...(model.providers || [])]
       .some(value => value?.toLowerCase().includes(text)))
 }
@@ -104,6 +104,7 @@ export function pricingEntryPoint(pricing: ModelPricing | null | undefined) {
   return {
     input: lowest(rungs.map(rung => rung.input_price_per_million)),
     output: lowest(rungs.map(rung => rung.output_price_per_million)),
+    cacheRead: lowest(rungs.map(rung => rung.cache_read_price_per_million)),
     maxRungCount: Math.max(0, ...tiers.map(tier => tier.rungs.length)),
     providerCount: pricing.providers.length,
     serviceTiers: [...new Set(tiers.map(tier => tier.service_tier))],

@@ -19,10 +19,10 @@ const { formatNumber, formatCompactNumber, formatPercent, formatAmount, formatDa
       <div class="flex items-center justify-between border-b border-[var(--ui-border)] px-4 py-3"><div><h2 class="text-sm font-semibold">{{ t('usage.credUsageTitle') }}</h2><p class="text-xs text-[var(--ui-text-muted)]">{{ t('usage.credUsageDesc') }}</p></div><AppButton size="sm" color="neutral" variant="ghost" icon="i-tabler-refresh" :aria-label="t('usage.refreshCredUsage')" :loading="credentialsLoading" :disabled="!canAttribute" @click="loadCredentialUsage" /></div>
       <PortalAlert v-if="!canAttribute" color="warning" variant="subtle" :title="t('usage.credAttributionUnavailable')" />
       <PortalAlert v-if="credentialError" color="error" variant="subtle" :description="credentialError" />
-      <div class="flex flex-wrap items-end gap-3 border-b border-[var(--ui-border)] bg-[var(--admin-control-bg)] px-4 py-2.5">
-        <AdminField :label="t('usage.sortMetric')"><AdminSelect v-model="credentialMetric" :items="rankingMetricOptions" value-key="value" label-key="label" class="w-44" /></AdminField>
-        <AdminField :label="t('usage.direction')"><AdminSelect v-model="credentialDirection" :items="[{ label: t('usage.descending'), value: 'desc' }, { label: t('usage.ascending'), value: 'asc' }]" value-key="value" label-key="label" class="w-36" /></AdminField>
-        <AdminField :label="t('usage.rows')"><AdminSelect v-model="credentialLimit" :items="[10, 20, 50, 100]" class="w-24" /></AdminField>
+      <div class="grid grid-cols-1 items-end gap-3 border-b border-[var(--ui-border)] bg-[var(--admin-control-bg)] px-4 py-2.5 sm:grid-cols-[11rem_9rem_6rem]">
+        <AdminField :label="t('usage.sortMetric')"><AdminSelect v-model="credentialMetric" :items="rankingMetricOptions" value-key="value" label-key="label" class="w-full" /></AdminField>
+        <AdminField :label="t('usage.direction')"><AdminSelect v-model="credentialDirection" :items="[{ label: t('usage.descending'), value: 'desc' }, { label: t('usage.ascending'), value: 'asc' }]" value-key="value" label-key="label" class="w-full" /></AdminField>
+        <AdminField :label="t('usage.rows')"><AdminSelect v-model="credentialLimit" :items="[10, 20, 50, 100]" class="w-full" /></AdminField>
       </div>
       <AppTable :columns="credentialColumns" :data="credentialUsage" :loading="credentialsLoading" :number-offset="(credentialPage - 1) * credentialLimit" class="min-w-[980px]">
         <template #credential-cell="{ row }"><div class="min-w-48"><p class="truncate text-sm font-medium">{{ rowValue(row).label || rowValue(row).id || t('usage.unknownCredential') }}</p><p class="truncate font-mono text-xs text-[var(--ui-text-muted)]">{{ rowValue(row).id }}</p></div></template>

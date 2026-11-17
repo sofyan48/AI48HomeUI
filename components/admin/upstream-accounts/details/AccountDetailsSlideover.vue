@@ -1,8 +1,8 @@
 <template>
-  <AppModal v-model:open="detailsOpen" :dismissible="!savingFields && !savingPolicy && !credentialAction" :title="detailsTarget?.label || detailsTarget?.name || t('cred.details.title')" :description="detailsTarget?.id || ''" :ui="{ content: 'sm:max-w-xl' }">
+  <AppModal v-model:open="detailsOpen" :dismissible="!savingFields && !savingPolicy && !credentialAction" :title="detailsTarget?.label || detailsTarget?.name || t('cred.details.title')" :description="detailsTarget?.id || ''" :ui="{ content: 'sm:w-[min(92vw,56rem)] sm:max-w-none' }">
     <template #body>
       <div v-if="detailsTarget" class="space-y-5">
-        <div class="-mx-4 flex flex-wrap gap-1 border-b border-[var(--ui-border)] bg-[var(--ui-bg-elevated)] px-4 py-2" role="tablist" :aria-label="t('cred.details.title')"><AppButton v-for="section in detailSections" :key="section" role="tab" :aria-selected="detailsTab === section" size="sm" color="neutral" :variant="detailsTab === section ? 'soft' : 'ghost'" :disabled="savingFields || savingPolicy || Boolean(credentialAction)" @click="selectDetailSection(section)">{{ detailSectionLabel(section) }}</AppButton></div>
+        <div class="account-detail-tabs" role="tablist" :aria-label="t('cred.details.title')"><AppButton v-for="section in detailSections" :key="section" role="tab" :aria-selected="detailsTab === section" size="sm" color="neutral" :variant="detailsTab === section ? 'soft' : 'ghost'" :disabled="savingFields || savingPolicy || Boolean(credentialAction)" @click="selectDetailSection(section)">{{ detailSectionLabel(section) }}</AppButton></div>
         <DetailsOverviewTab v-if="detailsTab === 'Overview'" />
         <DetailsMetadataTab v-else-if="detailsTab === 'Metadata'" />
         <DetailsQuotaTab v-else-if="detailsTab === 'Quota'" />
@@ -31,3 +31,12 @@ const {
   selectDetailSection, detailSectionLabel
 } = useUpstreamAccounts()
 </script>
+
+<style scoped>
+.account-detail-tabs[role="tablist"] {
+  width: 100%;
+  min-width: 0;
+  flex-wrap: wrap;
+  overflow: visible;
+}
+</style>

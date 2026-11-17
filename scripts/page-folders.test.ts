@@ -18,8 +18,8 @@ const adminFeatures = [
   'system-nodes', 'upstream', 'usage', 'users',
 ]
 const appFeatures = [
-  'api-keys', 'balance', 'forgot-password', 'login', 'logs', 'models',
-  'profile', 'register', 'reset-password', 'settings', 'verify-email',
+  'api-keys', 'balance', 'forgot-password', 'login', 'logs', 'models', 'models/price',
+  'playground', 'profile', 'register', 'reset-password', 'settings', 'verify-email',
 ]
 const expectedRoutes = [
   '/admin', ...adminFeatures.map(feature => `/admin/${feature}`),
@@ -29,10 +29,10 @@ const expectedRoutes = [
 const routeFor = (file: string) => file.replace(/^pages/, '').replace(/\/index\.vue$/, '').replace(/\.vue$/, '')
 
 describe('feature page folders', () => {
-  test('all 33 public URLs remain unique and unchanged', () => {
+  test('all 35 public URLs remain unique and match the expected routes', () => {
     const routes = pages().map(routeFor)
     expect(routes.sort()).toEqual(expectedRoutes)
-    expect(new Set(routes).size).toBe(33)
+    expect(new Set(routes).size).toBe(35)
   })
 
   test('every feature uses index.vue without inventing general pages', () => {
@@ -49,7 +49,8 @@ describe('feature page folders', () => {
   test('layout metadata and legacy redirect destinations remain intact', () => {
     for (const file of pages()) {
       const metadata = [...read(file).matchAll(/definePageMeta\(([^\n]+)\)/g)].map(match => match[1])
-      const expected = file.startsWith('pages/app/') ? ["{ layout: 'app' }"]
+      const expected = file === 'pages/app/playground/index.vue' ? ["{ layout: 'playground' }"]
+              : file.startsWith('pages/app/') ? ["{ layout: 'app' }"]
         : ['pages/admin/index.vue', 'pages/admin/connect/index.vue'].includes(file) ? ['{ layout: false }']
           : file === 'pages/admin/quota/index.vue' ? ["{ layout: 'default' }"] : []
       expect(metadata).toEqual(expected)

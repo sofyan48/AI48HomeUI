@@ -30,13 +30,13 @@
           </thead>
           <tbody>
             <tr v-if="!groupDetails(group).length">
-              <td :colspan="kind === 'model' && channelBindingsSupported ? 5 : 4" class="px-4 py-12 text-center text-sm text-muted">{{ t('users.noBindingsYet') }}</td>
+              <td :colspan="kind === 'model' && channelBindingsSupported ? 5 : 4" class="px-4 py-12 text-center text-sm text-muted-foreground">{{ t('users.noBindingsYet') }}</td>
             </tr>
             <tr v-for="(detail, index) in groupDetails(group)" :key="detail.id">
               <td class="app-table-number-cell"><span class="app-table-number">{{ index + 1 }}</span></td>
               <td class="min-w-32 max-w-64 truncate font-mono text-xs" :title="target(detail)">{{ target(detail) }}</td>
-              <td v-if="kind === 'model' && channelBindingsSupported" class="min-w-32 max-w-64 truncate text-muted" :title="channels(detail)">{{ channels(detail) }}</td>
-              <td class="whitespace-nowrap text-muted">{{ updated(detail) }}</td>
+              <td v-if="kind === 'model' && channelBindingsSupported" class="min-w-32 max-w-64 truncate text-muted-foreground" :title="channels(detail)">{{ channels(detail) }}</td>
+              <td class="whitespace-nowrap text-muted-foreground">{{ updated(detail) }}</td>
               <td class="w-px whitespace-nowrap text-right">
                 <AppButton color="error" variant="ghost" size="sm" icon="i-tabler-trash" :aria-label="t('users.removeBinding')" :title="t('users.removeBinding')" @click="$emit('delete-detail', detail)" />
               </td>

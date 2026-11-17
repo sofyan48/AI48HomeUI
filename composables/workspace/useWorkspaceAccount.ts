@@ -1,5 +1,6 @@
 import { computed, inject, provide, reactive, ref, type InjectionKey } from 'vue'
-import { useUserApi, type UserSessionResponse } from '~/composables/useUserApi'
+import { useUserApi } from '~/composables/useUserApi'
+import type { UserSessionResponse } from '~/stores/userSession'
 import { usePortalI18n } from '~/composables/usePortalI18n'
 import { usePortalToast } from '~/composables/portal/usePortalToast'
 import { useWorkspaceState } from '~/composables/useWorkspaceState'

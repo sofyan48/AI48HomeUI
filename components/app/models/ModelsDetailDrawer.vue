@@ -1,5 +1,5 @@
 <template>
-  <AppModal v-model:open="detailOpen" @after:enter="focusPricing" :title="selectedModel?.display_name || selectedModel?.id || t('models.detailTitle')" :description="selectedModel?.id" :ui="{ content: 'sm:max-w-xl' }">
+  <AppModal v-model:open="detailOpen" :title="selectedModel?.display_name || selectedModel?.id || t('models.detailTitle')" :description="selectedModel?.id" :ui="{ content: 'sm:max-w-xl' }">
     <template #body>
       <div v-if="selectedModel" class="catalog-details space-y-5 text-sm">
         <div class="flex items-center gap-3">
@@ -48,34 +48,6 @@
           <p v-if="selectedModel.availability.window">{{ t('models.availability.windowRange', { from: dateText(selectedModel.availability.window.from), to: dateText(selectedModel.availability.window.to) }) }}</p>
           <p>{{ t('models.availability.lastObserved', { value: dateText(selectedModel.availability.last_observed_at) }) }}</p>
         </section>
-        <section class="space-y-3" aria-labelledby="model-pricing-heading">
-          <h3 id="model-pricing-heading" ref="pricingHeading" tabindex="-1" class="font-semibold">{{ t('models.pricing.title') }}</h3>
-          <template v-if="selectedModel.pricing?.status === 'published' && selectedModel.pricing.providers?.length">
-            <p class="text-xs text-[var(--ui-text-muted)]">{{ t('models.pricing.noteRungs') }}</p>
-            <p class="text-xs text-[var(--ui-text-muted)]">{{ t('models.pricing.noteFormula') }}</p>
-            <div v-for="offer in selectedModel.pricing.providers" :key="offer.provider" class="min-w-0 space-y-3">
-              <h4 class="break-all font-mono font-semibold">{{ offer.provider }}</h4>
-              <div v-for="tier in offer.tiers" :key="tier.service_tier" class="min-w-0 space-y-2">
-                <p class="flex flex-wrap items-center gap-2">{{ t('models.pricing.serviceTier') }} <code>{{ tier.service_tier }}</code><PortalBadge v-if="tier.is_default" color="neutral" variant="subtle" size="sm">{{ t('models.pricing.default') }}</PortalBadge></p>
-                <p v-if="!tier.rungs.length" class="text-[var(--ui-text-muted)]">{{ t('models.pricing.noRungs') }}</p>
-                <div v-for="(rung, rungIndex) in tier.rungs" :key="`${rung.min_input_tokens}:${rungIndex}`" class="min-w-0 rounded-lg border border-[var(--ui-border)] p-3">
-                  <p class="mb-3 text-xs font-medium">{{ rung.min_input_tokens > 0 ? t('models.pricing.fromInputTokens', { count: rung.min_input_tokens.toLocaleString(intlLocale) }) : t('models.pricing.baseRung') }}</p>
-                  <dl class="grid grid-cols-2 gap-3">
-                    <div v-for="component in rungPriceComponents(rung)" :key="component.label" class="min-w-0">
-                      <dt class="text-xs text-[var(--ui-text-muted)]">{{ componentLabel(component.label) }}</dt>
-                      <dd class="break-words tabular-nums">{{ price(component.value) }} <span class="text-xs text-[var(--ui-text-muted)]">{{ unitLabel(component.unit) }}</span></dd>
-                    </div>
-                  </dl>
-                  <div v-if="rung.pricing_expr" class="mt-3 min-w-0 border-t border-[var(--ui-border)] pt-2">
-                    <p class="text-xs text-[var(--ui-text-muted)]">{{ t('models.pricing.formulaNote') }}</p>
-                    <div role="region" :aria-label="t('models.pricing.formulaAria')" tabindex="0" class="mt-1 max-w-full overflow-x-auto"><code class="block w-max whitespace-pre text-xs">{{ rung.pricing_expr }}</code></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </template>
-          <p v-else>{{ pricingText(selectedModel) }}</p>
-        </section>
       </div>
     </template>
   </AppModal>
@@ -85,28 +57,18 @@
 import AppIcon from '~/components/AppIcon.vue'
 import AppModal from '~/components/AppModal.vue'
 import PortalBadge from '~/components/app/general/PortalBadge.vue'
-import { nextTick, ref, watch } from 'vue'
 import { usePortalI18n } from '~/composables/usePortalI18n'
-import { rungPriceComponents } from '~/composables/userModelCatalog'
 import { budgetText, modelLogoIcon } from '~/composables/models/catalog'
 import { useModelFormat } from '~/composables/models/useModelFormat'
 import { useModelsWorkspace } from '~/composables/models/useModelsWorkspace'
 
-const { t, intlLocale } = usePortalI18n()
-const { selectedModel, detailOpen, detailsSection } = useModelsWorkspace()
+const { t } = usePortalI18n()
+const { selectedModel, detailOpen } = useModelsWorkspace()
 const {
   copyModelId, capabilityLabels, availabilityLabel, modalityText, capabilityText, duration, dateText,
-  providerLimit, modelFacts, price, pricingText, componentLabel, unitLabel
+  providerLimit, modelFacts
 } = useModelFormat()
 
-const pricingHeading = ref<HTMLElement | null>(null)
-
-function focusPricing() {
-  if (detailsSection.value !== 'pricing') return
-  pricingHeading.value?.focus({ preventScroll: true })
-  pricingHeading.value?.scrollIntoView({ block: 'start' })
-}
-watch(pricingHeading, () => { void nextTick(focusPricing) })
 </script>
 
 <style scoped>

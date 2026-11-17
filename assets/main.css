@@ -20,10 +20,24 @@
 
 :root {
   --ui-container: var(--container-7xl);
+  /* Source-owned semantic colors formerly supplied by Nuxt UI. */
+  --ui-secondary: var(--color-blue-600);
+  --ui-success: var(--color-emerald-600);
+  --ui-info: var(--color-sky-600);
+  --ui-warning: var(--color-amber-600);
+  --ui-error: var(--color-red-600);
   /* AI48Hub brand, shared by admin and user shells. */
   --brand-from: var(--ui-color-primary-600, var(--color-violet-600));
   --brand-to: var(--ui-color-primary-500, var(--color-violet-500));
   --brand-gradient: linear-gradient(135deg, var(--brand-from), var(--brand-to));
+}
+
+:root.dark {
+  --ui-secondary: var(--color-blue-400);
+  --ui-success: var(--color-emerald-400);
+  --ui-info: var(--color-sky-400);
+  --ui-warning: var(--color-amber-400);
+  --ui-error: var(--color-red-400);
 }
 
 /* User portal palette: mirrors the admin tokens in admin.css so both shells match. */
@@ -44,8 +58,11 @@
   --ui-border-muted: var(--color-zinc-200);
   --ui-border-accented: var(--color-zinc-300);
   --ui-focus: var(--ui-primary);
+  --ui-overlay: var(--ui-bg);
   --ui-hover: color-mix(in oklch, var(--ui-primary) 6%, var(--ui-bg-elevated));
   --user-selected: color-mix(in oklch, var(--ui-primary) 9%, var(--ui-bg));
+  --user-shell-bg: var(--color-zinc-100);
+  --user-rail-bg: oklch(0.2 0.012 292);
   --user-workspace-bg: var(--color-zinc-50);
   --user-panel-bg: var(--ui-bg);
   --user-panel-border: color-mix(in oklch, var(--color-zinc-200) 85%, transparent);
@@ -75,6 +92,8 @@
   --ui-border-accented: var(--color-zinc-700);
   --ui-hover: color-mix(in oklch, var(--ui-primary) 10%, var(--ui-bg));
   --user-selected: color-mix(in oklch, var(--ui-primary) 14%, var(--ui-bg));
+  --user-shell-bg: var(--color-zinc-950);
+  --user-rail-bg: oklch(0.17 0.01 292);
   --user-workspace-bg: var(--color-zinc-950);
   --user-panel-bg: var(--color-zinc-900);
   --user-panel-border: var(--color-zinc-800);
@@ -93,7 +112,40 @@ body {
   font-size: 0.875rem;
 }
 
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/ibm-plex-mono-regular.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("./fonts/ibm-plex-mono-medium.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("./fonts/ibm-plex-mono-semibold.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("./fonts/ibm-plex-mono-bold.ttf") format("truetype");
+}
+
 body:not([data-admin-console]) {
+  font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   background: var(--user-workspace-bg);
   color: var(--ui-text);
   font-size: 0.875rem;
@@ -354,6 +406,13 @@ body:not([data-admin-console]) .workbench-main button:not([role="switch"]):not([
   box-shadow: 0 16px 40px -8px rgb(24 24 27 / 20%) !important;
 }
 
+/* Portal overlays use an opaque surface, independent of the dark navigation rail. */
+:root:not([data-admin-console]) :is([data-reka-popper-content-wrapper] > *, [role="menu"], [role="listbox"]) {
+  background: var(--ui-overlay) !important;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
 [data-highlighted] {
   outline: none;
   background: var(--ui-hover) !important;
@@ -381,7 +440,7 @@ button[aria-expanded="true"] > svg {
 }
 
 /* Shared user surfaces: every page panel uses the same radius, border, and elevation. */
-:is(.logs-panel, .catalog-panel, .profile-panel, .settings-panel, .finance-panel, .balance-panel, .dashboard-panel, .balance-topup, .balance-hero) {
+:is(.logs-panel, .playground-panel, .catalog-panel, .profile-panel, .settings-panel, .finance-panel, .balance-panel, .dashboard-panel, .balance-topup, .balance-hero) {
   border: 1px solid var(--user-panel-border) !important;
   border-radius: var(--user-panel-radius) !important;
   background-color: var(--user-panel-bg);

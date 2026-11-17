@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { cp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { extname, resolve } from "node:path";
 
@@ -33,7 +34,10 @@ const rewriteAssetFiles = async (directory) => {
 await rm(distDir, { recursive: true, force: true });
 await mkdir(assetsDir, { recursive: true });
 await cp(generatedAssetsDir, assetsDir, { recursive: true });
-await cp(generatedFontsDir, resolve(assetsDir, "fonts"), { recursive: true });
+// _fonts is only emitted when a font module (e.g. @nuxt/fonts) bundles font files.
+if (existsSync(generatedFontsDir)) {
+  await cp(generatedFontsDir, resolve(assetsDir, "fonts"), { recursive: true });
+}
 await cp(resolve(generatedDir, "favicon.png"), resolve(assetsDir, "favicon.png"));
 await cp(resolve(generatedDir, "favicon.ico"), resolve(assetsDir, "favicon.ico"));
 await cp(resolve(generatedDir, "favicon.svg"), resolve(assetsDir, "favicon.svg"));

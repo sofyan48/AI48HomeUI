@@ -27,7 +27,7 @@
                   :key="mode.value"
                   class="space-y-2"
                 >
-                  <div class="flex items-center justify-between">
+                  <div class="flex flex-wrap items-center justify-between gap-2">
                     <h3 class="font-semibold">{{ payloadModeLabel(mode.value) }}</h3>
                     <AppButton
                       size="sm"
@@ -41,16 +41,16 @@
                     v-for="(rule, index) in payloadDraft[mode.value] || []"
                     :key="index"
                     :ui="{ body: 'p-3' }"
-                    ><div class="flex items-center justify-between gap-3">
-                      <div>
-                        <p class="text-sm font-medium">
+                    ><div class="flex flex-col items-start gap-3 sm:flex-row">
+                      <div class="min-w-0 flex-1">
+                        <p class="text-sm font-medium [overflow-wrap:anywhere]">
                           {{ payloadRuleSummary(rule) }}
                         </p>
-                        <p class="text-xs text-[var(--ui-text-muted)]">
+                        <p class="text-xs text-[var(--ui-text-muted)] [overflow-wrap:anywhere]">
                           {{ payloadRulePaths(rule, mode.value) }}
                         </p>
                       </div>
-                      <div class="flex gap-1">
+                      <div class="flex flex-wrap gap-1 sm:shrink-0">
                         <AppButton
                           size="sm"
                           color="neutral"

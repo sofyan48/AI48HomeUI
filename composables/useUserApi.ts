@@ -1,25 +1,6 @@
 import { storeToRefs } from 'pinia'
 import { useUserSessionStore } from '~/stores/userSession'
 
-export type {
-  UserApiQueryValue,
-  UserApiQuery,
-  UserApiRequestOptions,
-  UserEmailStatus,
-  UserPasskey,
-  UserAccount,
-  UserSessionResponse,
-  UserCapabilities,
-  UserServerInfo,
-  UserApiKey,
-  BillingTopItem,
-  BillingOverview,
-  BillingBalanceRecord,
-  BillingRechargeRequest,
-  BillingCharge,
-  UserModel
-} from '~/stores/userSession'
-export { UserApiError } from '~/stores/userSession'
 
 export const useUserApi = () => {
   const store = useUserSessionStore()

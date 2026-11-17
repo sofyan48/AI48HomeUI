@@ -57,7 +57,7 @@
       <template #header>
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div><h2 class="flex items-center gap-2 text-sm font-semibold"><AppIcon name="i-tabler-list-details" class="size-4 text-[var(--ui-text-muted)]" aria-hidden="true" /> {{ t('logs.historyTitle') }}</h2><p class="mt-1 text-xs tabular-nums text-[var(--ui-text-muted)]">{{ t('logs.historyCount', { count: formatNumber(total) }) }}</p></div>
-          <PortalField :label="t('logs.rowsPerPage')"><PortalSelect v-model="pageSize" :items="pageSizeOptions" class="w-24" :disabled="pending || unsupported" @update:model-value="changePageSize" /></PortalField>
+
         </div>
       </template>
       <div class="overflow-x-auto">
@@ -74,7 +74,12 @@
       </div>
       <template #footer>
         <div class="flex flex-wrap items-center justify-between gap-3 text-sm">
-          <span class="text-[var(--ui-text-muted)]">{{ t('logs.showing', { start: rangeStart, end: rangeEnd, total: formatNumber(total) }) }}</span>
+          <div class="flex flex-wrap items-center gap-3">
+            <PortalField :label="t('logs.rowsPerPage')" orientation="horizontal" class="w-auto shrink-0" :ui="{ container: 'shrink-0', label: 'whitespace-nowrap' }">
+              <PortalSelect v-model="pageSize" :items="pageSizeOptions" class="w-20 shrink-0" :disabled="pending || unsupported" @update:model-value="changePageSize" />
+            </PortalField>
+            <span class="text-[var(--ui-text-muted)]">{{ t('logs.showing', { start: rangeStart, end: rangeEnd, total: formatNumber(total) }) }}</span>
+          </div>
           <div class="flex flex-wrap items-center gap-2">
             <AppButton color="neutral" variant="outline" size="sm" :disabled="page <= 1 || pending || unsupported" @click="changePage(-1)">{{ t('logs.previous') }}</AppButton>
             <span class="px-1 text-xs tabular-nums text-[var(--ui-text-muted)]">{{ t('logs.pageOf', { page, pages }) }}</span>
