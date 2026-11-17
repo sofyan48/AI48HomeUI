@@ -20,7 +20,7 @@
 
     <section class="balance-topup min-w-0" aria-labelledby="topup-title">
       <h2 id="topup-title" class="flex items-center gap-2.5 text-lg font-semibold tracking-tight"><span class="balance-icon flex size-8 items-center justify-center rounded-lg"><AppIcon name="i-tabler-circle-plus" class="size-4" aria-hidden="true" /></span>{{ t('balance.addCredits') }}</h2>
-      <p class="mt-2 mb-6 text-sm leading-relaxed text-[var(--ui-text-muted)]">{{ topupApprovalEnabled ? t('balance.topupHintApproval') : t('balance.topupHint') }}</p>
+
       <div class="min-w-0 space-y-3">
 
         <form class="space-y-4" @submit.prevent="recharge">
@@ -31,10 +31,12 @@
           <PortalField :label="t('balance.amountLabel')" required>
             <div class="flex flex-col gap-4">
               <PortalInput v-model="amount" type="number" min="0" step="any" :placeholder="t('balance.amountPlaceholder')" size="xl" class="w-full" :disabled="saving || loading || !requestStateLoaded || !!pendingTopup" required />
+              <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
               <div class="flex flex-wrap gap-2" role="group" :aria-label="t('balance.quickAmounts')">
                 <button v-for="preset in amountPresets" :key="preset" type="button" class="balance-preset" :class="{ 'balance-preset--active': Number(amount) === preset }" :disabled="saving || loading || !requestStateLoaded || !!pendingTopup" @click="amount = String(preset)">{{ formatCredits(preset) }}</button>
               </div>
-              <AppButton type="submit" icon="i-tabler-plus" size="lg" class="justify-center rounded-full" :loading="saving" :disabled="!validAmount || !token || loading || !requestStateLoaded || !!pendingTopup">{{ topupApprovalEnabled ? t('balance.requestTopup') : t('balance.topup') }} {{ validAmount ? formatCredits(Number(amount)) : '' }}</AppButton>
+              <AppButton type="submit" icon="i-tabler-plus" size="lg" class="min-w-0 flex-1 justify-center rounded-full" :loading="saving" :disabled="!validAmount || !token || loading || !requestStateLoaded || !!pendingTopup">{{ topupApprovalEnabled ? t('balance.requestTopup') : t('balance.topup') }} {{ validAmount ? formatCredits(Number(amount)) : '' }}</AppButton>
+              </div>
             </div>
           </PortalField>
           <AppButton v-if="pendingTopup || !requestStateLoaded" type="button" color="neutral" variant="outline" icon="i-tabler-refresh" :loading="loading" :disabled="saving" @click="refresh">{{ t('balance.refreshStatus') }}</AppButton>
@@ -241,8 +243,7 @@ onMounted(() => { hydrateSession(); void refresh() })
 .balance-summary + .balance-summary { padding-left: 1.25rem; border-left: 1px solid var(--ui-border); }
 .balance-summary + .balance-summary dd:first-of-type { margin-top: 0.5rem; font-size: 1.5rem; }
 .balance-summary + .balance-summary dd:last-child { display: none; }
-.balance-topup { padding: 1.5rem; }
-.balance-topup > p { margin-bottom: 1rem; }
+.balance-topup { display: flex; flex-direction: column; gap: 1.25rem; padding: 1.5rem; }
 .balance-topup form > * + * { margin-top: 0.75rem; }
 .balance-hero::after {
   position: absolute;

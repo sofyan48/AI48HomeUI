@@ -19,12 +19,12 @@ const { charges, chargesTotal, billingLoading, billingError, rangeOptions, pageS
     <AppCard class="finance-panel finance-usage" :ui="{ body: 'space-y-5' }">
       <template #header><div class="flex items-center gap-3"><span class="finance-icon flex size-9 shrink-0 items-center justify-center rounded-xl"><AppIcon name="i-tabler-chart-bar" class="size-5" aria-hidden="true" /></span><div><h2 id="billing-title" class="text-sm font-semibold">{{ t('ws.billing.title') }}</h2><p class="mt-0.5 text-xs text-[var(--ui-text-muted)]">{{ t('ws.billing.subtitle') }}</p></div></div></template>
       <form class="billing-range flex flex-wrap items-end gap-3" @submit.prevent="applyBillingRange">
-        <PortalField :label="t('ws.dashboard.timeRange')">
-          <PortalSelect v-model="rangePreset" :items="rangeOptions" value-key="value" label-key="label" class="w-44" @update:model-value="selectRange" />
+        <PortalField :label="t('ws.dashboard.timeRange')" class="min-w-0 flex-1 sm:w-44 sm:flex-none">
+          <PortalSelect v-model="rangePreset" :items="rangeOptions" value-key="value" label-key="label" class="w-full" @update:model-value="selectRange" />
         </PortalField>
         <template v-if="rangePreset === 'custom'">
-          <PortalField :label="t('ws.dashboard.fromUtc')"><PortalInput v-model="rangeFrom" type="date" /></PortalField>
-          <PortalField :label="t('ws.dashboard.toUtc')"><PortalInput v-model="rangeTo" type="date" /></PortalField>
+          <PortalField :label="t('ws.dashboard.fromUtc')" class="w-full sm:w-auto"><PortalInput v-model="rangeFrom" type="date" /></PortalField>
+          <PortalField :label="t('ws.dashboard.toUtc')" class="w-full sm:w-auto"><PortalInput v-model="rangeTo" type="date" /></PortalField>
           <AppButton type="submit" :loading="billingLoading">{{ t('ws.billing.applyRange') }}</AppButton>
         </template>
         <AppButton type="button" class="ml-auto shrink-0 rounded-full" color="neutral" variant="ghost" icon="i-tabler-refresh" :loading="billingLoading" @click="loadBilling">{{ t('common.refresh') }}</AppButton>
