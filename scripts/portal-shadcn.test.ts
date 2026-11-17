@@ -297,7 +297,7 @@ test('portal and shared renderers contain no Nuxt UI components or imports', () 
     })
   }
   const violations: string[] = []
-  for (const file of [...files('pages/app'), ...files('components/app'), 'layouts/app.vue', 'components/AppButton.vue', 'components/AppCard.vue', 'components/AppModal.vue']) {
+  for (const file of [...files('pages/app'), ...files('components/app'), 'layouts/app.vue', 'layouts/playground.vue', 'components/AppButton.vue', 'components/AppCard.vue', 'components/AppModal.vue']) {
       expect(read(file)).not.toMatch(/from\s+['"]@nuxt\/ui(?:\/[^'"]*)?['"]/)
     const { descriptor } = parse(read(file), { filename: file })
     const walk = (node: any) => {

@@ -59,7 +59,7 @@ function createPlaygroundWorkspace() {
   const ready = computed(() => !loading.value && !disabledReason.value)
   const canSend = computed(() => ready.value && !sending.value && Boolean(draft.value.trim()) && Boolean(selectedKey.value) && Boolean(selectedModel.value))
   const keyOptions = computed(() => keys.value.map(key => ({ value: key.api_key, label: `${key.display_name || t('ws.keys.unnamed')} · ${maskKey(key.api_key)}` })))
-  const modelOptions = computed(() => models.value.map(model => ({ value: model.id, label: model.display_name && model.display_name !== model.id ? `${model.display_name} (${model.id})` : model.id })))
+  const modelOptions = computed(() => models.value.map(model => ({ value: model.id, label: model.display_name?.trim() || model.id })))
   const activeModel = computed(() => models.value.find(model => model.id === selectedModel.value) || null)
 
   async function load() {

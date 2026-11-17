@@ -44,7 +44,7 @@ import PlaygroundSettings from '~/components/app/playground/PlaygroundSettings.v
 import { usePortalI18n } from '~/composables/usePortalI18n'
 import { providePlaygroundWorkspace } from '~/composables/playground/usePlaygroundWorkspace'
 
-definePageMeta({ layout: 'app' })
+definePageMeta({ layout: 'playground' })
 const { t } = usePortalI18n()
 const { loading, loadError, disabledReason } = providePlaygroundWorkspace()
 // Without a usable key, endpoint, or model the chat stays visible but disabled; history remains browsable.
@@ -63,18 +63,12 @@ function toggleHistory() {
 </script>
 
 <style scoped>
-/* Cancel the shell's main padding so the chat fills the viewport below the header. */
 .playground-workspace {
   display: flex;
-  height: calc(100dvh - 4rem);
-  margin: -1.25rem -1rem;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
   overflow: hidden;
-}
-@media (min-width: 640px) {
-  .playground-workspace { margin: -1.25rem; }
-}
-@media (min-width: 1024px) {
-  .playground-workspace { margin: -1.5rem; }
 }
 .playground-workspace__history {
   width: 16rem;

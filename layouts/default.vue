@@ -1,5 +1,6 @@
 <template>
-  <div class="admin-console admin-shell relative h-dvh w-full overflow-hidden text-[var(--ui-text)]" :data-page-tone="pageTone">
+  <div class="admin-console admin-shell relative h-dvh w-full overflow-hidden text-[var(--ui-text)]" :data-page-tone="pageTone" :class="{ 'admin-shell--locked': !token }">
+      <template v-if="token">
     <div v-if="mobileOpen" aria-hidden="true" class="admin-navigation-overlay fixed inset-0 z-40 lg:hidden" @click="closeMobile" />
     <LayoutSidebar
       ref="sidebar"
@@ -50,6 +51,7 @@
       </div>
     </div>
     <AdminCommandPalette v-model:open="commandOpen" :groups="commandGroups" :disabled="connectionOpen || mobileOpen" />
+    </template>
     <AdminConnectionDialog v-model:open="connectionOpen" :status-label="connectionStatus.label" />
   </div>
 </template>
@@ -74,7 +76,7 @@ const sidebar = ref<InstanceType<typeof LayoutSidebar> | null>(null)
 const sidebarElement = computed(() => sidebar.value?.element ?? null)
 const { mobileOpen, sidebarCollapsed, desktopViewport, toggleSidebar, closeMobile, openMobile, handleSidebarKeydown } = useAdminSidebar(sidebarElement)
 const commandOpen = ref(false)
-const connectionOpen = ref(false)
+const connectionOpen = ref(!token.value)
 const openConnection = () => {
   commandOpen.value = false
   closeMobile()
@@ -94,6 +96,9 @@ const commandGroups = useAdminCommands({
   closeMobile, openConnection, syncData, toggleSidebar, disconnect: handleDisconnect
 })
 
+watch(token, (value) => {
+  if (!value) openConnection()
+})
 watch(() => route.fullPath, () => { closeMobile(); commandOpen.value = false })
 onMounted(async () => {
   if (!token.value) {
@@ -116,6 +121,7 @@ onMounted(async () => {
     radial-gradient(50rem 30rem at 100% 100%, color-mix(in oklch, var(--color-fuchsia-500) 10%, transparent), transparent 60%),
     var(--admin-shell-bg);
 }
+.admin-shell--locked { background: #000; }
 .admin-navigation-overlay { background: var(--admin-scrim); }
 
 /* Section tones: one accent per console area. */

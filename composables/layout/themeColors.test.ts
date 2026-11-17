@@ -59,6 +59,18 @@ describe('theme accent preference', () => {
     }
   })
 
+  test('access panel descriptions use foreground colors instead of muted surfaces', () => {
+    for (const file of [
+      'components/admin/general/DataPanel.vue',
+      'components/admin/general/DetailSection.vue',
+      'components/admin/users/UsersGroupCards.vue'
+    ]) {
+      const component = source(file)
+      expect(component).toContain('text-muted-foreground')
+      expect(component).not.toMatch(/\btext-(?:muted|highlighted|default)(?=[\s"])/)
+    }
+  })
+
   test('selector keeps labeled mode and accent controls together', () => {
     const selector = source('components/ThemeSwitcher.vue')
     expect(selector).toContain('v-for="option in options"')

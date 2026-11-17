@@ -22,7 +22,7 @@ function vueFiles(dir: string): string[] {
   })
 }
 
-const portalFiles = ['layouts/app.vue', ...vueFiles('pages/app'), ...vueFiles('components/app')]
+const portalFiles = ['layouts/app.vue', 'layouts/playground.vue', ...vueFiles('pages/app'), ...vueFiles('components/app')]
 
 describe('user portal i18n', () => {
   test('recursive discovery covers the workspace index and every app feature route', () => {

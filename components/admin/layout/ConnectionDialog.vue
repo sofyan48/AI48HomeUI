@@ -2,7 +2,7 @@
   <Dialog v-model:open="open">
     <DialogContent
       class="w-full max-w-lg"
-      :show-close-button="!pending"
+      :show-close-button="!!token && !pending"
       @escape-key-down="preventDismiss"
       @interact-outside="preventDismiss"
       @pointer-down-outside="preventDismiss"
@@ -24,7 +24,7 @@
         <p class="text-xs leading-5 text-muted-foreground">{{ t('shared.connection.privacy') }}</p>
         <div class="flex flex-col gap-2 sm:flex-row sm:justify-end">
           <AppButton v-if="token" type="button" color="error" variant="soft" :disabled="pending" @click="disconnect">{{ tc('shell.disconnect') }}</AppButton>
-          <AppButton type="button" color="neutral" variant="ghost" :disabled="pending" @click="open = false">{{ t('common.cancel') }}</AppButton>
+          <AppButton v-if="token" type="button" color="neutral" variant="ghost" :disabled="pending" @click="open = false">{{ t('common.cancel') }}</AppButton>
           <AppButton type="submit" :loading="pending" :disabled="pending || !key.trim()">{{ t('shared.connection.submit') }}</AppButton>
         </div>
       </form>
@@ -64,7 +64,7 @@ watch(open, (value) => {
 onBeforeUnmount(() => controller?.abort())
 
 function preventDismiss(event: Event) {
-  if (pending.value) event.preventDefault()
+  if (pending.value || !token.value) event.preventDefault()
 }
 
 async function connect() {

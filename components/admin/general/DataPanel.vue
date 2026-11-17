@@ -2,8 +2,8 @@
   <section class="admin-data-panel min-w-0 max-w-full overflow-hidden rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg)]" :aria-label="title || t('shared.panel.dataTable')">
     <header v-if="title || description || $slots.actions" class="flex min-w-0 flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
       <div v-if="title || description" class="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
-        <h2 v-if="title" class="text-sm font-semibold text-highlighted [overflow-wrap:anywhere]">{{ title }}</h2>
-        <span v-if="description" class="text-xs text-muted [overflow-wrap:anywhere]">{{ description }}</span>
+        <h2 v-if="title" class="text-sm font-semibold text-foreground [overflow-wrap:anywhere]">{{ title }}</h2>
+        <span v-if="description" class="text-xs text-muted-foreground [overflow-wrap:anywhere]">{{ description }}</span>
       </div>
       <div v-if="$slots.actions" class="admin-data-panel__actions flex min-w-0 flex-wrap items-center gap-2 sm:justify-end">
         <slot name="actions" />

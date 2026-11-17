@@ -59,11 +59,13 @@ import { Sheet, SheetContent, SheetTitle } from '~/components/ui/sheet'
 import PortalNavigation from '~/components/app/general/PortalNavigation.vue'
 import PortalThemeSwitcher from '~/components/app/general/PortalThemeSwitcher.vue'
 import PortalLanguageSwitcher from '~/components/app/general/PortalLanguageSwitcher.vue'
+import { usePortalSessionGuard } from '~/composables/portal/usePortalSessionGuard'
 provide(Symbol.for('cliproxy-user-card'), true)
 const route = useRoute()
 const { t, intlLocale } = usePortalI18n()
 const router = useRouter()
-const { token, currentUser, clearSession, loadCurrentUser, hydrateSession, capabilities, loadCapabilities } = useUserApi()
+const { token, currentUser, clearSession, capabilities } = useUserApi()
+usePortalSessionGuard()
 const creditBalance = computed(() => {
   if (!currentUser.value) return '—'
   const credits = Number(currentUser.value.credits)
@@ -83,7 +85,7 @@ const restoreMobileFocus = (event: Event) => {
   if (!isDesktop.value && mobileTrigger?.isConnected) mobileTrigger.focus({ preventScroll: true })
 }
 watch(isDesktop, closeMobile)
-const publicPaths = new Set(['/app/login', '/app/register', '/app/forgot-password', '/app/reset-password', '/app/verify-email', '/app/models'])
+
 const workspaceNavigation = computed(() => [
   { label: t('shell.nav.dashboard'), to: '/app', icon: 'i-tabler-layout-dashboard' },
   { label: t('shell.nav.balance'), to: '/app/balance', icon: 'i-tabler-wallet' },
@@ -112,20 +114,8 @@ const pageSubtitle = computed(() => workspaceRoute.value
 const homeTarget = computed(() => token.value ? '/app' : '/')
 const isActive = (to: string) => route.path === to
 
-const ensureSession = async () => {
-  hydrateSession()
-  if (publicPaths.has(route.path)) return
-  if (!token.value) { await router.replace({ path: '/app/login', query: { redirect: route.fullPath } }); return }
-  try { await loadCurrentUser(); await loadCapabilities().catch(() => {}) }
-  catch (cause: any) {
-    if (cause?.statusCode !== 401 && cause?.code !== 'approval_pending' && token.value) return
-    clearSession()
-    await router.replace({ path: '/app/login', query: { redirect: route.fullPath } })
-  }
-}
 const logout = async () => { clearSession(); await router.replace('/app/login') }
-watch(() => route.fullPath, () => { closeMobile(); void ensureSession() })
-onMounted(ensureSession)
+watch(() => route.fullPath, closeMobile)
 </script>
 
 <style scoped>

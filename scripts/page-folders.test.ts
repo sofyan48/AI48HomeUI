@@ -49,7 +49,8 @@ describe('feature page folders', () => {
   test('layout metadata and legacy redirect destinations remain intact', () => {
     for (const file of pages()) {
       const metadata = [...read(file).matchAll(/definePageMeta\(([^\n]+)\)/g)].map(match => match[1])
-      const expected = file.startsWith('pages/app/') ? ["{ layout: 'app' }"]
+      const expected = file === 'pages/app/playground/index.vue' ? ["{ layout: 'playground' }"]
+              : file.startsWith('pages/app/') ? ["{ layout: 'app' }"]
         : ['pages/admin/index.vue', 'pages/admin/connect/index.vue'].includes(file) ? ['{ layout: false }']
           : file === 'pages/admin/quota/index.vue' ? ["{ layout: 'default' }"] : []
       expect(metadata).toEqual(expected)
