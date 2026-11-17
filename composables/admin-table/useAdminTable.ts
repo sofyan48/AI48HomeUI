@@ -71,19 +71,26 @@ export function useAdminTable(
     }
     return { ...result, state }
   })
-  const tableApi = useTable<AdminTableFeatures, any>({
+  const forwardedKeys = [...optionKeys,
+    'manualPagination', 'manualSorting', 'manualFiltering', 'enableRowSelection',
+    'enableMultiRowSelection', 'enableSubRowSelection', 'enableSorting',
+    'enableMultiSort', 'enableSortingRemoval', 'sortDescFirst', 'maxMultiSortColCount',
+    'getRowCanExpand', 'autoResetExpanded', 'pageCount', 'rowCount', 'state',
+    ...tableStateKeys.map(key => `on${key[0]!.toUpperCase()}${key.slice(1)}Change`),
+  ]
+  const tableOptions: Record<string, any> = {
     features: adminTableFeatures,
     get data() { return data() },
     get columns() { return prepared.value },
-    // useTable watches getters and synchronizes controlled state into its atoms.
-    ...Object.fromEntries([...optionKeys, ...optionGroups.flatMap(group => []),
-      'manualPagination', 'manualSorting', 'manualFiltering', 'enableRowSelection',
-      'enableMultiRowSelection', 'enableSubRowSelection', 'enableSorting',
-      'enableMultiSort', 'enableSortingRemoval', 'sortDescFirst', 'maxMultiSortColCount',
-      'getRowCanExpand', 'autoResetExpanded', 'pageCount', 'rowCount', 'state',
-      ...tableStateKeys.map(key => `on${key[0]!.toUpperCase()}${key.slice(1)}Change`),
-    ].map(key => [key, computed(() => (options.value as Record<string, any>)[key])])), 
-  } as TableOptions<AdminTableFeatures, any>)
+  }
+  // Forward options as getters, not refs: the adapter's merge proxy falls back to the
+  // raw source when an unwrapped value is undefined, which would leak a truthy ComputedRef
+  // (e.g. autoResetAll or onSortingChange) into the table options.
+  for (const key of forwardedKeys) {
+    Object.defineProperty(tableOptions, key, { enumerable: true, get: () => (options.value as Record<string, any>)[key] })
+  }
+  // useTable watches getters and synchronizes controlled state into its atoms.
+  const tableApi = useTable<AdminTableFeatures, any>(tableOptions as TableOptions<AdminTableFeatures, any>)
   const domAttrs = computed(() => Object.fromEntries(Object.entries(attrs).filter(([key]) => {
     const name = camelize(key)
     return !tableStateKeys.includes(name as any) && !optionKeys.includes(name)
