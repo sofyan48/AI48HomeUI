@@ -12,6 +12,18 @@ export const noFilterValue = '__no_filter__'
 export const catalogPageSize = 24
 
 export function validQueryString(value: unknown) { return typeof value === 'string' && value.length <= 200 ? value : '' }
+export function parseProviders(value: unknown): string[] {
+  const values = Array.isArray(value) ? value : [value]
+  const seen = new Set<string>()
+  return values.flatMap(item => {
+    const provider = validQueryString(item).trim()
+    const identity = provider.toLowerCase()
+    if (!provider || seen.has(identity)) return []
+    seen.add(identity)
+    return [provider]
+  })
+}
+
 export function parseCapabilities(value: unknown) {
   if (typeof value !== 'string') return []
   const requested = new Set(value.split(','))

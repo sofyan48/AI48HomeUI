@@ -1,8 +1,18 @@
 import { describe, expect, test } from 'bun:test'
-import { catalogProviders, matchesPriceRange, priceBound } from '../composables/models/catalog'
+import { catalogProviders, matchesPriceRange, parseProviders, priceBound } from '../composables/models/catalog'
 import { mergeCatalogs } from '../composables/userModelCatalog'
 
 describe('catalog provider summary', () => {
+  test('parses scalar and repeated providers, trimming and deduplicating case-insensitively', () => {
+    expect(parseProviders(' OpenAI ')).toEqual(['OpenAI'])
+    expect(parseProviders([' OpenAI ', 'google', 'openai', ' GOOGLE ', 'Anthropic'])).toEqual(['OpenAI', 'google', 'Anthropic'])
+    expect(parseProviders('provider,with,commas')).toEqual(['provider,with,commas'])
+  })
+
+  test('ignores empty and invalid provider query values without inventing a selection', () => {
+    for (const value of [undefined, null, '', '  ', 42, {}, []]) expect(parseProviders(value)).toEqual([])
+    expect(parseProviders([null, '', ' ', 42, {}, ' google '])).toEqual(['google'])
+  })
   test('price ranges include boundaries and zero, and exclude unpublished prices only while active', () => {
     const model = { id: 'priced', pricing: { status: 'published', providers: [{ provider: 'p', tiers: [{ service_tier: '*', rungs: [{ min_input_tokens: 0, input_price_per_million: 2 }] }] }] } }
     expect(matchesPriceRange(model, '2', '2')).toBe(true)

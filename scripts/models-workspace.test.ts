@@ -143,15 +143,15 @@ describe('models workspace reactive provider and route synchronization', () => {
       const loading: boolean[] = []
       const stop = Vue.watch(view.workspace.loading, value => loading.push(value), { flush: 'sync' })
       view.workspace.catalogPage.value = 2
-      view.injected.provider.value = 'openai'
+      view.injected.toggleProvider('openai')
       expect(ids(view.workspace)).toEqual(['gpt'])
       expect(view.workspace.catalogPage.value).toBe(1)
       await settle()
       expect(view.router.currentRoute.value.query).toEqual({ campaign: 'keep', provider: 'openai' })
       expect(view.replacements).toEqual([{ campaign: 'keep', provider: 'openai' }])
-      expect(view.workspace.provider.value).toBe('openai')
+      expect(view.workspace.selectedProviders.value).toEqual(['openai'])
       expect(view.workspace.pagedModels.value.map(model => model.id)).toEqual(['gpt'])
-      view.injected.provider.value = ''
+      view.injected.selectedProviders.value = []
       await settle()
       expect(ids(view.workspace)).toEqual(['claude', 'gemini', 'gpt'])
       expect(view.router.currentRoute.value.query).toEqual({ campaign: 'keep' })
@@ -169,15 +169,15 @@ describe('models workspace reactive provider and route synchronization', () => {
       expect(ids(view.workspace)).toEqual(['claude'])
       await view.router.push({ query: { provider: 'google', campaign: 'keep' } })
       await settle()
-      expect(view.workspace.provider.value).toBe('google')
+      expect(view.workspace.selectedProviders.value).toEqual(['google'])
       expect(ids(view.workspace)).toEqual(['gemini'])
       view.router.back()
       await settle()
-      expect(view.workspace.provider.value).toBe('anthropic')
+      expect(view.workspace.selectedProviders.value).toEqual(['anthropic'])
       expect(ids(view.workspace)).toEqual(['claude'])
       view.router.forward()
       await settle()
-      expect(view.workspace.provider.value).toBe('google')
+      expect(view.workspace.selectedProviders.value).toEqual(['google'])
       expect(ids(view.workspace)).toEqual(['gemini'])
       expect(view.replacements).toEqual([])
       expect(view.calls).toEqual(['capabilities', '/models'])
@@ -192,13 +192,13 @@ describe('models workspace reactive provider and route synchronization', () => {
       if (to.query.provider === 'anthropic') { entered.resolve(); await navigation.promise }
     })
     try {
-      view.workspace.provider.value = 'anthropic'
+      view.workspace.selectedProviders.value = ['anthropic']
       await entered.promise
-      view.workspace.provider.value = 'openai'
+      view.workspace.selectedProviders.value = ['openai']
       await settle()
       navigation.resolve()
       await settle()
-      expect(view.workspace.provider.value).toBe('openai')
+      expect(view.workspace.selectedProviders.value).toEqual(['openai'])
       expect(view.router.currentRoute.value.query.provider).toBe('openai')
       expect(ids(view.workspace)).toEqual(['gpt'])
       expect(view.workspace.loading.value).toBe(false)
@@ -210,12 +210,12 @@ describe('models workspace reactive provider and route synchronization', () => {
     const view = await mountWorkspace({ provider: 'anthropic' }, { pending: true })
     try {
       expect(view.workspace.loading.value).toBe(true)
-      expect(view.workspace.provider.value).toBe('anthropic')
+      expect(view.workspace.selectedProviders.value).toEqual(['anthropic'])
       await view.router.push({ query: { provider: 'openai' } })
       await settle()
       view.publicResponse.resolve({ models: publicModels })
       await settle()
-      expect(view.workspace.provider.value).toBe('openai')
+      expect(view.workspace.selectedProviders.value).toEqual(['openai'])
       expect(ids(view.workspace)).toEqual(['gpt'])
       expect(view.replacements).toEqual([])
       expect(view.calls).toEqual(['capabilities', '/models'])
@@ -225,15 +225,106 @@ describe('models workspace reactive provider and route synchronization', () => {
   test('provider identity is case-insensitive and loading never silently broadens the filter', async () => {
     const view = await mountWorkspace({ provider: 'OpenAI', campaign: 'keep' }, { pending: true })
     try {
-      expect(view.workspace.provider.value).toBe('OpenAI')
+      expect(view.workspace.selectedProviders.value).toEqual(['OpenAI'])
       view.publicResponse.resolve({ models: publicModels })
       await settle()
-      expect(view.workspace.provider.value).toBe('OpenAI')
+      expect(view.workspace.selectedProviders.value).toEqual(['OpenAI'])
       expect(ids(view.workspace)).toEqual(['gpt'])
       expect(view.router.currentRoute.value.query).toEqual({ provider: 'OpenAI', campaign: 'keep' })
       expect(view.replacements).toEqual([])
-      view.workspace.provider.value = 'missing'
+      view.workspace.selectedProviders.value = ['missing']
       expect(ids(view.workspace)).toEqual([])
+      expect(view.calls).toEqual(['capabilities', '/models'])
+    } finally { view.app.unmount() }
+  })
+
+  test('provider toggles use OR membership without duplicate models and clear back to all', async () => {
+    const view = await mountWorkspace({ campaign: 'keep' })
+    try {
+      expect(view.workspace.selectedProviders.value).toEqual([])
+      expect(view.workspace.isProviderSelected('gateway')).toBe(false)
+      view.injected.toggleProvider('gateway')
+      view.injected.toggleProvider('openai')
+      expect(view.workspace.selectedProviders.value).toEqual(['gateway', 'openai'])
+      expect(view.workspace.isProviderSelected(' GATEWAY ')).toBe(true)
+      expect(ids(view.workspace)).toEqual(['claude', 'gpt'])
+      await settle()
+      expect(view.router.currentRoute.value.query).toEqual({ campaign: 'keep', provider: ['gateway', 'openai'] })
+      expect(view.replacements).toEqual([{ campaign: 'keep', provider: ['gateway', 'openai'] }])
+
+      view.injected.toggleProvider(' GATEWAY ')
+      expect(view.workspace.selectedProviders.value).toEqual(['openai'])
+      expect(view.workspace.isProviderSelected('gateway')).toBe(false)
+      expect(ids(view.workspace)).toEqual(['gpt'])
+      await settle()
+      expect(view.router.currentRoute.value.query.provider).toBe('openai')
+      view.injected.toggleProvider('google')
+      await settle()
+      expect(ids(view.workspace)).toEqual(['gemini', 'gpt'])
+      expect(view.router.currentRoute.value.query.provider).toEqual(['openai', 'google'])
+
+      view.injected.selectedProviders.value = []
+      await settle()
+      expect(ids(view.workspace)).toEqual(['claude', 'gemini', 'gpt'])
+      expect(view.workspace.isProviderSelected('openai')).toBe(false)
+      expect(view.router.currentRoute.value.query).toEqual({ campaign: 'keep' })
+      expect(view.calls).toEqual(['capabilities', '/models'])
+    } finally { view.app.unmount() }
+  })
+
+  test('repeated provider queries restore through history without redundant replacements', async () => {
+    const view = await mountWorkspace({ provider: ['gateway', 'openai'], campaign: 'keep' })
+    try {
+      expect(view.workspace.selectedProviders.value).toEqual(['gateway', 'openai'])
+      expect(ids(view.workspace)).toEqual(['claude', 'gpt'])
+      await view.router.push({ query: { provider: ['google', 'openai'], campaign: 'keep' } })
+      await settle()
+      expect(view.workspace.selectedProviders.value).toEqual(['google', 'openai'])
+      expect(ids(view.workspace)).toEqual(['gemini', 'gpt'])
+      view.router.back()
+      await settle()
+      expect(view.workspace.selectedProviders.value).toEqual(['gateway', 'openai'])
+      expect(ids(view.workspace)).toEqual(['claude', 'gpt'])
+      view.router.forward()
+      await settle()
+      expect(view.workspace.selectedProviders.value).toEqual(['google', 'openai'])
+      expect(ids(view.workspace)).toEqual(['gemini', 'gpt'])
+      view.workspace.selectedProviders.value = ['google', 'openai']
+      await settle()
+      expect(view.replacements).toEqual([])
+      expect(view.calls).toEqual(['capabilities', '/models'])
+    } finally { view.app.unmount() }
+  })
+
+  test('multi-provider OR selection still intersects key access and text search', async () => {
+    const view = await mountWorkspace({ provider: ['gateway', 'google'] }, { authenticated: true })
+    try {
+      expect(ids(view.workspace)).toEqual(['gpt'])
+      view.workspace.mineOnly.value = false
+      expect(ids(view.workspace)).toEqual(['claude', 'gemini', 'gpt'])
+      view.workspace.search.value = 'claude'
+      expect(ids(view.workspace)).toEqual(['claude'])
+      await settle()
+      expect(view.router.currentRoute.value.query).toEqual({ provider: ['gateway', 'google'], mine: 'false', q: 'claude' })
+      expect(view.calls).toEqual(['capabilities', '/models', '/models/accessible'])
+    } finally { view.app.unmount() }
+  })
+
+  test('repeated deep links preserve unknown providers and first spelling during loading', async () => {
+    const view = await mountWorkspace({ provider: [' OpenAI ', 'openai', 'missing'] }, { pending: true })
+    try {
+      expect(view.workspace.selectedProviders.value).toEqual(['OpenAI', 'missing'])
+      expect(view.workspace.isProviderSelected('openai')).toBe(true)
+      view.publicResponse.resolve({ models: publicModels })
+      await settle()
+      expect(view.workspace.selectedProviders.value).toEqual(['OpenAI', 'missing'])
+      expect(ids(view.workspace)).toEqual(['gpt'])
+      expect(view.router.currentRoute.value.query.provider).toEqual(['OpenAI', 'missing'])
+      view.workspace.toggleProvider(' OPENAI ')
+      await settle()
+      expect(view.workspace.selectedProviders.value).toEqual(['missing'])
+      expect(ids(view.workspace)).toEqual([])
+      expect(view.router.currentRoute.value.query.provider).toBe('missing')
       expect(view.calls).toEqual(['capabilities', '/models'])
     } finally { view.app.unmount() }
   })
@@ -241,7 +332,7 @@ describe('models workspace reactive provider and route synchronization', () => {
   test('providers are serving-provider membership, not inferred model brands', async () => {
     const view = await mountWorkspace()
     try {
-      view.workspace.provider.value = 'gateway'
+      view.workspace.selectedProviders.value = ['gateway']
       await settle()
       expect(ids(view.workspace)).toEqual(['claude', 'gpt'])
       expect(view.workspace.models.value.find(model => model.id === 'claude')?.providers).toContain('gateway')

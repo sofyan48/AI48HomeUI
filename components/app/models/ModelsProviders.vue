@@ -5,15 +5,15 @@
       <PortalBadge color="neutral" variant="soft" size="sm">{{ providers.length }}</PortalBadge>
     </h2>
     <PortalInput v-model="search" type="search" icon="i-tabler-search" size="sm" :aria-label="t('models.providers.search')" :placeholder="t('models.providers.search')" />
-    <AppButton block color="neutral" :variant="!provider ? 'soft' : 'ghost'" size="sm" class="justify-start gap-2" :aria-pressed="!provider" @click="provider = ''">
+    <AppButton block color="neutral" :variant="!selectedProviders.length ? 'soft' : 'ghost'" size="sm" class="justify-start gap-2" :aria-pressed="!selectedProviders.length" @click="selectedProviders = []">
       <AppIcon name="i-tabler-grid-dots" aria-hidden="true" />
       <span class="min-w-0 flex-1 truncate text-left">{{ t('models.filter.anyProvider') }}</span>
       <PortalBadge color="neutral" variant="soft" size="xs">{{ models.length }}</PortalBadge>
     </AppButton>
     <ul tabindex="0" aria-labelledby="catalog-providers-title" class="flex max-h-60 lg:max-h-[min(36rem,calc(100dvh-20rem))] flex-col gap-0.5 overflow-y-auto overscroll-contain rounded-md pr-1 focus-visible:outline-2 focus-visible:outline-ring">
       <li v-for="item in visibleProviders" :key="item.provider" class="min-w-0">
-        <AppButton block color="neutral" :variant="provider === item.provider ? 'soft' : 'ghost'" size="sm" class="justify-start gap-2" :aria-label="providerDescription(item)" :title="providerDescription(item)" :aria-pressed="provider === item.provider" @click="provider = provider === item.provider ? '' : item.provider">
-          <AppIcon :name="provider === item.provider ? 'i-tabler-square-check' : 'i-tabler-square'" aria-hidden="true" />
+        <AppButton block color="neutral" :variant="isProviderSelected(item.provider) ? 'soft' : 'ghost'" size="sm" class="justify-start gap-2" :aria-label="providerDescription(item)" :title="providerDescription(item)" :aria-pressed="isProviderSelected(item.provider)" @click="toggleProvider(item.provider)">
+          <AppIcon :name="isProviderSelected(item.provider) ? 'i-tabler-square-check' : 'i-tabler-square'" aria-hidden="true" />
           <span class="min-w-0 flex-1 truncate text-left">{{ item.provider }}</span>
           <PortalBadge :color="accessLoaded && item.accessibleCount > 0 ? 'success' : 'neutral'" variant="soft" size="xs">{{ item.modelCount }}</PortalBadge>
         </AppButton>
@@ -36,7 +36,7 @@ import { useModelsWorkspace } from '~/composables/models/useModelsWorkspace'
 import { usePortalI18n } from '~/composables/usePortalI18n'
 
 const { t } = usePortalI18n()
-const { models, provider, accessLoaded, catalogReady, loading, error } = useModelsWorkspace()
+const { models, selectedProviders, toggleProvider, isProviderSelected, accessLoaded, catalogReady, loading, error } = useModelsWorkspace()
 const search = ref('')
 const providers = computed(() => catalogProviders(models.value))
 const visibleProviders = computed(() => providers.value.filter(item => item.provider.toLowerCase().includes(search.value.trim().toLowerCase())))
