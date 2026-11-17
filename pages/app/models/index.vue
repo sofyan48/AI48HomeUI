@@ -1,5 +1,5 @@
 <template>
-  <div class="model-workspace min-w-0 space-y-5">
+  <div class="model-workspace flex min-w-0 w-full flex-col gap-5">
 
     <PortalAlert v-if="catalogUnsupported" color="warning" variant="subtle" :title="t('models.unsupportedTitle')" :description="t('models.unsupportedDescription')" />
 
@@ -46,8 +46,6 @@ const { catalogUnsupported } = provideModelsWorkspace()
 }
 
 .model-workspace {
-  max-width: 96rem;
   padding-block: 0.75rem;
-  margin-inline: auto;
 }
 </style>

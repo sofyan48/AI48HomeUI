@@ -19,7 +19,7 @@
       <div class="relative flex h-full min-h-0 min-w-0 flex-col transition-[padding] duration-200 motion-reduce:transition-none lg:py-3 lg:pr-3" :class="sidebarHidden ? 'lg:pl-[5.75rem]' : 'lg:pl-[17.5rem]'">
         <div class="user-canvas flex min-h-0 min-w-0 flex-1 flex-col">
         <header class="user-shell__header user-workspace-header z-30 flex h-[4.25rem] shrink-0 items-center px-3 [scrollbar-gutter:stable] sm:px-6">
-          <div class="mx-auto flex w-full max-w-7xl items-center justify-between gap-3">
+          <div class="flex min-w-0 w-full items-center justify-between gap-3">
           <div class="flex min-w-0 items-center gap-3">
             <AppButton class="lg:hidden" icon="i-tabler-menu-2" color="neutral" variant="ghost" :aria-label="t('shell.openNavigation')" aria-controls="workspace-mobile-sidebar" aria-haspopup="dialog" :aria-expanded="mobileOpen" @click="openMobile" />
             <span v-if="currentNavigation" class="user-page-icon hidden sm:flex" aria-hidden="true"><AppIcon :name="currentNavigation.icon" class="size-4" /></span>

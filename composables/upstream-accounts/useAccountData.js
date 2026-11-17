@@ -2,6 +2,7 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useWorkspaceState } from '~/composables/useWorkspaceState'
 import { useStoreData } from '~/composables/useStoreData'
 import { normalizeQuotaEntry } from '~/composables/upstreamQuota'
+import { useQuotaAutoRefresh } from '~/composables/useQuotaAutoRefresh'
 
 // Credential list, in-flight summary and quota summary loading, plus the shared refresh.
 export function useAccountData(ctx) {
@@ -73,6 +74,7 @@ export function useAccountData(ctx) {
   const { data: quotaSummary, pending: quotaPending, refresh: refreshQuotaSummary } = useStoreData('admin:upstream-accounts:management-account-quota', loadQuotaSummary, { lazy: true, default: () => [], watch: [credentialIDs] })
   const quotaByID = computed(() => new Map((quotaSummary.value || []).map(item => [item.credential_id, item])))
   watch(quotaCollection.revision, () => { void refreshQuotaSummary() })
+  useQuotaAutoRefresh(() => quotaCollection.collectingAll.value || quotaCollection.collectingIDs.value.size ? Promise.resolve() : refreshQuotaSummary())
 
   const flightItems = computed(() => Array.isArray(flightData.value?.items) ? flightData.value.items : [])
   const flightByID = computed(() => new Map(flightItems.value.map(item => [item.credential_id, item])))

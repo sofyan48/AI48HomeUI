@@ -70,6 +70,7 @@ import { useStoreData } from '~/composables/useStoreData'
 import { useQuotaCollection } from '~/composables/useQuotaCollection'
 import { isQuotaAttention } from '~/composables/upstreamQuota'
 import { useDataSync } from '~/composables/useDataSync'
+import { useQuotaAutoRefresh } from '~/composables/useQuotaAutoRefresh'
 const quotaCollection = useQuotaCollection()
 const route = useRoute();
 if (route.query.tab === "proxy")
@@ -272,6 +273,7 @@ function showAttention() {
   attentionRequest.value++;
 }
 watch(quotaCollection.revision, () => { void refreshSummaryQuota() });
+useQuotaAutoRefresh(() => syncing.value || quotaCollection.collectingAll.value ? Promise.resolve() : refreshSummaryQuota());
 useDataSync('admin:upstream:quota-collection', syncData);
 async function syncData() {
   if (syncing.value) return;
