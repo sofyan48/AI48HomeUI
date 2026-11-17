@@ -12,13 +12,14 @@
     <template v-for="section in sections" :key="section.id">
     <AppCard :id="`config-${section.id}`">
       <template #header>
-        <div class="flex items-start justify-between gap-4">
-          <div>
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div class="min-w-0 flex-1">
             <h2 class="font-semibold text-[var(--ui-text-highlighted)]">{{ section.title }}</h2>
             <p class="mt-1 text-xs text-[var(--ui-text-muted)]">{{ section.description }}</p>
           </div>
           <AppButton
             v-if="section.navigateTo"
+            class="shrink-0"
             type="button"
             color="neutral"
             variant="ghost"

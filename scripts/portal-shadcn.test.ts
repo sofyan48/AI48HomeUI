@@ -223,6 +223,19 @@ describe('portal runtime focus', () => {
     } finally { view.app.unmount() }
   })
 
+  test('standalone checkbox stays compact and layout classes do not resize its control', () => {
+    const view = mount(adapter('Checkbox'), { class: 'mt-1', 'aria-label': 'Select model' })
+    try {
+      const field = view.find('field')
+      expect(field.props.class).toContain('w-auto')
+      expect(field.props.class).toContain('shrink-0')
+      expect(field.props.class).toContain('mt-1')
+      const button = view.find('checkbox')
+      expect(button.props.class ?? '').not.toContain('mt-1')
+      expect(button.props['aria-label']).toBe('Select model')
+    } finally { view.app.unmount() }
+  })
+
   test('actual focus helper safely ignores null and fragment/comment roots supplied through setup', async () => {
     let helper!: ReturnType<typeof portalField.usePortalFocus>
     const Harness = Vue.defineComponent({ setup() { helper = portalField.usePortalFocus(); return () => Vue.h('div') } })

@@ -25,9 +25,10 @@ const attrs = useAttrs()
 const { id, accessibility } = usePortalControl(props)
 const { root, element, focus, blur } = usePortalFocus()
 const controlAttrs = computed(() => {
-  const inherited = accessibility(attrs)
+  const { class: _class, ...inputAttrs } = attrs
+  const inherited = accessibility(inputAttrs)
   return {
-    ...attrs,
+    ...inputAttrs,
     ...inherited,
     'aria-invalid': !!props.error || inherited['aria-invalid'],
     'aria-describedby': [inherited['aria-describedby'], (props.description || props.help) && `${id.value}-description`, typeof props.error === 'string' && props.error && `${id.value}-error`].filter(Boolean).join(' ') || undefined,
@@ -40,10 +41,10 @@ defineExpose({ checkboxRef: element, focus, blur })
 </script>
 
 <template>
-  <Field :class="cn(attrs.class, ui?.root)" :data-invalid="!!controlAttrs['aria-invalid'] || undefined" :data-disabled="disabled || undefined">
+  <Field :class="cn('min-w-0', !label && !$slots.label && !description && !help && !error && 'w-auto shrink-0', attrs.class, ui?.root)" :data-invalid="!!controlAttrs['aria-invalid'] || undefined" :data-disabled="disabled || undefined">
     <div ref="root" class="flex items-center gap-2">
       <Checkbox v-bind="controlAttrs" :class="ui?.base" :model-value="modelValue ?? false" :disabled="disabled" :aria-readonly="readonly || undefined" @click="readonly && $event.preventDefault()" @update:model-value="update" />
-      <FieldLabel v-if="label || $slots.label" :for="id" :class="ui?.label"><slot name="label">{{ label }}</slot></FieldLabel>
+      <FieldLabel v-if="label || $slots.label" :for="id" :class="cn('min-w-0 [overflow-wrap:anywhere]', ui?.label)"><slot name="label">{{ label }}</slot></FieldLabel>
     </div>
     <FieldDescription v-if="description || help" :id="`${id}-description`" :class="ui?.description">{{ description || help }}</FieldDescription>
     <FieldError v-if="typeof error === 'string' && error" :id="`${id}-error`" :class="ui?.error">{{ error }}</FieldError>

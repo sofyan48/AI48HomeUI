@@ -13,7 +13,7 @@
               <div class="space-y-6">
                 <section class="space-y-3">
                   <div class="flex flex-col gap-3 lg:flex-row lg:items-end">
-                    <AdminField :label="t('config.oauthRules.channel')" class="lg:w-64"
+                    <AdminField :label="t('config.oauthRules.channel')" class="lg:w-64 lg:shrink-0"
                       ><AdminSelect
                         v-model="exclusionChannel"
                         :items="channelOptions"
@@ -25,7 +25,7 @@
                       v-model="modelSearch"
                       icon="i-tabler-search"
                       :placeholder="t('config.oauthRules.searchPlaceholder')"
-                      class="flex-1"
+                      class="min-w-0 flex-1"
                     /><AppButton
                       color="neutral"
                       variant="outline"
@@ -52,7 +52,7 @@
                         :model-value="excludedForChannel.includes(model.id)"
                         :disabled="loading || saving || Boolean(validationErrors.oauthExcludedModelsJson)"
                         @update:model-value="toggleExcluded(model.id, $event)"
-                      /><span
+                      /><span class="min-w-0 flex-1 [overflow-wrap:anywhere]"
                         ><span class="block text-sm font-medium">{{
                           model.display_name || model.name || model.id
                         }}</span
@@ -69,7 +69,7 @@
                       {{ modelsLoading ? t('config.oauthRules.loadingModels') : t('config.oauthRules.noModels') }}
                     </p>
                   </div>
-                  <div class="flex items-center justify-between">
+                  <div class="flex flex-wrap items-center justify-between gap-3">
                     <PortalBadge color="neutral" variant="subtle"
                       >{{ t('config.oauthRules.disabledCount', { count: excludedForChannel.length }) }}</PortalBadge
                     ><AppButton
@@ -89,8 +89,8 @@
                 <section
                   class="space-y-3 border-t border-[var(--ui-border)] pt-5"
                 >
-                  <div class="flex items-center justify-between">
-                    <div>
+                  <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div class="min-w-0 flex-1">
                       <h3 class="font-semibold">{{ t('config.aliases.title') }}</h3>
                       <p class="text-xs text-[var(--ui-text-muted)]">
                         {{ t('config.aliases.description') }}
