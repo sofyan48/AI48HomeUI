@@ -43,6 +43,22 @@ describe('theme accent preference', () => {
     }
   })
 
+  test('shared status colors remain defined without Nuxt UI in light and dark mode', () => {
+    const css = source('assets/main.css')
+    const light = css.match(/:root\s*\{([^}]+)\}/)?.[1] || ''
+    const dark = css.match(/:root\.dark\s*\{([^}]+)\}/)?.[1] || ''
+    const palettes = { secondary: 'blue', success: 'emerald', info: 'sky', warning: 'amber', error: 'red' }
+    for (const [status, palette] of Object.entries(palettes)) {
+      expect(light).toContain(`--ui-${status}: var(--color-${palette}-600);`)
+      expect(dark).toContain(`--ui-${status}: var(--color-${palette}-400);`)
+    }
+    // The readiness card composes its border/background from these status tokens.
+    const hero = source('components/admin/dashboard/DashboardHero.vue')
+    for (const status of ['success', 'warning', 'info']) {
+      expect(hero).toContain(`--hero-accent: var(--ui-${status})`)
+    }
+  })
+
   test('selector keeps labeled mode and accent controls together', () => {
     const selector = source('components/ThemeSwitcher.vue')
     expect(selector).toContain('v-for="option in options"')

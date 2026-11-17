@@ -20,10 +20,24 @@
 
 :root {
   --ui-container: var(--container-7xl);
+  /* Source-owned semantic colors formerly supplied by Nuxt UI. */
+  --ui-secondary: var(--color-blue-600);
+  --ui-success: var(--color-emerald-600);
+  --ui-info: var(--color-sky-600);
+  --ui-warning: var(--color-amber-600);
+  --ui-error: var(--color-red-600);
   /* AI48Hub brand, shared by admin and user shells. */
   --brand-from: var(--ui-color-primary-600, var(--color-violet-600));
   --brand-to: var(--ui-color-primary-500, var(--color-violet-500));
   --brand-gradient: linear-gradient(135deg, var(--brand-from), var(--brand-to));
+}
+
+:root.dark {
+  --ui-secondary: var(--color-blue-400);
+  --ui-success: var(--color-emerald-400);
+  --ui-info: var(--color-sky-400);
+  --ui-warning: var(--color-amber-400);
+  --ui-error: var(--color-red-400);
 }
 
 /* User portal palette: mirrors the admin tokens in admin.css so both shells match. */
