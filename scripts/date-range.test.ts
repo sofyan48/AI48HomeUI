@@ -65,10 +65,10 @@ describe('admin filter integration', () => {
   test('every apply path validates before replacing applied filters', () => {
     const cases = [
       ['composables/usage/useUsagePage.ts', 'const applyFilters = async () => {', 'appliedFilters.value ='],
-      ['composables/logs/useLogsWorkspace.js', 'const applyFilters = async () => {', 'appliedApplicationFilters.value ='],
-      ['composables/billing/useBillingWorkspace.js', 'async function applyOverviewFilters() {', 'appliedOverviewFilters.value ='],
-      ['composables/billing/useBillingWorkspace.js', 'async function applyChargeFilters() {', 'appliedChargeFilters.value ='],
-      ['composables/billing/useBillingWorkspace.js', 'async function applyBalanceFilters() {', 'appliedBalanceFilters.value ='],
+      ['composables/logs/useLogsWorkspace.ts', 'const applyFilters = async () => {', 'appliedApplicationFilters.value ='],
+      ['composables/billing/useBillingWorkspace.ts', 'async function applyOverviewFilters() {', 'appliedOverviewFilters.value ='],
+      ['composables/billing/useBillingWorkspace.ts', 'async function applyChargeFilters() {', 'appliedChargeFilters.value ='],
+      ['composables/billing/useBillingWorkspace.ts', 'async function applyBalanceFilters() {', 'appliedBalanceFilters.value ='],
       ['components/admin/usage/RequestRecords.vue', 'async function applyFilters() {', 'appliedFilters.value ='],
       ['components/admin/usage/UsageLegacyRecords.vue', 'function apply() {', 'applied.value =']
     ]

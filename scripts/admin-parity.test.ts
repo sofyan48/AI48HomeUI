@@ -5,6 +5,7 @@ import { normalizeTopologyConfig } from '../composables/systemTopologyConfig'
 import { pluginInstallTrust } from '../composables/pluginInstallTrust'
 
 const source = (path: string) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8')
+const transpile = (source: string) => new Bun.Transpiler({ loader: 'ts' }).transformSync(source)
 
 describe('system topology v8 config', () => {
   test('reads nested signals, not obsolete flat fields', () => {
@@ -29,9 +30,9 @@ describe('plugin install trust and payloads', () => {
     const plugin = { id: 'spoofed-plugin', repository: 'https://github.com/router-for-me/plugin', source_id: 'custom', source_url: 'https://untrusted.example/registry.json', install_type: 'direct' }
     const trust = pluginInstallTrust(plugin)
     expect(trust).toEqual({ confirmation: 'spoofed-plugin' })
-    const script = source('composables/plugins/usePluginActions.js')
+    const script = source('composables/plugins/usePluginActions.ts')
     const expression = script.slice(script.indexOf('const canConfirmAction ='), script.indexOf('const confirmationTitle ='))
-    const canConfirm = (kind: string, text: string, confirmation = trust.confirmation) => new Function('computed', 'confirmation', 'installTrust', 'typedConfirmation', `${expression}; return canConfirmAction`)((fn: () => boolean) => fn(), { value: { kind, plugin } }, { value: { confirmation } }, { value: text })
+    const canConfirm = (kind: string, text: string, confirmation = trust.confirmation) => new Function('computed', 'confirmation', 'installTrust', 'typedConfirmation', transpile(`${expression}; return canConfirmAction`))((fn: () => boolean) => fn(), { value: { kind, plugin } }, { value: { confirmation } }, { value: text })
     expect(canConfirm('install', '')).toBe(false)
     expect(canConfirm('install', 'router-for-me/plugin')).toBe(false)
     expect(canConfirm('install', 'wrong-id')).toBe(false)
@@ -50,10 +51,10 @@ describe('plugin install trust and payloads', () => {
     expect(source('locales/admin/plugins.ts')).toContain('Registry and repository labels do not verify the provenance')
   })
   test('sends entered version or an empty latest-release body, retaining source selector', async () => {
-    const script = source('composables/plugins/usePluginActions.js')
+    const script = source('composables/plugins/usePluginActions.ts')
     const calls: any[] = []
     const functions = script.slice(script.indexOf('async function performInstall('), script.indexOf('return { configOpen'))
-    const { performInstall, performUninstall } = new Function('fetchAPI', 'busyPlugin', 'operation', 'toast', 'refreshAll', 'message', 't', `${functions}; return { performInstall, performUninstall }`)(async (...args: any[]) => { calls.push(args); return { status: 'installed' } }, { value: '' }, { value: null }, { add() {} }, async () => {}, String, (key: string) => key)
+    const { performInstall, performUninstall } = new Function('fetchAPI', 'busyPlugin', 'operation', 'toast', 'refreshAll', 'message', 't', transpile(`${functions}; return { performInstall, performUninstall }`))(async (...args: any[]) => { calls.push(args); return { status: 'installed' } }, { value: '' }, { value: null }, { add() {} }, async () => {}, String, (key: string) => key)
     const plugin = { id: 'a/b', version: 'registry-version', source_id: 'third-party' }
     await performInstall(plugin, 'v1.2.3')
     await performInstall(plugin, '')
@@ -73,10 +74,10 @@ test('plugins feature state retains a single page-scoped owner and polling lifec
     expect(workspace.match(new RegExp(`${feature}\\(`, 'g'))).toHaveLength(1)
   }
   const files = readdirSync(new URL('../composables/plugins/', import.meta.url)).map(path => source(`composables/plugins/${path}`)).join('\n')
-  const keys = [...files.matchAll(/useWorkspaceState\('(admin:plugins:[^']+)'/g)].map(match => match[1])
+  const keys = [...files.matchAll(/useWorkspaceState(?:<[^>]+>)?\('(admin:plugins:[^']+)'/g)].map(match => match[1])
   expect(keys.sort()).toEqual(['pageError', 'operation', 'busyPlugin', 'savingAuth', 'nodesResponse', 'nodesError', 'nodesLoading', 'pollExpired'].map(key => `admin:plugins:${key}`).sort())
   expect(files).toContain("useStoreData('admin:plugins:management-plugins', loadAll)")
-  const reports = source('composables/plugins/usePluginReports.js')
+  const reports = source('composables/plugins/usePluginReports.ts')
   expect(reports).toContain("useDataSync('admin:plugins:sync', () => loadNodes(pollGeneration))")
   expect(reports).toContain('const pollDuration = 60000;')
   expect(reports).toContain('const pollInterval = 5000;')
@@ -94,13 +95,13 @@ test('plugins feature state retains a single page-scoped owner and polling lifec
 })
 
 test('Meta discovery uses official default and never enables Meta WebSockets', () => {
-  const script = source('composables/upstream-providers/useModelDiscovery.js')
+  const script = source('composables/upstream-providers/useModelDiscovery.ts')
   const expression = script.slice(script.indexOf('const defaultDiscoveryURL ='), script.indexOf('async function discoverModels('))
   for (const [base, expected] of [['', 'https://api.meta.ai/v1/models'], ['https://custom/v1/', 'https://custom/v1/models'], ['https://custom/v1/models', 'https://custom/v1/models']]) {
     const result = new Function('computed', 'providerForm', 'selectedProviderRoute', `${expression}; return defaultDiscoveryURL`)((fn: () => string) => fn(), { value: { 'base-url': base } }, { value: 'meta-api-key' })
     expect(result).toBe(expected)
   }
-  expect(source('composables/upstream-providers/useProviderEditorState.js')).toContain("const supportsWebsockets = computed(() => ['codex-api-key', 'xai-api-key']")
+  expect(source('composables/upstream-providers/useProviderEditorState.ts')).toContain("const supportsWebsockets = computed(() => ['codex-api-key', 'xai-api-key']")
   expect(source('locales/admin/upstream.ts')).toContain('Signing is automatic on supported direct upstreams')
 })
 

@@ -6,7 +6,7 @@ import consoleEn from '../../locales/en'
 
 const root = new URL('../..', import.meta.url).pathname
 const source = (file: string) => readFileSync(join(root, file), 'utf8')
-const workspace = source('composables/billing/useBillingWorkspace.js')
+const workspace = source('composables/billing/useBillingWorkspace.ts')
 const importer = source('composables/billing/useBillingPriceImport.ts')
 
 function functionSource(text: string, name: string) {

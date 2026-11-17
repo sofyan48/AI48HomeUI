@@ -76,7 +76,7 @@
 import AdminInput from '~/components/admin/general/controls/AdminInput.vue'
 import AdminSelect from '~/components/admin/general/controls/AdminSelect.vue'
 import { Badge } from '~/components/ui/badge'
-import { allOptionValue } from '~/composables/logs/filters.js'
+import { allOptionValue } from '~/composables/logs/filters'
 import { useLogsPage } from '~/composables/logs/useLogsPage'
 
 const {

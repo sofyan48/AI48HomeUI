@@ -5,6 +5,7 @@ CPAHomeUI is the browser-based admin and user interface for AI48Home (Home), the
 ## Stack And Repository
 
 - Nuxt 4, Vue 3, TypeScript, and Vue Router.
+- Write composables and their feature helpers in `.ts`, with meaningful types. Do not add `.js` composables, blanket `any` types, or `@ts-nocheck` to bypass typing.
 - Client-side SPA: `ssr: false` in `nuxt.config.ts`.
 - Nuxt UI 4, Tailwind CSS 4, and Tabler icons (`i-tabler-*`).
 - Pinia 3 with `@pinia/nuxt` for application state.

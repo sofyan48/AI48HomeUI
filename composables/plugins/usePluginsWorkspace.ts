@@ -7,14 +7,15 @@ import { usePluginAuth } from './usePluginAuth'
 import { usePluginActions } from './usePluginActions'
 import { usePluginCatalog } from './usePluginCatalog'
 import { safeURL } from './presentation'
+import { pluginErrorMessage } from './types'
 
 function createPluginsWorkspace() {
     const { fetchAPI, token } = useApi();
     const { t } = useAdminI18n();
     const toast = useAdminToast();
-    const value = (row: any) => row?.original ?? row;
+    const value = <T extends object>(row: T | { original: T }): T => (('original' in row ? row.original : undefined) ?? row) as T;
     const yesNo = (flag: unknown) => (flag ? t('common.yes') : t('common.no'));
-    const message = (error: any) => error?.data?.message || error?.data?.error || error?.message || t('plugins.unexpectedError');
+    const message = (error: unknown) => pluginErrorMessage(error, t('plugins.unexpectedError'));
     const section = ref('installed');
     const sections = computed(() => [
         { label: t('plugins.section.installed'), value: 'installed' },

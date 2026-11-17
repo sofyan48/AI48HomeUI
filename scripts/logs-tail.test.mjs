@@ -4,8 +4,8 @@ import fs from 'node:fs'
 import { test } from 'node:test'
 import { ref } from 'vue'
 import { parse, compileScript, compileTemplate } from '@vue/compiler-sfc'
-import { mergeLogRows, useApplicationLogTail } from '../composables/useApplicationLogTail.js'
-import { useApplicationLogs } from '../composables/logs/useApplicationLogs.js'
+import { mergeLogRows, useApplicationLogTail } from '../composables/useApplicationLogTail.ts'
+import { useApplicationLogs } from '../composables/logs/useApplicationLogs.ts'
 
 const row = (id, timestamp = id) => ({ id, timestamp: new Date(timestamp * 1000).toISOString(), line: `line ${id}` })
 const snapshot = (logs, total = logs.length, anchor_id = 999) => ({ logs, total, anchor_id, search: 'needle' })
@@ -106,7 +106,7 @@ test('bounded pending buffer signals truncation and keeps reader rows unchanged'
   assert.equal(f.tail.truncated.value, true)
 })
 
-// Application-log state lives in composables/logs/useApplicationLogs.js; the page provides it via provideLogsPage().
+// Application-log state lives in composables/logs/useApplicationLogs.ts; the page provides it via provideLogsPage().
 function pageFixture() {
   let respond = async () => snapshot([row(2), row(1)], 10)
   const calls = []

@@ -48,7 +48,7 @@ describe('credential model cards', () => {
   })
 
   test('Models tab renders one card loop keyed by exposed ID and one heading', () => {
-    const source = readFileSync(new URL('../composables/upstream-accounts/useAccountModels.js', import.meta.url), 'utf8')
+    const source = readFileSync(new URL('../composables/upstream-accounts/useAccountModels.ts', import.meta.url), 'utf8')
     const section = readFileSync(new URL('../components/admin/upstream-accounts/models/DetailsModelsTab.vue', import.meta.url), 'utf8')
     expect(section.match(/<h3 /g)?.length).toBe(1)
     expect(section).toContain('v-for="model in scopedModelCards" :key="model.id"')

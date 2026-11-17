@@ -3,8 +3,8 @@ import { useAdminI18n } from '~/composables/useAdminI18n'
 import { useApi } from '~/composables/useApi'
 import { useDataSync } from '~/composables/useDataSync'
 import { useWorkspaceState } from '~/composables/useWorkspaceState'
-import { createLogFormatters, levelColor, rowValue, validErrorLogName } from './format.js'
-import { createLogsWorkspace } from './useLogsWorkspace.js'
+import { createLogFormatters, levelColor, rowValue, validErrorLogName } from './format'
+import { createLogsWorkspace } from './useLogsWorkspace'
 
 /**
  * Shared state for the admin logs page (/admin/logs).
