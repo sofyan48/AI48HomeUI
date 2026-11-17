@@ -48,7 +48,7 @@
       <template #header>
               <div class="flex flex-wrap items-center justify-between gap-3">
                 <div><h2 class="flex items-center gap-2 text-sm font-semibold"><AppIcon name="i-tabler-history" class="size-4 text-[var(--ui-primary)]" aria-hidden="true" /> {{ t('balance.historyTitle') }}</h2><p class="text-xs text-[var(--ui-text-muted)]">{{ t('balance.historyCount', { count: formatNumber(recordsTotal) }) }}</p></div>
-                <PortalField :label="t('balance.rowsPerPage')"><PortalSelect v-model="pageSize" :items="pageSizeOptions" value-key="value" label-key="label" class="w-28" :disabled="busy" @update:model-value="changeRecordPageSize" /></PortalField>
+
               </div>
             </template>
       <div class="min-h-64 overflow-x-auto">
@@ -60,7 +60,21 @@
           <template #balance_after-cell="{ row }">{{ formatCredits(balanceRow(row).balance_after) }}</template>
         </PortalTable>
       </div>
-      <template #footer><div class="flex flex-wrap items-center justify-between gap-3 text-sm"><span class="text-[var(--ui-text-muted)]">{{ t('balance.showing', { start: recordRangeStart, end: recordRangeEnd, total: formatNumber(recordsTotal) }) }}</span><div class="flex items-center gap-2"><AppButton size="sm" color="neutral" variant="outline" :disabled="recordPage <= 1 || busy" @click="changeRecordPage(-1)">{{ t('balance.previous') }}</AppButton><span>{{ t('balance.pageOf', { page: recordPage, pages: recordPages }) }}</span><AppButton size="sm" color="neutral" variant="outline" :disabled="recordPage >= recordPages || busy" @click="changeRecordPage(1)">{{ t('balance.next') }}</AppButton></div></div></template>
+      <template #footer>
+        <div class="flex flex-wrap items-center justify-between gap-3 text-sm">
+          <div class="flex flex-wrap items-center gap-3">
+            <PortalField :label="t('balance.rowsPerPage')" orientation="horizontal" class="w-auto shrink-0" :ui="{ container: 'shrink-0', label: 'whitespace-nowrap' }">
+              <PortalSelect v-model="pageSize" :items="pageSizeOptions" value-key="value" label-key="label" class="w-20 shrink-0" :disabled="busy" @update:model-value="changeRecordPageSize" />
+            </PortalField>
+            <span class="text-[var(--ui-text-muted)]">{{ t('balance.showing', { start: recordRangeStart, end: recordRangeEnd, total: formatNumber(recordsTotal) }) }}</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <AppButton size="sm" color="neutral" variant="outline" :disabled="recordPage <= 1 || busy" @click="changeRecordPage(-1)">{{ t('balance.previous') }}</AppButton>
+            <span>{{ t('balance.pageOf', { page: recordPage, pages: recordPages }) }}</span>
+            <AppButton size="sm" color="neutral" variant="outline" :disabled="recordPage >= recordPages || busy" @click="changeRecordPage(1)">{{ t('balance.next') }}</AppButton>
+          </div>
+        </div>
+      </template>
       </AppCard>
       </template>
     </AppUserWorkspace>

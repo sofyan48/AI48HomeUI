@@ -61,9 +61,7 @@ const { charges, chargesTotal, billingLoading, billingError, rangeOptions, pageS
               <h3 class="flex items-center gap-2 text-sm font-semibold"><AppIcon name="i-tabler-receipt" class="size-4 text-[var(--ui-primary)]" aria-hidden="true" /> {{ t('ws.billing.recentCharges') }}</h3>
               <p class="text-xs text-[var(--ui-text-muted)]">{{ t('ws.billing.matchingRecords', { count: formatNumber(chargesTotal) }) }}</p>
             </div>
-            <PortalField :label="t('ws.billing.rowsPerPage')">
-              <PortalSelect v-model="chargePageSize" :items="pageSizeOptions" value-key="value" label-key="label" class="w-28" @update:model-value="changePageSize" />
-            </PortalField>
+
           </div>
         </template>
         <div class="min-h-64 overflow-x-auto">
@@ -79,7 +77,12 @@ const { charges, chargesTotal, billingLoading, billingError, rangeOptions, pageS
         </div>
         <template #footer>
           <div class="flex flex-wrap items-center justify-between gap-3 text-sm">
-            <span class="text-[var(--ui-text-muted)]">{{ t('ws.billing.showing', { start: chargeRangeStart, end: chargeRangeEnd, total: formatNumber(chargesTotal) }) }}</span>
+            <div class="flex flex-wrap items-center gap-3">
+              <PortalField :label="t('ws.billing.rowsPerPage')" orientation="horizontal" class="w-auto shrink-0" :ui="{ container: 'shrink-0', label: 'whitespace-nowrap' }">
+                <PortalSelect v-model="chargePageSize" :items="pageSizeOptions" value-key="value" label-key="label" class="w-20 shrink-0" @update:model-value="changePageSize" />
+              </PortalField>
+              <span class="text-[var(--ui-text-muted)]">{{ t('ws.billing.showing', { start: chargeRangeStart, end: chargeRangeEnd, total: formatNumber(chargesTotal) }) }}</span>
+            </div>
             <div class="flex items-center gap-2">
               <AppButton size="sm" color="neutral" variant="outline" :disabled="chargePage <= 1 || billingLoading" @click="changeChargePage(-1)">{{ t('ws.billing.previous') }}</AppButton>
               <span>{{ t('ws.billing.page', { page: chargePage, pages: chargePages }) }}</span>
