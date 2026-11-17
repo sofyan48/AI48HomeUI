@@ -1,5 +1,5 @@
 <template>
-  <div class="max-h-[75vh] space-y-5 overflow-y-auto pr-1">
+  <div class="flex flex-col gap-5">
     <div><p class="text-xs font-medium uppercase text-[var(--ui-text-muted)]">{{ t('upstream.providers.detailsTitle') }}</p><h2 class="mt-2 text-base font-semibold">{{ providerEntryLabel(editingProviderEntry) }}</h2></div>
     <dl class="grid gap-x-4 gap-y-3 sm:grid-cols-2">
       <div v-for="field in providerDetailFields" :key="field.label" class="min-w-0"><dt class="text-xs text-[var(--ui-text-muted)]">{{ field.label }}</dt><dd class="mt-1 break-words font-mono text-xs">{{ field.value }}</dd></div>

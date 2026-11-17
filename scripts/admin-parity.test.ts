@@ -105,6 +105,23 @@ test('Meta discovery uses official default and never enables Meta WebSockets', (
   expect(source('locales/admin/upstream.ts')).toContain('Signing is automatic on supported direct upstreams')
 })
 
+test('provider editor uses the modal body scroll area and a persistent form-linked footer', () => {
+  const editor = source('components/admin/upstream-providers/ProvidersEditorDialog.vue')
+  const details = source('components/admin/upstream-providers/editor/ProvidersDetailView.vue')
+  const modal = source('components/admin/general/ModalForm.vue')
+  for (const component of [editor, details]) {
+    expect(component).not.toContain('max-h-[75vh]')
+    expect(component).not.toContain('overflow-y-auto')
+  }
+  expect(editor).toContain(':id="providerFormId"')
+  expect(editor).toContain('const providerFormId = useId()')
+  expect(editor).toContain('v-if="providerEditorMode !== \'detail\'" #footer')
+  expect(editor).toContain('type="submit" :form="providerFormId" :loading="savingProvider"')
+  expect(editor).toContain('@submit.prevent="saveProviderEntry"')
+  expect(modal).toContain('<template v-if="$slots.footer" #footer>')
+  expect(modal).toContain('<slot name="footer" />')
+})
+
 const pluginComponents = readdirSync(new URL('../components/admin/plugins/', import.meta.url)).filter(path => path.endsWith('.vue')).map(path => `components/admin/plugins/${path}`)
 const upstreamProviderComponents = readdirSync(new URL('../components/admin/upstream-providers/', import.meta.url), { recursive: true, encoding: 'utf8' }).filter(path => path.endsWith('.vue')).map(path => `components/admin/upstream-providers/${path}`).sort()
 

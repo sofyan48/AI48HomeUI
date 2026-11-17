@@ -5,6 +5,7 @@ import { isVNode } from 'vue'
 import { IconCircleCheck, IconClock } from '@tabler/icons-vue'
 import { toast } from 'vue-sonner'
 import { usePortalToast } from './usePortalToast'
+import { useAdminToast } from '../admin-feedback/useAdminToast'
 
 const root = resolve(import.meta.dir, '../..')
 function sourceFiles(folder: string): string[] {
@@ -15,8 +16,8 @@ function sourceFiles(folder: string): string[] {
 }
 
 // Exercise the actual installed Sonner store, without replacing its module globally.
-function notification(options: Parameters<ReturnType<typeof usePortalToast>['add']>[0]) {
-  const id = usePortalToast().add(options)
+function notification(options: Parameters<ReturnType<typeof usePortalToast>['add']>[0], adapter = usePortalToast()) {
+  const id = adapter.add(options)
   const entry = toast.getHistory().find(item => item.id === id)
   expect(entry).toBeDefined()
   const originalFrame = globalThis.requestAnimationFrame
@@ -60,6 +61,27 @@ describe('portal toast mapping', () => {
     })
   }
 })
+
+for (const [workspace, createToast, provider] of [
+  ['portal', usePortalToast, 'components/app/general/PortalProvider.vue'],
+  ['admin', useAdminToast, 'components/admin/general/AdminUiProvider.vue'],
+] as const) {
+  test(`${workspace} notifications appear top-right with status colors and a close button`, () => {
+    const source = readFileSync(resolve(root, provider), 'utf8')
+    expect(source).toContain('position="top-right" rich-colors close-button close-button-position="top-right"')
+    for (const color of ['success', 'warning', 'error'] as const) {
+      expect(notification({ title: color, color }, createToast()).type).toBe(color)
+    }
+  })
+
+  test(`${workspace} progress is yellow, auto-dismisses by default and uses a clock icon`, () => {
+    const entry = notification({ title: 'Working', color: 'progress' }, createToast())
+    expect(entry).toMatchObject({ type: 'warning', dismissible: true })
+        expect(entry.duration).toBeUndefined()
+    expect(entry.icon).toMatchObject({ type: IconClock })
+    expect(notification({ title: 'Working', color: 'progress', duration: 5000 }, createToast()).duration).toBe(5000)
+  })
+}
 
 test('all portal toast consumers explicitly import the portal adapter, not Nuxt useToast', () => {
   const files = ['pages/app', 'components/app', 'composables/workspace', 'composables/models'].flatMap(folder => sourceFiles(resolve(root, folder)))

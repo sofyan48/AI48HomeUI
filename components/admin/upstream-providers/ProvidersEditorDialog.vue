@@ -5,7 +5,7 @@
     :description="t('upstream.providers.modalDescription')"
   >
       <ProvidersDetailView v-if="providerEditorMode === 'detail' && editingProviderEntry" />
-      <form v-else novalidate class="max-h-[75vh] space-y-4 overflow-y-auto pr-1" @submit.prevent="saveProviderEntry">
+      <form v-else :id="providerFormId" novalidate class="flex flex-col gap-4" @submit.prevent="saveProviderEntry">
         <PortalAlert
           v-if="editorError"
           color="error"
@@ -19,18 +19,21 @@
           <ProvidersAdvancedFields />
           <ProvidersModelsSection />
           <ProvidersHeadersAndTest />
-        <div class="flex items-center justify-between border-t border-[var(--ui-border)] pt-4">
-          <span class="text-xs text-[var(--ui-text-muted)]">{{ t('upstream.providers.keepKeyFooter') }}</span>
-          <div class="flex gap-3">
+      </form>
+      <template v-if="providerEditorMode !== 'detail'" #footer>
+        <div class="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <span class="min-w-0 text-xs text-[var(--ui-text-muted)]">{{ t('upstream.providers.keepKeyFooter') }}</span>
+          <div class="flex shrink-0 justify-end gap-3">
             <AppButton color="neutral" variant="ghost" type="button" @click="providerEditorOpen = false">{{ t('common.cancel') }}</AppButton>
-            <AppButton color="primary" type="submit" :loading="savingProvider">{{ t('upstream.providers.saveEntry') }}</AppButton>
+            <AppButton color="primary" type="submit" :form="providerFormId" :loading="savingProvider">{{ t('upstream.providers.saveEntry') }}</AppButton>
           </div>
         </div>
-      </form>
+      </template>
   </AdminModalForm>
 </template>
 
-<script setup>
+<script setup lang="ts">
+import { useId } from 'vue'
 import PortalAlert from '~/components/app/general/PortalAlert.vue'
 import AdminModalForm from '~/components/admin/general/ModalForm.vue'
 import { useUpstreamProvidersWorkspace } from '~/composables/upstream-providers/useUpstreamProvidersWorkspace'
@@ -40,5 +43,6 @@ import ProvidersAdvancedFields from '~/components/admin/upstream-providers/edito
 import ProvidersModelsSection from '~/components/admin/upstream-providers/editor/ProvidersModelsSection.vue'
 import ProvidersHeadersAndTest from '~/components/admin/upstream-providers/editor/ProvidersHeadersAndTest.vue'
 
+const providerFormId = useId()
 const { t, providerEditorOpen, providerEditorMode, isCompat, selectedProviderLabel, editingProviderEntry, editorError, saveProviderEntry, savingProvider } = useUpstreamProvidersWorkspace()
 </script>

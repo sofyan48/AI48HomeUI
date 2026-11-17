@@ -11,6 +11,6 @@ const toastTheme = computed(() => colorMode.value === 'dark' ? 'dark' : 'light')
 <template>
   <ConfigProvider dir="ltr">
     <slot />
-    <Toaster :theme="toastTheme" position="bottom-right" />
+    <Toaster :theme="toastTheme" position="top-right" rich-colors close-button close-button-position="top-right" />
   </ConfigProvider>
 </template>
