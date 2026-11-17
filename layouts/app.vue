@@ -1,5 +1,5 @@
 <template>
-  <div class="user-shell relative text-[var(--ui-text)]" :class="workspaceRoute ? 'user-shell--workspace h-dvh overflow-hidden' : 'user-shell--public min-h-screen'">
+  <div class="user-shell relative text-[var(--ui-text)]" :class="[workspaceRoute ? 'user-shell--workspace h-dvh overflow-hidden' : 'user-shell--public min-h-screen', { 'user-shell--login': route.path === '/app/login' }]">
     <template v-if="workspaceRoute">
       <Sheet v-if="!isDesktop" v-model:open="mobileOpen">
         <SheetContent id="workspace-mobile-sidebar" side="left" :show-close="false" :aria-describedby="undefined" class="user-sidebar w-64 max-w-[calc(100vw-2rem)] gap-0 p-0" @close-auto-focus="restoreMobileFocus">
@@ -152,6 +152,7 @@ watch(() => route.fullPath, closeMobile)
   }
   .user-sidebar { border-radius: 0.5rem; }
 }
+.user-shell--login,
 .user-shell--workspace .user-main {
   background:
     radial-gradient(circle at 1px 1px, color-mix(in oklch, var(--ui-text-dimmed) 22%, transparent) 1px, transparent 0) 0 0 / 22px 22px,
