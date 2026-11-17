@@ -3,9 +3,9 @@
 
     <AppCard>
       <template #header>
-        <div class="flex items-start gap-3">
-          <span class="flex size-10 shrink-0 items-center justify-center rounded-md bg-primary-500/10 text-primary-500"><AppIcon :name="passkeyRequired ? 'i-tabler-fingerprint' : needsTOTP ? 'i-tabler-device-mobile' : 'i-tabler-user'" class="size-5" /></span>
-          <div><h1 class="text-xl font-semibold text-[var(--ui-text-highlighted)]">{{ title }}</h1><p class="mt-1 text-sm text-[var(--ui-text-muted)]">{{ description }}</p></div>
+        <div class="flex flex-col items-center gap-2 py-2 text-center">
+          <h1 class="text-lg font-semibold tracking-tight text-[var(--ui-text-highlighted)]">{{ title }}</h1>
+          <p class="max-w-xs text-xs leading-relaxed text-[var(--ui-text-muted)]">{{ description }}</p>
         </div>
       </template>
 
@@ -36,7 +36,7 @@
 </template>
 
 <script setup lang="ts">
-import AppIcon from '~/components/AppIcon.vue'
+
 import PortalAlert from '~/components/app/general/PortalAlert.vue'
 import PortalCheckbox from '~/components/app/general/PortalCheckbox.vue'
 import PortalField from '~/components/app/general/PortalField.vue'
