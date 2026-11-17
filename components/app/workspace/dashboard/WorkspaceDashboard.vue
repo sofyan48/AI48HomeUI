@@ -29,7 +29,7 @@ const copyText = useWorkspaceClipboard()
         <h1 id="dashboard-title" class="break-words font-bold tracking-tight text-[var(--ui-text-highlighted)]">{{ user?.username ? t('ws.dashboard.welcomeUser', { name: user.username }) : t('ws.dashboard.welcome') }}</h1>
         <p class="mt-1 text-sm text-[var(--ui-text-muted)]">{{ dashboardStatusLine }}</p>
       </div>
-      <AppButton v-if="capabilities.request_logs === true" to="/app/logs" icon="i-tabler-list-details" color="neutral" variant="ghost" size="sm" class="rounded-full">{{ t('ws.dashboard.requestLogs') }}</AppButton>
+      <AppButton to="/app/balance" icon="i-tabler-wallet" color="primary" variant="solid" size="sm">{{ t('shell.nav.balance') }}</AppButton>
     </AppCard>
 
     <!-- Spotlight 1: how to start sending requests. -->
@@ -135,7 +135,7 @@ const copyText = useWorkspaceClipboard()
               <AppButton type="submit" :loading="billingLoading">{{ t('ws.dashboard.apply') }}</AppButton>
             </template>
             <AppButton type="button" color="neutral" variant="ghost" icon="i-tabler-refresh" :loading="billingLoading" :aria-label="t('ws.dashboard.refreshUsage')" :title="t('ws.dashboard.refreshUsage')" @click="loadBilling" />
-            <AppButton to="/app/balance" color="neutral" variant="ghost" size="sm" trailing-icon="i-tabler-arrow-right">{{ t('ws.dashboard.details') }}</AppButton>
+            <AppButton v-if="capabilities.analytics === true" to="/app/analytics" color="primary" variant="solid" size="sm" trailing-icon="i-tabler-arrow-right">{{ t('ws.dashboard.details') }}</AppButton>
           </form>
         </div>
       </template>
