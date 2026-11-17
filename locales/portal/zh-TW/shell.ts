@@ -21,6 +21,8 @@ export default {
   'shell.group.playground': '試驗場',
   'shell.group.model': '模型',
   'shell.group.build': '開發',
+  'shell.group.statistic': '統計',
+  'shell.nav.usage': '用量',
   'shell.group.account': '帳號',
   'shell.nav.dashboard': '儀表板',
   'shell.nav.balance': '餘額',

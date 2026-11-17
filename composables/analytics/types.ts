@@ -23,6 +23,24 @@ export interface UserAnalytics {
   per_key: (AnalyticsMetrics & { api_key_id: number | null })[]
 }
 
+export interface AnalyticsKeyChoice { id: number; name: string }
+
+// Retain only key identifiers and labels; never store secret key values here.
+export function analyticsKeyChoices(payload: unknown): AnalyticsKeyChoice[] {
+  if (!payload || typeof payload !== 'object') return []
+  const response = payload as { items?: unknown; api_keys?: unknown }
+  const entries = Array.isArray(response.items) ? response.items : response.api_keys
+  if (!Array.isArray(entries)) return []
+  const choices = new Map<number, AnalyticsKeyChoice>()
+  for (const entry of entries) {
+    if (!entry || typeof entry !== 'object') continue
+    const record = entry as { id?: unknown; display_name?: unknown }
+    if (typeof record.id !== 'number' || !Number.isSafeInteger(record.id) || record.id <= 0) continue
+    choices.set(record.id, { id: record.id, name: typeof record.display_name === 'string' ? record.display_name.trim() : '' })
+  }
+  return [...choices.values()].sort((a, b) => a.id - b.id)
+}
+
 export interface AnalyticsFilters { from: string; to: string; model: string; api_key_id: string }
 
 export function defaultAnalyticsFilters(now = new Date()): AnalyticsFilters {

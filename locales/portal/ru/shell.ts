@@ -21,6 +21,8 @@ export default {
   'shell.group.playground': 'Песочница',
   'shell.group.model': 'Модели',
   'shell.group.build': 'Разработка',
+  'shell.group.statistic': 'Статистика',
+  'shell.nav.usage': 'Использование',
   'shell.group.account': 'Аккаунт',
   'shell.nav.dashboard': 'Обзор',
   'shell.nav.balance': 'Баланс',

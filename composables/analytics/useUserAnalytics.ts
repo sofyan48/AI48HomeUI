@@ -2,7 +2,7 @@ import { computed, onScopeDispose, ref } from 'vue'
 import { useUserApi, usePortalI18n } from '#imports'
 import { useStoreData } from '~/composables/useStoreData'
 import { usePortalToast } from '~/composables/portal/usePortalToast'
-import { analyticsCSV, defaultAnalyticsFilters, validateRange, type AnalyticsFilters, type AnalyticsRow, type UserAnalytics } from './types'
+import { analyticsCSV, analyticsKeyChoices, defaultAnalyticsFilters, validateRange, type AnalyticsKeyChoice, type AnalyticsFilters, type AnalyticsRow, type UserAnalytics } from './types'
 
 export function useUserAnalytics() {
   const { fetchAPI, hydrateSession, loadCapabilities, capabilities } = useUserApi()
@@ -12,8 +12,8 @@ export function useUserAnalytics() {
   const applied = ref<AnalyticsFilters>({ ...filters.value })
   const filterError = ref('')
   const unsupported = ref(false)
-  // Fetch choices separately from the filtered result so selecting a model or
-  // key never makes the other choices disappear. No key values are fetched.
+  const ownedKeys = ref<AnalyticsKeyChoice[]>([])
+  // Keep model choices independent of the filtered result.
   const choices = ref<UserAnalytics | null>(null)
   let controller: AbortController | undefined
   let disposed = false
@@ -36,10 +36,12 @@ export function useUserAnalytics() {
     }
     const range = { from: applied.value.from, to: applied.value.to }
     const query = { ...range, ...(applied.value.model ? { model: applied.value.model } : {}), ...(applied.value.api_key_id ? { api_key_id: applied.value.api_key_id } : {}) }
+    const keysResponse = await fetchAPI<unknown>('/api-keys', { signal: requestController.signal })
     try {
       const result = await fetchAPI<UserAnalytics>('/analytics', { query, signal: requestController.signal })
       if (!disposed && !requestController.signal.aborted) {
         unsupported.value = false
+        ownedKeys.value = analyticsKeyChoices(keysResponse)
         if (!applied.value.model && !applied.value.api_key_id) choices.value = result
       }
       return result
@@ -60,9 +62,14 @@ export function useUserAnalytics() {
     { label: t('analytics.allModels'), value: '' },
     ...Array.from(new Set([...(choices.value?.per_model ?? []).map(row => row.model), applied.value.model].filter(Boolean))).sort().map(model => ({ label: model, value: model })),
   ])
-  // Historical ledger IDs remain useful labels without exposing an API key.
-  // A reassigned-away key can appear historically but is not offered as a
-  // filter: the server checks current ownership before filtering.
+  const keyOptions = computed(() => [
+    { label: t('analytics.allKeys'), value: '' },
+    ...ownedKeys.value.map(key => ({
+      label: key.name ? `${key.name} · #${key.id}` : t('analytics.keyLabel', { id: key.id }),
+      value: String(key.id),
+    })),
+  ])
+  // Historical key IDs may still appear in breakdowns after deletion or reassignment.
   const modelRows = computed<AnalyticsRow[]>(() => (result.value?.per_model ?? []).map(row => ({ ...row, id: row.model, name: row.model || '—' })))
   const keyRows = computed<AnalyticsRow[]>(() => (result.value?.per_key ?? []).map(row => ({ ...row, id: String(row.api_key_id ?? 'unknown'), name: row.api_key_id === null ? t('analytics.unknownKey') : t('analytics.keyLabel', { id: row.api_key_id }) })))
   const errorMessage = computed(() => {
@@ -97,5 +104,5 @@ export function useUserAnalytics() {
       if (url) URL.revokeObjectURL(url)
     }
   }
-  return { t, filters, applied, filterError, unsupported, result, pending, error, errorMessage, refresh, applyFilters, download, modelOptions, modelRows, keyRows }
+  return { t, filters, applied, filterError, unsupported, result, pending, error, errorMessage, refresh, applyFilters, download, modelOptions, keyOptions, modelRows, keyRows }
 }

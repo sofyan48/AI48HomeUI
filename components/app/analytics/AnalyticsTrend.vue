@@ -64,8 +64,13 @@ function details(day: AnalyticsDay) {
 <template>
   <AppCard>
     <template #header>
-      <h2 class="text-sm font-semibold">{{ t('analytics.trend.title') }}</h2>
-      <p class="mt-1 text-xs text-muted-foreground">{{ t('analytics.unitNote') }}</p>
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 class="text-sm font-semibold">{{ t('analytics.trend.title') }}</h2>
+          <p class="mt-1 text-xs text-muted-foreground">{{ t('analytics.unitNote') }}</p>
+        </div>
+        <slot name="actions" />
+      </div>
     </template>
     <AppEmptyState v-if="!daily.length" :text="t('analytics.empty')" />
     <div v-else class="flex min-w-0 flex-col gap-5">

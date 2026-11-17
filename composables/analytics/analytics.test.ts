@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { analyticsCSV, csvCell, defaultAnalyticsFilters, validateRange, type UserAnalytics } from './types'
+import { analyticsCSV, analyticsKeyChoices, csvCell, defaultAnalyticsFilters, validateRange, type UserAnalytics } from './types'
 
 const metrics = { requests: 2, input_tokens: 20, output_tokens: 8, cache_tokens: 10, billed_amount: 0.01234567, base_amount: 0.02, unpriced_requests: 1 }
 const data: UserAnalytics = {
@@ -10,6 +10,15 @@ const data: UserAnalytics = {
 }
 
 describe('user analytics helpers', () => {
+  test('key selector retains only owned key IDs and names, never secrets', () => {
+    expect(analyticsKeyChoices({ api_keys: [
+      { id: 7, display_name: ' Work ', api_key: 'secret' },
+      { id: 2, display_name: null },
+      { id: 0 }, { id: '9' }, null,
+    ] })).toEqual([{ id: 2, name: '' }, { id: 7, name: 'Work' }])
+    expect(analyticsKeyChoices({ items: [{ id: 3, display_name: 'Personal' }] })).toEqual([{ id: 3, name: 'Personal' }])
+    expect(analyticsKeyChoices(null)).toEqual([])
+  })
   test('defaults to 30 UTC dates including today, exclusive end', () => {
     expect(defaultAnalyticsFilters(new Date('2026-11-17T23:20:00-05:00'))).toEqual({ from: '2026-10-20', to: '2026-11-19', model: '', api_key_id: '' })
   })
