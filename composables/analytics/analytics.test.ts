@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'bun:test'
+import { readFileSync } from 'node:fs'
 import { analyticsCSV, analyticsKeyChoices, csvCell, defaultAnalyticsFilters, validateRange, type UserAnalytics } from './types'
 
 const metrics = { requests: 2, input_tokens: 20, output_tokens: 8, cache_tokens: 10, billed_amount: 0.01234567, base_amount: 0.02, unpriced_requests: 1 }
@@ -10,6 +11,15 @@ const data: UserAnalytics = {
 }
 
 describe('user analytics helpers', () => {
+  test('filter and chart labels use the user or response timezone', () => {
+    const page = readFileSync(new URL('../../components/app/analytics/UserAnalytics.vue', import.meta.url), 'utf8')
+    const chart = readFileSync(new URL('../../components/app/analytics/AnalyticsTrend.vue', import.meta.url), 'utf8')
+    expect(page).toContain("t('analytics.from', { timezone })")
+    expect(page).toContain("t('analytics.to', { timezone })")
+    expect(page).toContain(':timezone="result.timezone"')
+    expect(chart).toContain('(${timezone})')
+    expect(chart).not.toContain('(UTC)')
+  })
   test('key selector retains only owned key IDs and names, never secrets', () => {
     expect(analyticsKeyChoices({ api_keys: [
       { id: 7, display_name: ' Work ', api_key: 'secret' },

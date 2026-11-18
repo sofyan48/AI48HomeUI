@@ -5,7 +5,7 @@ import { usePortalToast } from '~/composables/portal/usePortalToast'
 import { analyticsCSV, analyticsKeyChoices, defaultAnalyticsFilters, validateRange, type AnalyticsKeyChoice, type AnalyticsFilters, type AnalyticsRow, type UserAnalytics } from './types'
 
 export function useUserAnalytics() {
-  const { fetchAPI, hydrateSession, loadCapabilities, capabilities, currentUser } = useUserApi()
+  const { fetchAPI, hydrateSession, loadCapabilities, capabilities, currentUser, loadCurrentUser } = useUserApi()
   const { t } = usePortalI18n()
   const toast = usePortalToast()
   const timezone = computed(() => currentUser.value?.timezone || 'UTC')
@@ -25,6 +25,8 @@ export function useUserAnalytics() {
     controller = requestController
     hydrateSession()
     if (!filtersTimezone) {
+      await loadCurrentUser()
+      if (disposed || requestController.signal.aborted) return null
       filtersTimezone = timezone.value
       filters.value = defaultAnalyticsFilters(new Date(), filtersTimezone)
       applied.value = { ...filters.value }
@@ -87,7 +89,7 @@ export function useUserAnalytics() {
   function applyFilters() {
     if (pending.value) return
     const invalid = validateRange(filters.value)
-    if (invalid) { filterError.value = invalid === 'long' ? t('analytics.maxRange', { days: 366 }) : t('analytics.invalidRange'); return }
+    if (invalid) { filterError.value = invalid === 'long' ? t('analytics.maxRange', { days: 366 }) : t('analytics.invalidRange', { timezone: timezone.value }); return }
     if (filters.value.api_key_id && !/^[1-9]\d*$/.test(filters.value.api_key_id)) { filterError.value = t('analytics.key') + ': ID > 0'; return }
     filterError.value = ''
     applied.value = { ...filters.value, model: filters.value.model.trim() }

@@ -45,10 +45,10 @@ const summary = computed(() => result.value ? [
       </template>
       <form @submit.prevent="applyFilters">
         <FieldGroup class="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-5">
-          <PortalField :label="t('analytics.from')" required>
+          <PortalField :label="t('analytics.from', { timezone })" required>
             <PortalInput v-model="filters.from" type="date" required :disabled="pending || unsupported" class="w-full" />
           </PortalField>
-          <PortalField :label="t('analytics.to')" required>
+          <PortalField :label="t('analytics.to', { timezone })" required>
             <PortalInput v-model="filters.to" type="date" required :disabled="pending || unsupported" class="w-full" />
           </PortalField>
           <PortalField :label="t('analytics.model')">
@@ -72,7 +72,7 @@ const summary = computed(() => result.value ? [
         <template #header>
           <p class="text-xs text-muted-foreground">
             <time :datetime="result.from">{{ result.from.slice(0, 10) }}</time>
-            → <time :datetime="result.to">{{ result.to.slice(0, 10) }}</time> · {{ timezone }}
+            → <time :datetime="result.to">{{ result.to.slice(0, 10) }}</time> · {{ result.timezone }}
           </p>
         </template>
         <div class="overflow-x-auto" role="region" :aria-label="t('analytics.title')" tabindex="0">
@@ -86,7 +86,7 @@ const summary = computed(() => result.value ? [
           </div>
         </div>
       </AppCard>
-      <AnalyticsTrend :daily="result.daily">
+      <AnalyticsTrend :daily="result.daily" :timezone="result.timezone">
         <template #actions>
           <div class="ml-auto flex flex-wrap justify-end gap-2" :aria-label="t('analytics.export')">
             <AppButton icon="i-tabler-download" color="neutral" variant="outline" @click="download('daily')">{{ t('analytics.csvDaily') }}</AppButton>

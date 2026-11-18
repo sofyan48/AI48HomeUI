@@ -111,7 +111,7 @@
                 <PortalBadge :color="healthColor(item.status)" variant="subtle" size="sm">{{ healthLabel(item.status) }}</PortalBadge>
               </div>
               <p class="mt-0.5 pl-4 text-xs text-[var(--ui-text-muted)]">{{ item.provider || item.credential_type || '—' }} · {{ t('diag.successFailed', { success: number(item.recent_success_count), failed: number(item.recent_failed_count) }) }}<template v-if="item.next_retry_at"> · {{ t('diag.retry', { time: formatTime(item.next_retry_at) }) }}</template></p>
-              <p v-if="item.last_error_message" class="mt-0.5 break-words pl-4 text-xs text-[var(--ui-error)]">{{ t('diag.lastError', { status: item.last_error_status ? ` (${item.last_error_status})` : '', message: item.last_error_message, time: formatTime(item.last_error_at) }) }}</p>
+              <p v-if="diagnosticMessage(item.last_error_message)" class="mt-0.5 whitespace-normal pl-4 text-xs text-[var(--ui-error)] [overflow-wrap:anywhere]">{{ t('diag.lastError', { status: item.last_error_status ? ` (${item.last_error_status})` : '', message: diagnosticMessage(item.last_error_message), time: formatTime(item.last_error_at) }) }}</p>
             </li>
           </ul>
           <p v-else class="px-4 py-8 text-center text-sm text-[var(--ui-text-muted)]">{{ t('diag.noHealth') }}</p>
@@ -196,6 +196,7 @@
 </template>
 
 <script setup>
+import { diagnosticMessage } from '~/composables/upstream-accounts/diagnosticMessage'
 import AdminField from '~/components/admin/general/controls/AdminField.vue'
 import AdminSelectMenu from '~/components/admin/general/controls/AdminSelectMenu.vue'
 import AdminInput from '~/components/admin/general/controls/AdminInput.vue'

@@ -6,10 +6,11 @@ import PortalTable from '~/components/app/general/PortalTable.vue'
 import { usePortalI18n } from '~/composables/usePortalI18n'
 import type { AnalyticsDay, AnalyticsMetrics } from '~/composables/analytics/types'
 
-const props = defineProps<{ daily: AnalyticsDay[] }>()
+const props = defineProps<{ daily: AnalyticsDay[]; timezone: string }>()
 const { t, intlLocale } = usePortalI18n()
 const numberFormat = computed(() => new Intl.NumberFormat(intlLocale.value))
 const amountFormat = computed(() => new Intl.NumberFormat(intlLocale.value, { maximumFractionDigits: 8 }))
+// Daily buckets are calendar dates in the response timezone, not instants to shift.
 const dateFormat = computed(() => new Intl.DateTimeFormat(intlLocale.value, { month: 'short', day: 'numeric', timeZone: 'UTC' }))
 const days = computed(() => [...props.daily].sort((a, b) => a.date.localeCompare(b.date)))
 const formatNumber = (value: number) => numberFormat.value.format(value)
@@ -28,7 +29,7 @@ const metricColumns = computed(() => [
   { accessorKey: 'unpriced_requests', header: t('analytics.unpriced') },
 ])
 const columns = computed(() => [
-  { accessorKey: 'date', header: t('analytics.from') },
+  { accessorKey: 'date', header: t('analytics.from', { timezone: props.timezone }) },
   ...metricColumns.value.map(column => ({ ...column, meta: { class: { th: 'text-right', td: 'text-right tabular-nums whitespace-nowrap' } } })),
 ])
 const tableData = computed(() => days.value.map(day => ({
@@ -85,8 +86,8 @@ function details(day: AnalyticsDay) {
               {{ series.label }}
             </span>
           </div>
-          <svg viewBox="0 0 640 220" role="img" :aria-label="`${panel.title} (UTC)`" class="mt-2 w-full text-primary">
-            <title>{{ panel.title }} (UTC)</title>
+          <svg viewBox="0 0 640 220" role="img" :aria-label="`${panel.title} (${timezone})`" class="mt-2 w-full text-primary">
+            <title>{{ panel.title }} ({{ timezone }})</title>
             <g v-for="fraction in [0, 0.5, 1]" :key="fraction">
               <line x1="60" x2="600" :y1="y(panel.max * fraction, panel.max)" :y2="y(panel.max * fraction, panel.max)" class="stroke-border" />
               <text x="52" :y="y(panel.max * fraction, panel.max) + 4" text-anchor="end" class="fill-muted-foreground text-[10px]">{{ panel.amount ? formatAmount(panel.max * fraction) : formatNumber(Math.round(panel.max * fraction)) }}</text>

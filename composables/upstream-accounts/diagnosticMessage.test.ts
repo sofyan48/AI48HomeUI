@@ -14,6 +14,15 @@ describe('diagnosticMessage', () => {
     expect(diagnosticMessage(null)).toBe('')
   })
 
+  test('extracts complete messages from truncated health response bodies', () => {
+    expect(diagnosticMessage('{"error":{"type":"usage_limit_reached","message":"The usage limit has been reached","plan_type":"team","resets_at":1794984881'))
+      .toBe('The usage limit has been reached')
+    expect(diagnosticMessage('{ "error": { "code": 403, "message": "This service has been disabled. Please submit an appeal.", "status"'))
+      .toBe('This service has been disabled. Please submit an appeal.')
+    expect(diagnosticMessage('{"error":{"message":"Try \\"again\\".\\nLater.","details":'))
+      .toBe('Try "again".\nLater.')
+  })
+
   test('uses status when available and hides unrecognized JSON payloads', () => {
     expect(diagnosticMessage('{"error":{"status":"RESOURCE_EXHAUSTED"}}')).toBe('RESOURCE_EXHAUSTED')
     expect(diagnosticMessage('{"details":[]}')).toBe('')
