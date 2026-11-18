@@ -46,5 +46,16 @@ export default {
   'analytics.csvModels': 'CSV использования по моделям',
   'analytics.csvKeys': 'CSV использования по API-ключам',
   'analytics.downloadFailed': 'Не удалось скачать CSV-файл.',
-  'analytics.unitNote': 'Суммы указаны в расчётных единицах, а не в долларах США.'
+  'analytics.unitNote': 'Суммы указаны в расчётных единицах, а не в долларах США.',
+  'analytics.date': 'Дата ({timezone})',
+  'analytics.requestTrend': 'Запросы по дням',
+  'analytics.showTable': 'Показать таблицу',
+  'analytics.showAll': 'Все {count} в таблице',
+  'analytics.entries': 'Записей: {count}',
+  'analytics.share': '{share} от общего',
+  'analytics.requestCount': 'Запросов: {count}',
+  'analytics.tokenSplit': '{input} вх. / {output} вых.',
+  'analytics.baseDetail': 'Базовая {amount}',
+  'analytics.unpricedDetail': 'Без цены: {count}',
+  'analytics.cacheDetail': 'Из кэша: {count}'
 } satisfies PortalAreaTranslation<typeof area>

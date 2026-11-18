@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import AppCard from '~/components/AppCard.vue'
 import AppEmptyState from '~/components/AppEmptyState.vue'
+import AppIcon from '~/components/AppIcon.vue'
 import PortalTable from '~/components/app/general/PortalTable.vue'
 import { usePortalI18n } from '~/composables/usePortalI18n'
 import type { AnalyticsDay, AnalyticsMetrics } from '~/composables/analytics/types'
@@ -29,7 +30,7 @@ const metricColumns = computed(() => [
   { accessorKey: 'unpriced_requests', header: t('analytics.unpriced') },
 ])
 const columns = computed(() => [
-  { accessorKey: 'date', header: t('analytics.from', { timezone: props.timezone }) },
+  { accessorKey: 'date', header: t('analytics.date', { timezone: props.timezone }) },
   ...metricColumns.value.map(column => ({ ...column, meta: { class: { th: 'text-right', td: 'text-right tabular-nums whitespace-nowrap' } } })),
 ])
 const tableData = computed(() => days.value.map(day => ({
@@ -42,7 +43,7 @@ const tableData = computed(() => days.value.map(day => ({
   ])),
 })))
 const panels = computed(() => [
-  { title: t('analytics.trend.title'), amount: false, series: [{ key: 'requests' as const, label: t('analytics.requests'), secondary: false }] },
+  { title: t('analytics.requestTrend'), amount: false, series: [{ key: 'requests' as const, label: t('analytics.requests'), secondary: false }] },
   { title: t('analytics.costTrend'), amount: true, series: [
     { key: 'billed_amount' as const, label: t('analytics.billed'), secondary: false },
     { key: 'base_amount' as const, label: t('analytics.base'), secondary: true },
@@ -65,26 +66,25 @@ function details(day: AnalyticsDay) {
 <template>
   <AppCard>
     <template #header>
-      <div class="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 class="text-sm font-semibold">{{ t('analytics.trend.title') }}</h2>
-          <p class="mt-1 text-xs text-muted-foreground">{{ t('analytics.unitNote') }}</p>
-        </div>
-        <slot name="actions" />
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <h2 class="flex items-center gap-2 text-sm font-semibold"><AppIcon name="i-tabler-activity" class="size-4 text-muted-foreground" aria-hidden="true" />{{ t('analytics.trend.title') }}</h2>
+        <span v-if="daily.length" class="text-xs tabular-nums text-muted-foreground">{{ t('analytics.days', { days: daily.length }) }}</span>
       </div>
     </template>
-    <AppEmptyState v-if="!daily.length" :text="t('analytics.empty')" />
+    <AppEmptyState v-if="!daily.length" icon="i-tabler-activity" :text="t('analytics.empty')" />
     <div v-else class="flex min-w-0 flex-col gap-5">
       <div class="grid min-w-0 gap-5 xl:grid-cols-2">
         <section v-for="panel in panels" :key="panel.title" class="min-w-0">
+          <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
           <h3 class="text-sm font-medium">{{ panel.title }}</h3>
-          <div class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+          <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
             <span v-for="series in panel.series" :key="series.key" class="flex items-center gap-2">
               <svg width="20" height="8" aria-hidden="true" class="text-primary">
                 <line x1="0" y1="4" x2="20" y2="4" stroke="currentColor" stroke-width="2" :stroke-dasharray="series.secondary ? '4 3' : undefined" />
               </svg>
               {{ series.label }}
             </span>
+          </div>
           </div>
           <svg viewBox="0 0 640 220" role="img" :aria-label="`${panel.title} (${timezone})`" class="mt-2 w-full text-primary">
             <title>{{ panel.title }} ({{ timezone }})</title>
@@ -94,7 +94,7 @@ function details(day: AnalyticsDay) {
             </g>
             <g v-for="series in panel.series" :key="series.key">
               <polyline :points="points(series.key, panel.max)" fill="none" stroke="currentColor" stroke-width="2" :stroke-dasharray="series.secondary ? '6 4' : undefined" />
-              <circle v-for="(day, index) in days" :key="day.date" :cx="x(index)" :cy="y(day[series.key], panel.max)" r="4" :fill="series.secondary ? 'var(--background)' : 'currentColor'" stroke="currentColor" stroke-width="2">
+              <circle v-for="(day, index) in days" :key="day.date" :cx="x(index)" :cy="y(day[series.key], panel.max)" :r="days.length > 31 ? 2.5 : 4" :fill="series.secondary ? 'var(--background)' : 'currentColor'" stroke="currentColor" stroke-width="2">
                 <title>{{ details(day) }}</title>
               </circle>
             </g>
@@ -103,9 +103,30 @@ function details(day: AnalyticsDay) {
         </section>
       </div>
       <details class="min-w-0">
-        <summary class="cursor-pointer rounded-sm text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{{ t('analytics.trend.title') }} · {{ t('analytics.days', { days: daily.length }) }}</summary>
+        <summary class="analytics-disclosure"><AppIcon name="i-tabler-list" class="size-4 text-muted-foreground" aria-hidden="true" />{{ t('analytics.showTable') }}<AppIcon name="i-tabler-chevron-down" class="analytics-disclosure-chevron ml-auto size-4 text-muted-foreground" aria-hidden="true" /></summary>
         <PortalTable class="mt-3" :data="tableData" :columns="columns" :numbered="false" :aria-label="t('analytics.trend.title')" />
       </details>
     </div>
   </AppCard>
 </template>
+
+<style scoped>
+.analytics-disclosure {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--ui-border);
+  border-radius: 0.375rem;
+  cursor: pointer;
+  list-style: none;
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+.analytics-disclosure::-webkit-details-marker { display: none; }
+.analytics-disclosure:hover { background: var(--ui-hover); }
+.analytics-disclosure:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 2px; }
+.analytics-disclosure-chevron { transition: transform 150ms ease; }
+details[open] .analytics-disclosure-chevron { transform: rotate(180deg); }
+@media (prefers-reduced-motion: reduce) { .analytics-disclosure-chevron { transition: none; } }
+</style>

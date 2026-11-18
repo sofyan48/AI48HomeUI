@@ -45,7 +45,18 @@ export default definePortalMessages({
   'analytics.csvModels': 'Usage by model CSV',
   'analytics.csvKeys': 'Usage by API key CSV',
   'analytics.downloadFailed': 'Unable to download the CSV file.',
-  'analytics.unitNote': 'Amounts are in billing units, not USD.'
+  'analytics.unitNote': 'Amounts are in billing units, not USD.',
+  'analytics.date': 'Date ({timezone})',
+  'analytics.requestTrend': 'Daily requests',
+  'analytics.showTable': 'Show table',
+  'analytics.showAll': 'Show all {count} in a table',
+  'analytics.entries': '{count} entries',
+  'analytics.share': '{share} of the total',
+  'analytics.requestCount': '{count} requests',
+  'analytics.tokenSplit': '{input} in / {output} out',
+  'analytics.baseDetail': 'Base {amount}',
+  'analytics.unpricedDetail': '{count} unpriced',
+  'analytics.cacheDetail': '{count} cached'
 }, {
   'analytics.title': 'Analitik',
   'analytics.description': 'Jelajahi penggunaan dan biaya per hari, model, dan API key.',
@@ -91,5 +102,16 @@ export default definePortalMessages({
   'analytics.csvModels': 'CSV penggunaan per model',
   'analytics.csvKeys': 'CSV penggunaan per API key',
   'analytics.downloadFailed': 'Tidak dapat mengunduh file CSV.',
-  'analytics.unitNote': 'Jumlah dinyatakan dalam unit penagihan, bukan USD.'
+  'analytics.unitNote': 'Jumlah dinyatakan dalam unit penagihan, bukan USD.',
+  'analytics.date': 'Tanggal ({timezone})',
+  'analytics.requestTrend': 'Request harian',
+  'analytics.showTable': 'Tampilkan tabel',
+  'analytics.showAll': 'Tampilkan semua {count} dalam tabel',
+  'analytics.entries': '{count} entri',
+  'analytics.share': '{share} dari total',
+  'analytics.requestCount': '{count} request',
+  'analytics.tokenSplit': '{input} masuk / {output} keluar',
+  'analytics.baseDetail': 'Dasar {amount}',
+  'analytics.unpricedDetail': '{count} tanpa harga',
+  'analytics.cacheDetail': '{count} dari cache'
 })

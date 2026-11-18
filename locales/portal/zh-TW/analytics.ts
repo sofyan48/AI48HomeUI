@@ -46,5 +46,16 @@ export default {
   'analytics.csvModels': '依模型統計的用量 CSV',
   'analytics.csvKeys': '依 API 金鑰統計的用量 CSV',
   'analytics.downloadFailed': '無法下載 CSV 檔案。',
-  'analytics.unitNote': '金額以計費單位表示，而非美元。'
+  'analytics.unitNote': '金額以計費單位表示，而非美元。',
+  'analytics.date': '日期（{timezone}）',
+  'analytics.requestTrend': '每日請求',
+  'analytics.showTable': '顯示表格',
+  'analytics.showAll': '在表格中顯示全部 {count} 項',
+  'analytics.entries': '{count} 項',
+  'analytics.share': '佔總計的 {share}',
+  'analytics.requestCount': '{count} 次請求',
+  'analytics.tokenSplit': '輸入 {input} / 輸出 {output}',
+  'analytics.baseDetail': '基礎 {amount}',
+  'analytics.unpricedDetail': '{count} 次未定價',
+  'analytics.cacheDetail': '快取 {count}'
 } satisfies PortalAreaTranslation<typeof area>
