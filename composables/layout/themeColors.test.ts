@@ -63,7 +63,7 @@ describe('theme accent preference', () => {
     for (const file of [
       'components/admin/general/DataPanel.vue',
       'components/admin/general/DetailSection.vue',
-      'components/admin/users/UsersGroupCards.vue'
+      'components/admin/users/UsersCredentialScopesTab.vue'
     ]) {
       const component = source(file)
       expect(component).toContain('text-muted-foreground')

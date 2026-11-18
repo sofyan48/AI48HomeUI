@@ -10,6 +10,7 @@ const providerCandidateRoutes = [
   { id: 'codex', path: '/config/api-keys/codex' },
   { id: 'vertex', path: '/config/api-keys/vertex' },
   { id: 'xai', path: '/config/api-keys/xai' },
+  { id: 'meta', path: '/config/api-keys/meta' },
   { id: 'openaiCompatibility', path: '/config/api-keys/openai-compatibility' }
 ]
 
@@ -37,14 +38,19 @@ export function useBindingCandidates({ fetchAPI, errorMessage }: Pick<UsersWorks
     ])
     const failures = results.flatMap(result => result.status === 'rejected' ? [errorMessage(result.reason)] : [])
     const first = results[0]?.status === 'fulfilled' ? results[0].value : null
-    const credentialEntries: AnyRecord[] = Array.isArray(first) ? first : first?.credentials || first?.items || []
+    // Home's /credentials returns { files: [...] }; keep the other shapes for older deployments.
+    const credentialEntries: AnyRecord[] = Array.isArray(first) ? first : first?.files || first?.credentials || first?.items || []
     const providerEntries = providerCandidateRoutes.flatMap((route, index) => {
       const result = results[index + 1]
       if (result?.status !== 'fulfilled' || !Array.isArray(result.value)) return []
-      return result.value.flatMap((group: AnyRecord) =>
-        (Array.isArray(group?.keys) ? group.keys : []).map((item: AnyRecord) => ({
+      return result.value.flatMap((group: AnyRecord) => {
+        const keys: AnyRecord[] = Array.isArray(group?.keys) ? group.keys : []
+        // Keyless compatibility groups carry their credential ID on the group itself.
+        if (!keys.length) return [{ ...group, keys: undefined, source: 'provider', providerId: route.id }]
+        return keys.map((item: AnyRecord) => ({
           ...group, ...item, keys: undefined, source: 'provider', providerId: route.id
-        })))
+        }))
+      })
     })
     const seen = new Set<string>()
     credentials.value = [
