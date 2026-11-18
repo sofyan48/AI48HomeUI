@@ -7,7 +7,8 @@
     :submit-label="editingKey ? t('users.saveChanges') : t('users.createKey')"
     :loading="saving"
     :cancel-disabled="saving"
-    content-class="sm:max-w-xl"
+    content-class="sm:max-w-2xl"
+    form-class="flex min-h-full flex-col [&>div:last-child]:mt-auto"
     divided
     @submit="submit"
   >
@@ -24,7 +25,7 @@
         :search-input="{ placeholder: t('users.searchUsersEllipsis') }"
       />
     </AdminField>
-    <div class="grid gap-4">
+    <div class="grid gap-5">
       <UsersScopePicker
         :title="t('users.credentialScope')"
         :empty-label="t('users.noCredentialScopesCreated')"
@@ -40,7 +41,7 @@
         @toggle="toggleId(form.model_groups, $event)"
       />
     </div>
-    <p class="text-sm leading-6 text-[var(--ui-text-muted)]">{{ t('users.noScopeHint') }}</p>
+    <p class="text-xs leading-5 text-[var(--ui-text-muted)]">{{ t('users.noScopeHint') }}</p>
   </AppFormModal>
 </template>
 

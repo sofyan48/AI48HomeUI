@@ -9,7 +9,7 @@
     @update:open="emit('update:open', $event)"
   >
     <template #body>
-      <form class="space-y-4" @submit.prevent="emit('submit')">
+      <form :class="formClass ? `${formClass} gap-4` : 'space-y-4'" @submit.prevent="emit('submit')">
         <PortalAlert v-if="error" color="error" variant="subtle" :description="error" />
         <slot />
         <div class="flex justify-end gap-2" :class="{ 'border-t border-[var(--ui-border)] pt-4': divided }">
@@ -52,6 +52,7 @@ withDefaults(defineProps<{
   // Separator line above the footer, used by long slide-over forms.
   divided?: boolean
   contentClass?: string
+  formClass?: string
 }>(), {
   description: undefined,
   error: '',
@@ -64,7 +65,8 @@ withDefaults(defineProps<{
   cancelDisabled: false,
   locked: false,
   divided: false,
-  contentClass: undefined
+  contentClass: undefined,
+  formClass: undefined
 })
 
 const emit = defineEmits<{ 'update:open': [value: boolean]; submit: [] }>()
