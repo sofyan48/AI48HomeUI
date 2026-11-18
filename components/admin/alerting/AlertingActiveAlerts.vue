@@ -17,16 +17,16 @@
         <PortalBadge :color="ruleColor(value(row).rule)" variant="subtle">{{ ruleLabel(value(row).rule) }}</PortalBadge>
       </template>
       <template #alert-cell="{ row }">
-        <div class="min-w-64 max-w-xl">
+        <div class="min-w-64 max-w-xl whitespace-normal [overflow-wrap:anywhere]">
           <p class="font-medium">{{ value(row).title }}</p>
-          <p class="text-xs text-[var(--ui-text-muted)] break-words">{{ value(row).detail }}</p>
+          <p class="mt-1 text-xs text-[var(--ui-text-muted)]">{{ value(row).detail }}</p>
         </div>
       </template>
       <template #since-cell="{ row }">
-        <span class="text-sm tabular-nums">{{ formatDate(value(row).first_seen_at) }}</span>
+        <span class="whitespace-nowrap text-sm tabular-nums">{{ formatDate(value(row).first_seen_at) }}</span>
       </template>
       <template #notified-cell="{ row }">
-        <span class="text-sm tabular-nums text-[var(--ui-text-muted)]">{{ formatDate(value(row).last_notified_at) }}</span>
+        <span class="whitespace-nowrap text-sm tabular-nums text-[var(--ui-text-muted)]">{{ formatDate(value(row).last_notified_at) }}</span>
       </template>
       <template #actions-cell="{ row }">
         <div class="flex justify-end">
