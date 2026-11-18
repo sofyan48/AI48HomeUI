@@ -18,10 +18,10 @@
     <!-- Actions live in the sheet footer so they stay pinned to the bottom instead of floating mid-sheet. -->
     <template #footer>
       <slot name="actions">
-        <AppButton type="button" color="neutral" variant="outline" :disabled="locked || cancelDisabled" @click="emit('update:open', false)">
+        <AppButton type="button" :size="centered ? 'sm' : 'md'" color="neutral" variant="outline" :disabled="locked || cancelDisabled" @click="emit('update:open', false)">
           {{ cancelLabel || t('common.cancel') }}
         </AppButton>
-        <AppButton type="submit" :form="formId" :color="submitColor" :icon="submitIcon" :loading="loading" :disabled="submitDisabled">
+        <AppButton type="submit" :size="centered ? 'sm' : 'md'" :form="formId" :color="submitColor" :icon="submitIcon" :loading="loading" :disabled="submitDisabled">
           {{ submitLabel || t('common.save') }}
         </AppButton>
       </slot>

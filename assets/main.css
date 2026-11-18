@@ -397,18 +397,18 @@ body:not([data-admin-console]) .workbench-main button:not([role="switch"]):not([
 
 /* Right-side sheets: let a single form/stack root fill the body so its trailing action row
    is pinned to the bottom of the sheet instead of floating in the middle of empty space. */
-[data-slot="sheet-content"] > [data-slot="body"] {
+[data-slot="sheet-content"][data-modal-layout="sheet"] > [data-slot="body"] {
   display: flex;
   flex-direction: column;
 }
 
-[data-slot="sheet-content"] > [data-slot="body"] > :is(form, .space-y-4, .space-y-5):only-child {
+[data-slot="sheet-content"][data-modal-layout="sheet"] > [data-slot="body"] > :is(form, .space-y-4, .space-y-5):only-child {
   display: flex;
   flex: 1 0 auto;
   flex-direction: column;
 }
 
-[data-slot="sheet-content"] > [data-slot="body"] > :is(form, .space-y-4, .space-y-5):only-child > .flex.justify-end:last-child {
+[data-slot="sheet-content"][data-modal-layout="sheet"] > [data-slot="body"] > :is(form, .space-y-4, .space-y-5):only-child > .flex.justify-end:last-child {
   position: sticky;
   bottom: -1rem;
   z-index: 1;
@@ -421,7 +421,7 @@ body:not([data-admin-console]) .workbench-main button:not([role="switch"]):not([
 }
 
 @media (min-width: 40rem) {
-  [data-slot="sheet-content"] > [data-slot="body"] > :is(form, .space-y-4, .space-y-5):only-child > .flex.justify-end:last-child {
+  [data-slot="sheet-content"][data-modal-layout="sheet"] > [data-slot="body"] > :is(form, .space-y-4, .space-y-5):only-child > .flex.justify-end:last-child {
     bottom: -1.25rem;
     margin-inline: -1.25rem;
     margin-bottom: -1.25rem;

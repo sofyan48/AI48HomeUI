@@ -53,7 +53,12 @@
         </AppTable>
       </AdminDataPanel>
       <AppConfirmModal v-model:open="open" :title="t('billing.bulkDelete.title')" :description="t('billing.delete.description')" :message="t('billing.bulkDelete.message', { count: targets.length })" :confirm-label="t('billing.bulkDelete.action', { count: targets.length })" :loading="busy" :locked="busy" :error="error" @confirm="remove">
-        <ul class="flex max-h-48 flex-col gap-1 overflow-y-auto text-sm text-muted-foreground"><li v-for="rule in targets" :key="rule.id">{{ rule.provider }} / {{ rule.model }} · {{ rule.service_tier || '*' }} · {{ contextBandLabel(rule.min_input_tokens) }}</li></ul>
+        <ul class="flex max-h-48 flex-col gap-2 overflow-y-auto rounded-md border border-border bg-muted/40 p-3">
+          <li v-for="rule in targets" :key="rule.id" class="flex min-w-0 flex-col gap-1">
+            <span class="break-words text-sm font-medium [overflow-wrap:anywhere]">{{ rule.model }}</span>
+            <span class="text-xs text-muted-foreground">{{ rule.provider }} · {{ rule.service_tier || '*' }} · {{ contextBandLabel(rule.min_input_tokens) }}</span>
+          </li>
+        </ul>
       </AppConfirmModal>
 </template>
 <script setup lang="ts">
