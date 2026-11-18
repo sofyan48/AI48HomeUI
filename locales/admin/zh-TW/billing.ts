@@ -2,6 +2,14 @@ import type { AdminAreaTranslation } from '../define'
 import type area from '../billing'
 
 export default {
+  'billing.bulkDelete.action': '刪除所選 ({count})',
+  'billing.bulkDelete.title': '刪除所選價格規則',
+  'billing.bulkDelete.message': '永久刪除 {count} 條所選價格規則？這些規則將不再適用於未來用量。所選項目可能包含被目前篩選隱藏的規則。',
+  'billing.bulkDelete.selectAll': '選取所有篩選後的價格規則',
+  'billing.bulkDelete.selectOne': '選取價格規則：{provider} / {model}',
+  'billing.bulkDelete.deleted': '已刪除 {count} 條價格規則',
+  'billing.bulkDelete.failed': '{count} 條價格規則刪除失敗，仍保持選取，可重試刪除。',
+  'billing.bulkDelete.refreshFailed': '刪除已完成，但價格清單重新整理失敗。請重新整理清單以查看最新規則。',
   'billing.requestFailed': '計費請求失敗',
   'billing.sectionsLabel': '計費區段',
   'billing.timezoneHint': '報表與日期篩選使用此時區。日期範圍包含起訖兩個日曆日。',

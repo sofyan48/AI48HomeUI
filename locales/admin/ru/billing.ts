@@ -2,6 +2,14 @@ import type { AdminAreaTranslation } from '../define'
 import type area from '../billing'
 
 export default {
+  'billing.bulkDelete.action': 'Удалить выбранные ({count})',
+  'billing.bulkDelete.title': 'Удалить выбранные правила цен',
+  'billing.bulkDelete.message': 'Безвозвратно удалить выбранные правила цен ({count})? Они больше не будут применяться к будущему использованию. Выбор может включать правила, скрытые текущими фильтрами.',
+  'billing.bulkDelete.selectAll': 'Выбрать все отфильтрованные правила цен',
+  'billing.bulkDelete.selectOne': 'Выбрать правило цены: {provider} / {model}',
+  'billing.bulkDelete.deleted': 'Удалено правил цен: {count}',
+  'billing.bulkDelete.failed': 'Не удалось удалить правил цен: {count}. Они остаются выбранными; повторите попытку.',
+  'billing.bulkDelete.refreshFailed': 'Удаление завершено, но список цен не обновился. Обновите список, чтобы увидеть актуальные правила.',
   'billing.requestFailed': 'Ошибка запроса биллинга',
   'billing.sectionsLabel': 'Разделы биллинга',
   'billing.timezoneHint': 'Отчёты и фильтры по дате используют этот часовой пояс. Диапазоны дат включают обе календарные даты.',
