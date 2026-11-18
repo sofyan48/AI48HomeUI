@@ -33,6 +33,7 @@ export interface UserAccount {
   id: number
   username: string
   credits: number
+  timezone: string
   totp_enabled: boolean
   passkey_count: number
   email_status: UserEmailStatus
@@ -206,6 +207,7 @@ const normalizeUser = (value: any): UserAccount => ({
   id: Number(value?.id) || 0,
   username: String(value?.username || ''),
   credits: Number(value?.credits) || 0,
+  timezone: String(value?.timezone || 'Asia/Shanghai'),
   totp_enabled: Boolean(value?.totp_enabled ?? value?.totpEnabled),
   passkey_count: Number(value?.passkey_count ?? value?.passkeyCount ?? value?.passkeys?.length) || 0,
   email_status: {

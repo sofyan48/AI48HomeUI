@@ -13,7 +13,7 @@ export interface AnalyticsRow extends AnalyticsMetrics { name: string; id: strin
 export interface UserAnalytics {
   from: string
   to: string
-  timezone: 'UTC'
+  timezone: string
   source: 'billing_charge'
   model: string
   api_key_id: number | null
@@ -43,9 +43,17 @@ export function analyticsKeyChoices(payload: unknown): AnalyticsKeyChoice[] {
 
 export interface AnalyticsFilters { from: string; to: string; model: string; api_key_id: string }
 
-export function defaultAnalyticsFilters(now = new Date()): AnalyticsFilters {
-  const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1))
-  return { from: new Date(end.getTime() - 30 * 86400000).toISOString().slice(0, 10), to: end.toISOString().slice(0, 10), model: '', api_key_id: '' }
+export function defaultAnalyticsFilters(now = new Date(), timezone = 'UTC'): AnalyticsFilters {
+  let parts: Record<string, string>
+  try {
+    parts = Object.fromEntries(new Intl.DateTimeFormat('en-CA', { timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(now).filter(part => part.type !== 'literal').map(part => [part.type, part.value]))
+  } catch {
+    parts = Object.fromEntries(new Intl.DateTimeFormat('en-CA', { timeZone: 'UTC', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(now).filter(part => part.type !== 'literal').map(part => [part.type, part.value]))
+  }
+  const today = `${parts.year}-${parts.month}-${parts.day}`
+  const end = new Date(`${today}T00:00:00Z`)
+  end.setUTCDate(end.getUTCDate() + 1)
+  return { from: new Date(end.getTime() - 7 * 86400000).toISOString().slice(0, 10), to: new Date(end.getTime()).toISOString().slice(0, 10), model: '', api_key_id: '' }
 }
 
 export function validateRange(filters: AnalyticsFilters): 'invalid' | 'long' | null {

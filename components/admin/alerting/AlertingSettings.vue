@@ -14,14 +14,14 @@
     </template>
 
     <form v-if="settingsDraft" class="space-y-5" @submit.prevent="saveSettings">
-      <div class="grid gap-4 sm:grid-cols-3">
-        <AdminField :label="t('alerting.settings.interval')" :help="t('alerting.settings.intervalHelp')">
+      <div class="grid items-start gap-4 sm:grid-cols-3">
+        <AdminField :label="t('alerting.settings.interval')" :help="t('alerting.settings.intervalHelp')" :ui="{ container: 'min-h-10' }">
           <AdminInput v-model.number="settingsDraft.interval_seconds" type="number" min="15" max="3600" class="w-full" />
         </AdminField>
-        <AdminField :label="t('alerting.settings.repeat')" :help="t('alerting.settings.repeatHelp')">
+        <AdminField :label="t('alerting.settings.repeat')" :help="t('alerting.settings.repeatHelp')" :ui="{ container: 'min-h-10' }">
           <AdminInput v-model.number="settingsDraft.repeat_minutes" type="number" min="0" class="w-full" />
         </AdminField>
-        <label class="flex items-center justify-between gap-3 rounded-lg border border-[var(--ui-border)] p-3 sm:self-start sm:mt-6">
+        <label class="flex items-center justify-between gap-3 rounded-lg border border-[var(--ui-border)] p-3 sm:self-start sm:mt-10">
           <span class="text-sm font-medium">{{ t('alerting.settings.sendResolved') }}</span>
           <AdminSwitch v-model="settingsDraft.send_resolved" />
         </label>

@@ -13,7 +13,7 @@ import AnalyticsBreakdown from './AnalyticsBreakdown.vue'
 import { useUserAnalytics } from '~/composables/analytics/useUserAnalytics'
 
 const {
-  t, filters, filterError, unsupported, result, pending, error, errorMessage,
+  t, filters, filterError, unsupported, result, pending, error, errorMessage, timezone,
   refresh, applyFilters, download, modelOptions, keyOptions, modelRows, keyRows,
 } = useUserAnalytics()
 const { intlLocale } = usePortalI18n()
@@ -72,7 +72,7 @@ const summary = computed(() => result.value ? [
         <template #header>
           <p class="text-xs text-muted-foreground">
             <time :datetime="result.from">{{ result.from.slice(0, 10) }}</time>
-            → <time :datetime="result.to">{{ result.to.slice(0, 10) }}</time> · UTC
+            → <time :datetime="result.to">{{ result.to.slice(0, 10) }}</time> · {{ timezone }}
           </p>
         </template>
         <div class="overflow-x-auto" role="region" :aria-label="t('analytics.title')" tabindex="0">

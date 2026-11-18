@@ -19,8 +19,8 @@ describe('user analytics helpers', () => {
     expect(analyticsKeyChoices({ items: [{ id: 3, display_name: 'Personal' }] })).toEqual([{ id: 3, name: 'Personal' }])
     expect(analyticsKeyChoices(null)).toEqual([])
   })
-  test('defaults to 30 UTC dates including today, exclusive end', () => {
-    expect(defaultAnalyticsFilters(new Date('2026-11-17T23:20:00-05:00'))).toEqual({ from: '2026-10-20', to: '2026-11-19', model: '', api_key_id: '' })
+  test('defaults to seven user-local dates including today, exclusive end', () => {
+    expect(defaultAnalyticsFilters(new Date('2026-11-17T23:20:00-05:00'), 'Asia/Jakarta')).toEqual({ from: '2026-11-12', to: '2026-11-19', model: '', api_key_id: '' })
   })
   test('validates exclusive boundaries, leap dates, and max range', () => {
     const filters = { ...defaultAnalyticsFilters(), from: '2026-11-01', to: '2026-11-01' }

@@ -5,11 +5,13 @@ import { usePortalToast } from '~/composables/portal/usePortalToast'
 import { analyticsCSV, analyticsKeyChoices, defaultAnalyticsFilters, validateRange, type AnalyticsKeyChoice, type AnalyticsFilters, type AnalyticsRow, type UserAnalytics } from './types'
 
 export function useUserAnalytics() {
-  const { fetchAPI, hydrateSession, loadCapabilities, capabilities } = useUserApi()
+  const { fetchAPI, hydrateSession, loadCapabilities, capabilities, currentUser } = useUserApi()
   const { t } = usePortalI18n()
   const toast = usePortalToast()
-  const filters = ref(defaultAnalyticsFilters())
+  const timezone = computed(() => currentUser.value?.timezone || 'UTC')
+  const filters = ref(defaultAnalyticsFilters(new Date(), timezone.value))
   const applied = ref<AnalyticsFilters>({ ...filters.value })
+  let filtersTimezone = ''
   const filterError = ref('')
   const unsupported = ref(false)
   const ownedKeys = ref<AnalyticsKeyChoice[]>([])
@@ -22,6 +24,11 @@ export function useUserAnalytics() {
     const requestController = new AbortController()
     controller = requestController
     hydrateSession()
+    if (!filtersTimezone) {
+      filtersTimezone = timezone.value
+      filters.value = defaultAnalyticsFilters(new Date(), filtersTimezone)
+      applied.value = { ...filters.value }
+    }
     try {
       await loadCapabilities()
     } catch (cause) {
@@ -104,5 +111,5 @@ export function useUserAnalytics() {
       if (url) URL.revokeObjectURL(url)
     }
   }
-  return { t, filters, applied, filterError, unsupported, result, pending, error, errorMessage, refresh, applyFilters, download, modelOptions, keyOptions, modelRows, keyRows }
+  return { t, filters, applied, filterError, unsupported, result, pending, error, errorMessage, timezone, refresh, applyFilters, download, modelOptions, keyOptions, modelRows, keyRows }
 }
