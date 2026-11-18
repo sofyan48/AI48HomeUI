@@ -11,7 +11,7 @@
     </template>
     <AppTable :columns="columns" :data="channels" :loading="loading">
       <template #identity-cell="{ row }">
-        <div class="min-w-48">
+        <div class="min-w-48 max-w-xs whitespace-normal [overflow-wrap:anywhere] sm:max-w-md">
           <p class="font-medium">{{ value(row).name }}</p>
           <p class="font-mono text-xs text-[var(--ui-text-muted)]">{{ target(value(row)) }}</p>
         </div>
