@@ -105,9 +105,10 @@ const candidates = computed(() => {
     ...item,
     value: item.modelId,
     description: item.modelId,
-    disabled: bound.has(item.modelId),
+    disabled: bound.has(item.modelId) || !item.scopes.includes('available'),
     badges: [
       ...item.scopes.map(scope => scope === 'available' ? 'Available' : 'Static catalog'),
+      ...item.availableProviders.map(provider => `Provider:${provider}`),
       ...(item.channel ? [item.channel] : []),
       ...(bound.has(item.modelId) ? ['Bound'] : [])
     ]
@@ -168,7 +169,8 @@ async function addModelBindings(targets: string[]) {
   const created = results.length - failed.length
   if (failed.length) {
     if (created) toast.add({ title: t('users.bindingsPartiallyAdded', { created, failed: failed.length }), color: 'warning' })
-    throw new Error(t('users.bindingsFailedDetail', { count: failed.length, target: failed[0].target, message: failed[0].message }))
+    const firstFailure = failed[0]
+    throw new Error(t('users.bindingsFailedDetail', { count: failed.length, target: firstFailure?.target || '', message: firstFailure?.message || '' }))
   }
   open.value = false
   toast.add({ title: t('users.bindingsAdded', { count: created }), color: 'success' })

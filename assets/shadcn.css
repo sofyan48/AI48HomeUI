@@ -17,6 +17,8 @@
   --color-accent: var(--ui-bg-accented);
   --color-accent-foreground: var(--ui-text-highlighted);
   --color-destructive: var(--ui-error);
+  --color-success: var(--ui-success);
+  --color-success-foreground: var(--ui-text-inverted);
   --color-border: var(--ui-border);
   --color-input: var(--ui-border-accented);
   --color-ring: var(--ring, var(--ui-primary));

@@ -73,6 +73,7 @@ export type ModelCandidate = {
   ownedBy: string
   type: string
   providers: string[]
+  availableProviders: string[]
   channel: string
   scopes: string[]
 }
@@ -81,6 +82,8 @@ function normalizeModelCandidate(item: AnyRecord, scope: string): ModelCandidate
   const modelId = firstText(item, ['id', 'model_id', 'model-id', 'model', 'name'])
   if (!modelId) return null
   const displayName = firstText(item, ['displayName', 'display_name', 'display-name', 'label'])
+  const channel = firstText(item, ['channelBucket', 'channel', 'channel_bucket', 'channel-bucket', 'source'])
+  const providers = normalizeProviders(item?.providers ?? item?.provider ?? item?.ownedBy ?? item?.owned_by ?? channel)
   return {
     id: `model:${modelId}`,
     modelId,
@@ -88,8 +91,9 @@ function normalizeModelCandidate(item: AnyRecord, scope: string): ModelCandidate
     displayName,
     ownedBy: firstText(item, ['ownedBy', 'owned_by', 'owned-by']),
     type: firstText(item, ['type']),
-    providers: normalizeProviders(item?.providers ?? item?.provider),
-    channel: firstText(item, ['channelBucket', 'channel', 'channel_bucket', 'channel-bucket', 'source']),
+    providers,
+    availableProviders: scope === 'available' ? providers : [],
+    channel,
     scopes: [scope]
   }
 }
@@ -112,6 +116,7 @@ export function mergeModelCandidates(runtime: AnyRecord[], staticModels: AnyReco
     existing.type ||= candidate.type
     existing.channel ||= candidate.channel
     existing.providers = [...new Set([...existing.providers, ...candidate.providers])]
+    existing.availableProviders = [...new Set([...existing.availableProviders, ...candidate.availableProviders])]
   }
   for (const item of runtime) add(item, 'available')
   for (const item of staticModels) add(item, 'static')

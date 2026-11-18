@@ -37,7 +37,7 @@ export function useAccountFields(ctx: AccountShared & ReturnType<typeof useAccou
       prefix: item.prefix || '', proxy_url: item.proxy_url || '',
       weight: item.weight == null ? '' : String(item.weight),
       priority: item.priority == null ? '' : String(item.priority), request_retry: item['request-retry'] == null ? '' : String(item['request-retry']),
-      note: item.note || '', websockets: credentialWebsocketState(item) === 'on', using_api: credentialUsingAPI(item), disable_cooling: item['disable-cooling'] == null ? 'inherit' : item['disable-cooling'] ? 'disable' : 'enable', enabled: !item.disabled
+      note: item.note || '', websockets: credentialWebsocketState(item) === 'on', using_api: credentialUsingAPI(item), disable_cooling: item['disable-cooling'] == null ? 'inherit' : item['disable-cooling'] ? 'disable' : 'enable', enabled: item.disabled === true ? false : item.disabled === false ? true : fields.enabled
     })
     originalFields.value = { ...fields }
   }
@@ -79,8 +79,10 @@ export function useAccountFields(ctx: AccountShared & ReturnType<typeof useAccou
         body[key] = raw ? Number(raw) : null
       } else if (key === 'disable_cooling') body['disable-cooling'] = fields[key] === 'inherit' ? null : fields[key] === 'disable'
       else if (key === 'using_api') body.using_api = Boolean(fields[key])
-      else if (key === 'enabled') body.disabled = !fields.enabled
-      else body[key] = fields[key]
+      else if (key === 'enabled') {
+        // The status endpoint owns disabled state. Do not send an inferred enable when a list response omits it.
+        if (typeof detailsTarget.value?.disabled === 'boolean') body.disabled = !fields.enabled
+      } else body[key] = fields[key]
     }
     try {
       if (exclusionsLoaded.value && excludedModels.value !== originalExcludedModels.value) {

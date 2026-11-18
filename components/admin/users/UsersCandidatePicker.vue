@@ -1,29 +1,34 @@
 <template>
   <div class="grid gap-2">
     <p class="text-sm font-medium">{{ kind === 'credential' ? t('users.accountCredential') : t('common.model') }}</p>
-    <AdminInput
-      :model-value="search"
-      icon="i-tabler-search"
+    <input
+      :value="search"
+      type="search"
+      class="h-10 w-full rounded-md border border-[var(--ui-border)] bg-[var(--ui-bg-elevated)] px-3 text-sm text-[var(--ui-text-highlighted)] outline-none placeholder:text-[var(--ui-text-muted)] focus:border-[var(--ui-primary)]"
       :disabled="mutating || pending"
       :placeholder="kind === 'credential' ? t('users.searchCredentialPlaceholder') : t('users.searchModelPlaceholder')"
-      @update:model-value="$emit('update:search', $event)"
+      :aria-label="kind === 'credential' ? t('users.searchCredentialPlaceholder') : t('users.searchModelPlaceholder')"
+      @input="$emit('update:search', $event.target.value)"
       @keydown.enter.prevent.stop="selectFirst($event)"
     />
     <div class="flex flex-col gap-2 rounded-md border border-[var(--ui-border)] px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
-      <div v-if="kind === 'model'" class="flex flex-wrap items-center gap-1.5">
-        <span class="mr-1 text-xs text-[var(--ui-text-muted)]">{{ t('users.source') }}</span>
-        <AppButton
-          v-for="filter in [{ label: t('common.all'), value: 'all' }, { label: t('users.sourceRuntime'), value: 'available' }, { label: t('users.sourceStatic'), value: 'static' }]"
-          :key="filter.value"
-          type="button"
-          size="xs"
-          color="neutral"
-          :variant="sourceFilter === filter.value ? 'soft' : 'outline'"
-          :disabled="mutating || pending"
-          @click="$emit('update:source-filter', filter.value)"
-        >
-          {{ filter.label }}
-        </AppButton>
+      <div v-if="kind === 'model'" class="grid gap-2">
+        <div class="flex flex-wrap items-center gap-1.5">
+          <span class="mr-1 text-xs text-[var(--ui-text-muted)]">{{ t('users.source') }}</span>
+          <AppButton
+            v-for="filter in [{ label: t('common.all'), value: 'all' }, { label: t('users.sourceRuntime'), value: 'available' }, { label: t('users.sourceStatic'), value: 'static' }]"
+            :key="filter.value"
+            type="button"
+            size="xs"
+            color="neutral"
+            :variant="sourceFilter === filter.value ? 'soft' : 'outline'"
+            :disabled="mutating || pending"
+            @click="$emit('update:source-filter', filter.value)"
+          >
+            {{ filter.label }}
+          </AppButton>
+        </div>
+
       </div>
       <span v-else class="text-xs text-[var(--ui-text-muted)]">{{ t('users.currentResults', { count: visible.length }) }}</span>
       <span class="text-xs text-[var(--ui-text-muted)]">{{ kind === 'credential' ? t('users.credentialsSelected', { count: selected.length }) : t('users.modelsSelected', { count: selected.length }) }}</span>
@@ -54,11 +59,27 @@
           :key="item.id"
           :class="['flex min-w-0 items-start gap-3 rounded-md px-3 py-2.5 text-left transition-colors', selected.includes(item.value) ? 'bg-[var(--ui-primary)]/10 ring-1 ring-[var(--ui-primary)]/35' : 'hover:bg-[var(--ui-bg-muted)]', (mutating || item.disabled) ? 'cursor-not-allowed opacity-55' : '']"
         >
-          <AdminCheckbox class="mt-0.5" :model-value="selected.includes(item.value)" :disabled="mutating || item.disabled" @update:model-value="toggle(item.value)" />
+          <input
+            type="checkbox"
+            class="mt-1 size-5 shrink-0 cursor-pointer accent-[var(--ui-primary)]"
+            :checked="selected.includes(item.value)"
+            :disabled="mutating || item.disabled"
+            :aria-label="item.label"
+            @change="toggle(item.value)"
+          />
           <span class="min-w-0 flex-1">
             <span class="flex flex-wrap items-center gap-1.5">
               <span class="truncate text-sm font-medium">{{ item.label }}</span>
-              <PortalBadge v-for="badge in item.badges" :key="badge" :color="badge === 'Available' || badge === 'Bound' ? 'success' : 'neutral'" variant="subtle" size="sm">{{ badgeLabel(badge) }}</PortalBadge>
+              <Badge
+                v-for="badge in item.badges"
+                :key="badge"
+                variant="outline"
+                :class="badge === 'Available'
+                  ? 'border-success/40 bg-success/10 font-semibold text-success'
+                  : 'border-border bg-muted text-muted-foreground'"
+              >
+                {{ badgeLabel(badge) }}
+              </Badge>
             </span>
             <span class="mt-1 block truncate font-mono text-xs text-[var(--ui-text-muted)]">{{ item.description }}</span>
           </span>
@@ -70,25 +91,30 @@
 </template>
 
 <script>
-import AdminInput from '~/components/admin/general/controls/AdminInput.vue'
-import AdminCheckbox from '~/components/admin/general/controls/AdminCheckbox.vue'
-import PortalBadge from '~/components/app/general/PortalBadge.vue'
+import Badge from '~/components/ui/badge/Badge.vue'
 import PortalSkeleton from '~/components/app/general/PortalSkeleton.vue'
 import { useAdminI18n } from '~/composables/useAdminI18n'
 
 export default {
+  components: { Badge, PortalSkeleton },
   props: ['kind', 'items', 'selected', 'search', 'sourceFilter', 'pending', 'issueMessage', 'errorMessage', 'mutating'],
   emits: ['update:search', 'update:source-filter', 'update:selected', 'retry', 'clear-error'],
   setup() {
     const { t } = useAdminI18n()
     // Badge values stay English internally (they drive badge colors); translate only for display.
-    const badgeLabel = badge => badge === 'Available' ? t('users.badgeAvailable') : badge === 'Bound' ? t('users.badgeBound') : badge === 'Unavailable' ? t('users.badgeUnavailable') : badge === 'Static catalog' ? t('users.badgeStaticCatalog') : badge
+    const badgeLabel = badge => badge === 'Available' ? t('users.badgeAvailable') : badge === 'Bound' ? t('users.badgeBound') : badge === 'Unavailable' ? t('users.badgeUnavailable') : badge === 'Static catalog' ? t('users.badgeStaticCatalog') : badge.startsWith('Provider:') ? badge.slice('Provider:'.length) : badge
     return { t, badgeLabel }
   },
   computed: {
     visible() {
       const query = String(this.search || '').trim().toLowerCase()
-      return this.items.filter(item => (this.kind !== 'model' || this.sourceFilter === 'all' || item.scopes.includes(this.sourceFilter)) && (!query || (this.kind === 'model' ? [item.label, item.modelId, item.ownedBy, item.type, item.channel, ...(item.scopes || [])] : [item.label, item.value, item.provider, item.type, item.status]).some(value => String(value || '').toLowerCase().includes(query))))
+      return this.items.filter(item => {
+        const sourceMatches = this.kind !== 'model' || this.sourceFilter === 'all' || item.scopes.includes(this.sourceFilter)
+        const searchValues = this.kind === 'model'
+          ? [item.label, item.modelId, item.ownedBy, item.type, item.channel, ...(item.providers || []), ...(item.scopes || [])]
+          : [item.label, item.value, item.provider, item.type, item.status]
+        return sourceMatches && (!query || searchValues.some(value => String(value || '').toLowerCase().includes(query)))
+      })
     },
     enabledVisible() {
       return this.visible.filter(item => !item.disabled)
