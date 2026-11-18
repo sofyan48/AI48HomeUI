@@ -29,7 +29,16 @@
         <span class="whitespace-nowrap text-sm tabular-nums text-[var(--ui-text-muted)]">{{ formatDate(value(row).last_notified_at) }}</span>
       </template>
       <template #actions-cell="{ row }">
-        <div class="flex justify-end">
+        <div class="flex items-center justify-end gap-1">
+          <AppButton
+            size="xs"
+            color="neutral"
+            variant="outline"
+            icon="i-tabler-circle-check"
+            :loading="resolvingKey === value(row).key"
+            :disabled="resolvingKey !== null"
+            @click="resolveAlert(value(row))"
+          >{{ t('alerting.alerts.resolve') }}</AppButton>
           <AdminTableAction v-if="value(row).rule === 'node_offline'" action="remove" :label="t('alerting.alerts.forgetNode')" destructive @click="forgetNode(value(row))" />
         </div>
       </template>
@@ -51,7 +60,7 @@ import AdminTableAction from '~/components/admin/general/TableAction.vue'
 import { useAlertingWorkspace } from '~/composables/alerting/useAlertingWorkspace'
 import type { AlertState } from '~/composables/alerting/types'
 
-const { t, alerts, loading, evaluating, loadAlerts, evaluateNow, forgetNode } = useAlertingWorkspace()
+const { t, alerts, loading, evaluating, resolvingKey, loadAlerts, evaluateNow, resolveAlert, forgetNode } = useAlertingWorkspace()
 const { intlLocale } = useAdminI18n()
 
 const columns = computed(() => [

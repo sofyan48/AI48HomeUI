@@ -23,6 +23,7 @@ function createAlertingWorkspace() {
   const settingsDraft = ref<AlertSettings | null>(null)
   const savingSettings = ref(false)
   const evaluating = ref(false)
+  const resolvingKey = ref<string | null>(null)
   const testingId = ref<number | null>(null)
   const channelFormOpen = ref(false)
   const channelSaving = ref(false)
@@ -202,6 +203,21 @@ function createAlertingWorkspace() {
     }
   }
 
+  async function resolveAlert(alert: AlertState) {
+    if (resolvingKey.value !== null) return
+    resolvingKey.value = alert.key
+    try {
+      await fetchAPI('/alerting/alerts/resolve', { method: 'POST', body: { key: alert.key } })
+      alerts.value = alerts.value.filter(item => item.key !== alert.key)
+      toast.add({ title: t('alerting.alerts.resolved'), color: 'success' })
+      await loadAlerts()
+    } catch (error) {
+      toast.add({ title: t('alerting.alerts.resolveFailed'), description: alertingErrorMessage(error, ''), color: 'error' })
+    } finally {
+      resolvingKey.value = null
+    }
+  }
+
   async function forgetNode(alert: AlertState) {
     try {
       await fetchAPI(`/alerting/nodes/${encodeURIComponent(alert.subject)}`, { method: 'DELETE' })
@@ -215,7 +231,7 @@ function createAlertingWorkspace() {
   return {
     t, loading, unsupported, errorMessage, settings, settingsDraft, channels, alerts, enabledChannelCount,
     savingSettings, evaluating, testingId, channelFormOpen, channelSaving, channelFormError, editingChannel, channelForm,
-    deleteTarget, deleting, deleteError,
+    deleteTarget, deleting, deleteError, resolvingKey, resolveAlert,
     loadAll, loadAlerts, saveSettings, resetSettings, evaluateNow,
     openCreateChannel, openEditChannel, saveChannel, toggleChannel, testChannel, askDeleteChannel, confirmDeleteChannel, forgetNode,
   }
