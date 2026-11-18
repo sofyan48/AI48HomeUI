@@ -13,17 +13,17 @@
     <PortalAlert v-if="!canExport" color="warning" variant="subtle" :title="t('requests.exportUnavailable')" :description="t('requests.exportUnsupported')" />
 
     <form class="admin-toolbar" :aria-label="t('requests.filtersLabel')" @submit.prevent="applyFilters">
-      <div class="flex flex-wrap items-center gap-2">
-        <div class="w-full sm:w-96"><div class="flex"><AdminSelect v-model="searchField" :items="searchFieldOptions" value-key="value" label-key="label" class="w-36 shrink-0 [&_button]:rounded-r-none" /><AdminInput v-model="filters.search" icon="i-tabler-search" :placeholder="t('requests.searchPlaceholder')" class="min-w-0 flex-1 [&_input]:rounded-l-none" /></div></div>
-        <AdminSelect v-model="timeRange" :items="timeRangeOptions" value-key="value" label-key="label" class="w-40" icon="i-tabler-calendar" :aria-label="t('usage.timeRange')" @update:model-value="applyTimeRange" />
-        <AdminSelect :model-value="filters.status || allOptionValue" @update:model-value="setSelectFilter('status', $event)" :items="statusOptions" value-key="value" label-key="label" class="w-36" icon="i-tabler-circle-dot" :aria-label="t('common.status')" />
-        <AdminSelectMenu :model-value="filters.provider || allOptionValue" @update:model-value="setSelectFilter('provider', $event)" :items="providerOptions" value-key="value" label-key="label" class="w-44" icon="i-tabler-cloud" :aria-label="t('common.provider')" />
-        <AdminSelectMenu :model-value="filters.model || allOptionValue" @update:model-value="setSelectFilter('model', $event)" :items="modelOptions" value-key="value" label-key="label" class="w-52" icon="i-tabler-box" :aria-label="t('common.model')" />
+      <div class="flex flex-wrap items-center gap-2 xl:flex-nowrap [&>button]:shrink-0">
+        <div class="w-full sm:w-80 xl:min-w-56 xl:flex-1"><div class="flex"><AdminSelect v-model="searchField" :items="searchFieldOptions" value-key="value" label-key="label" class="w-28 shrink-0 [&_button]:rounded-r-none" /><AdminInput v-model="filters.search" icon="i-tabler-search" :placeholder="t('requests.searchPlaceholder')" class="min-w-0 flex-1 [&_input]:rounded-l-none" /></div></div>
+        <AdminSelect v-model="timeRange" :items="timeRangeOptions" value-key="value" label-key="label" class="w-36 shrink-0" icon="i-tabler-calendar" :aria-label="t('usage.timeRange')" @update:model-value="applyTimeRange" />
+        <AdminSelect :model-value="filters.status || allOptionValue" @update:model-value="setSelectFilter('status', $event)" :items="statusOptions" value-key="value" label-key="label" class="w-32 shrink-0" icon="i-tabler-circle-dot" :aria-label="t('common.status')" />
+        <AdminSelectMenu :model-value="filters.provider || allOptionValue" @update:model-value="setSelectFilter('provider', $event)" :items="providerOptions" value-key="value" label-key="label" class="w-36 xl:min-w-28 xl:shrink" icon="i-tabler-cloud" :aria-label="t('common.provider')" />
+        <AdminSelectMenu :model-value="filters.model || allOptionValue" @update:model-value="setSelectFilter('model', $event)" :items="modelOptions" value-key="value" label-key="label" class="w-44 xl:min-w-32 xl:shrink" icon="i-tabler-box" :aria-label="t('common.model')" />
         <AppButton type="button" color="neutral" :variant="advancedOpen ? 'soft' : 'ghost'" icon="i-tabler-dots-vertical" :aria-label="advancedOpen ? t('usage.hideAdvanced') : t('usage.showAdvanced')" :title="advancedOpen ? t('usage.hideAdvanced') : t('usage.advancedFilters')" :aria-expanded="advancedOpen" @click="advancedOpen = !advancedOpen" />
         <AppButton type="button" color="neutral" variant="ghost" @click="resetFilters">{{ t('common.reset') }}</AppButton>
         <AppButton type="submit" icon="i-tabler-filter" :loading="loading">{{ t('common.apply') }}</AppButton>
         <span class="mx-1 hidden h-5 w-px bg-[var(--ui-border)] lg:block" aria-hidden="true" />
-        <div class="flex items-center gap-1.5 lg:ml-auto"><div class="flex items-center gap-2 rounded-full border border-[var(--ui-border)] px-2.5 py-1"><AdminSwitch v-model="liveRefresh" size="sm" /><span class="text-xs">{{ t('requests.live') }}</span><AdminSelect v-if="liveRefresh" v-model="refreshSeconds" :items="refreshOptions" value-key="value" label-key="label" size="sm" class="w-24" /></div><AppButton color="neutral" variant="ghost" size="sm" icon="i-tabler-download" :disabled="exporting || !canExport" @click="exportOpen = true" :aria-label="t('requests.exportLabel')" :title="t('requests.exportTitle')" /></div>
+        <div class="flex shrink-0 items-center gap-1.5 lg:ml-auto"><div class="flex items-center gap-2 rounded-full border border-[var(--ui-border)] px-2.5 py-1"><AdminSwitch v-model="liveRefresh" size="sm" /><span class="text-xs">{{ t('requests.live') }}</span><AdminSelect v-if="liveRefresh" v-model="refreshSeconds" :items="refreshOptions" value-key="value" label-key="label" size="sm" class="w-24" /></div></div>
       </div>
       <div v-if="timeRange === 'custom'" class="mt-2.5 flex flex-wrap items-start gap-2 border-t border-[var(--ui-border)] pt-2.5"><AdminField :label="t('requests.startTime')" class="w-full sm:w-64"><AppDateInput v-model="filters.from" type="datetime-local" :max="filters.to" class="w-full" /></AdminField><AdminField :label="t('requests.endTime')" class="w-full sm:w-64"><AppDateInput v-model="filters.to" type="datetime-local" :min="filters.from" class="w-full" /></AdminField></div>
 
@@ -35,7 +35,7 @@
         <AdminSelect v-model="sort" :items="sortOptions" value-key="value" label-key="label" class="w-44" icon="i-tabler-arrows-sort" :aria-label="t('requests.sort')" />
         <div class="flex items-center gap-1"><AdminInput v-model="filters.min_latency_ms" type="number" min="0" :placeholder="t('requests.minMs')" class="w-28" :aria-label="t('requests.minLatency')" /><span class="text-xs text-[var(--ui-text-dimmed)]">–</span><AdminInput v-model="filters.max_latency_ms" type="number" min="0" :placeholder="t('requests.maxMs')" class="w-28" :aria-label="t('requests.maxLatency')" /></div>
       </div>
-      <p class="mt-2 text-[11px] text-[var(--ui-text-muted)]">{{ t('requests.timezone', { timezone }) }}</p>
+
     </form>
 
     <AppCard :ui="{ body: 'p-0' }">
@@ -58,6 +58,7 @@
               {{ pendingNewEvents === 1 ? t('requests.showNewOne', { count: formatNumber(pendingNewEvents) }) : t('requests.showNewMany', { count: formatNumber(pendingNewEvents) }) }}
             </AppButton>
             <PortalBadge v-if="liveRefresh" color="success" variant="subtle"><span class="mr-1 inline-block size-1.5 rounded-full bg-current" />{{ t('requests.live') }}</PortalBadge>
+            <AppButton type="button" color="neutral" variant="ghost" size="sm" icon="i-tabler-download" :disabled="exporting || !canExport" @click="exportOpen = true" :aria-label="t('requests.exportLabel')" :title="t('requests.exportTitle')" />
           </div>
         </div>
       </template>
