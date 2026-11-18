@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import { compileScript, compileStyle, compileTemplate, parse } from '@vue/compiler-sfc'
 import { portalMessages } from '../../locales/portal'
 import { keyEntries, maskKey, normalizeKey } from './keys'
+import { dashboardExperience } from './experience'
 
 const root = new URL('../..', import.meta.url).pathname
 const featureRoot = join(root, 'components/app/workspace')
@@ -61,11 +62,28 @@ describe('user workspace extraction', () => {
   })
 
   test('dashboard ancestor selectors keep their scoped descendants', () => {
-    const filename = join(featureRoot, 'dashboard/WorkspaceDashboard.vue')
-    const { descriptor } = parse(readFileSync(filename, 'utf8'))
-    const { code } = compileStyle({ source: descriptor.styles[0]!.content, id: 'data-v-workspace', scoped: true })
-    expect(code).toContain('.user-dashboard .dashboard-primary-action[data-v-workspace]')
-    expect(code).toContain('.user-dashboard .dashboard-panel[data-v-workspace] [data-slot="header"]')
+    const scopedStyle = (name: string) => {
+      const { descriptor } = parse(readFileSync(join(featureRoot, 'dashboard', name), 'utf8'))
+      return compileStyle({ source: descriptor.styles[0]!.content, id: 'data-v-workspace', scoped: true }).code
+    }
+    expect(scopedStyle('ConnectionGuide.vue')).toContain('.user-dashboard .dashboard-primary-action[data-v-workspace]')
+    expect(scopedStyle('WorkspaceDashboard.vue')).toContain('.user-dashboard .dashboard-panel[data-v-workspace] [data-slot="header"]')
+  })
+
+  test('dashboard leads with the guide only for users without activity this month', () => {
+    expect(dashboardExperience(null, true)).toBe('pending')
+    expect(dashboardExperience(null, false)).toBe('new')
+    expect(dashboardExperience({ request_count: 0, total_charge_amount: 0 }, false)).toBe('new')
+    expect(dashboardExperience({ request_count: 3 }, false)).toBe('active')
+    expect(dashboardExperience({ request_count: 0, month_spend: 1.5 }, false)).toBe('active')
+    // Refreshes keep the last known layout instead of flashing back to pending.
+    expect(dashboardExperience({ request_count: 3 }, true)).toBe('active')
+  })
+
+  test('both dashboard layouts keep the connection guide', () => {
+    const source = readFileSync(join(featureRoot, 'dashboard/WorkspaceDashboard.vue'), 'utf8')
+    expect(source).toContain('<ConnectionGuide v-if="isNewUser" />')
+    expect(source).toContain('<ConnectionGuide v-if="!isNewUser" v-model:open="guideOpen" collapsible')
   })
 })
 

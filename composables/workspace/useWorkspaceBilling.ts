@@ -60,6 +60,12 @@ function createWorkspaceBilling(section: Ref<WorkspaceSection>) {
   const chargeRangeStart = computed(() => chargesTotal.value ? (chargePage.value - 1) * chargePageSize.value + 1 : 0)
   const chargeRangeEnd = computed(() => Math.min(chargePage.value * chargePageSize.value, chargesTotal.value))
   const topModels = computed(() => (selectedOverview.value?.top_models || []).slice(0, 5))
+  // Dashboard model list: share of the range's spend, so each row can show a proportional bar.
+  const dashboardTopModels = computed(() => {
+    const models = (selectedOverview.value?.top_models || []).slice(0, 4)
+    const total = Number(selectedOverview.value?.total_charge_amount) || models.reduce((sum, model) => sum + (Number(model.amount) || 0), 0)
+    return models.map(model => ({ ...model, share: total > 0 ? Math.max(0, Math.min(1, (Number(model.amount) || 0) / total)) : 0 }))
+  })
   const chargeColumns = computed(() => [
     { accessorKey: 'created_at', header: t('ws.billing.col.time') },
     { accessorKey: 'provider', header: t('ws.billing.col.provider') },
@@ -164,7 +170,7 @@ function createWorkspaceBilling(section: Ref<WorkspaceSection>) {
     monthOverview, charges, chargesTotal, billingLoading, billingError,
     rangeOptions, pageSizeOptions, rangePreset, rangeFrom, rangeTo, appliedRange,
     chargePage, chargePageSize, chargePages, chargeRangeStart, chargeRangeEnd,
-    topModels, chargeColumns, billingMetrics, dashboardUsageMetrics,
+    topModels, dashboardTopModels, chargeColumns, billingMetrics, dashboardUsageMetrics,
     loadDashboardBilling, loadBilling, selectRange, applyBillingRange, changePageSize, changeChargePage
   }
 }

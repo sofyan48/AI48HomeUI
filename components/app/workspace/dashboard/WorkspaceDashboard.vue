@@ -8,78 +8,43 @@ import PortalAlert from '~/components/app/general/PortalAlert.vue'
 import PortalBadge from '~/components/app/general/PortalBadge.vue'
 import PortalSkeleton from '~/components/app/general/PortalSkeleton.vue'
 import AppLimitReset from './LimitReset.vue'
+import ConnectionGuide from './ConnectionGuide.vue'
 import { usePortalI18n } from '~/composables/usePortalI18n'
 import { useUserApi } from '~/composables/useUserApi'
 import { useWorkspaceDashboard } from '~/composables/workspace/useWorkspaceDashboard'
+import { dashboardExperience } from '~/composables/workspace/experience'
 import { useWorkspaceBilling } from '~/composables/workspace/useWorkspaceBilling'
-import { useWorkspaceClipboard, useWorkspaceFormat } from '~/composables/workspace/common'
+import { useWorkspaceFormat } from '~/composables/workspace/common'
 
 const { t } = usePortalI18n()
-const { currentUser: user, capabilities, serverInfo } = useUserApi()
-const { activePeriodWindows, curlExample, periodWindowLabel, periodWindowRatio, periodWindowColor, periodWindowBarColor, formatPercent, limitAlert, dashboardStatusLine, loadPeriodLimits } = useWorkspaceDashboard()
-const { monthOverview, billingLoading, billingError, rangeOptions, rangePreset, rangeFrom, rangeTo, appliedRange, dashboardUsageMetrics, loadBilling, selectRange, applyBillingRange } = useWorkspaceBilling()
-const { formatCredits, formatDate } = useWorkspaceFormat()
-const copyText = useWorkspaceClipboard()
+const { currentUser: user, capabilities } = useUserApi()
+const { activePeriodWindows, periodWindowLabel, periodWindowRatio, periodWindowColor, formatPercent, limitAlert, dashboardStatusLine, loadPeriodLimits } = useWorkspaceDashboard()
+const { monthOverview, billingLoading, billingError, rangeOptions, rangePreset, rangeFrom, rangeTo, appliedRange, dashboardUsageMetrics, dashboardTopModels, loadBilling, selectRange, applyBillingRange } = useWorkspaceBilling()
+const { formatCredits, formatDate, formatNumber } = useWorkspaceFormat()
+// New users get the connection guide first; returning users see balance and usage first.
+// While month data loads the returning layout is used, since most visits come from active users.
+const experience = computed(() => dashboardExperience(monthOverview.value, billingLoading.value))
+const isNewUser = computed(() => experience.value === 'new')
+const guideOpen = ref(false)
 </script>
 
 <template>
-  <div class="dashboard-bento">
+  <div class="dashboard-bento" :class="isNewUser ? 'dashboard-bento--new' : 'dashboard-bento--active'" :data-experience="experience">
     <AppCard class="dashboard-greeting" aria-labelledby="dashboard-title" :ui="{ body: 'flex flex-wrap items-center justify-between gap-4' }">
       <div class="min-w-0">
         <h1 id="dashboard-title" class="break-words font-bold tracking-tight text-[var(--ui-text-highlighted)]">{{ user?.username ? t('ws.dashboard.welcomeUser', { name: user.username }) : t('ws.dashboard.welcome') }}</h1>
         <p class="mt-1 text-sm text-[var(--ui-text-muted)]">{{ dashboardStatusLine }}</p>
       </div>
-      <AppButton to="/app/balance" icon="i-tabler-wallet" color="primary" variant="solid" size="sm">{{ t('shell.nav.balance') }}</AppButton>
+      <div class="flex flex-wrap items-center gap-2">
+        <AppButton v-if="!isNewUser" to="/app/api-keys" icon="i-tabler-key" color="neutral" variant="outline" size="sm">{{ t('shell.nav.apiKeys') }}</AppButton>
+        <AppButton to="/app/balance" icon="i-tabler-wallet" color="primary" variant="solid" size="sm">{{ t('shell.nav.balance') }}</AppButton>
+      </div>
     </AppCard>
 
-    <!-- Spotlight 1: how to start sending requests. -->
-    <section class="dashboard-connect" aria-labelledby="connect-title">
-      <div class="flex flex-wrap items-start justify-between gap-3">
-        <div class="flex items-center gap-3">
-          <span class="dashboard-connect-icon"><AppIcon name="i-tabler-plug-connected" class="size-5" aria-hidden="true" /></span>
-          <div><h2 id="connect-title" class="text-base font-semibold text-[var(--ui-text-highlighted)]">{{ t('ws.dashboard.connectTitle') }}</h2><p class="text-xs text-[var(--ui-text-muted)]">{{ t('ws.dashboard.connectSubtitle') }}</p></div>
-        </div>
-        <AppButton to="/app/models" size="xs" color="neutral" variant="ghost" class="rounded-full" trailing-icon="i-tabler-arrow-right">{{ t('ws.dashboard.findModel') }}</AppButton>
-      </div>
+    <!-- New users: the connection guide leads, fully expanded. -->
+    <ConnectionGuide v-if="isNewUser" />
 
-      <ol class="dashboard-steps mt-5">
-        <li class="dashboard-step">
-          <span class="dashboard-step-index" aria-hidden="true">1</span>
-          <div class="min-w-0 flex-1">
-            <p class="text-sm font-semibold text-[var(--ui-text-highlighted)]">{{ t('ws.dashboard.step1Title') }}</p>
-            <p class="mt-0.5 text-xs text-[var(--ui-text-muted)]">{{ t('ws.dashboard.step1Detail') }}</p>
-          </div>
-          <AppButton to="/app/api-keys" size="sm" icon="i-tabler-key" class="dashboard-primary-action shrink-0 rounded-full">{{ t('ws.dashboard.apiKeys') }}</AppButton>
-        </li>
-        <li class="dashboard-step">
-          <span class="dashboard-step-index" aria-hidden="true">2</span>
-          <div class="min-w-0 flex-1">
-            <p class="text-sm font-semibold text-[var(--ui-text-highlighted)]">{{ t('ws.dashboard.step2Title') }}</p>
-            <div v-if="serverInfo.cpa_public_url" class="dashboard-endpoint-field mt-2">
-              <code class="min-w-0 flex-1 truncate font-mono text-sm text-[var(--ui-text-highlighted)]" :title="serverInfo.cpa_public_url">{{ serverInfo.cpa_public_url }}</code>
-              <AppButton type="button" size="xs" class="shrink-0" color="neutral" variant="soft" icon="i-tabler-copy" :aria-label="t('ws.dashboard.copyEndpoint')" @click="copyText(serverInfo.cpa_public_url, t('ws.dashboard.endpointCopied'))">{{ t('common.copy') }}</AppButton>
-            </div>
-            <p v-else class="mt-0.5 text-xs text-[var(--ui-text-muted)]">{{ t('ws.dashboard.noEndpoint') }}</p>
-          </div>
-        </li>
-        <li class="dashboard-step">
-          <span class="dashboard-step-index" aria-hidden="true">3</span>
-          <div class="min-w-0 flex-1">
-            <p class="text-sm font-semibold text-[var(--ui-text-highlighted)]">{{ t('ws.dashboard.step3Title') }}</p>
-            <p class="mt-0.5 text-xs text-[var(--ui-text-muted)]">{{ t('ws.dashboard.step3Detail') }}</p>
-            <div v-if="serverInfo.cpa_public_url" class="dashboard-code mt-2 overflow-hidden rounded-xl">
-              <div class="flex items-center justify-between gap-2 border-b px-3 py-1.5">
-                <span class="font-mono text-[11px] opacity-70">curl</span>
-                <AppButton type="button" size="xs" color="neutral" variant="ghost" icon="i-tabler-copy" class="dashboard-code-copy" :aria-label="t('ws.dashboard.copyCurl')" @click="copyText(curlExample, t('ws.dashboard.exampleCopied'))">{{ t('common.copy') }}</AppButton>
-              </div>
-              <pre class="overflow-x-auto p-4 text-xs leading-6"><code class="font-mono">{{ curlExample }}</code></pre>
-            </div>
-          </div>
-        </li>
-      </ol>
-    </section>
-
-    <!-- Spotlight 2: what the user can still spend. -->
+    <!-- What the user can still spend. -->
     <section class="dashboard-credits" aria-labelledby="credits-title">
       <div class="flex items-center justify-between gap-3">
         <h2 id="credits-title" class="flex items-center gap-2 text-sm font-semibold text-[var(--ui-text-highlighted)]"><span class="dashboard-balance-icon"><AppIcon name="i-tabler-wallet" class="size-4" aria-hidden="true" /></span>{{ t('ws.dashboard.creditsTitle') }}</h2>
@@ -114,7 +79,7 @@ const copyText = useWorkspaceClipboard()
     </section>
 
     <!-- Single place for activity numbers. -->
-    <AppCard class="dashboard-panel dashboard-usage min-w-0" :ui="{ header: 'px-4 pt-4 pb-3', body: 'px-4 pt-0 pb-4' }">
+    <AppCard class="dashboard-panel dashboard-usage min-w-0" :ui="{ header: 'px-4 pt-4 pb-3', body: 'flex flex-1 flex-col gap-3 px-4 pt-0 pb-4' }">
       <template #header>
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div class="flex min-w-0 items-center gap-3">
@@ -152,13 +117,40 @@ const copyText = useWorkspaceClipboard()
         </div>
       </dl>
 
-      <PortalAlert v-if="billingError" class="mt-3" color="error" variant="subtle" :title="t('ws.dashboard.usageError')" :description="billingError" />
+      <!-- Top models for the selected range; fills the card when it sits beside credits. -->
+      <section class="dashboard-models" aria-labelledby="dashboard-models-title" :aria-busy="billingLoading">
+        <div class="flex items-center justify-between gap-2">
+          <h3 id="dashboard-models-title" class="flex items-center gap-2 text-xs font-medium text-[var(--ui-text-muted)]"><AppIcon name="i-tabler-stack-2" class="size-4" aria-hidden="true" />{{ t('ws.dashboard.topModels') }}</h3>
+          <NuxtLink to="/app/balance" class="dashboard-models-link text-xs font-medium">{{ t('ws.dashboard.viewBilling') }}</NuxtLink>
+        </div>
+        <ol v-if="billingLoading && !dashboardTopModels.length" class="dashboard-model-list">
+          <li v-for="index in 3" :key="index"><PortalSkeleton class="h-9 w-full rounded-md" /></li>
+        </ol>
+        <ol v-else-if="dashboardTopModels.length" class="dashboard-model-list">
+          <li v-for="model in dashboardTopModels" :key="model.id || model.label" class="dashboard-model">
+            <div class="flex items-baseline justify-between gap-3">
+              <p class="min-w-0 truncate font-mono text-sm text-[var(--ui-text-highlighted)]" :title="model.label || model.id">{{ model.label || model.id || t('ws.billing.unknownModel') }}</p>
+              <span class="shrink-0 text-sm font-semibold tabular-nums text-[var(--ui-text-highlighted)]">{{ formatCredits(model.amount) }}</span>
+            </div>
+            <div class="mt-1.5 flex items-center gap-2">
+              <span class="dashboard-model-bar" role="img" :aria-label="t('ws.dashboard.modelShare', { share: formatPercent(model.share) })"><span :style="{ width: `${Math.max(2, model.share * 100)}%` }" /></span>
+              <span class="shrink-0 text-[11px] tabular-nums text-[var(--ui-text-muted)]">{{ t('ws.billing.modelRequests', { count: formatNumber(model.request_count) }) }}</span>
+            </div>
+          </li>
+        </ol>
+        <p v-else class="dashboard-models-empty">{{ t('ws.billing.noModelCharges') }}</p>
+      </section>
+
+      <PortalAlert v-if="billingError" color="error" variant="subtle" :title="t('ws.dashboard.usageError')" :description="billingError" />
     </AppCard>
+
+    <!-- Returning users: the guide stays available, collapsed below their numbers. -->
+    <ConnectionGuide v-if="!isNewUser" v-model:open="guideOpen" collapsible class="dashboard-guide" />
   </div>
 </template>
 
 <style scoped>
-/* Priority layout: connect (how to start) + credits & limits (what is left), then one usage strip. */
+/* New users: guide + credits, then usage. Returning users: credits + usage, then the collapsed guide. */
 .dashboard-bento {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -167,7 +159,6 @@ const copyText = useWorkspaceClipboard()
 .dashboard-bento > * { min-width: 0; }
 
 .dashboard-greeting h1 { font-size: 1.5rem; font-weight: 600; line-height: 1.35; letter-spacing: -0.015em; }
-.dashboard-connect,
 .dashboard-credits {
   position: relative;
   display: flex;
@@ -177,78 +168,6 @@ const copyText = useWorkspaceClipboard()
   border-radius: var(--user-panel-radius);
   box-shadow: var(--user-panel-shadow);
 }
-.dashboard-connect {
-  border: 1px solid var(--user-panel-border);
-  background: var(--user-panel-bg);
-}
-.dashboard-connect-icon {
-  display: flex;
-  width: 2.5rem;
-  height: 2.5rem;
-  align-items: center;
-  justify-content: center;
-  border-radius: 0.375rem;
-  background: var(--user-inset-bg);
-  color: var(--ui-text-muted);
-}
-.dashboard-steps { display: grid; gap: 0.25rem; }
-.dashboard-step {
-  position: relative;
-  display: flex;
-  align-items: flex-start;
-  gap: 0.875rem;
-  padding-block: 0.75rem;
-}
-.dashboard-step:not(:last-child)::before {
-  position: absolute;
-  top: 2.5rem;
-  bottom: -0.5rem;
-  left: 0.8125rem;
-  width: 2px;
-  border-radius: 9999px;
-  background: color-mix(in oklch, var(--brand-from) 18%, var(--ui-border));
-  content: '';
-}
-.dashboard-step-index {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  width: 1.75rem;
-  height: 1.75rem;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid color-mix(in oklch, var(--brand-from) 30%, var(--ui-border));
-  border-radius: 9999px;
-  background: var(--user-panel-bg);
-  color: var(--ui-primary);
-  font-size: 0.75rem;
-  font-weight: 700;
-}
-.dashboard-endpoint-field {
-  display: flex;
-  min-width: 0;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.375rem 0.375rem 0.375rem 0.75rem;
-  border: 1px solid var(--ui-border);
-  border-radius: 0.375rem;
-  background: var(--user-inset-bg);
-}
-.user-dashboard .dashboard-primary-action {
-  background: var(--ui-primary);
-  color: var(--ui-text-inverted);
-  box-shadow: none;
-}
-.user-dashboard .dashboard-primary-action:hover { filter: brightness(1.06); }
-.dashboard-code {
-  border: 1px solid var(--color-zinc-800);
-  background: var(--color-zinc-950);
-  color: var(--color-zinc-200);
-}
-.dashboard-code > div { border-color: var(--color-zinc-800); color: var(--color-zinc-400); }
-.dashboard-code :deep(.dashboard-code-copy) { color: var(--color-zinc-400); }
-.dashboard-code :deep(.dashboard-code-copy:hover) { background: var(--color-zinc-800); color: white; }
 .dashboard-credits {
   border: 1px solid var(--user-panel-border);
   background: var(--user-panel-bg);
@@ -324,6 +243,39 @@ const copyText = useWorkspaceClipboard()
   background: color-mix(in oklch, var(--ui-primary) 8%, var(--user-panel-bg));
 }
 .dashboard-usage-item--featured .dashboard-usage-value { color: var(--ui-primary); }
+.dashboard-models {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 0.625rem;
+  padding: 0.75rem 0.875rem;
+  border: 1px solid var(--ui-border);
+  border-radius: 0.625rem;
+  background: var(--user-inset-bg);
+}
+.dashboard-models-link { color: var(--ui-primary); }
+.dashboard-models-link:hover { text-decoration: underline; }
+.dashboard-models-link:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 2px; border-radius: 0.25rem; }
+.dashboard-model-list { display: grid; gap: 0.75rem; }
+.dashboard-model { min-width: 0; }
+.dashboard-model-bar {
+  height: 0.3125rem;
+  flex: 1 1 auto;
+  overflow: hidden;
+  border-radius: 9999px;
+  background: color-mix(in oklch, var(--ui-text-muted) 16%, var(--ui-bg));
+}
+.dashboard-model-bar > span { display: block; height: 100%; border-radius: inherit; background: var(--ui-primary); }
+.dashboard-models-empty {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  min-height: 4rem;
+  font-size: 0.75rem;
+  color: var(--ui-text-muted);
+  text-align: center;
+}
 @media (max-width: 639px) {
   .dashboard-usage-controls { width: 100%; }
   .dashboard-usage-item { padding: 0.625rem 0.75rem; }
@@ -336,9 +288,13 @@ const copyText = useWorkspaceClipboard()
 @media (min-width: 1024px) {
   .dashboard-bento { grid-template-columns: repeat(12, minmax(0, 1fr)); }
   .dashboard-bento > .dashboard-greeting,
-  .dashboard-bento > .dashboard-usage { grid-column: 1 / -1; }
-  .dashboard-bento > .dashboard-connect { grid-column: span 7; }
+  .dashboard-bento > .dashboard-guide,
+  .dashboard-bento--new > .dashboard-usage { grid-column: 1 / -1; }
+  .dashboard-bento--new > :deep(.dashboard-connect) { grid-column: span 7; }
   .dashboard-bento > .dashboard-credits { grid-column: span 5; }
+  /* Returning users: usage sits beside credits, so its four metrics wrap into two columns. */
+  .dashboard-bento--active > .dashboard-usage { grid-column: span 7; }
+  .dashboard-bento--active .dashboard-usage-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 .period-progress-track {
   background: color-mix(in oklch, var(--ui-text-muted) 16%, var(--ui-bg));

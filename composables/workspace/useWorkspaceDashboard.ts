@@ -6,6 +6,7 @@ import { useWorkspaceState } from '~/composables/useWorkspaceState'
 type PeriodWindowStatus = { id: string; enabled: boolean; limit: number | null; used: number; remaining: number | null; active: boolean; reset_at?: string | null }
 type PeriodLimitsStatus = { windows?: PeriodWindowStatus[] }
 
+
 function createWorkspaceDashboard() {
   const { t } = usePortalI18n()
   const { currentUser: user, serverInfo, fetchAPI } = useUserApi()
