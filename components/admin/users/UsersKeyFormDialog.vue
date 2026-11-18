@@ -8,7 +8,7 @@
     :loading="saving"
     :cancel-disabled="saving"
     content-class="sm:max-w-2xl"
-    form-class="flex min-h-full flex-col [&>div:last-child]:mt-auto"
+
     divided
     @submit="submit"
   >

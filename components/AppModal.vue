@@ -124,9 +124,9 @@ const classes = computed(() => ({
   header: cn('relative shrink-0 flex-row items-center gap-1.5 px-4 py-3 sm:px-5 min-h-(--ui-header-height)', props.ui?.header),
   wrapper: cn('min-w-0 pr-10', props.ui?.wrapper),
   body: cn('min-h-0 min-w-0 flex-1 overflow-y-auto p-4 sm:p-5', props.ui?.body),
-  footer: cn('mt-0 shrink-0 flex-row items-center gap-1.5 px-4 py-3 sm:px-5', props.ui?.footer),
+  footer: cn('mt-0 shrink-0 flex-row flex-wrap items-center justify-end gap-2 bg-default px-4 py-3 sm:px-5', props.ui?.footer),
   title: cn('text-base font-semibold text-foreground [overflow-wrap:anywhere]', props.ui?.title),
-  description: cn('mt-1 text-muted-foreground text-sm [overflow-wrap:anywhere]', props.ui?.description),
+  description: cn('mt-1 text-muted-foreground text-sm leading-relaxed [overflow-wrap:anywhere]', props.ui?.description),
   close: cn('absolute top-4 end-4', props.ui?.close),
 }))
 const slotUi = computed(() => Object.fromEntries(Object.entries(classes.value).map(([name, value]) => [name, (options?: { class?: HTMLAttributes['class'] }) => cn(value, options?.class)])))
