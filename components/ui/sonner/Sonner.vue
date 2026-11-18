@@ -40,3 +40,21 @@ const props = defineProps<ToasterProps>()
     </template>
   </Sonner>
 </template>
+
+<style>
+.toaster[data-sonner-toaster] [data-sonner-toast][data-styled='true'] {
+  padding-inline-end: 2.75rem;
+}
+
+.toaster[data-sonner-toaster] [data-sonner-toast][data-styled='true'] [data-close-button] {
+  top: 0.5rem;
+  right: 0.5rem;
+  left: auto;
+  bottom: auto;
+  width: 1.5rem;
+  height: 1.5rem;
+  min-width: 1.5rem;
+  min-height: 1.5rem;
+  transform: none;
+}
+</style>

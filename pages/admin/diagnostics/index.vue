@@ -5,13 +5,13 @@
     <section v-if="activeView === 'console'" class="space-y-4" role="tabpanel">
       <AppCard :ui="{ body: 'p-3 sm:p-3' }">
         <div class="flex flex-wrap items-end gap-3">
-          <AdminField :label="t('diag.window')">
-            <AdminSelect v-model="windowSeconds" :items="windowOptions" value-key="value" label-key="label" class="w-40" :disabled="loadingConsole" @update:model-value="refreshConsole" />
+          <AdminField :label="t('diag.window')" class="w-full sm:w-48 sm:shrink-0">
+            <AdminSelect v-model="windowSeconds" :items="windowOptions" value-key="value" label-key="label" class="w-full" :disabled="loadingConsole" @update:model-value="refreshConsole" />
           </AdminField>
-          <AdminField :label="t('diag.grouping')">
-            <AdminSelect v-model="groupBy" :items="['model', 'provider', 'client_key', 'credential']" class="w-40" :disabled="loadingConsole" @update:model-value="refreshConsole" />
+          <AdminField :label="t('diag.grouping')" class="w-full sm:w-48 sm:shrink-0">
+            <AdminSelect v-model="groupBy" :items="['model', 'provider', 'client_key', 'credential']" class="w-full" :disabled="loadingConsole" @update:model-value="refreshConsole" />
           </AdminField>
-          <div class="ml-auto flex flex-wrap items-center gap-3">
+          <div class="flex w-full flex-wrap items-center gap-3 sm:ml-auto sm:w-auto">
             <label class="flex items-center gap-2 text-sm"><AdminSwitch v-model="autoRefresh" :aria-label="t('diag.autoRefreshLabel')" />{{ t('diag.autoRefresh') }}</label>
             <span v-if="lastUpdated" class="text-xs text-[var(--ui-text-muted)]" role="status">{{ t('diag.updated', { time: formatTime(lastUpdated) }) }}</span>
             <AppButton icon="i-tabler-refresh" :loading="loadingConsole" @click="refreshConsole">{{ t('common.refresh') }}</AppButton>

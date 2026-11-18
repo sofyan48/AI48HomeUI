@@ -294,7 +294,7 @@ body:not([data-admin-console]) .workbench-main button:not([role="switch"]):not([
 /* Compact forms and controls. */
 .workbench-main input:not([type="checkbox"]):not([type="radio"]),
 .workbench-main select,
-.workbench-main button:not([role="switch"]):not([role="checkbox"]) {
+.workbench-main button:not([role="switch"]):not([role="checkbox"]):not([data-close-button]) {
   min-height: 2rem;
 }
 
