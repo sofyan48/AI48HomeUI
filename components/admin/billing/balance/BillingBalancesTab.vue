@@ -7,7 +7,7 @@
         <template #toolbar>
           <AdminBillingFilterBar v-model:filters="balanceFilters" v-model:preset="balancePreset" :range-options="rangeOptions" :user-options="userSearchOptions" :loading="balancesLoading" @range="selectRange('balances', $event)" @apply="applyBalanceFilters" @reset="resetBalanceFilters" />
         </template>
-        <AppTable :columns="balanceColumns" :data="balanceRecords" :loading="balancesLoading" :number-offset="(balancePage - 1) * balancePageSize" class="min-w-[52rem]">
+        <AppTable :columns="balanceColumns" :data="balanceRecords" :loading="balancesLoading" :number-offset="(balancePage - 1) * balancePageSize" class="min-w-[30rem] sm:min-w-[52rem]">
           <template #created_at-cell="{ row }"><p class="whitespace-nowrap text-sm">{{ formatDateTime(rowValue(row).created_at) }}</p><p class="font-mono text-xs text-[var(--ui-text-muted)]">#{{ rowValue(row).id }}</p></template>
           <template #user_id-cell="{ row }"><span class="text-sm font-medium">{{ balanceUserName(rowValue(row)) }}</span></template>
           <template #type-cell="{ row }"><span class="inline-flex items-center gap-1.5 text-sm capitalize"><span class="size-1.5 rounded-full" :class="rowValue(row).type === 'recharge' ? 'bg-green-500' : 'bg-amber-500'" />{{ balanceTypeLabel(rowValue(row).type) }}</span></template>

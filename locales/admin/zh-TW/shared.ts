@@ -18,6 +18,8 @@ export default {
   'shared.table.rowCount': '{count} 列',
   'shared.table.noMatch': '沒有符合「{query}」的資料列。',
   'shared.table.number': '編號',
+  'shared.table.moreColumns': '更多欄位',
+  'shared.table.previousColumns': '上一組欄位',
   'shared.date.chooseDate': '選擇日期',
   'shared.date.chooseDateTime': '選擇日期與時間',
   'shared.date.invalidDate': '請輸入有效的日期，格式為 YYYY-MM-DD（年份 0001–9999）。',

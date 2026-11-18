@@ -18,6 +18,8 @@ export default {
   'shared.table.rowCount': 'Строк: {count}',
   'shared.table.noMatch': 'Нет строк, соответствующих «{query}».',
   'shared.table.number': '№',
+  'shared.table.moreColumns': 'Другие столбцы',
+  'shared.table.previousColumns': 'Предыдущие столбцы',
   'shared.date.chooseDate': 'Выберите дату',
   'shared.date.chooseDateTime': 'Выберите дату и время',
   'shared.date.invalidDate': 'Введите корректную дату в формате YYYY-MM-DD (год 0001–9999).',

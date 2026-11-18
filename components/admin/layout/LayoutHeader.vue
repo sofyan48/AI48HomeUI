@@ -23,7 +23,8 @@
         <AppButton class="md:hidden" icon="i-tabler-search" color="neutral" variant="ghost" size="sm" :aria-label="tc('shell.search')" :title="tc('shell.search')" aria-haspopup="dialog" @click="emit('openCommands')" />
         <ThemeSwitcher />
         <ConsoleLanguageSwitcher />
-        <AppButton icon="i-tabler-plug" color="neutral" variant="ghost" size="sm" :aria-label="tc('shell.manageConnection')" :title="tc('shell.manageConnection')" aria-haspopup="dialog" @click="emit('openConnection')" />
+        <!-- On phones connection management stays reachable from the sidebar and command palette. -->
+        <AppButton class="hidden sm:inline-flex" icon="i-tabler-plug" color="neutral" variant="ghost" size="sm" :aria-label="tc('shell.manageConnection')" :title="tc('shell.manageConnection')" aria-haspopup="dialog" @click="emit('openConnection')" />
         <AppButton
           icon="i-tabler-refresh"
           color="primary"
@@ -69,10 +70,10 @@ const { t } = useAdminI18n()
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  border-radius: 0.875rem;
-  background: linear-gradient(135deg, var(--page-accent), var(--page-accent-2));
-  color: white;
-  box-shadow: 0 8px 18px -8px color-mix(in oklch, var(--page-accent) 70%, transparent);
+  border: 1px solid color-mix(in oklch, var(--page-accent) 22%, var(--admin-panel-border));
+  border-radius: 0.625rem;
+  background: color-mix(in oklch, var(--page-accent) 10%, var(--admin-panel-bg));
+  color: var(--page-accent);
 }
 .admin-page-title {
   font-size: 1.125rem;
@@ -115,6 +116,12 @@ const { t } = useAdminI18n()
 }
 .admin-dock :deep(button),
 .admin-dock :deep(a) { border-radius: 9999px; }
+
+@media (width < 40rem) {
+  /* Shared touch sizing is too wide for a single header row on phones. */
+  .admin-dock { gap: 0; padding: 0.125rem; }
+  .admin-page-title { font-size: 1rem; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .admin-search { transition: none; }

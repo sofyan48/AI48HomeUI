@@ -97,19 +97,19 @@ const cards = computed<MetricCard[]>(() => {
   border-radius: 0.875rem;
   background: var(--admin-panel-bg, var(--ui-bg));
   box-shadow: var(--admin-panel-shadow);
-  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+  transition: background-color 160ms ease, border-color 160ms ease;
 }
 .metric-label { font-size: 0.8125rem; line-height: 1.125rem; font-weight: 500; color: var(--ui-text-muted); }
 .metric-value {
-  margin-top: 0.625rem;
-  font-size: 1.375rem;
-  line-height: 1.75rem;
+  margin-top: 0.75rem;
+  font-size: 1.75rem;
+  line-height: 2.125rem;
   font-weight: 650;
-  letter-spacing: -0.015em;
+  letter-spacing: -0.025em;
   color: var(--ui-text-highlighted);
   font-variant-numeric: tabular-nums;
 }
-.metric-detail { margin-top: 0.125rem; font-size: 0.75rem; line-height: 1rem; color: var(--ui-text-dimmed); }
+.metric-detail { margin-top: 0.25rem; font-size: 0.75rem; line-height: 1rem; color: var(--ui-text-muted); }
 .metric-spark { height: 2.25rem; color: var(--dashboard-accent); }
 .metric-bar {
   height: 0.375rem;
@@ -133,9 +133,8 @@ const cards = computed<MetricCard[]>(() => {
 .dashboard-metric:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 2px; }
 @media (hover: hover) {
   .dashboard-metric:not(.dashboard-metric--static):hover {
-    transform: translateY(-2px);
-    border-color: color-mix(in oklch, var(--dashboard-accent) 40%, var(--ui-border));
-    box-shadow: 0 14px 30px -16px color-mix(in oklch, var(--dashboard-accent) 55%, transparent);
+    border-color: var(--admin-hover-border, var(--ui-border-accented));
+    background: color-mix(in oklch, var(--dashboard-accent) 3%, var(--admin-panel-bg, var(--ui-bg)));
   }
   .dashboard-metric:hover .metric-link-icon { color: var(--dashboard-accent); transform: translate(2px, -2px); }
 }

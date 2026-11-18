@@ -18,6 +18,8 @@ export default {
   'shared.table.rowCount': '{count} 行',
   'shared.table.noMatch': '没有与“{query}”匹配的行。',
   'shared.table.number': '序号',
+  'shared.table.moreColumns': '更多列',
+  'shared.table.previousColumns': '上一组列',
   'shared.date.chooseDate': '选择日期',
   'shared.date.chooseDateTime': '选择日期和时间',
   'shared.date.invalidDate': '请输入 YYYY-MM-DD 格式的有效日期（年份 0001–9999）。',

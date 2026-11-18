@@ -13,20 +13,22 @@
       </span>
     </div>
 
+    <div class="app-table-scroller" :class="{ 'app-table-scroller--start': overflowStart, 'app-table-scroller--end': overflowEnd }">
     <div
       v-if="native"
       ref="nativeRoot"
       class="app-table app-table-viewport app-table-viewport--self w-full min-w-0"
-      :class="{ 'app-table-viewport--free': !scroll }"
+      :class="{ 'app-table-viewport--free': !bounded }"
       v-bind="$attrs"
     >
       <slot />
     </div>
-    <!-- Virtualized tables keep UTable's root as the scroll element; others scroll in the wrapper. -->
+    <!-- Virtualized tables keep the table root as the scroll element; others scroll in the wrapper. -->
     <div
       v-else
+      ref="viewport"
       class="app-table-viewport w-full min-w-0 max-w-full"
-      :class="{ 'app-table-viewport--root': rootScrolls, 'app-table-viewport--free': !scroll }"
+      :class="{ 'app-table-viewport--root': rootScrolls, 'app-table-viewport--free': !bounded }"
     >
       <AdminTable
         class="app-table"
@@ -44,12 +46,22 @@
         </template>
       </AdminTable>
     </div>
+    <button v-if="overflowStart" type="button" class="app-table-shift app-table-shift--start" :aria-label="t('shared.table.previousColumns')" :title="t('shared.table.previousColumns')" @click="scrollColumns(-1)">
+      <AppIcon name="i-tabler-chevron-left" class="size-3.5" aria-hidden="true" />
+    </button>
+    <button v-if="overflowEnd" type="button" class="app-table-shift app-table-shift--end" :aria-label="t('shared.table.moreColumns')" :title="t('shared.table.moreColumns')" @click="scrollColumns(1)">
+      <span class="app-table-shift__label">{{ t('shared.table.moreColumns') }}</span>
+      <AppIcon name="i-tabler-chevron-right" class="size-3.5" aria-hidden="true" />
+    </button>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import AppIcon from '~/components/AppIcon.vue'
 import Input from '~/components/ui/input/Input.vue'
 import AdminTable from '~/components/admin/general/table/AdminTable.vue'
+import { useTableOverflow } from '~/composables/admin-table/useTableOverflow'
 
 defineOptions({ inheritAttrs: false })
 const props = withDefaults(defineProps<{
@@ -60,21 +72,36 @@ const props = withDefaults(defineProps<{
   numbered?: boolean
   // Offset of the first row on the current server page (e.g. (page - 1) * pageSize).
   numberOffset?: number
-  // Bounded height with a sticky header; disable for tables that must grow with the page.
-  scroll?: boolean
+  // Bounded height with a sticky header. 'auto' bounds only long or virtualized tables so short
+  // tables follow the page scroll; true always bounds, false never does.
+  scroll?: boolean | 'auto'
   // Client-side quick search over every row field; only for fully loaded data sets.
   searchable?: boolean
   searchPlaceholder?: string
-}>(), { data: undefined, columns: undefined, native: false, numbered: true, numberOffset: 0, scroll: true, searchable: false, searchPlaceholder: '' })
+}>(), { data: undefined, columns: undefined, native: false, numbered: true, numberOffset: 0, scroll: 'auto', searchable: false, searchPlaceholder: '' })
 
 const { t } = useAdminI18n()
 
 const attrs = useAttrs()
 const nativeRoot = ref<HTMLElement | null>(null)
+const viewport = ref<HTMLElement | null>(null)
 const query = ref('')
 
 const sourceData = computed<any[]>(() => Array.isArray(props.data) ? props.data : [])
 const rootScrolls = computed(() => attrs.virtualize !== undefined && attrs.virtualize !== false)
+// Above this many rows a bounded viewport keeps the header and pagination within reach.
+const BOUNDED_ROW_THRESHOLD = 30
+const bounded = computed(() => {
+  if (props.scroll !== 'auto') return props.scroll
+  // Native tables are paginated by their pages, and virtualization requires its own viewport.
+  if (props.native) return false
+  return rootScrolls.value || sourceData.value.length > BOUNDED_ROW_THRESHOLD
+})
+// Virtualized tables scroll inside the table root; every other table scrolls in its viewport.
+const scrollElement = computed(() => props.native
+  ? nativeRoot.value
+  : rootScrolls.value ? viewport.value?.querySelector<HTMLElement>('.admin-table-root') : viewport.value)
+const { overflowStart, overflowEnd, scrollColumns } = useTableOverflow(scrollElement)
 
 function rowText(value: unknown, depth = 0): string {
   if (value == null || depth > 3) return ''
@@ -97,12 +124,21 @@ const showNumber = computed(() => props.numbered && !sourceColumns.value.some((c
   const header = typeof column?.header === 'string' ? column.header.trim().toLowerCase() : ''
   return key === NUMBER_COLUMN || NUMBER_ALIASES.has(key) || header === 'no.' || header === '#'
 }))
+// Columns marked meta.priority = 'secondary' are hidden on phones; their rows must offer a detail view.
+function withPriority(column: any): any {
+  const nested = Array.isArray(column?.columns) ? { columns: column.columns.map(withPriority) } : {}
+  if (column?.meta?.priority !== 'secondary') return { ...column, ...nested }
+  const classes = column.meta.class || {}
+  const join = (value: unknown) => [value, 'app-table-col--secondary'].filter(Boolean).join(' ')
+  return { ...column, ...nested, meta: { ...column.meta, class: { ...classes, th: join(classes.th ?? classes.header), td: join(classes.td ?? classes.cell) } } }
+}
+const prioritizedColumns = computed(() => sourceColumns.value.map(withPriority))
 const tableColumns = computed(() => {
-  if (!showNumber.value) return sourceColumns.value
+  if (!showNumber.value) return prioritizedColumns.value
   const column = { id: NUMBER_COLUMN, header: t('shared.table.number'), enableSorting: false, meta: { class: { th: 'app-table-number-head', td: 'app-table-number-cell' } } }
   // Keep selection checkboxes first, number right after.
-  const selectIndex = sourceColumns.value.findIndex(item => String(item?.id ?? item?.accessorKey ?? '') === 'select')
-  const next = [...sourceColumns.value]
+  const selectIndex = prioritizedColumns.value.findIndex(item => String(item?.id ?? item?.accessorKey ?? '') === 'select')
+  const next = [...prioritizedColumns.value]
   next.splice(selectIndex >= 0 ? selectIndex + 1 : 0, 0, column)
   return next
 })
@@ -122,7 +158,9 @@ defineExpose({ nativeRoot })
   contain: inline-size;
   max-height: var(--app-table-max-height);
   overflow: auto;
-  overscroll-behavior: contain;
+  /* Horizontal containment avoids trackpad back-navigation; vertical scroll hands off to the page. */
+  overscroll-behavior-x: contain;
+  overscroll-behavior-y: auto;
   scrollbar-width: thin;
   scrollbar-color: color-mix(in oklch, var(--ui-text-dimmed) 45%, transparent) transparent;
 }
@@ -131,7 +169,56 @@ defineExpose({ nativeRoot })
 .app-table-viewport:not(.app-table-viewport--root, .app-table-viewport--self) > .app-table { overflow: visible !important; }
 /* Virtualized tables: UTable root is the scroll element. */
 .app-table-viewport--root { max-height: none; overflow: visible; }
-.app-table-viewport--root > .app-table { max-height: var(--app-table-max-height); overflow: auto; overscroll-behavior: contain; }
+.app-table-viewport--root > .app-table { max-height: var(--app-table-max-height); overflow: auto; overscroll-behavior-x: contain; overscroll-behavior-y: auto; }
+
+/* Edge fades and a column-shift control signal columns outside the horizontal viewport. */
+.app-table-scroller { position: relative; min-width: 0; }
+.app-table-scroller::before,
+.app-table-scroller::after {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 3;
+  width: 1.5rem;
+  content: '';
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 160ms ease;
+}
+.app-table-scroller::before { left: 0; background: linear-gradient(90deg, color-mix(in oklch, var(--ui-text-highlighted) 10%, transparent), transparent); }
+.app-table-scroller::after { right: 0; background: linear-gradient(270deg, color-mix(in oklch, var(--ui-text-highlighted) 10%, transparent), transparent); }
+.app-table-scroller--start::before,
+.app-table-scroller--end::after { opacity: 1; }
+.app-table-shift {
+  position: absolute;
+  top: 0.3125rem;
+  z-index: 4;
+  display: inline-flex;
+  height: 1.625rem;
+  min-height: 0;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0 0.5rem;
+  border: 1px solid var(--ui-border);
+  border-radius: 9999px !important;
+  background: var(--ui-bg);
+  color: var(--ui-text-muted);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  box-shadow: 0 2px 8px -2px color-mix(in oklch, var(--ui-text) 22%, transparent);
+}
+.app-table-shift--start { left: 0.375rem; padding: 0 0.3125rem; }
+.app-table-shift--end { right: 0.375rem; }
+.app-table-shift:hover { border-color: var(--admin-hover-border, var(--ui-border-accented)); color: var(--ui-text-highlighted); }
+.app-table-shift:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 2px; }
+@media (pointer: coarse) {
+  .app-table-shift { height: 2.25rem; min-width: 2.25rem; justify-content: center; }
+}
+@media (width < 40rem) {
+  .app-table-shift__label { display: none; }
+  .app-table-shift--end { padding: 0 0.3125rem; }
+  .app-table:deep(.app-table-col--secondary) { display: none; }
+}
 
 .app-table-search {
   display: flex;
@@ -198,5 +285,6 @@ defineExpose({ nativeRoot })
 
 @media (prefers-reduced-motion: reduce) {
   .app-table:deep(tbody tr) { transition: none; }
+  .app-table-scroller::before, .app-table-scroller::after { transition: none; }
 }
 </style>

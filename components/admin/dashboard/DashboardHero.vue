@@ -61,25 +61,13 @@ const { loading, runtimeMode, latestVersion, lastUpdated, statusItems, health, h
   flex-direction: column;
   overflow: hidden;
   padding: 1.25rem 1.25rem 1.375rem;
-  border: 1px solid color-mix(in oklch, var(--hero-accent) 24%, var(--ui-border));
-  border-radius: 1.125rem;
+  border: 1px solid var(--admin-panel-border, var(--ui-border));
+  border-radius: 0.875rem;
   background:
-    radial-gradient(ellipse 120% 70% at 100% 0%, color-mix(in oklch, var(--hero-accent) 16%, transparent), transparent 65%),
+    linear-gradient(180deg, color-mix(in oklch, var(--hero-accent) 7%, transparent), transparent 9rem),
     var(--admin-panel-bg, var(--ui-bg));
-  box-shadow: var(--admin-panel-shadow);
+  box-shadow: inset 0 3px 0 var(--hero-accent), var(--admin-panel-shadow);
 }
-.dashboard-hero::after {
-  position: absolute;
-  right: -4rem;
-  bottom: -5rem;
-  width: 12rem;
-  height: 12rem;
-  border: 1.75rem solid color-mix(in oklch, var(--hero-accent) 7%, transparent);
-  border-radius: 9999px;
-  content: '';
-  pointer-events: none;
-}
-.dashboard-hero > * { position: relative; z-index: 1; }
 .dashboard-hero--success { --hero-accent: var(--ui-success); }
 .dashboard-hero--warning { --hero-accent: var(--ui-warning); }
 .dashboard-hero--info { --hero-accent: var(--ui-info); }

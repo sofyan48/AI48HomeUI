@@ -129,21 +129,23 @@ const selectedBalance = ref<BillingBalanceRecord | null>(null)
 
 const actionColumn = { accessorKey: 'actions', header: '', meta: { class: { th: 'table-action-head', td: 'table-action-cell' } } }
 const rightAligned = { class: { th: 'text-right' } }
+// Secondary columns are hidden on phones; every row keeps them in its detail dialog.
+const secondary = { priority: 'secondary' }
 const chargeColumns = computed(() => [
   { accessorKey: 'created_at', header: t('billing.col.time') },
   { accessorKey: 'user', header: t('common.user') },
   { accessorKey: 'model', header: t('common.model') },
-  { accessorKey: 'tokens', header: t('common.tokens'), meta: rightAligned },
+  { accessorKey: 'tokens', header: t('common.tokens'), meta: { ...rightAligned, ...secondary } },
   { accessorKey: 'amount', header: t('billing.col.charge'), meta: rightAligned },
   actionColumn
 ])
 const balanceColumns = computed(() => [
   { accessorKey: 'created_at', header: t('billing.col.time') },
   { accessorKey: 'user_id', header: t('common.user') },
-  { accessorKey: 'type', header: t('common.type') },
+  { accessorKey: 'type', header: t('common.type'), meta: secondary },
   { accessorKey: 'amount', header: t('billing.col.amount'), meta: rightAligned },
-  { accessorKey: 'balance', header: t('billing.col.balance'), meta: rightAligned },
-  { accessorKey: 'note', header: t('billing.col.note') },
+  { accessorKey: 'balance', header: t('billing.col.balance'), meta: { ...rightAligned, ...secondary } },
+  { accessorKey: 'note', header: t('billing.col.note'), meta: secondary },
   actionColumn
 ])
 const priceColumns = computed(() => [

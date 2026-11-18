@@ -115,10 +115,10 @@ onMounted(async () => {
 
 <style scoped>
 /* AI48Home shell: floating ink rail + rounded canvas. */
+/* A single faint brand wash keeps identity without competing with page data. */
 .admin-shell {
   background:
-    radial-gradient(60rem 40rem at 0% 0%, color-mix(in oklch, var(--color-violet-500) 14%, transparent), transparent 60%),
-    radial-gradient(50rem 30rem at 100% 100%, color-mix(in oklch, var(--color-fuchsia-500) 10%, transparent), transparent 60%),
+    radial-gradient(60rem 40rem at 0% 0%, color-mix(in oklch, var(--ui-primary) 7%, transparent), transparent 60%),
     var(--admin-shell-bg);
 }
 .admin-shell--locked { background: #000; }
@@ -137,12 +137,9 @@ onMounted(async () => {
     overflow: hidden;
     border: 1px solid var(--admin-panel-border);
     border-radius: 1.375rem;
-    box-shadow: 0 1px 2px rgb(24 24 27 / 4%), 0 30px 60px -40px rgb(76 29 149 / 30%);
+    box-shadow: 0 1px 2px rgb(24 24 27 / 4%);
   }
 }
-.admin-canvas__body {
-  background:
-    radial-gradient(circle at 1px 1px, color-mix(in oklch, var(--ui-text-dimmed) 22%, transparent) 1px, transparent 0) 0 0 / 22px 22px,
-    var(--admin-workspace-bg) !important;
-}
+/* Plain work surface: tables, charts, and metrics read better without a patterned backdrop. */
+.admin-canvas__body { background: var(--admin-workspace-bg) !important; }
 </style>
