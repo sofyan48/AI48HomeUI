@@ -7,7 +7,8 @@
           <span class="profile-avatar" aria-hidden="true">{{ (user?.username || '?').charAt(0).toUpperCase() }}</span>
           <div class="min-w-0 pb-1"><h1 id="profile-title" class="break-words text-xl font-bold tracking-tight text-[var(--ui-text-highlighted)]">{{ user?.username || t('profile.userFallback') }}</h1><p class="mt-0.5 text-xs text-[var(--ui-text-muted)]">{{ t('profile.subtitle', { id: user?.id || '—' }) }}</p></div>
         </div>
-        <div class="flex gap-2 pb-1">
+        <div class="flex flex-wrap gap-2 pb-1">
+          <ProfileEditDialog @saved="loadProfile" />
           <AppButton to="/app/settings" class="rounded-full" color="neutral" variant="outline" size="sm" icon="i-tabler-settings">{{ t('profile.settings') }}</AppButton>
           <AppButton class="rounded-full" color="neutral" variant="ghost" size="sm" icon="i-tabler-refresh" :loading="loading" :aria-label="t('profile.refreshAria')" @click="loadProfile">{{ t('common.refresh') }}</AppButton>
         </div>
@@ -48,6 +49,7 @@
 </template>
 
 <script setup lang="ts">
+import ProfileEditDialog from '~/components/app/profile/ProfileEditDialog.vue'
 import AppIcon from '~/components/AppIcon.vue'
 import PortalProgress from '~/components/app/general/PortalProgress.vue'
 import { Empty, EmptyDescription, EmptyHeader } from '~/components/ui/empty'
@@ -57,7 +59,7 @@ import PortalBadge from '~/components/app/general/PortalBadge.vue'
 import { useWorkspaceState } from '~/composables/useWorkspaceState'
 definePageMeta({ layout: 'app' })
 const { t, intlLocale } = usePortalI18n()
-const { currentUser: user, tokenExpiresAt, fetchAPI, loadCurrentUser } = useUserApi()
+const { currentUser: user, tokenExpiresAt, fetchAPI, loadCurrentUser, loadCapabilities } = useUserApi()
 const loading = useWorkspaceState('user:profile:loading', () => false)
 const error = useWorkspaceState('user:profile:error', () => '')
 const keys = useWorkspaceState<any[]>('user:profile:keys', () => [])
@@ -78,6 +80,7 @@ const stats = computed(() => [
 ])
 const accountDetails = computed(() => [
   { label: t('profile.detail.userId'), value: user.value?.id || '—', mono: true }, { label: t('profile.detail.username'), value: user.value?.username || '—' },
+  { label: t('profile.timezone'), value: user.value?.timezone || '—' },
   { label: t('profile.detail.created'), value: date(user.value?.created_at) }, { label: t('profile.detail.updated'), value: date(user.value?.updated_at) },
   { label: t('profile.detail.recoveryEmail'), value: user.value?.email_status.masked || t('profile.notConfigured') }, { label: t('profile.detail.emailVerification'), value: user.value?.email_status.verified ? t('profile.verified') : user.value?.email_status.configured ? t('profile.pending') : t('profile.notConfigured') }
 ])
@@ -92,6 +95,7 @@ async function loadProfile() {
     const [, keyResponse, limits] = await Promise.all([loadCurrentUser(), fetchAPI<any>('/api-keys'), fetchAPI<any>('/period-limits').catch((cause: any) => cause?.statusCode === 404 ? null : Promise.reject(cause))])
     keys.value = Array.isArray(keyResponse) ? keyResponse : keyResponse?.api_keys || keyResponse?.['api-keys'] || keyResponse?.items || keyResponse?.data || []
     periodLimits.value = limits
+    await loadCapabilities()
   } catch (cause: any) { error.value = cause?.message || t('profile.loadErrorFallback') }
   finally { loading.value = false }
 }

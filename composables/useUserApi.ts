@@ -21,6 +21,7 @@ export const useUserApi = () => {
     hydrateSession: store.hydrateSession,
     loadCapabilities: store.loadCapabilities,
     loadCurrentUser: store.loadCurrentUser,
+    updateProfile: store.updateProfile,
     login: store.login,
     loginWithPasskey: store.loginWithPasskey,
     registerPasskey: store.registerPasskey

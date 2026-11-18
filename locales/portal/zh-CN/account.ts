@@ -2,6 +2,16 @@ import type { PortalAreaTranslation } from '../define'
 import type area from '../account'
 
 export default {
+  'profile.edit': 'Edit profile',
+  'profile.editDescription': 'Only username and timezone can be edited here. Security and billing settings are managed separately.',
+  'profile.timezone': 'Timezone',
+  'profile.timezoneHelp': 'Used for usage dates and calendar-based account limits.',
+  'profile.editRequired': 'Username and timezone are required.',
+  'profile.editInvalidTimezone': 'Enter a valid IANA timezone, such as Asia/Jakarta.',
+  'profile.editSaved': 'Profile updated',
+  'profile.editFailed': 'Could not update profile.',
+  'profile.editUnsupported': 'This server does not support profile editing.',
+
   'balance.loadError': '无法加载余额信息',
   'balance.accountCredits': '账户额度',
   'balance.title': '您的余额',

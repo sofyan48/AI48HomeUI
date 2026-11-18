@@ -49,6 +49,7 @@ export interface UserSessionResponse {
 }
 
 export interface UserCapabilities {
+  profile_edit?: boolean
   user_reset_allowance?: boolean
   topup_approval?: boolean
   request_logs?: boolean
@@ -429,6 +430,14 @@ export const useUserSessionStore = defineStore('userSession', () => {
     return currentUser.value
   }
 
+  const updateProfile = async (profile: { username: string; timezone: string }) => {
+    const generation = sessionGeneration
+    const response = await fetchAPI<{ user: UserAccount }>('/me', { method: 'PATCH', body: { username: profile.username, timezone: profile.timezone } })
+    if (generation !== sessionGeneration) return null
+    currentUser.value = normalizeUser(response.user)
+    return currentUser.value
+  }
+
   const login = async (username: string, password: string, totpCode?: string, remembered = true) => {
     const response = await fetchAPI<UserSessionResponse>(totpCode ? '/login/totp' : '/login', {
       method: 'POST',
@@ -481,6 +490,7 @@ export const useUserSessionStore = defineStore('userSession', () => {
     hydrateSession,
     loadCapabilities,
     loadCurrentUser,
+    updateProfile,
     login,
     loginWithPasskey,
     registerPasskey
