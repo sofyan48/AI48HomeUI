@@ -5,6 +5,7 @@
     :description="description"
     :dismissible="!locked"
     :close="!locked"
+    :centered="centered"
     :ui="contentClass ? { content: contentClass } : undefined"
     @update:open="emit('update:open', $event)"
   >
@@ -55,6 +56,7 @@ withDefaults(defineProps<{
   divided?: boolean
   contentClass?: string
   formClass?: string
+  centered?: boolean
 }>(), {
   description: undefined,
   error: '',
@@ -68,7 +70,8 @@ withDefaults(defineProps<{
   locked: false,
   divided: false,
   contentClass: undefined,
-  formClass: undefined
+  formClass: undefined,
+  centered: false
 })
 
 const emit = defineEmits<{ 'update:open': [value: boolean]; submit: [] }>()

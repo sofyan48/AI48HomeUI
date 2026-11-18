@@ -1,5 +1,5 @@
 <template>
-  <AppModal v-model:open="deleteOpen" :title="t('upstream.providers.deleteTitle')">
+  <AppModal v-model:open="deleteOpen" centered :title="t('upstream.providers.deleteTitle')">
     <template #body>
       <div class="space-y-5">
         <PortalAlert

@@ -1,5 +1,5 @@
 <template>
-  <AppModal v-model:open="clearConfirmOpen" :title="t('logs.clearTitle')" :description="t('logs.clearDescription')">
+  <AppModal v-model:open="clearConfirmOpen" centered :title="t('logs.clearTitle')" :description="t('logs.clearDescription')">
     <template #body>
       <div class="space-y-5">
         <div class="rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-sm">

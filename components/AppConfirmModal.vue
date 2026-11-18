@@ -9,6 +9,7 @@
     :submit-icon="confirmIcon"
     :loading="loading"
     :locked="locked"
+    centered
     @update:open="emit('update:open', $event)"
     @submit="emit('confirm')"
   >

@@ -1,5 +1,5 @@
 <template>
-  <AppModal v-model:open="confirmationOpen" :title="confirmationTitle" :description="confirmationDescription">
+  <AppModal v-model:open="confirmationOpen" centered :title="confirmationTitle" :description="confirmationDescription">
     <template #body>
       <div class="flex justify-end gap-2">
         <AppButton color="neutral" variant="outline" :disabled="confirmationBusy" @click="closeConfirmation">{{ t('common.cancel') }}</AppButton>

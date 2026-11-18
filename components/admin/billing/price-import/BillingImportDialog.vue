@@ -62,7 +62,7 @@
       </div>
     </template>
   </AppModal>
-  <AppModal v-model:open="discardPendingOpen" :title="t('billing.import.discardTitle')" :description="t('billing.import.discardDescription')">
+  <AppModal v-model:open="discardPendingOpen" centered :title="t('billing.import.discardTitle')" :description="t('billing.import.discardDescription')">
     <template #footer>
       <div class="flex w-full flex-col gap-2 sm:flex-row sm:justify-end">
         <AppButton color="neutral" variant="outline" @click="discardPendingOpen = false">{{ t('billing.import.keepRecovery') }}</AppButton>

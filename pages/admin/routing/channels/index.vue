@@ -142,7 +142,7 @@
       </template>
     </AppModal>
 
-    <AppModal v-model:open="deleteOpen" :title="deleteKind === 'group' ? t('channels.deleteGroupTitle') : t('channels.removeBindingTitle')" :description="t('routing.softDeleteDescription')">
+    <AppModal v-model:open="deleteOpen" centered :title="deleteKind === 'group' ? t('channels.deleteGroupTitle') : t('channels.removeBindingTitle')" :description="t('routing.softDeleteDescription')">
       <template #body>
         <div class="space-y-5">
           <PortalAlert color="warning" variant="subtle" icon="i-tabler-alert-triangle" :title="t('routing.confirmDeletion')" :description="deleteDescription" />

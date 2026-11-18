@@ -35,7 +35,7 @@
       </template>
     </AppModal>
 
-    <AppModal v-model:open="deletePriceOpen" :title="t('billing.delete.title')" :description="t('billing.delete.description')">
+    <AppModal v-model:open="deletePriceOpen" centered :title="t('billing.delete.title')" :description="t('billing.delete.description')">
       <template #body><div class="space-y-5"><PortalAlert color="warning" variant="subtle" icon="i-tabler-alert-triangle" :title="t('billing.delete.warning')" :description="deletePriceTarget ? `${deletePriceTarget.provider} / ${deletePriceTarget.model} / ${deletePriceTarget.service_tier || '*'}` : ''" /><div class="flex justify-end gap-3"><AppButton color="neutral" variant="ghost" @click="deletePriceOpen = false">{{ t('common.cancel') }}</AppButton><AppButton color="error" :loading="priceDeleting" @click="deletePrice">{{ t('billing.delete.confirm') }}</AppButton></div></div></template>
     </AppModal>
 

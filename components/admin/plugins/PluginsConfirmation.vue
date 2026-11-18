@@ -1,5 +1,5 @@
 <template>
-        <AppModal v-model:open="confirmationOpen" :title="confirmationTitle" :dismissible="!confirmationBusy" :close="!confirmationBusy">
+        <AppModal v-model:open="confirmationOpen" centered :title="confirmationTitle" :dismissible="!confirmationBusy" :close="!confirmationBusy">
           <template #body>
             <form class="space-y-4" @submit.prevent="performConfirmedAction">
               <p class="text-sm">{{ confirmationDescription }}</p>

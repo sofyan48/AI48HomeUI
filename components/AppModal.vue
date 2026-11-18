@@ -5,7 +5,7 @@
     </SheetTrigger>
     <SheetContent
       v-bind="getContentBindings()"
-      side="right"
+      :side="centered ? 'center' : 'right'"
       :show-close="false"
       :close-label="t('common.close')"
       :overlay="overlay"
@@ -93,6 +93,8 @@ const props = withDefaults(defineProps<{
   class?: HTMLAttributes['class']
   fullscreen?: boolean
   scrollable?: boolean
+  // Short confirmations (delete, clear, discard) open as a centered dialog instead of a side sheet.
+  centered?: boolean
   ui?: ModalUi
 }>(), {
   open: undefined,
@@ -120,7 +122,13 @@ function rootProps() {
 // Keep the workbench's existing slideover sizing and scroll only its flexible body.
 const classes = computed(() => ({
   overlay: cn('bg-elevated/75', props.transition ? 'data-[state=open]:animate-[fade-in_200ms_ease-out] data-[state=closed]:animate-[fade-out_200ms_ease-in]' : 'animate-none data-[state=open]:animate-none data-[state=closed]:animate-none', props.ui?.overlay),
-  content: cn('w-full max-w-full sm:max-w-lg gap-0 bg-default divide-y divide-default border-0 sm:ring ring-default sm:shadow-lg focus:outline-none', props.transition ? 'data-[state=open]:animate-[slide-in-from-right_200ms_ease-in-out] data-[state=closed]:animate-[slide-out-to-right_200ms_ease-in-out]' : 'animate-none data-[state=open]:animate-none data-[state=closed]:animate-none', !slots.default && props.class, props.ui?.content, props.fullscreen && 'max-w-none sm:max-w-none'),
+  content: cn(
+    props.centered ? 'sm:max-w-md' : 'w-full max-w-full sm:max-w-lg',
+    'gap-0 bg-default divide-y divide-default border-0 sm:ring ring-default sm:shadow-lg focus:outline-none',
+    !props.transition ? 'animate-none data-[state=open]:animate-none data-[state=closed]:animate-none'
+      : props.centered ? 'data-[state=open]:animate-[fade-in_150ms_ease-out] data-[state=closed]:animate-[fade-out_150ms_ease-in]'
+        : 'data-[state=open]:animate-[slide-in-from-right_200ms_ease-in-out] data-[state=closed]:animate-[slide-out-to-right_200ms_ease-in-out]',
+    !slots.default && props.class, props.ui?.content, props.fullscreen && 'max-w-none sm:max-w-none'),
   header: cn('relative shrink-0 flex-row items-center gap-1.5 px-4 py-3 sm:px-5 min-h-(--ui-header-height)', props.ui?.header),
   wrapper: cn('min-w-0 pr-10', props.ui?.wrapper),
   body: cn('min-h-0 min-w-0 flex-1 overflow-y-auto p-4 sm:p-5', props.ui?.body),

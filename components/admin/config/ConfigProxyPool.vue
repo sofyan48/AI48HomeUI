@@ -115,7 +115,7 @@
       </template>
     </AppModal>
 
-    <AppModal v-model:open="deleteOpen" :title="t('proxy.action.delete')">
+    <AppModal v-model:open="deleteOpen" centered :title="t('proxy.action.delete')">
       <template #body>
         <div class="space-y-5">
           <PortalAlert color="warning" variant="subtle" icon="i-tabler-alert-triangle" :title="t('proxy.delete.warning')" :description="deleteTarget?.name || deleteTarget?.proxy_url" />
