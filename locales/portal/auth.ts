@@ -37,7 +37,7 @@ export default definePortalMessages({
   'login.passkeyFailed': 'Passkey authentication failed.',
 
   'register.title': 'Create your account',
-  'register.desc': 'Start using models through AI48Hub.',
+  'register.desc': 'Start using models through AI48Home.',
   'register.pendingTitle': 'Account awaiting approval',
   'register.pendingDesc': 'Your account has been created. An administrator must approve it before you can sign in to the user dashboard.',
   'register.failed': 'Registration failed',
@@ -141,7 +141,7 @@ export default definePortalMessages({
   'login.passkeyFailed': 'Autentikasi passkey gagal.',
 
   'register.title': 'Buat akun Anda',
-  'register.desc': 'Mulai gunakan model melalui AI48Hub.',
+  'register.desc': 'Mulai gunakan model melalui AI48Home.',
   'register.pendingTitle': 'Akun menunggu persetujuan',
   'register.pendingDesc': 'Akun Anda telah dibuat. Administrator harus menyetujuinya sebelum Anda dapat masuk ke dasbor pengguna.',
   'register.failed': 'Pendaftaran gagal',

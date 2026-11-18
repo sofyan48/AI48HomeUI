@@ -114,7 +114,7 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-/* AI48Hub shell: floating ink rail + rounded canvas. */
+/* AI48Home shell: floating ink rail + rounded canvas. */
 .admin-shell {
   background:
     radial-gradient(60rem 40rem at 0% 0%, color-mix(in oklch, var(--color-violet-500) 14%, transparent), transparent 60%),

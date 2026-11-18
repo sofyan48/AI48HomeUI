@@ -3,7 +3,7 @@ import type area from '../shell'
 
 export default {
   'shell.userWorkspace': '使用者工作區',
-  'shell.dashboardLink': 'AI48Hub 儀表板',
+  'shell.dashboardLink': 'AI48Home 儀表板',
   'shell.closeNavigation': '關閉導覽',
   'shell.openNavigation': '開啟導覽',
   'shell.expandSidebar': '展開側邊欄',

@@ -38,7 +38,7 @@ export default {
   'login.passkeyFailed': '通行金鑰驗證失敗。',
 
   'register.title': '建立您的帳號',
-  'register.desc': '開始透過 AI48Hub 使用模型。',
+  'register.desc': '開始透過 AI48Home 使用模型。',
   'register.pendingTitle': '帳號等待核准中',
   'register.pendingDesc': '您的帳號已建立，須經管理員核准後才能登入使用者儀表板。',
   'register.failed': '註冊失敗',

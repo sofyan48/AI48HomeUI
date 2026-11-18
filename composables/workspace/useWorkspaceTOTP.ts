@@ -23,7 +23,7 @@ function createWorkspaceTOTP() {
     totpError.value = ''
     totpLoading.value = true
     try {
-      totpSetup.value = await fetchAPI<TOTPSetup>('/totp', { query: { issuer: 'AI48Hub', ...(regenerate ? { regenerate: true } : {}) } })
+      totpSetup.value = await fetchAPI<TOTPSetup>('/totp', { query: { issuer: 'AI48Home', ...(regenerate ? { regenerate: true } : {}) } })
       totpCode.value = ''
     } catch (error: any) {
       totpError.value = errorMessage(error, t('ws.settings.totpLoadFailed'))
@@ -37,7 +37,7 @@ function createWorkspaceTOTP() {
     if (!totpCode.value.trim()) return void (totpError.value = t('ws.settings.enterCode'))
     totpSaving.value = true
     try {
-      await fetchAPI('/totp', { method: 'POST', body: { secret: totpSetup.value.secret, issuer: totpSetup.value.issuer || 'AI48Hub', code: totpCode.value.trim() } })
+      await fetchAPI('/totp', { method: 'POST', body: { secret: totpSetup.value.secret, issuer: totpSetup.value.issuer || 'AI48Home', code: totpCode.value.trim() } })
       await loadCurrentUser()
       totpSetup.value = null
       totpCode.value = ''

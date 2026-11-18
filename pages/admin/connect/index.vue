@@ -9,7 +9,7 @@
         <div class="mb-8 inline-flex items-center gap-3 rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-bg-elevated)]/80 px-4 py-3 shadow-sm backdrop-blur">
           <AppBrandMark size="lg" />
           <div>
-            <p class="font-bold tracking-tight text-[var(--ui-text-highlighted)]">AI48Hub</p>
+            <p class="font-bold tracking-tight text-[var(--ui-text-highlighted)]">AI48Home</p>
             <p class="text-xs text-[var(--ui-text-muted)]">{{ t('connect.controlPlane') }}</p>
           </div>
         </div>

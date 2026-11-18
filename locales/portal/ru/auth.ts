@@ -38,7 +38,7 @@ export default {
   'login.passkeyFailed': 'Ошибка аутентификации с passkey.',
 
   'register.title': 'Создайте аккаунт',
-  'register.desc': 'Начните использовать модели через AI48Hub.',
+  'register.desc': 'Начните использовать модели через AI48Home.',
   'register.pendingTitle': 'Аккаунт ожидает одобрения',
   'register.pendingDesc': 'Аккаунт создан. Чтобы войти в панель пользователя, его должен одобрить администратор.',
   'register.failed': 'Ошибка регистрации',

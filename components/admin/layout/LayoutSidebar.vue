@@ -11,7 +11,7 @@
     :class="[mobileOpen ? 'translate-x-0' : '-translate-x-full', collapsed ? 'lg:w-[4.25rem]' : 'lg:w-64']"
   >
     <div class="flex h-16 shrink-0 items-center gap-2 px-3" :class="collapsed ? 'lg:h-auto lg:flex-col lg:justify-center lg:gap-2 lg:px-1 lg:py-3' : ''">
-      <NuxtLink to="/admin/dashboard" class="admin-brand flex min-w-0 flex-1 items-center gap-3 rounded-lg" :class="collapsed ? 'lg:flex-none' : ''" title="AI48Hub" aria-label="AI48Hub" @click="emit('close')">
+      <NuxtLink to="/admin/dashboard" class="admin-brand flex min-w-0 flex-1 items-center gap-3 rounded-lg" :class="collapsed ? 'lg:flex-none' : ''" title="AI48Home" aria-label="AI48Home" @click="emit('close')">
         <AppBrandMark />
         <div class="min-w-0 leading-tight" :class="collapsed ? 'lg:hidden' : ''">
           <p class="admin-wordmark truncate">AI48<span class="admin-brand-accent">Hub</span></p>

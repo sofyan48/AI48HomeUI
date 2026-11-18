@@ -3,7 +3,7 @@ import type area from '../shell'
 
 export default {
   'shell.userWorkspace': 'Рабочее пространство',
-  'shell.dashboardLink': 'Панель AI48Hub',
+  'shell.dashboardLink': 'Панель AI48Home',
   'shell.closeNavigation': 'Закрыть навигацию',
   'shell.openNavigation': 'Открыть навигацию',
   'shell.expandSidebar': 'Развернуть боковую панель',

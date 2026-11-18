@@ -6,7 +6,7 @@
       <span v-if="pageIcon" class="admin-page-glyph hidden sm:flex" aria-hidden="true"><AppIcon :name="pageIcon" /></span>
       <div class="min-w-0 leading-tight">
         <nav :aria-label="t('shared.breadcrumb')" class="hidden items-center gap-1 text-[11px] font-medium text-[var(--ui-text-muted)] sm:flex">
-          <span>AI48Hub</span>
+          <span>AI48Home</span>
           <template v-if="section"><AppIcon name="i-tabler-slash" class="size-3 text-[var(--ui-text-dimmed)]" aria-hidden="true" /><span class="truncate">{{ section }}</span></template>
         </nav>
         <p class="admin-page-title truncate" :title="subtitle || undefined" aria-current="page">{{ title }}</p>

@@ -208,8 +208,8 @@ export default defineAdminMessages({
   'system.signals.proxyEndpoint': 'Proxy endpoint',
   'system.signals.routingStrategy': 'Routing strategy',
   // Credits
-  'system.credits.title': 'About AI48Hub',
-  'system.credits.builtUpon': 'AI48Hub is inspired by and built upon',
+  'system.credits.title': 'About AI48Home',
+  'system.credits.builtUpon': 'AI48Home is inspired by and built upon',
   'system.credits.thanks': 'Thanks to its authors and contributors for the original control plane for CLIProxyAPI.',
   'system.credits.original': 'Original project',
   // Verdict
@@ -491,8 +491,8 @@ export default defineAdminMessages({
   'system.signals.proxyEndpoint': 'Endpoint proxy',
   'system.signals.routingStrategy': 'Strategi routing',
   // Credits
-  'system.credits.title': 'Tentang AI48Hub',
-  'system.credits.builtUpon': 'AI48Hub terinspirasi oleh dan dibangun di atas',
+  'system.credits.title': 'Tentang AI48Home',
+  'system.credits.builtUpon': 'AI48Home terinspirasi oleh dan dibangun di atas',
   'system.credits.thanks': 'Terima kasih kepada para penulis dan kontributornya atas control plane orisinal untuk CLIProxyAPI.',
   'system.credits.original': 'Proyek orisinal',
   // Verdict

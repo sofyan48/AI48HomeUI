@@ -220,7 +220,7 @@ const sections = computed<Section[]>(() => [
       { key: 'userEmailEnabled', label: t('config.field.userEmailEnabled'), type: 'switch', description: t('config.field.userEmailEnabled.desc') },
       { key: 'userEmailPublicUrl', label: t('config.field.userEmailPublicUrl'), type: 'url', placeholder: 'https://home.example.com/user.html', hint: t('config.field.userEmailPublicUrl.hint') },
       { key: 'userEmailFromAddress', label: t('config.field.userEmailFromAddress'), type: 'text', placeholder: 'no-reply@example.com', hint: t('config.field.userEmailFromAddress.hint') },
-      { key: 'userEmailFromName', label: t('config.field.userEmailFromName'), type: 'text', placeholder: 'AI48Hub' },
+      { key: 'userEmailFromName', label: t('config.field.userEmailFromName'), type: 'text', placeholder: 'AI48Home' },
       { key: 'userEmailSenderType', label: t('config.field.userEmailSenderType'), type: 'select', items: [{ label: 'SMTP', value: 'smtp' }] },
       { key: 'userEmailSmtpHost', label: t('config.field.userEmailSmtpHost'), type: 'text', placeholder: 'smtp.example.com' },
       { key: 'userEmailSmtpPort', label: t('config.field.userEmailSmtpPort'), type: 'number', min: 1, max: 65535, step: 1, hint: t('config.field.userEmailSmtpPort.hint') },

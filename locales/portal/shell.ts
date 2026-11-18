@@ -2,7 +2,7 @@ import { definePortalMessages } from './define'
 
 export default definePortalMessages({
   'shell.userWorkspace': 'User workspace',
-  'shell.dashboardLink': 'AI48Hub dashboard',
+  'shell.dashboardLink': 'AI48Home dashboard',
   'shell.closeNavigation': 'Close navigation',
   'shell.openNavigation': 'Open navigation',
   'shell.expandSidebar': 'Expand sidebar',
@@ -60,7 +60,7 @@ export default definePortalMessages({
   'common.unknownError': 'Something went wrong.'
 }, {
   'shell.userWorkspace': 'Ruang kerja pengguna',
-  'shell.dashboardLink': 'Dasbor AI48Hub',
+  'shell.dashboardLink': 'Dasbor AI48Home',
   'shell.closeNavigation': 'Tutup navigasi',
   'shell.openNavigation': 'Buka navigasi',
   'shell.expandSidebar': 'Bentangkan sidebar',

@@ -36,7 +36,7 @@ export default {
   'login.passkeyCancelled': '通行密钥验证已取消。',
   'login.passkeyFailed': '通行密钥验证失败。',
   'register.title': '创建您的账户',
-  'register.desc': '开始通过 AI48Hub 使用模型。',
+  'register.desc': '开始通过 AI48Home 使用模型。',
   'register.pendingTitle': '账户待审批',
   'register.pendingDesc': '您的账户已创建。需经管理员审批后，才能登录用户仪表盘。',
   'register.failed': '注册失败',

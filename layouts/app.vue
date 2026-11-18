@@ -24,7 +24,7 @@
             <AppButton class="lg:hidden" icon="i-tabler-menu-2" color="neutral" variant="ghost" :aria-label="t('shell.openNavigation')" aria-controls="workspace-mobile-sidebar" aria-haspopup="dialog" :aria-expanded="mobileOpen" @click="openMobile" />
             <span v-if="currentNavigation" class="user-page-icon hidden sm:flex" aria-hidden="true"><AppIcon :name="currentNavigation.icon" class="size-4" /></span>
             <div class="min-w-0 leading-tight">
-                          <p class="hidden items-center gap-1 text-[11px] font-medium text-muted-foreground sm:flex"><span>AI48Hub</span><AppIcon name="i-tabler-slash" class="size-3" aria-hidden="true" /><span class="truncate">{{ t('shell.userWorkspace') }}</span></p>
+                          <p class="hidden items-center gap-1 text-[11px] font-medium text-muted-foreground sm:flex"><span>AI48Home</span><AppIcon name="i-tabler-slash" class="size-3" aria-hidden="true" /><span class="truncate">{{ t('shell.userWorkspace') }}</span></p>
                           <p class="user-page-title truncate" :title="pageSubtitle">{{ pageTitle }}</p>
                         </div>
           </div>
