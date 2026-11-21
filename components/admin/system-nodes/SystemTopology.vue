@@ -75,7 +75,7 @@
           <div v-else class="grid gap-3">
             <div class="flex flex-wrap gap-2">
               <PortalBadge color="info" variant="subtle">{{ homeGroups.length }} Home</PortalBadge>
-              <PortalBadge color="neutral" variant="subtle">{{ nodes.length }} CPA</PortalBadge>
+              <PortalBadge color="neutral" variant="subtle">{{ nodes.length }} Worker</PortalBadge>
             </div>
 
             <section v-for="group in homeGroups" :key="group.id" class="overflow-hidden rounded-md border border-[var(--ui-border)] bg-[var(--ui-bg-muted)]/20">
@@ -277,7 +277,7 @@ const nodes = computed<any[]>(() => Array.isArray(nodesResponse.value?.nodes) ? 
 const nodesSupported = computed(() => supports('topology', false) || supports('nodes', false))
 const topologySource = computed(() => topology.value ? 'topology' : nodesResponse.value ? 'nodes' : 'unsupported')
 const topologySourceLabel = computed(() => topologySource.value === 'topology' ? t('system.topology.cluster') : topologySource.value === 'nodes' ? t('system.topology.partial') : t('system.topology.unavailable'))
-const runtimeLabel = computed(() => supports('topology', false) ? t('system.runtime.homeCluster') : supports('nodes', false) || serverInfo.value.home_version ? t('system.runtime.homeRuntime') : 'CPA')
+const runtimeLabel = computed(() => supports('topology', false) ? t('system.runtime.homeCluster') : supports('nodes', false) || serverInfo.value.home_version ? t('system.runtime.homeRuntime') : 'Worker')
 const currentVersion = computed(() => serverInfo.value.home_version || configSnapshot.value?.version || configSnapshot.value?.['version'] || 'Unknown')
 const summary = computed(() => topology.value?.summary || {})
 const inferredHomeCount = computed(() => new Set(nodes.value.map(node => homeKey(node)).filter(key => key !== 'unknown-home')).size)
@@ -342,7 +342,7 @@ const summaryCards = computed(() => [
   { key: 'version', label: t('system.stat.version'), value: currentVersionLabel.value, detail: t('system.stat.latest', { version: latestVersion.value || t('common.unknown') }), tone: currentVersion.value === 'Unknown' ? 'warning' : 'success', icon: 'i-tabler-tag' },
   { key: 'endpoint', label: t('system.stat.endpoint'), value: apiBase, detail: t('system.stat.master', { id: masterHome.value }), tone: apiBase ? 'info' : 'warning', icon: 'i-tabler-link' },
   { key: 'home', label: 'Home', value: nodesSupported.value ? String(homeCount.value) : t('system.na'), detail: topology.value ? t('system.topology.healthyCount', { healthy: healthyHomeCount.value, total: homeCount.value }) : homeCount.value ? t('system.stat.inferred', { count: homeCount.value }) : t('system.stat.noHomeList'), tone: homeCount.value ? 'info' : 'warning', icon: 'i-tabler-building' },
-  { key: 'cpa', label: 'CPA', value: String(cpaCount.value), detail: t('system.topology.healthyCount', { healthy: healthyCpaCount.value, total: cpaCount.value }), tone: cpaCount.value ? 'success' : 'neutral', icon: 'i-tabler-server-2' },
+  { key: 'cpa', label: 'Worker', value: String(cpaCount.value), detail: t('system.topology.healthyCount', { healthy: healthyCpaCount.value, total: cpaCount.value }), tone: cpaCount.value ? 'success' : 'neutral', icon: 'i-tabler-server-2' },
   { key: 'attention', label: t('system.stat.attention'), value: String(attentionCount.value), detail: attentionCount.value ? t('system.stat.needsReview') : t('system.stat.noAttention'), tone: attentionCount.value ? 'warning' : 'success', icon: 'i-tabler-alert-triangle' },
   { key: 'config', label: t('system.stat.config'), value: configSnapshot.value ? t('system.fact.available') : t('system.na'), detail: configSnapshot.value ? t('system.stat.summaryLoaded') : t('system.stat.summaryUnavailable'), tone: configSnapshot.value ? 'success' : 'warning', icon: 'i-tabler-adjustments' }
 ])

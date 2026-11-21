@@ -44,6 +44,40 @@ describe('admin console i18n', () => {
   })
 
   for (const [locale, table] of Object.entries(adminMessages)) {
+    test(`${locale} uses Worker terminology in Alerting and System Info`, () => {
+      const messages = table as Record<string, string>
+      const visibleText = Object.entries(messages)
+        .filter(([key]) => key.startsWith('system.') || key.startsWith('alerting.'))
+        .map(([, text]) => text.replace(/\{\w+\}/g, ''))
+      expect(visibleText.filter(text => /\bCPAs?\b/i.test(text))).toEqual([])
+
+      for (const key of [
+        'alerting.rule.nodeOffline', 'alerting.rule.nodeOfflineHelp',
+        'system.topology.title', 'system.topology.cpaCount', 'system.topology.unmatched',
+        'system.topology.noCpa', 'system.topology.nodeName', 'system.topology.nodeIp',
+        'system.topology.nodeId', 'system.topology.descCluster', 'system.topology.descInferred',
+        'system.fact.nodesWithHome', 'system.rename.title', 'system.rename.description'
+      ]) {
+        expect(messages[key]).toContain('Worker')
+      }
+      for (const key of ['system.topology.descCluster', 'system.topology.descInferred', 'system.fact.nodesWithHome']) {
+        expect(names(messages[key]!)).toEqual(['cpa', 'home'])
+      }
+    })
+  }
+
+  test('System Info uses Worker labels without renaming CPA data fields', () => {
+    const source = readFileSync(join(root, 'components/admin/system-nodes/SystemTopology.vue'), 'utf8')
+    expect(source).not.toMatch(/\bCPA\b/)
+    expect(source).toContain('{{ nodes.length }} Worker')
+    expect(source).toContain("t('system.runtime.homeRuntime') : 'Worker'")
+    expect(source).toContain("{ key: 'cpa', label: 'Worker', value: String(cpaCount.value)")
+    expect(source).toContain('topology.value.cpas')
+    expect(source).toContain('summary.value.cpa_count')
+    expect(source).toContain('summary.value.healthy_cpa_count')
+  })
+
+  for (const [locale, table] of Object.entries(adminMessages)) {
     if (locale === 'en') continue
     test(`${locale} covers every key with matching placeholders`, () => {
       const messages = table as Record<string, string>
