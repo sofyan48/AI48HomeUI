@@ -14,7 +14,7 @@
       <NuxtLink to="/admin/dashboard" class="admin-brand flex min-w-0 flex-1 items-center gap-3 rounded-lg" :class="collapsed ? 'lg:flex-none' : ''" title="AI48Home" aria-label="AI48Home" @click="emit('close')">
         <AppBrandMark />
         <div class="min-w-0 leading-tight" :class="collapsed ? 'lg:hidden' : ''">
-          <p class="admin-wordmark truncate">AI48<span class="admin-brand-accent">Hub</span></p>
+          <p class="admin-wordmark truncate">AI48<span class="admin-brand-accent">Home</span></p>
           <p class="truncate text-[11px] text-[var(--ui-text-muted)]">{{ tc('shell.tagline') }}</p>
         </div>
       </NuxtLink>

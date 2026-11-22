@@ -21,7 +21,7 @@ const isActive = (to: string) => route.path === to
     <div class="flex h-16 shrink-0 items-center justify-between gap-1 px-3" :class="collapsed ? 'lg:h-auto lg:flex-col lg:justify-center lg:px-1 lg:py-3 lg:gap-2' : ''">
       <NuxtLink to="/app" class="user-brand flex min-w-0 flex-1 items-center gap-2.5 rounded-lg" :class="collapsed ? 'lg:flex-none' : ''" @click="emit('navigate')">
         <AppBrandMark />
-        <span class="min-w-0 leading-tight" :class="collapsed ? 'lg:hidden' : ''"><span class="block truncate text-[15px] font-bold tracking-tight text-[var(--ui-text-highlighted)]">AI48<span class="user-brand-accent">Hub</span></span><span class="block truncate text-[11px] text-[var(--ui-text-muted)]">{{ t('shell.userWorkspace') }}</span></span>
+        <span class="min-w-0 leading-tight" :class="collapsed ? 'lg:hidden' : ''"><span class="block truncate text-[15px] font-bold tracking-tight text-[var(--ui-text-highlighted)]">AI48<span class="user-brand-accent">Home</span></span><span class="block truncate text-[11px] text-[var(--ui-text-muted)]">{{ t('shell.userWorkspace') }}</span></span>
       </NuxtLink>
       <AppButton v-if="!mobile" class="hidden shrink-0 lg:inline-flex" :icon="collapsed ? 'i-tabler-layout-sidebar-left-expand' : 'i-tabler-layout-sidebar-left-collapse'" color="neutral" variant="ghost" :aria-label="collapsed ? t('shell.expandSidebar') : t('shell.collapseSidebar')" :title="collapsed ? t('shell.expandSidebar') : t('shell.collapseSidebar')" :aria-expanded="!collapsed" aria-controls="workspace-sidebar" @click="emit('toggleCollapse')" />
       <AppButton v-else icon="i-tabler-x" color="neutral" variant="ghost" :aria-label="t('shell.closeNavigation')" @click="emit('navigate')" />
