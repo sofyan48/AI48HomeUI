@@ -26,7 +26,7 @@ const adminFiles = [
 describe('admin console i18n', () => {
   test('recursive discovery covers every admin route, including nested routing features', () => {
     const routes = adminFiles.filter(file => file.startsWith('pages/admin/'))
-    expect(routes).toHaveLength(22)
+    expect(routes).toHaveLength(23)
     expect(routes).toContain('pages/admin/index.vue')
     expect(routes).toContain('pages/admin/dashboard/index.vue')
     expect(routes).toContain('pages/admin/routing/channels/index.vue')

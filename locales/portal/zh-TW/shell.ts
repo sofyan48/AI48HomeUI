@@ -34,6 +34,8 @@ export default {
   'shell.nav.logs': '請求日誌',
   'shell.nav.settings': '設定',
   'shell.sub.logs': '僅顯示您帳號的請求摘要',
+  'shell.nav.organizations': '組織',
+  'shell.sub.organizations': '共享組織餘額的團隊工作區',
   'shell.sub.dashboard': '計費與帳號概覽',
   'shell.sub.balance': '儲值點數並追蹤餘額',
   'shell.sub.playground': '使用您自己的 API 金鑰試用模型',

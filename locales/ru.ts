@@ -56,6 +56,8 @@ export default {
   'nav.systemDescription': 'Работа системы и диагностика',
   'nav.alerting': 'Оповещения',
   'nav.alertingDescription': 'Уведомления в Telegram и Teams',
+  'nav.organizations': 'Организации',
+  'nav.organizationsDescription': 'Командные пространства с общим балансом',
   'connect.controlPlane': 'Плоскость управления',
   'connect.heading': 'Уверенно управляйте кластером CPA.',
   'connect.description': 'Следите за топологией, анализируйте использование, управляйте доступом и контролируйте все подключённые узлы из одной защищённой консоли.',

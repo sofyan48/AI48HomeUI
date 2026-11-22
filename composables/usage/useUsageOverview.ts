@@ -15,7 +15,7 @@ type Options = {
 export function useUsageOverview({ fetchAPI, supports, scope, appliedFilters, buildCommonParams }: Options) {
   let version = 0
   const overview = useWorkspaceState<any>('admin:usage:overview', () => (null))
-  const recordsResponse = useWorkspaceState<any>('admin:usage:recordsResponse', () => (null))
+  const filterOptions = useWorkspaceState<{ providers?: string[], models?: string[] }>('admin:usage:filterOptions', () => ({}))
   const overviewLoading = useWorkspaceState('admin:usage:overviewLoading', () => (false))
   const recordsLoading = useWorkspaceState('admin:usage:recordsLoading', () => (false))
 
@@ -26,9 +26,8 @@ export function useUsageOverview({ fetchAPI, supports, scope, appliedFilters, bu
   const tokenBreakdown = computed(() => totals.value?.token_breakdown || null)
   const costBreakdown = computed<any[]>(() => Array.isArray(overview.value?.cost_breakdown) ? overview.value.cost_breakdown : [])
   const top = computed<Record<string, any>>(() => overview.value?.top || {})
-  const records = computed<any[]>(() => Array.isArray(recordsResponse.value?.items) ? recordsResponse.value.items : [])
-  const providerSuggestions = computed(() => [...new Set(records.value.map(item => item.provider).filter(Boolean))].sort())
-  const modelSuggestions = computed(() => [...new Set(records.value.map(item => item.model).filter(Boolean))].sort())
+  const providerSuggestions = computed(() => [...new Set(filterOptions.value.providers || [])].filter(Boolean).sort())
+  const modelSuggestions = computed(() => [...new Set(filterOptions.value.models || [])].filter(Boolean).sort())
 
   const loadOverview = async () => {
     if (!supports('usage_overview')) return
@@ -37,8 +36,23 @@ export function useUsageOverview({ fetchAPI, supports, scope, appliedFilters, bu
     try {
       const params = buildCommonParams(appliedFilters.value)
       params.set('interval', 'auto')
-      const result = await fetchAPI<any>(`/usage/overview?${params.toString()}`, { signal: scope.controller.signal })
-      if (!scope.disposed && current === version) overview.value = result
+      // Load choices independently of the active filters or paginated records;
+      // otherwise selecting one model can hide every other model in the dropdown.
+      const [result, choices] = await Promise.all([
+        fetchAPI<any>(`/usage/overview?${params.toString()}`, { signal: scope.controller.signal }),
+        supports('request_events_filters', true)
+          ? fetchAPI<{ providers?: string[], models?: string[] }>('/request-events/filter-options', { signal: scope.controller.signal })
+            .catch((error: unknown) => {
+              const failure = error as { statusCode?: number, status?: number }
+              if (failure.statusCode === 404 || failure.status === 404) return null
+              throw error
+            })
+          : Promise.resolve(null),
+      ])
+      if (!scope.disposed && current === version) {
+        overview.value = result
+        if (choices) filterOptions.value = choices
+      }
     } finally {
       if (!scope.disposed && current === version) overviewLoading.value = false
     }

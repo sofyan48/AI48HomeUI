@@ -59,6 +59,7 @@ export interface UserCapabilities {
   password_recovery?: boolean
   model_catalog?: boolean
   chat_history?: boolean
+  organizations?: boolean
 }
 
 export interface UserServerInfo {

@@ -54,6 +54,8 @@ export default {
   'nav.systemDescription': 'Runtime and diagnostics',
   'nav.alerting': 'Alerting',
   'nav.alertingDescription': 'Telegram and Teams notifications',
+  'nav.organizations': 'Organizations',
+  'nav.organizationsDescription': 'Team workspaces with shared credits',
   'connect.controlPlane': 'Management control plane',
   'connect.heading': 'Operate your CPA cluster with confidence.',
   'connect.description': 'Monitor topology, inspect usage, manage access, and keep every connected node visible from one secure console.',

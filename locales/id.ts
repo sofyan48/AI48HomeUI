@@ -56,6 +56,8 @@ export default {
   'nav.systemDescription': 'Runtime dan diagnostik',
   'nav.alerting': 'Alerting',
   'nav.alertingDescription': 'Notifikasi Telegram dan Teams',
+  'nav.organizations': 'Organisasi',
+  'nav.organizationsDescription': 'Workspace tim dengan saldo bersama',
   'connect.controlPlane': 'Control plane manajemen',
   'connect.heading': 'Kelola cluster CPA Anda dengan percaya diri.',
   'connect.description': 'Pantau topologi, periksa penggunaan, kelola akses, dan lihat setiap node yang terhubung dari satu konsol yang aman.',

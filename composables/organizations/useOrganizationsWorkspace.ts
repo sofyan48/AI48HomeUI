@@ -1,0 +1,320 @@
+import { computed, inject, provide, ref, type InjectionKey } from 'vue'
+import { useApi, useAdminI18n } from '#imports'
+import { useAdminToast } from '~/composables/admin-feedback/useAdminToast'
+import { useWorkspaceState } from '~/composables/useWorkspaceState'
+import {
+  emptyMemberForm, emptyOrganizationForm, isOrganizationsUnsupported, organizationErrorMessage, parseOptionalLimit,
+  type MemberForm, type Organization, type OrganizationAPIKey, type OrganizationForm, type OrganizationMember,
+  type OrganizationModelGroupOption, type OrganizationUserOption,
+} from './types'
+
+function createOrganizationsWorkspace() {
+  const { fetchAPI } = useApi()
+  const { t } = useAdminI18n()
+  const toast = useAdminToast()
+
+  const loading = useWorkspaceState<boolean>('admin:organizations:loading', () => false)
+  const unsupported = useWorkspaceState<boolean>('admin:organizations:unsupported', () => false)
+  const errorMessage = useWorkspaceState<string>('admin:organizations:errorMessage', () => '')
+  const organizations = useWorkspaceState<Organization[]>('admin:organizations:list', () => [])
+
+  // Transient detail and form state stays local to the mounted page.
+  const selected = ref<Organization | null>(null)
+  const selectedKeys = ref<OrganizationAPIKey[]>([])
+  const detailOpen = ref(false)
+  const detailLoading = ref(false)
+
+  const orgFormOpen = ref(false)
+  const orgForm = ref<OrganizationForm>(emptyOrganizationForm())
+  const orgFormError = ref('')
+  const orgSaving = ref(false)
+  const editingOrg = ref<Organization | null>(null)
+
+  const memberFormOpen = ref(false)
+  const memberForm = ref<MemberForm>(emptyMemberForm())
+  const memberFormError = ref('')
+  const memberSaving = ref(false)
+  const editingMember = ref<OrganizationMember | null>(null)
+
+  const deleteTarget = ref<{ kind: 'org' | 'member' | 'key', label: string, run: () => Promise<void> } | null>(null)
+  const deleting = ref(false)
+  const deleteError = ref('')
+  const creatingKeyFor = ref<number | null>(null)
+
+  // Personal users for the owner/member search dropdowns. Loaded lazily when a form opens.
+  const users = ref<OrganizationUserOption[]>([])
+  const usersLoading = ref(false)
+  const usersLoaded = ref(false)
+  const userOptions = computed(() => users.value.map(user => ({ value: user.id, label: user.username, description: `#${user.id}`, keywords: String(user.id) })))
+  // Members already in the selected organization cannot be added twice.
+  const memberUserOptions = computed(() => {
+    const existing = new Set((selected.value?.members || []).map(member => member.user_id))
+    return userOptions.value.map(option => ({ ...option, disabled: existing.has(option.value) }))
+  })
+
+  // Model groups for the organization form checkboxes. Loaded lazily when the form opens.
+  const modelGroups = ref<OrganizationModelGroupOption[]>([])
+  const modelGroupsLoading = ref(false)
+  const modelGroupsLoaded = ref(false)
+  const modelGroupsError = ref('')
+  // Disabled groups are only listed while the organization still uses them, so they can be unchecked.
+  const modelGroupOptions = computed(() => modelGroups.value.filter(group => !group.disabled || orgForm.value.modelGroups.includes(group.id)))
+
+  async function loadModelGroups(force = false) {
+    if (modelGroupsLoading.value || (modelGroupsLoaded.value && !force)) return
+    modelGroupsLoading.value = true
+    modelGroupsError.value = ''
+    try {
+      const response = await fetchAPI<{ model_groups: Array<{ id: number, group_name: string, disabled?: boolean, deleted_at?: string | null }> }>('/model-groups')
+      modelGroups.value = (Array.isArray(response.model_groups) ? response.model_groups : [])
+        .filter(group => !group.deleted_at)
+        .map(group => ({ id: group.id, name: group.group_name || t('organizations.unnamedModelGroup'), disabled: Boolean(group.disabled) }))
+      modelGroupsLoaded.value = true
+    } catch (error) {
+      modelGroupsError.value = organizationErrorMessage(error, t('organizations.modelGroupsLoadFailed'))
+    } finally {
+      modelGroupsLoading.value = false
+    }
+  }
+
+  const modelGroupName = (id: number) => modelGroups.value.find(group => group.id === id)?.name || t('organizations.unknownModelGroup')
+
+  function toggleModelGroup(id: number, checked: boolean) {
+    const current = orgForm.value.modelGroups.filter(item => item !== id)
+    orgForm.value.modelGroups = checked ? [...current, id].sort((a, b) => a - b) : current
+  }
+
+  async function loadUsers(force = false) {
+    if (usersLoading.value || (usersLoaded.value && !force)) return
+    usersLoading.value = true
+    try {
+      const response = await fetchAPI<{ users: Array<OrganizationUserOption & { approval_pending?: boolean, deleted_at?: string | null }> }>('/users')
+      users.value = (Array.isArray(response.users) ? response.users : [])
+        .filter(user => !user.approval_pending && !user.deleted_at)
+        .map(user => ({ id: user.id, username: user.username }))
+      usersLoaded.value = true
+    } catch (error) {
+      toast.add({ title: t('organizations.usersLoadFailed'), description: organizationErrorMessage(error, ''), color: 'error' })
+    } finally {
+      usersLoading.value = false
+    }
+  }
+
+  async function loadAll() {
+    loading.value = true
+    errorMessage.value = ''
+    try {
+      const response = await fetchAPI<{ organizations: Organization[] }>('/organizations')
+      unsupported.value = false
+      organizations.value = Array.isArray(response.organizations) ? response.organizations : []
+    } catch (error) {
+      if (isOrganizationsUnsupported(error)) unsupported.value = true
+      else errorMessage.value = organizationErrorMessage(error, t('organizations.loadFailed'))
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function loadDetail(id: number) {
+    detailLoading.value = true
+    try {
+      const [orgResponse, keysResponse] = await Promise.all([
+        fetchAPI<{ organization: Organization }>(`/organizations/${id}`),
+        fetchAPI<{ api_keys: OrganizationAPIKey[] }>(`/organizations/${id}/api-keys`),
+      ])
+      selected.value = orgResponse.organization
+      selectedKeys.value = Array.isArray(keysResponse.api_keys) ? keysResponse.api_keys : []
+    } catch (error) {
+      toast.add({ title: t('organizations.loadFailed'), description: organizationErrorMessage(error, ''), color: 'error' })
+    } finally {
+      detailLoading.value = false
+    }
+  }
+
+  async function openDetail(org: Organization) {
+    selected.value = org
+    selectedKeys.value = []
+    detailOpen.value = true
+    await Promise.all([loadDetail(org.id), loadModelGroups()])
+  }
+
+  function openCreateOrg() {
+    editingOrg.value = null
+    orgForm.value = emptyOrganizationForm()
+    orgFormError.value = ''
+    orgFormOpen.value = true
+    void loadUsers()
+    void loadModelGroups()
+  }
+
+  function openEditOrg(org: Organization) {
+    editingOrg.value = org
+    orgForm.value = { name: org.name, credits: String(org.credits ?? ''), ownerUserId: null, modelGroups: [...(org.model_groups || [])] }
+    orgFormError.value = ''
+    orgFormOpen.value = true
+    void loadModelGroups()
+  }
+
+  async function saveOrg() {
+    if (orgSaving.value) return
+    const form = orgForm.value
+    const editing = editingOrg.value
+    if (!form.name.trim()) { orgFormError.value = t('organizations.error.name'); return }
+    const body: Record<string, unknown> = { name: form.name.trim() }
+    if (form.credits.trim() !== '') {
+      const credits = Number(form.credits)
+      if (!Number.isFinite(credits)) { orgFormError.value = t('organizations.error.credits'); return }
+      body.credits = credits
+    }
+    if (form.modelGroups.length || editing) body.model_groups = [...form.modelGroups]
+    if (!editing && form.ownerUserId !== null) body.owner_user_id = form.ownerUserId
+    orgSaving.value = true
+    orgFormError.value = ''
+    try {
+      if (editing) await fetchAPI(`/organizations/${editing.id}`, { method: 'PATCH', body })
+      else await fetchAPI('/organizations', { method: 'POST', body })
+      orgFormOpen.value = false
+      toast.add({ title: editing ? t('organizations.updated') : t('organizations.created'), color: 'success' })
+      await loadAll()
+      if (editing && selected.value?.id === editing.id) await loadDetail(editing.id)
+    } catch (error) {
+      orgFormError.value = organizationErrorMessage(error, t('organizations.saveFailed'))
+    } finally {
+      orgSaving.value = false
+    }
+  }
+
+  function openAddMember() {
+    editingMember.value = null
+    memberForm.value = emptyMemberForm()
+    memberFormError.value = ''
+    memberFormOpen.value = true
+    void loadUsers()
+  }
+
+  function openEditMember(member: OrganizationMember) {
+    editingMember.value = member
+    memberForm.value = {
+      username: member.username, role: member.role,
+      limit1d: member.limit_1d_credits === null ? '' : String(member.limit_1d_credits),
+      limit7d: member.limit_7d_credits === null ? '' : String(member.limit_7d_credits),
+      limit30d: member.limit_30d_credits === null ? '' : String(member.limit_30d_credits),
+    }
+    memberFormError.value = ''
+    memberFormOpen.value = true
+  }
+
+  async function saveMember() {
+    const org = selected.value
+    if (!org || memberSaving.value) return
+    const form = memberForm.value
+    const editing = editingMember.value
+    if (!editing && !form.username.trim()) { memberFormError.value = t('organizations.error.username'); return }
+    const limits = [parseOptionalLimit(form.limit1d), parseOptionalLimit(form.limit7d), parseOptionalLimit(form.limit30d)]
+    if (limits.some(limit => !limit.ok)) { memberFormError.value = t('organizations.error.limit'); return }
+    const [l1d, l7d, l30d] = limits.map(limit => (limit.ok ? limit.value : null))
+    const body: Record<string, unknown> = { role: form.role, limit_1d_credits: l1d, limit_7d_credits: l7d, limit_30d_credits: l30d }
+    if (!editing) body.username = form.username.trim()
+    memberSaving.value = true
+    memberFormError.value = ''
+    try {
+      if (editing) await fetchAPI(`/organizations/${org.id}/members/${editing.user_id}`, { method: 'PATCH', body })
+      else await fetchAPI(`/organizations/${org.id}/members`, { method: 'POST', body })
+      memberFormOpen.value = false
+      toast.add({ title: editing ? t('organizations.member.updated') : t('organizations.member.added'), color: 'success' })
+      await Promise.all([loadDetail(org.id), loadAll()])
+    } catch (error) {
+      memberFormError.value = organizationErrorMessage(error, t('organizations.member.saveFailed'))
+    } finally {
+      memberSaving.value = false
+    }
+  }
+
+  async function createKeyFor(member: OrganizationMember) {
+    const org = selected.value
+    if (!org || creatingKeyFor.value !== null) return
+    creatingKeyFor.value = member.user_id
+    try {
+      await fetchAPI(`/organizations/${org.id}/api-keys`, { method: 'POST', body: { member_user_id: member.user_id } })
+      toast.add({ title: t('organizations.key.created'), description: member.username, color: 'success' })
+      await loadDetail(org.id)
+    } catch (error) {
+      toast.add({ title: t('organizations.key.createFailed'), description: organizationErrorMessage(error, ''), color: 'error' })
+    } finally {
+      creatingKeyFor.value = null
+    }
+  }
+
+  function askDelete(kind: 'org' | 'member' | 'key', label: string, run: () => Promise<void>) {
+    deleteError.value = ''
+    deleteTarget.value = { kind, label, run }
+  }
+
+  function askDeleteOrg(org: Organization) {
+    askDelete('org', org.name, async () => {
+      await fetchAPI(`/organizations/${org.id}`, { method: 'DELETE' })
+      if (selected.value?.id === org.id) detailOpen.value = false
+      await loadAll()
+    })
+  }
+
+  function askRemoveMember(member: OrganizationMember) {
+    const org = selected.value
+    if (!org) return
+    askDelete('member', member.username, async () => {
+      await fetchAPI(`/organizations/${org.id}/members/${member.user_id}`, { method: 'DELETE' })
+      await Promise.all([loadDetail(org.id), loadAll()])
+    })
+  }
+
+  function askDeleteKey(key: OrganizationAPIKey) {
+    const org = selected.value
+    if (!org) return
+    askDelete('key', key.display_name || `#${key.id}`, async () => {
+      await fetchAPI(`/organizations/${org.id}/api-keys/${key.id}`, { method: 'DELETE' })
+      await loadDetail(org.id)
+    })
+  }
+
+  async function confirmDelete() {
+    const target = deleteTarget.value
+    if (!target || deleting.value) return
+    deleting.value = true
+    deleteError.value = ''
+    try {
+      await target.run()
+      deleteTarget.value = null
+      toast.add({ title: t('organizations.deleted'), color: 'success' })
+    } catch (error) {
+      deleteError.value = organizationErrorMessage(error, t('organizations.deleteFailed'))
+    } finally {
+      deleting.value = false
+    }
+  }
+
+  return {
+    t, loading, unsupported, errorMessage, organizations,
+    selected, selectedKeys, detailOpen, detailLoading, openDetail,
+    orgFormOpen, orgForm, orgFormError, orgSaving, editingOrg, openCreateOrg, openEditOrg, saveOrg,
+    memberFormOpen, memberForm, memberFormError, memberSaving, editingMember, openAddMember, openEditMember, saveMember,
+    creatingKeyFor, createKeyFor, userOptions, memberUserOptions, usersLoading, loadUsers,
+    modelGroupOptions, modelGroupsLoading, modelGroupsError, loadModelGroups, toggleModelGroup, modelGroupName,
+    deleteTarget, deleting, deleteError, askDeleteOrg, askRemoveMember, askDeleteKey, confirmDelete,
+    loadAll,
+  }
+}
+
+const organizationsWorkspaceKey: InjectionKey<ReturnType<typeof createOrganizationsWorkspace>> = Symbol('organizations-workspace')
+
+export function provideOrganizationsWorkspace() {
+  // Created once in the page scope so child sections share the same workspace generation.
+  const workspace = createOrganizationsWorkspace()
+  provide(organizationsWorkspaceKey, workspace)
+  return workspace
+}
+
+export function useOrganizationsWorkspace() {
+  const workspace = inject(organizationsWorkspaceKey)
+  if (!workspace) throw new Error('Organizations workspace is not provided')
+  return workspace
+}

@@ -138,6 +138,19 @@ describe('Nuxt telemetry integration', () => {
     expect(source).toContain('columnDefinitions.filter(column => visibleColumnKeys.value.includes(column.accessorKey))')
     expect(source).toContain('onUpdateChecked: checked => setColumnVisible')
   })
+  test('usage dropdown choices load independently of records and applied filters', () => {
+    const source = readFileSync(new URL('../composables/usage/useUsageOverview.ts', import.meta.url), 'utf8')
+    expect(source).not.toContain('recordsResponse')
+    expect(source).toContain("('/request-events/filter-options', { signal: scope.controller.signal })")
+    expect(source).toContain('filterOptions.value.providers')
+    expect(source).toContain('filterOptions.value.models')
+    expect(source).toContain('if (!scope.disposed && current === version)')
+    const view = readFileSync(new URL('../components/admin/usage/overview/UsageFilters.vue', import.meta.url), 'utf8')
+    expect(view).not.toContain('AdminInputMenu')
+    expect(view).toContain(':items="providerOptions"')
+    expect(view).toContain(':items="modelOptions"')
+  })
+
   test('usage filter validation returns before changing applied filters, pagination or requests', async () => {
     const source = readFileSync(new URL('../composables/usage/useUsagePage.ts', import.meta.url), 'utf8')
     const body = source.split('  const applyFilters = async () => {')[1]!.split('\n  const refreshAll =')[0]!.trim()

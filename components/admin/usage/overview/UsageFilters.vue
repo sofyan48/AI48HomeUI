@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import AdminField from '~/components/admin/general/controls/AdminField.vue'
-import AdminInputMenu from '~/components/admin/general/controls/AdminInputMenu.vue'
+import { computed } from 'vue'
 import AdminInput from '~/components/admin/general/controls/AdminInput.vue'
 import AdminSelect from '~/components/admin/general/controls/AdminSelect.vue'
 import AdminSwitch from '~/components/admin/general/controls/AdminSwitch.vue'
@@ -9,6 +9,14 @@ import { useUsagePage } from '~/composables/usage/useUsagePage'
 
 const { t, rangePreset, rangeOptions, selectRange, filters, showAdvancedFilters, allOptionValue, credentialTypeOptions, overviewScopeLabel, applyFilters, resetFilters, autoRefresh, refreshStatusText, refreshAll, overview: overviewState } = useUsagePage()
 const { loading, providerSuggestions, modelSuggestions } = overviewState
+
+// Keep the selected value available when a filtered refresh narrows suggestions.
+function filterOptions(values: string[], selected: string, label: string) {
+  const options = [...new Set([...values, selected].filter(Boolean))].sort()
+  return [{ label, value: allOptionValue }, ...options.map(value => ({ label: value, value }))]
+}
+const providerOptions = computed(() => filterOptions(providerSuggestions.value, filters.value.provider, t('usage.allProviders')))
+const modelOptions = computed(() => filterOptions(modelSuggestions.value, filters.value.model, t('usage.allModels')))
 </script>
 
 <template>
@@ -22,10 +30,10 @@ const { loading, providerSuggestions, modelSuggestions } = overviewState
         <AdminField :label="t('usage.endDate')" class="w-full sm:w-40"><AppDateInput v-model="filters.to" type="date" :min="filters.from" class="w-full" /></AdminField>
       </template>
       <AdminField :label="t('common.provider')" class="w-full sm:w-48">
-        <AdminInputMenu v-model="filters.provider" :items="providerSuggestions" create-item @create="filters.provider = $event.trim()" :placeholder="t('usage.allProviders')" class="w-full" />
+        <AdminSelect :model-value="filters.provider || allOptionValue" :items="providerOptions" value-key="value" label-key="label" :aria-label="t('common.provider')" class="w-full" @update:model-value="filters.provider = $event === allOptionValue ? '' : String($event ?? '')" />
       </AdminField>
       <AdminField :label="t('common.model')" class="w-full sm:w-56">
-        <AdminInputMenu v-model="filters.model" :items="modelSuggestions" create-item @create="filters.model = $event.trim()" :placeholder="t('usage.allModels')" class="w-full" />
+        <AdminSelect :model-value="filters.model || allOptionValue" :items="modelOptions" value-key="value" label-key="label" :aria-label="t('common.model')" class="w-full" @update:model-value="filters.model = $event === allOptionValue ? '' : String($event ?? '')" />
       </AdminField>
       <AppButton type="button" color="neutral" :variant="showAdvancedFilters ? 'soft' : 'ghost'" icon="i-tabler-dots-vertical" :aria-label="showAdvancedFilters ? t('usage.hideAdvanced') : t('usage.showAdvanced')" :title="showAdvancedFilters ? t('usage.hideAdvanced') : t('usage.advancedFilters')" :aria-expanded="showAdvancedFilters" @click="showAdvancedFilters = !showAdvancedFilters" />
       <AppButton type="submit" color="primary" icon="i-tabler-filter" :loading="loading">{{ t('common.apply') }}</AppButton>
