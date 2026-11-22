@@ -7,7 +7,10 @@ import { maskKey } from '~/composables/workspace/keys'
 import { useWorkspaceClipboard } from '~/composables/workspace/common'
 import { usePortalOrganizations } from '~/composables/organizations-portal/usePortalOrganizations'
 
-const { t, keys, isOwner, canCreateKeys, keyName, keyCreating, pendingAction, memberName, createKey, deleteKey } = usePortalOrganizations()
+const {
+  t, keys, isOwner, canCreateKeys, keyName, keyCreating, pendingAction, memberName, createKey, deleteKey,
+  renamingKeyId, renameDraft, startRenameKey, cancelRenameKey, saveRenameKey,
+} = usePortalOrganizations()
 const copyText = useWorkspaceClipboard()
 </script>
 
@@ -29,11 +32,17 @@ const copyText = useWorkspaceClipboard()
 
     <ul v-if="keys.length" class="mt-4 divide-y divide-[var(--ui-border)]">
       <li v-for="key in keys" :key="key.id" class="flex flex-wrap items-center justify-between gap-3 py-3">
-        <div class="min-w-0">
-          <p class="break-words text-sm font-medium">{{ key.display_name || t('org.unnamedKey') }}</p>
+        <form v-if="renamingKeyId === key.id" class="flex min-w-0 flex-1 items-center gap-2" @submit.prevent="saveRenameKey(key)" @keydown.esc.prevent="cancelRenameKey">
+          <PortalInput v-model="renameDraft" icon="i-tabler-tag" maxlength="128" autofocus class="min-w-0 flex-1" :aria-label="t('org.keyName')" :placeholder="t('org.keyNamePlaceholder')" />
+          <AppButton type="submit" size="xs" icon="i-tabler-check" :aria-label="t('org.keyRenameSave')" :loading="pendingAction === `rename:${key.id}`" />
+          <AppButton type="button" size="xs" color="neutral" variant="ghost" icon="i-tabler-x" :aria-label="t('common.cancel')" :disabled="pendingAction === `rename:${key.id}`" @click="cancelRenameKey" />
+        </form>
+        <div v-else class="min-w-0">
+          <p class="break-words text-sm font-medium" :class="key.display_name ? '' : 'text-[var(--ui-text-muted)] italic'">{{ key.display_name || t('org.unnamedKey') }}</p>
           <p class="font-mono text-xs text-[var(--ui-text-muted)]">{{ maskKey(key.api_key) }}<span v-if="isOwner"> · {{ memberName(key.created_by_user_id) }}</span></p>
         </div>
-        <div class="flex items-center gap-1">
+        <div v-if="renamingKeyId !== key.id" class="flex items-center gap-1">
+          <AppButton type="button" size="xs" color="neutral" variant="ghost" icon="i-tabler-tag" :aria-label="t('org.keyRename')" :title="t('org.keyRename')" :disabled="pendingAction !== null" @click="startRenameKey(key)" />
           <AppButton type="button" size="xs" color="neutral" variant="ghost" icon="i-tabler-copy" :aria-label="t('org.copyKey')" @click="copyText(key.api_key, t('org.copied'))" />
           <AppButton type="button" size="xs" color="error" variant="ghost" icon="i-tabler-trash" :aria-label="t('org.deleteKey')" :loading="pendingAction === `key:${key.id}`" @click="deleteKey(key)" />
         </div>

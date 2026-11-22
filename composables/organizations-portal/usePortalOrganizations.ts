@@ -38,6 +38,9 @@ function createPortalOrganizations() {
   const editingMember = ref<PortalOrgMember | null>(null)
   const keyName = ref('')
   const keyCreating = ref(false)
+  // Inline rename state: the key being renamed and its draft name.
+  const renamingKeyId = ref<number | null>(null)
+  const renameDraft = ref('')
   const createdKey = ref<string>('')
   const pendingAction = ref<string | null>(null)
 
@@ -148,15 +151,17 @@ function createPortalOrganizations() {
     }
   }
 
-  async function runAction(id: string, action: () => Promise<unknown>, success: string, failure: string) {
-    if (pendingAction.value) return
+  async function runAction(id: string, action: () => Promise<unknown>, success: string, failure: string): Promise<boolean> {
+    if (pendingAction.value) return false
     pendingAction.value = id
     try {
       await action()
       toast.add({ title: success, color: 'success' })
       await loadSelected()
+      return true
     } catch (error) {
       toast.add({ title: failure, description: portalOrgError(error, ''), color: 'error' })
+      return false
     } finally {
       pendingAction.value = null
     }
@@ -165,11 +170,27 @@ function createPortalOrganizations() {
   const setMemberKeysAllowed = (allowed: boolean) => runAction('settings',
     () => fetchAPI(base.value, { method: 'PATCH', body: { allow_member_keys: allowed } }), t('org.settingsSaved'), t('org.settingsFailed'))
 
-  const createKeyForMember = (member: PortalOrgMember) => runAction(`issue:${member.user_id}`,
+  const createKeyForMember = (member: PortalOrgMember, name = '') => runAction(`issue:${member.user_id}`,
     async () => {
-      const response = await fetchAPI<{ api_key: PortalOrgKey }>(`${base.value}/api-keys`, { method: 'POST', body: { member_user_id: member.user_id } })
+      const displayName = name.trim()
+      const body: Record<string, unknown> = { member_user_id: member.user_id }
+      if (displayName) body.display_name = displayName
+      const response = await fetchAPI<{ api_key: PortalOrgKey }>(`${base.value}/api-keys`, { method: 'POST', body })
       createdKey.value = response.api_key?.api_key || ''
     }, t('org.keyCreated'), t('org.keyCreateFailed'))
+
+  function startRenameKey(key: PortalOrgKey) {
+    renamingKeyId.value = key.id
+    renameDraft.value = key.display_name || ''
+  }
+  function cancelRenameKey() { renamingKeyId.value = null; renameDraft.value = '' }
+  async function saveRenameKey(key: PortalOrgKey) {
+    const name = renameDraft.value.trim()
+    if (name === (key.display_name || '')) { cancelRenameKey(); return }
+    const saved = await runAction(`rename:${key.id}`,
+      () => fetchAPI(`${base.value}/api-keys/${key.id}`, { method: 'PATCH', body: { display_name: name || null } }), t('org.keyRenamed'), t('org.keyRenameFailed'))
+    if (saved) cancelRenameKey()
+  }
 
   const deleteKey = (key: PortalOrgKey) => runAction(`key:${key.id}`,
     () => fetchAPI(`${base.value}/api-keys/${key.id}`, { method: 'DELETE', body: {} }), t('org.keyDeleted'), t('org.keyDeleteFailed'))
@@ -240,6 +261,7 @@ function createPortalOrganizations() {
     memberFormOpen, memberForm, memberFormError, memberSaving, editingMember, keyName, keyCreating, createdKey, pendingAction,
     loadMemberships, selectOrganization, createKey, deleteKey, removeMember, leaveOrganization, openMemberForm, saveMember,
     setMemberKeysAllowed, createKeyForMember,
+    renamingKeyId, renameDraft, startRenameKey, cancelRenameKey, saveRenameKey,
   }
 }
 

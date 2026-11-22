@@ -96,4 +96,10 @@ export default {
   'org.tab.members': 'Участники',
   'org.tab.charges': 'Списания',
   'org.dismissKey': 'Скрыть ключ',
+  'org.keyRename': 'Переименовать ключ',
+  'org.keyRenameSave': 'Сохранить название',
+  'org.keyRenamed': 'Ключ переименован',
+  'org.keyRenameFailed': 'Не удалось переименовать ключ',
+  'org.issueKeyTitle': 'Создать ключ для участника',
+  'org.issueKeyDescription': 'Оплачивается организацией, владелец — {name}.',
 } satisfies PortalAreaTranslation<typeof area>

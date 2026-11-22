@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import AppIcon from '~/components/AppIcon.vue'
 import PortalAlert from '~/components/app/general/PortalAlert.vue'
 import PortalBadge from '~/components/app/general/PortalBadge.vue'
@@ -19,6 +19,18 @@ const {
   memberKeysAllowed, settingsSupported, modelGroupOptions, modelGroupName,
   openMemberForm, saveMember, removeMember, setMemberKeysAllowed, createKeyForMember,
 } = usePortalOrganizations()
+
+// Issuing a key for a member asks for an optional name first.
+const issueFor = ref<PortalOrgMember | null>(null)
+const issueName = ref('')
+const issueOpen = computed({ get: () => issueFor.value !== null, set: (open: boolean) => { if (!open) issueFor.value = null } })
+function openIssueKey(member: PortalOrgMember) { issueFor.value = member; issueName.value = '' }
+async function submitIssueKey() {
+  const member = issueFor.value
+  if (!member) return
+  await createKeyForMember(member, issueName.value)
+  issueFor.value = null
+}
 
 const scopeText = (member: PortalOrgMember) =>
   member.model_groups?.length ? member.model_groups.map(modelGroupName).join(', ') : t('org.inheritModelGroups')
@@ -60,13 +72,25 @@ const roleItems = computed(() => [
                     <p class="text-xs text-[var(--ui-text-muted)]"><span v-if="modelGroupOptions">{{ scopeText(member) }} · </span>{{ t('org.keysUsed', { usage: memberKeyUsage(member) }) }}</p>
         </div>
         <div class="flex items-center gap-1">
-          <AppButton type="button" size="xs" color="neutral" variant="ghost" icon="i-tabler-key" :aria-label="t('org.issueKey')" :loading="pendingAction === `issue:${member.user_id}`" @click="createKeyForMember(member)" />
+          <AppButton type="button" size="xs" color="neutral" variant="ghost" icon="i-tabler-key" :aria-label="t('org.issueKey')" :loading="pendingAction === `issue:${member.user_id}`" @click="openIssueKey(member)" />
           <AppButton type="button" size="xs" color="neutral" variant="ghost" icon="i-tabler-pencil" :aria-label="t('org.memberEdit')" @click="openMemberForm(member)" />
           <AppButton type="button" size="xs" color="error" variant="ghost" icon="i-tabler-trash" :aria-label="t('org.memberRemove')" :loading="pendingAction === `member:${member.user_id}`" @click="removeMember(member)" />
         </div>
       </li>
     </ul>
   </AppCard>
+
+  <AppModal v-model:open="issueOpen" :title="t('org.issueKeyTitle')" :description="t('org.issueKeyDescription', { name: issueFor?.username || '' })">
+    <template #body>
+      <form class="space-y-4" @submit.prevent="submitIssueKey">
+        <PortalField :label="t('org.keyName')"><PortalInput v-model="issueName" icon="i-tabler-tag" maxlength="128" autofocus class="w-full" :placeholder="t('org.keyNamePlaceholder')" /></PortalField>
+        <div class="flex justify-end gap-2">
+          <AppButton type="button" color="neutral" variant="ghost" :disabled="pendingAction !== null" @click="issueFor = null">{{ t('common.cancel') }}</AppButton>
+          <AppButton type="submit" icon="i-tabler-key" :loading="issueFor !== null && pendingAction === `issue:${issueFor.user_id}`">{{ t('org.keyCreate') }}</AppButton>
+        </div>
+      </form>
+    </template>
+  </AppModal>
 
   <AppModal v-model:open="memberFormOpen" :title="editingMember ? t('org.memberEditTitle') : t('org.memberAddTitle')" :description="t('org.memberFormDescription')">
     <template #body>

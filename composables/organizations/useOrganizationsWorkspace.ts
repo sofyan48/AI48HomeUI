@@ -2,6 +2,8 @@ import { computed, inject, provide, ref, type InjectionKey } from 'vue'
 import { useApi, useAdminI18n } from '#imports'
 import { useAdminToast } from '~/composables/admin-feedback/useAdminToast'
 import { useWorkspaceState } from '~/composables/useWorkspaceState'
+import { useCapabilities } from '~/composables/useCapabilities'
+import { useOrganizationKeyForm } from './useOrganizationKeyForm'
 import { memberLimitsBody, memberLimitsFromRecord } from './memberLimits'
 import { memberAccessBody, memberAccessFromRecord } from './memberAccess'
 import {
@@ -81,7 +83,6 @@ function createOrganizationsWorkspace() {
   const deleteTarget = ref<{ kind: 'org' | 'member' | 'key', label: string, run: () => Promise<void> } | null>(null)
   const deleting = ref(false)
   const deleteError = ref('')
-  const creatingKeyFor = ref<number | null>(null)
 
   // Personal users for the owner/member search dropdowns. Loaded lazily when a form opens.
   const users = ref<OrganizationUserOption[]>([])
@@ -294,20 +295,7 @@ function createOrganizationsWorkspace() {
     }
   }
 
-  async function createKeyFor(member: OrganizationMember) {
-    const org = selected.value
-    if (!org || creatingKeyFor.value !== null) return
-    creatingKeyFor.value = member.user_id
-    try {
-      await fetchAPI(`/organizations/${org.id}/api-keys`, { method: 'POST', body: { member_user_id: member.user_id } })
-      toast.add({ title: t('organizations.key.created'), description: member.username, color: 'success' })
-      await loadDetail(org.id)
-    } catch (error) {
-      toast.add({ title: t('organizations.key.createFailed'), description: organizationErrorMessage(error, ''), color: 'error' })
-    } finally {
-      creatingKeyFor.value = null
-    }
-  }
+  const keyForm = useOrganizationKeyForm({ fetchAPI, t, toast, selected, supports: useCapabilities().supports, reload: loadDetail })
 
   function askDelete(kind: 'org' | 'member' | 'key', label: string, run: () => Promise<void>) {
     deleteError.value = ''
@@ -362,7 +350,7 @@ function createOrganizationsWorkspace() {
     charges, chargesTotal, chargesPage, chargesLoading, chargesError, chargesPageSize, loadCharges,
     orgFormOpen, orgForm, orgFormError, orgSaving, editingOrg, openCreateOrg, openEditOrg, saveOrg,
     memberFormOpen, memberForm, memberFormError, memberSaving, editingMember, openAddMember, openEditMember, saveMember,
-    creatingKeyFor, createKeyFor, userOptions, memberUserOptions, usersLoading, loadUsers,
+    ...keyForm, userOptions, memberUserOptions, usersLoading, loadUsers,
     modelGroupOptions, memberModelGroupOptions, modelGroupsLoading, modelGroupsError, loadModelGroups, toggleModelGroup, modelGroupName,
     deleteTarget, deleting, deleteError, askDeleteOrg, askRemoveMember, askDeleteKey, confirmDelete,
     loadAll,

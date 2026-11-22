@@ -1,7 +1,7 @@
 <template>
       <AdminDataPanel :title="t('billing.charges.title')" :description="t('billing.charges.records', { count: formatNumber(chargesTotal) })">
         <template #toolbar>
-          <AdminBillingFilterBar v-model:filters="chargeFilters" v-model:preset="chargePreset" :range-options="rangeOptions" :user-options="userSearchOptions" :provider-options="providerSearchOptions" :model-options="modelSearchOptions" :loading="chargesLoading" @range="selectRange('charges', $event)" @apply="applyChargeFilters" @reset="resetChargeFilters" />
+          <AdminBillingFilterBar v-model:filters="chargeFilters" :organization-scope="organizationScope" v-model:preset="chargePreset" :range-options="rangeOptions" :user-options="userSearchOptions" :provider-options="providerSearchOptions" :model-options="modelSearchOptions" :loading="chargesLoading" @range="selectRange('charges', $event)" @apply="applyChargeFilters" @reset="resetChargeFilters" />
         </template>
         <AppTable :columns="chargeColumns" :data="charges" :loading="chargesLoading" :number-offset="(chargePage - 1) * chargePageSize" class="min-w-[36rem] sm:min-w-[56rem]">
           <template #created_at-cell="{ row }"><p class="whitespace-nowrap text-sm">{{ formatDateTime(rowValue(row).created_at) }}</p><p class="max-w-44 truncate font-mono text-xs text-[var(--ui-text-muted)]" :title="rowValue(row).request_id || rowValue(row).id">{{ rowValue(row).request_id || rowValue(row).id }}</p></template>
@@ -20,5 +20,5 @@
 import AdminDataPanel from '~/components/admin/general/DataPanel.vue'
 import AdminTableAction from '~/components/admin/general/TableAction.vue'
 import { useBillingWorkspace } from "~/composables/billing/useBillingWorkspace"
-const { t, formatNumber, chargesTotal, chargeFilters, chargePreset, rangeOptions, userSearchOptions, providerSearchOptions, modelSearchOptions, chargesLoading, selectRange, applyChargeFilters, resetChargeFilters, chargeColumns, charges, chargePage, chargePageSize, formatDateTime, rowValue, chargeUserName, totalChargeTokens, formatCredits, openChargeDetail, changeChargePage, changePageSize } = useBillingWorkspace()
+const { t, organizationScope, formatNumber, chargesTotal, chargeFilters, chargePreset, rangeOptions, userSearchOptions, providerSearchOptions, modelSearchOptions, chargesLoading, selectRange, applyChargeFilters, resetChargeFilters, chargeColumns, charges, chargePage, chargePageSize, formatDateTime, rowValue, chargeUserName, totalChargeTokens, formatCredits, openChargeDetail, changeChargePage, changePageSize } = useBillingWorkspace()
 </script>

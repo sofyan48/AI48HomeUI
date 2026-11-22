@@ -16,9 +16,10 @@
       <div class="flex flex-wrap items-center gap-2 xl:flex-nowrap [&>button]:shrink-0">
         <div class="w-full sm:w-80 xl:min-w-56 xl:flex-1"><div class="flex"><AdminSelect v-model="searchField" :items="searchFieldOptions" value-key="value" label-key="label" class="w-28 shrink-0 [&_button]:rounded-r-none" /><AdminInput v-model="filters.search" icon="i-tabler-search" :placeholder="t('requests.searchPlaceholder')" class="min-w-0 flex-1 [&_input]:rounded-l-none" /></div></div>
         <AdminSelect v-model="timeRange" :items="timeRangeOptions" value-key="value" label-key="label" class="w-36 shrink-0" icon="i-tabler-calendar" :aria-label="t('usage.timeRange')" @update:model-value="applyTimeRange" />
+        <OrganizationScopeFilter v-model:organization="filters.user_id" v-model:member="filters.actor_user_id" :scope="organizationScope" organization-class="w-full sm:w-40 xl:min-w-32 xl:shrink" member-class="w-full sm:w-36 xl:min-w-28 xl:shrink" class="xl:w-auto xl:flex-nowrap" />
         <AdminSelect :model-value="filters.status || allOptionValue" @update:model-value="setSelectFilter('status', $event)" :items="statusOptions" value-key="value" label-key="label" class="w-32 shrink-0" icon="i-tabler-circle-dot" :aria-label="t('common.status')" />
-        <AdminSelectMenu :model-value="filters.provider || allOptionValue" @update:model-value="setSelectFilter('provider', $event)" :items="providerOptions" value-key="value" label-key="label" class="w-36 xl:min-w-28 xl:shrink" icon="i-tabler-cloud" :aria-label="t('common.provider')" />
-        <AdminSelectMenu :model-value="filters.model || allOptionValue" @update:model-value="setSelectFilter('model', $event)" :items="modelOptions" value-key="value" label-key="label" class="w-44 xl:min-w-32 xl:shrink" icon="i-tabler-box" :aria-label="t('common.model')" />
+        <AdminSearchSelect :model-value="filters.provider || allOptionValue" @update:model-value="setSelectFilter('provider', $event ?? '')" :items="providerOptions" class="w-full sm:w-36 xl:min-w-28 xl:shrink" :placeholder="t('usage.allProviders')" :aria-label="t('common.provider')" :clear-label="t('common.reset')" :empty-text="t('common.noResults')" />
+        <AdminSearchSelect :model-value="filters.model || allOptionValue" @update:model-value="setSelectFilter('model', $event ?? '')" :items="modelOptions" class="w-full sm:w-44 xl:min-w-32 xl:shrink" :placeholder="t('usage.allModels')" :aria-label="t('common.model')" :clear-label="t('common.reset')" :empty-text="t('common.noResults')" />
         <AppButton type="button" color="neutral" :variant="advancedOpen ? 'soft' : 'ghost'" icon="i-tabler-dots-vertical" :aria-label="advancedOpen ? t('usage.hideAdvanced') : t('usage.showAdvanced')" :title="advancedOpen ? t('usage.hideAdvanced') : t('usage.advancedFilters')" :aria-expanded="advancedOpen" @click="advancedOpen = !advancedOpen" />
         <AppButton type="button" color="neutral" variant="ghost" @click="resetFilters">{{ t('common.reset') }}</AppButton>
         <AppButton type="submit" icon="i-tabler-filter" :loading="loading">{{ t('common.apply') }}</AppButton>
@@ -117,6 +118,9 @@
 </template>
 
 <script setup>
+import AdminSearchSelect from '~/components/admin/general/controls/AdminSearchSelect.vue'
+import OrganizationScopeFilter from '~/components/admin/general/OrganizationScopeFilter.vue'
+import { useUsagePage } from '~/composables/usage/useUsagePage'
 import AdminField from '~/components/admin/general/controls/AdminField.vue'
 import AdminSelectMenu from '~/components/admin/general/controls/AdminSelectMenu.vue'
 import AdminInput from '~/components/admin/general/controls/AdminInput.vue'
@@ -151,10 +155,12 @@ const toInputDateTime = date => {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
 }
 const defaultFilters = () => ({
-  from: toInputDateTime(new Date(Date.now() - 24 * 60 * 60 * 1000)), to: '', event_type: '', status: '', status_code: '', search: '', provider: '', model: '', home_ip: '', cpa_node: '', credential_type: '', request_id: '', session_id: '', root_session_id: '', user: '', client_key: '', credential_id: '', auth_index: '', executor_type: '', endpoint: '', min_latency_ms: '', max_latency_ms: '', min_amount: '', max_amount: ''
+  from: toInputDateTime(new Date(Date.now() - 24 * 60 * 60 * 1000)), to: '', event_type: '', status: '', status_code: '', search: '', provider: '', model: '', home_ip: '', cpa_node: '', credential_type: '', request_id: '', session_id: '', root_session_id: '', user: '', user_id: '', actor_user_id: '', client_key: '', credential_id: '', auth_index: '', executor_type: '', endpoint: '', min_latency_ms: '', max_latency_ms: '', min_amount: '', max_amount: ''
 })
 
-const filters = ref(defaultFilters())
+// The overview organization scope (or a deep link) carries over into the request list.
+const { organizationScope, appliedFilters: overviewScope } = useUsagePage()
+const filters = ref({ ...defaultFilters(), user_id: overviewScope.value.organization, actor_user_id: overviewScope.value.organization ? overviewScope.value.member : '' })
 const appliedFilters = ref({ ...filters.value })
 const searchField = ref('all')
 const appliedSearchField = ref('all')
@@ -294,7 +300,11 @@ const pageStart = computed(() => total.value ? ((page.value - 1) * pageSize.valu
 const pageEnd = computed(() => Math.min(page.value * pageSize.value, total.value))
 const visibleFailures = computed(() => events.value.filter(event => event.failed).length)
 const visibleTokens = computed(() => events.value.reduce((sum, event) => sum + (Number(event.tokens?.total_tokens) || 0), 0))
-const optionList = (key, label) => [{ label, value: allOptionValue }, ...(Array.isArray(filterOptions.value?.[key]) ? filterOptions.value[key] : []).filter(value => value !== '' && value != null).map(value => ({ label: value, value }))]
+const optionList = (key, label) => {
+  const selected = key === 'providers' ? filters.value.provider : key === 'models' ? filters.value.model : ''
+  const values = [...new Set([...(Array.isArray(filterOptions.value?.[key]) ? filterOptions.value[key] : []), selected].filter(value => value !== '' && value != null))]
+  return [{ label, value: allOptionValue }, ...values.map(value => ({ label: value, value }))]
+}
 const setSelectFilter = (field, value) => { filters.value[field] = value === allOptionValue ? '' : value }
 const eventTypeOptions = computed(() => optionList('event_types', t('requests.allEventTypes')))
 const providerOptions = computed(() => optionList('providers', t('usage.allProviders')))

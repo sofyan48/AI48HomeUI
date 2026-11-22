@@ -20,7 +20,8 @@
       </template>
       <template #actions-cell="{ row }">
         <div class="flex justify-end gap-1">
-          <AdminTableAction action="add" icon="i-tabler-key" :label="t('organizations.key.create')" :loading="creatingKeyFor === member(row).user_id" @click="createKeyFor(member(row))" />
+          <AppButton size="xs" color="neutral" variant="ghost" icon="i-tabler-chart-bar" :aria-label="t('organizations.memberUsage', { name: member(row).username })" :title="t('organizations.memberUsage', { name: member(row).username })" :to="{ path: '/admin/usage', query: { organization: selected?.id, member: member(row).user_id } }" />
+          <AdminTableAction action="add" icon="i-tabler-key" :label="t('organizations.key.create')" @click="openCreateKey(member(row))" />
           <AdminTableAction action="edit" :label="t('organizations.member.edit')" @click="openEditMember(member(row))" />
           <AdminTableAction action="delete" :label="t('organizations.member.remove')" destructive @click="askRemoveMember(member(row))" />
         </div>
@@ -42,7 +43,7 @@ import { memberLimitsSummary } from '~/composables/organizations/memberLimits'
 import { memberKeyUsage } from '~/composables/organizations/memberAccess'
 
 const {
-  t, selected, detailLoading, openAddMember, openEditMember, askRemoveMember, createKeyFor, creatingKeyFor, modelGroupName,
+  t, selected, detailLoading, openAddMember, openEditMember, askRemoveMember, openCreateKey, modelGroupName,
 } = useOrganizationsWorkspace()
 
 const members = computed(() => selected.value?.members || [])

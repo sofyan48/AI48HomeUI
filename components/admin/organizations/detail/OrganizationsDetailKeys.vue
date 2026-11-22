@@ -13,7 +13,8 @@
         <span class="text-xs text-[var(--ui-text-muted)]">{{ formatDate(key(row).created_at) }}</span>
       </template>
       <template #actions-cell="{ row }">
-        <div class="flex justify-end">
+        <div class="flex justify-end gap-1">
+          <AdminTableAction v-if="canRenameKeys" action="edit" icon="i-tabler-tag" :label="t('organizations.key.rename')" @click="openRenameKey(key(row))" />
           <AdminTableAction action="delete" :label="t('organizations.key.delete')" destructive @click="askDeleteKey(key(row))" />
         </div>
       </template>
@@ -31,7 +32,7 @@ import AdminTableAction from '~/components/admin/general/TableAction.vue'
 import { useOrganizationsWorkspace } from '~/composables/organizations/useOrganizationsWorkspace'
 import type { OrganizationAPIKey } from '~/composables/organizations/types'
 
-const { t, selected, selectedKeys, detailLoading, askDeleteKey } = useOrganizationsWorkspace()
+const { t, selected, selectedKeys, detailLoading, askDeleteKey, canRenameKeys, openRenameKey } = useOrganizationsWorkspace()
 const { intlLocale } = useAdminI18n()
 
 const columns = computed(() => [

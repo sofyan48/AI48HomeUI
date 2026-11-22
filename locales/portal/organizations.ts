@@ -95,6 +95,12 @@ export default definePortalMessages({
   'org.tab.members': 'Members',
   'org.tab.charges': 'Charges',
   'org.dismissKey': 'Hide key',
+  'org.keyRename': 'Rename key',
+  'org.keyRenameSave': 'Save name',
+  'org.keyRenamed': 'Key renamed',
+  'org.keyRenameFailed': 'Key could not be renamed',
+  'org.issueKeyTitle': 'Create key for member',
+  'org.issueKeyDescription': 'Billed to the organization and owned by {name}.',
 }, {
   'org.title': 'Organisasi',
   'org.loadFailed': 'Organisasi tidak dapat dimuat',
@@ -190,4 +196,10 @@ export default definePortalMessages({
   'org.tab.members': 'Member',
   'org.tab.charges': 'Tagihan',
   'org.dismissKey': 'Sembunyikan key',
+  'org.keyRename': 'Ganti nama key',
+  'org.keyRenameSave': 'Simpan nama',
+  'org.keyRenamed': 'Nama key diperbarui',
+  'org.keyRenameFailed': 'Nama key gagal diperbarui',
+  'org.issueKeyTitle': 'Buat key untuk member',
+  'org.issueKeyDescription': 'Ditagihkan ke organisasi dan dimiliki {name}.',
 })

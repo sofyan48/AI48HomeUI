@@ -52,6 +52,7 @@
     <OrganizationsFormDialog />
     <OrganizationsDetailDialog />
     <OrganizationsMemberDialog />
+    <OrganizationsKeyDialog />
 
     <AppConfirmModal
       :open="deleteTarget !== null"
@@ -75,6 +76,7 @@ import AdminTableAction from '~/components/admin/general/TableAction.vue'
 import OrganizationsFormDialog from '~/components/admin/organizations/OrganizationsFormDialog.vue'
 import OrganizationsDetailDialog from '~/components/admin/organizations/OrganizationsDetailDialog.vue'
 import OrganizationsMemberDialog from '~/components/admin/organizations/OrganizationsMemberDialog.vue'
+import OrganizationsKeyDialog from '~/components/admin/organizations/OrganizationsKeyDialog.vue'
 import { useDataSync } from '~/composables/useDataSync'
 import { provideOrganizationsWorkspace } from '~/composables/organizations/useOrganizationsWorkspace'
 import type { Organization } from '~/composables/organizations/types'

@@ -1,5 +1,5 @@
 <template>
-      <AdminBillingFilterBar v-model:filters="overviewFilters" v-model:preset="overviewPreset" :range-options="rangeOptions" :user-options="userSearchOptions" :provider-options="providerSearchOptions" :model-options="modelSearchOptions" :loading="overviewLoading" @range="selectRange('overview', $event)" @apply="applyOverviewFilters" @reset="resetOverviewFilters" />
+      <AdminBillingFilterBar v-model:filters="overviewFilters" :organization-scope="organizationScope" v-model:preset="overviewPreset" :range-options="rangeOptions" :user-options="userSearchOptions" :provider-options="providerSearchOptions" :model-options="modelSearchOptions" :loading="overviewLoading" @range="selectRange('overview', $event)" @apply="applyOverviewFilters" @reset="resetOverviewFilters" />
 
       <template v-if="overview">
         <section class="ledger" :aria-label="t('billing.overview.summaryLabel')">
@@ -101,5 +101,5 @@
 import PortalSkeleton from '~/components/app/general/PortalSkeleton.vue'
 import AppIcon from '~/components/AppIcon.vue'
 import { useBillingWorkspace } from "~/composables/billing/useBillingWorkspace"
-const { t, overviewFilters, overviewPreset, rangeOptions, userSearchOptions, providerSearchOptions, modelSearchOptions, overviewLoading, selectRange, applyOverviewFilters, resetOverviewFilters, overview, financeMetrics, overviewRange, savedReportTimezone, usageMetrics, dailyTrend, trendWidth, formatCredits, formatNumber, topUsers, rankingGroups, share, pageError } = useBillingWorkspace()
+const { t, organizationScope, overviewFilters, overviewPreset, rangeOptions, userSearchOptions, providerSearchOptions, modelSearchOptions, overviewLoading, selectRange, applyOverviewFilters, resetOverviewFilters, overview, financeMetrics, overviewRange, savedReportTimezone, usageMetrics, dailyTrend, trendWidth, formatCredits, formatNumber, topUsers, rankingGroups, share, pageError } = useBillingWorkspace()
 </script>

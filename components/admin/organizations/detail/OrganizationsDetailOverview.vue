@@ -29,7 +29,9 @@
     <p v-if="selected.pending_topup" class="rounded-md border border-[var(--ui-border)] p-3 text-sm">
       {{ t('organizations.pendingTopup', { amount: selected.pending_topup.amount }) }}
     </p>
-    <div class="flex justify-end">
+    <div class="flex flex-wrap justify-end gap-2">
+      <AppButton size="sm" color="neutral" variant="ghost" icon="i-tabler-chart-bar" :to="{ path: '/admin/usage', query: { organization: selected.id } }">{{ t('organizations.viewUsage') }}</AppButton>
+      <AppButton size="sm" color="neutral" variant="ghost" icon="i-tabler-receipt" :to="{ path: '/admin/billing', query: { organization: selected.id, section: 'charges' } }">{{ t('organizations.viewBilling') }}</AppButton>
       <AppButton size="sm" color="neutral" variant="outline" icon="i-tabler-pencil" @click="openEditOrg(selected)">{{ t('organizations.edit') }}</AppButton>
     </div>
   </div>

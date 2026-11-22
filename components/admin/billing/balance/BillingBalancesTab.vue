@@ -5,7 +5,7 @@
           <AppButton size="sm" icon="i-tabler-plus" @click="openBalanceAdjustment('recharge')">{{ t('billing.balances.recharge') }}</AppButton>
         </template>
         <template #toolbar>
-          <AdminBillingFilterBar v-model:filters="balanceFilters" v-model:preset="balancePreset" :range-options="rangeOptions" :user-options="userSearchOptions" :loading="balancesLoading" @range="selectRange('balances', $event)" @apply="applyBalanceFilters" @reset="resetBalanceFilters" />
+          <AdminBillingFilterBar v-model:filters="balanceFilters" :organization-scope="organizationScope" v-model:preset="balancePreset" :range-options="rangeOptions" :user-options="userSearchOptions" :loading="balancesLoading" @range="selectRange('balances', $event)" @apply="applyBalanceFilters" @reset="resetBalanceFilters" />
         </template>
         <AppTable :columns="balanceColumns" :data="balanceRecords" :loading="balancesLoading" :number-offset="(balancePage - 1) * balancePageSize" class="min-w-[30rem] sm:min-w-[52rem]">
           <template #created_at-cell="{ row }"><p class="whitespace-nowrap text-sm">{{ formatDateTime(rowValue(row).created_at) }}</p><p class="font-mono text-xs text-[var(--ui-text-muted)]">#{{ rowValue(row).id }}</p></template>
@@ -25,5 +25,5 @@
 import AdminDataPanel from '~/components/admin/general/DataPanel.vue'
 import AdminTableAction from '~/components/admin/general/TableAction.vue'
 import { useBillingWorkspace } from "~/composables/billing/useBillingWorkspace"
-const { t, formatNumber, balancesTotal, openBalanceAdjustment, balanceFilters, balancePreset, rangeOptions, userSearchOptions, balancesLoading, selectRange, applyBalanceFilters, resetBalanceFilters, balanceColumns, balanceRecords, balancePage, balancePageSize, formatDateTime, rowValue, balanceUserName, balanceTypeLabel, formatCredits, openBalanceDetail, changeBalancePage, changePageSize } = useBillingWorkspace()
+const { t, organizationScope, formatNumber, balancesTotal, openBalanceAdjustment, balanceFilters, balancePreset, rangeOptions, userSearchOptions, balancesLoading, selectRange, applyBalanceFilters, resetBalanceFilters, balanceColumns, balanceRecords, balancePage, balancePageSize, formatDateTime, rowValue, balanceUserName, balanceTypeLabel, formatCredits, openBalanceDetail, changeBalancePage, changePageSize } = useBillingWorkspace()
 </script>

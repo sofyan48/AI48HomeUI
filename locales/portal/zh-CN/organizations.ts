@@ -96,4 +96,10 @@ export default {
   'org.tab.members': '成员',
   'org.tab.charges': '扣费',
   'org.dismissKey': '隐藏 Key',
+  'org.keyRename': '重命名 Key',
+  'org.keyRenameSave': '保存名称',
+  'org.keyRenamed': 'Key 已重命名',
+  'org.keyRenameFailed': 'Key 重命名失败',
+  'org.issueKeyTitle': '为成员创建 Key',
+  'org.issueKeyDescription': '计入组织账单，归属 {name}。',
 } satisfies PortalAreaTranslation<typeof area>

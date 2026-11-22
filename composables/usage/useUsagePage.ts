@@ -15,6 +15,8 @@ import { useUsageDetail } from '~/composables/usage/useUsageDetail'
 import { dateRangeError } from '~/composables/dateRange'
 import { useUsagePresentation } from '~/composables/usage/useUsagePresentation'
 import { createUsageRequestScope } from '~/composables/usage/useUsageRequestScope'
+import { useOrganizationScope } from '~/composables/organizations/useOrganizationScope'
+import { organizationScopeFromQuery } from '~/composables/organizations/organizationScope'
 
 /**
  * Shared state for the admin usage page (/admin/usage).
@@ -42,7 +44,9 @@ function createUsagePage() {
   const isActive = () => activeView.value === 'overview'
 
   const errorMessage = useWorkspaceState('admin:usage:errorMessage', () => (''))
-  const filterState = useUsageFilters(t)
+  // Organization deep links (/admin/usage?organization=<id>&member=<id>) preselect the scope.
+  const organizationScope = useOrganizationScope()
+  const filterState = useUsageFilters(t, organizationScopeFromQuery(route.query), organizationScope)
   const { rangePreset, appliedPreset, filters, appliedFilters, showAdvancedFilters, insightQuery, buildCommonParams } = filterState
   const overview = useUsageOverview({ fetchAPI, supports, scope, appliedFilters, buildCommonParams })
   const detail = useUsageDetail({ t, fetchAPI, errorMessage })
@@ -104,12 +108,13 @@ function createUsagePage() {
   watch(activeView, () => { if (capabilitiesReady.value) void refreshAll() })
   watch(token, async () => {
     invalidateAll()
+    organizationScope.reset()
     scope.controller.abort(); scope.controller = new AbortController()
     credentials.reset()
     overview.overviewLoading.value = false; ranking.rankingLoading.value = false
     detail.detailOpen.value = false; ranking.rankingOpen.value = false; capabilitiesReady.value = false
     await refreshCapabilities().catch(() => {})
-    if (!scope.disposed) { capabilitiesReady.value = true; void refreshAll() }
+    if (!scope.disposed) { capabilitiesReady.value = true; void organizationScope.load(); void refreshAll() }
   })
   useDataSync('admin:usage:sync', () => refreshAll())
   onMounted(async () => { await refreshCapabilities().catch(() => {}); if (!scope.disposed) { capabilitiesReady.value = true; await refreshAll() } })
@@ -126,6 +131,7 @@ function createUsagePage() {
     setView,
     errorMessage,
     ...filterState,
+    organizationScope,
     overview,
     credentials,
     ranking,
