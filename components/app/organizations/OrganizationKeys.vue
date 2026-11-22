@@ -7,7 +7,7 @@ import { maskKey } from '~/composables/workspace/keys'
 import { useWorkspaceClipboard } from '~/composables/workspace/common'
 import { usePortalOrganizations } from '~/composables/organizations-portal/usePortalOrganizations'
 
-const { t, keys, isOwner, keyName, keyCreating, createdKey, pendingAction, memberName, createKey, deleteKey } = usePortalOrganizations()
+const { t, keys, isOwner, canCreateKeys, keyName, keyCreating, pendingAction, memberName, createKey, deleteKey } = usePortalOrganizations()
 const copyText = useWorkspaceClipboard()
 </script>
 
@@ -19,20 +19,14 @@ const copyText = useWorkspaceClipboard()
         <p class="mt-1 text-xs text-[var(--ui-text-muted)]">{{ isOwner ? t('org.keysOwnerHint') : t('org.keysMemberHint') }}</p>
       </div>
     </template>
-    <form class="flex flex-wrap items-end gap-3" @submit.prevent="createKey">
+    <PortalAlert v-if="!canCreateKeys" color="neutral" variant="subtle" icon="i-tabler-lock" :description="t('org.keysOwnerIssued')" />
+    <form v-else class="flex flex-wrap items-end gap-3" @submit.prevent="createKey">
       <PortalField :label="t('org.keyName')" class="min-w-0 flex-1">
         <PortalInput v-model="keyName" icon="i-tabler-tag" maxlength="128" class="w-full" :placeholder="t('org.keyNamePlaceholder')" />
       </PortalField>
       <AppButton type="submit" icon="i-tabler-plus" class="rounded-full" :loading="keyCreating">{{ t('org.keyCreate') }}</AppButton>
     </form>
-    <PortalAlert v-if="createdKey" class="mt-4" color="success" variant="subtle" :title="t('org.keyCreatedTitle')">
-      <template #description>
-        <div class="flex min-w-0 items-center gap-2">
-          <code class="min-w-0 break-all text-xs">{{ createdKey }}</code>
-          <AppButton type="button" size="xs" color="neutral" variant="ghost" icon="i-tabler-copy" :aria-label="t('org.copyKey')" @click="copyText(createdKey, t('org.copied'))" />
-        </div>
-      </template>
-    </PortalAlert>
+
     <ul v-if="keys.length" class="mt-4 divide-y divide-[var(--ui-border)]">
       <li v-for="key in keys" :key="key.id" class="flex flex-wrap items-center justify-between gap-3 py-3">
         <div class="min-w-0">

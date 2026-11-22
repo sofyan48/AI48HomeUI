@@ -24,13 +24,12 @@
         <AppTable :columns="columns" :data="organizations" :loading="loading">
           <template #name-cell="{ row }">
             <button type="button" class="text-left font-medium hover:underline" @click="openDetail(value(row))">{{ value(row).name }}</button>
-            <p class="text-xs text-[var(--ui-text-muted)]">#{{ value(row).id }}</p>
           </template>
           <template #credits-cell="{ row }">
             <span class="tabular-nums">{{ value(row).credits_unlimited ? '∞' : value(row).credits }}</span>
           </template>
           <template #members-cell="{ row }">
-            <span class="tabular-nums">{{ value(row).member_count ?? 0 }}</span>
+            <button type="button" class="tabular-nums hover:underline" :aria-label="t('organizations.openMembers', { name: value(row).name })" @click="openDetail(value(row), 'members')">{{ value(row).member_count ?? 0 }}</button>
           </template>
           <template #owners-cell="{ row }">
             <span class="text-sm">{{ (value(row).owners || []).join(', ') || '—' }}</span>
@@ -38,6 +37,7 @@
           <template #actions-cell="{ row }">
             <div class="flex justify-end gap-1">
               <AdminTableAction action="view" :label="t('organizations.view')" @click="openDetail(value(row))" />
+              <AdminTableAction action="view" icon="i-tabler-receipt" :label="t('organizations.openCharges')" @click="openDetail(value(row), 'charges')" />
               <AdminTableAction action="edit" :label="t('organizations.edit')" @click="openEditOrg(value(row))" />
               <AdminTableAction action="delete" :label="t('organizations.delete')" destructive @click="askDeleteOrg(value(row))" />
             </div>

@@ -27,6 +27,13 @@
         :clear-label="t('organizations.clearSelection')"
       />
     </AdminField>
+    <div class="flex items-center justify-between gap-3 rounded-md border border-[var(--ui-border)] px-3 py-2.5">
+      <div>
+        <p class="text-sm font-medium">{{ t('organizations.allowMemberKeys') }}</p>
+        <p class="text-xs text-[var(--ui-text-muted)]">{{ t('organizations.allowMemberKeysHelp') }}</p>
+      </div>
+      <AdminSwitch v-model="orgForm.allowMemberKeys" :aria-label="t('organizations.allowMemberKeys')" :disabled="orgSaving" />
+    </div>
     <AdminField :label="t('organizations.modelGroups')" :help="t('organizations.modelGroupsHelp')">
       <div class="grid gap-2 rounded-md border border-[var(--ui-border)] p-2">
         <div v-if="modelGroupsLoading" class="grid gap-2">
@@ -64,6 +71,7 @@ import AdminField from '~/components/admin/general/controls/AdminField.vue'
 import AdminInput from '~/components/admin/general/controls/AdminInput.vue'
 import AdminSearchSelect from '~/components/admin/general/controls/AdminSearchSelect.vue'
 import AdminCheckbox from '~/components/admin/general/controls/AdminCheckbox.vue'
+import AdminSwitch from '~/components/admin/general/controls/AdminSwitch.vue'
 import PortalSkeleton from '~/components/app/general/PortalSkeleton.vue'
 import { useOrganizationsWorkspace } from '~/composables/organizations/useOrganizationsWorkspace'
 

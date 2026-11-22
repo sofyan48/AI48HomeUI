@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import AppIcon from '~/components/AppIcon.vue'
+import AppPanelTabs from '~/components/AppPanelTabs.vue'
 import PortalAlert from '~/components/app/general/PortalAlert.vue'
 import PortalSelect from '~/components/app/general/PortalSelect.vue'
 import PortalSkeleton from '~/components/app/general/PortalSkeleton.vue'
@@ -8,10 +10,31 @@ import OrganizationSummary from '~/components/app/organizations/OrganizationSumm
 import OrganizationKeys from '~/components/app/organizations/OrganizationKeys.vue'
 import OrganizationMembers from '~/components/app/organizations/OrganizationMembers.vue'
 import OrganizationCharges from '~/components/app/organizations/OrganizationCharges.vue'
+import OrganizationCreatedKey from '~/components/app/organizations/OrganizationCreatedKey.vue'
 import { useDataSync } from '~/composables/useDataSync'
 import { providePortalOrganizations } from '~/composables/organizations-portal/usePortalOrganizations'
+import { organizationTabs, type OrganizationTab } from '~/composables/organizations-portal/tabs'
 
 const { t, memberships, selectedId, summary, loading, unsupported, loadError, isOwner, loadMemberships, selectOrganization } = providePortalOrganizations()
+const route = useRoute()
+const router = useRouter()
+
+const tabItems = computed(() => organizationTabs(isOwner.value).map(tab => ({
+  value: tab,
+  label: t(`org.tab.${tab}`),
+  icon: { overview: 'i-tabler-layout-dashboard', keys: 'i-tabler-key', members: 'i-tabler-users', charges: 'i-tabler-receipt' }[tab],
+})))
+
+// The tab lives in ?tab= so sections can be linked; members cannot open the owner-only tab.
+const activeTab = computed<OrganizationTab>({
+  get() {
+    const requested = route.query.tab
+    return organizationTabs(isOwner.value).find(tab => tab === requested) ?? 'overview'
+  },
+  set(tab) {
+    void router.replace({ query: { ...route.query, tab: tab === 'overview' ? undefined : tab } })
+  },
+})
 
 const onSelect = (value: unknown) => {
   const id = Number(value)
@@ -50,10 +73,14 @@ onMounted(loadMemberships)
             @update:model-value="onSelect"
           />
         </div>
-        <OrganizationSummary />
-        <OrganizationKeys />
-        <OrganizationMembers v-if="isOwner" />
-        <OrganizationCharges />
+        <AppPanelTabs v-model="activeTab" :items="tabItems" :label="t('org.tabsAria')" />
+        <OrganizationCreatedKey />
+        <div class="min-w-0" role="tabpanel">
+          <OrganizationSummary v-if="activeTab === 'overview'" />
+          <OrganizationKeys v-else-if="activeTab === 'keys'" />
+          <OrganizationMembers v-else-if="activeTab === 'members' && isOwner" />
+          <OrganizationCharges v-else-if="activeTab === 'charges'" />
+        </div>
       </template>
     </template>
   </section>

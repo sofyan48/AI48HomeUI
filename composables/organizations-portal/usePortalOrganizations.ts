@@ -3,10 +3,14 @@ import { useUserApi } from '~/composables/useUserApi'
 import { usePortalI18n } from '~/composables/usePortalI18n'
 import { usePortalToast } from '~/composables/portal/usePortalToast'
 import { useWorkspaceState } from '~/composables/useWorkspaceState'
+import { memberLimitsBody, memberLimitsFromRecord } from '~/composables/organizations/memberLimits'
+import { memberAccessBody, memberAccessFromRecord } from '~/composables/organizations/memberAccess'
 import {
-  emptyPortalMemberForm, isPortalOrgUnsupported, parsePortalLimit, portalOrgError,
+  emptyPortalMemberForm, isPortalOrgUnsupported, portalOrgError,
   type PortalMemberForm, type PortalOrgCharge, type PortalOrgKey, type PortalOrgMember, type PortalOrgMembership, type PortalOrgSummary,
 } from './types'
+
+const chargesPageSize = 20
 
 function createPortalOrganizations() {
   const { t } = usePortalI18n()
@@ -19,6 +23,9 @@ function createPortalOrganizations() {
   const keys = useWorkspaceState<PortalOrgKey[]>('user:organizations:keys', () => [])
   const members = useWorkspaceState<PortalOrgMember[]>('user:organizations:members', () => [])
   const charges = useWorkspaceState<PortalOrgCharge[]>('user:organizations:charges', () => [])
+  const chargesTotal = useWorkspaceState<number>('user:organizations:chargesTotal', () => 0)
+  const chargesPage = useWorkspaceState<number>('user:organizations:chargesPage', () => 1)
+  const chargesLoading = ref(false)
   const loading = useWorkspaceState<boolean>('user:organizations:loading', () => false)
   const unsupported = useWorkspaceState<boolean>('user:organizations:unsupported', () => false)
   const loadError = useWorkspaceState<string>('user:organizations:error', () => '')
@@ -35,6 +42,13 @@ function createPortalOrganizations() {
   const pendingAction = ref<string | null>(null)
 
   const isOwner = computed(() => summary.value?.role === 'owner')
+  // Older Home builds omit can_create_keys and always allow member keys.
+  const canCreateKeys = computed(() => summary.value?.can_create_keys !== false)
+  const memberKeysAllowed = computed(() => summary.value?.allow_member_keys !== false)
+  const settingsSupported = computed(() => typeof summary.value?.allow_member_keys === 'boolean')
+  // Older Home builds omit the options; the member scope editor is hidden then.
+  const modelGroupOptions = computed(() => summary.value?.model_group_options)
+  const modelGroupName = (id: number) => modelGroupOptions.value?.find(group => group.id === id)?.name || t('org.unknownModelGroup')
   const base = computed(() => (selectedId.value ? `/organizations/${selectedId.value}` : ''))
   const memberName = (id: number | null) => {
     if (id === null) return t('org.adminKey')
@@ -63,11 +77,11 @@ function createPortalOrganizations() {
     const [summaryResponse, keysResponse, chargesResponse] = await Promise.all([
       fetchAPI<{ organization: PortalOrgSummary }>(base.value),
       fetchAPI<{ api_keys: PortalOrgKey[] }>(`${base.value}/api-keys`),
-      fetchAPI<{ items: PortalOrgCharge[] }>(`${base.value}/billing/charges`, { query: { limit: 20 } }),
+      fetchCharges(chargesPage.value),
     ])
     summary.value = summaryResponse.organization
     keys.value = Array.isArray(keysResponse.api_keys) ? keysResponse.api_keys : []
-    charges.value = Array.isArray(chargesResponse.items) ? chargesResponse.items : []
+    applyCharges(chargesResponse)
     members.value = []
     if (summary.value?.role === 'owner') {
       const membersResponse = await fetchAPI<{ members: PortalOrgMember[] }>(`${base.value}/members`)
@@ -75,8 +89,37 @@ function createPortalOrganizations() {
     }
   }
 
+  function fetchCharges(page: number) {
+    return fetchAPI<{ items: PortalOrgCharge[], total?: number }>(`${base.value}/billing/charges`, {
+      query: { limit: chargesPageSize, offset: (Math.max(1, page) - 1) * chargesPageSize },
+    })
+  }
+
+  function applyCharges(response: { items: PortalOrgCharge[], total?: number }) {
+    charges.value = Array.isArray(response.items) ? response.items : []
+    chargesTotal.value = typeof response.total === 'number' ? response.total : charges.value.length
+  }
+
+  // Version guard: a slow page response must not overwrite a newer page.
+  let chargesVersion = 0
+  async function loadChargesPage(page: number) {
+    if (!base.value) return
+    const version = ++chargesVersion
+    chargesPage.value = page
+    chargesLoading.value = true
+    try {
+      const response = await fetchCharges(page)
+      if (version === chargesVersion) applyCharges(response)
+    } catch (error) {
+      if (version === chargesVersion) toast.add({ title: t('org.chargesLoadFailed'), description: portalOrgError(error, ''), color: 'error' })
+    } finally {
+      if (version === chargesVersion) chargesLoading.value = false
+    }
+  }
+
   async function selectOrganization(id: number) {
     selectedId.value = id
+    chargesPage.value = 1
     createdKey.value = ''
     loading.value = true
     try {
@@ -119,6 +162,15 @@ function createPortalOrganizations() {
     }
   }
 
+  const setMemberKeysAllowed = (allowed: boolean) => runAction('settings',
+    () => fetchAPI(base.value, { method: 'PATCH', body: { allow_member_keys: allowed } }), t('org.settingsSaved'), t('org.settingsFailed'))
+
+  const createKeyForMember = (member: PortalOrgMember) => runAction(`issue:${member.user_id}`,
+    async () => {
+      const response = await fetchAPI<{ api_key: PortalOrgKey }>(`${base.value}/api-keys`, { method: 'POST', body: { member_user_id: member.user_id } })
+      createdKey.value = response.api_key?.api_key || ''
+    }, t('org.keyCreated'), t('org.keyCreateFailed'))
+
   const deleteKey = (key: PortalOrgKey) => runAction(`key:${key.id}`,
     () => fetchAPI(`${base.value}/api-keys/${key.id}`, { method: 'DELETE', body: {} }), t('org.keyDeleted'), t('org.keyDeleteFailed'))
 
@@ -143,12 +195,7 @@ function createPortalOrganizations() {
   function openMemberForm(member?: PortalOrgMember) {
     editingMember.value = member || null
     memberForm.value = member
-      ? {
-          username: member.username, role: member.role,
-          limit1d: member.limit_1d_credits === null ? '' : String(member.limit_1d_credits),
-          limit7d: member.limit_7d_credits === null ? '' : String(member.limit_7d_credits),
-          limit30d: member.limit_30d_credits === null ? '' : String(member.limit_30d_credits),
-        }
+      ? { username: member.username, role: member.role, limits: memberLimitsFromRecord(member), access: memberAccessFromRecord(member) }
       : emptyPortalMemberForm()
     memberFormError.value = ''
     memberFormOpen.value = true
@@ -159,9 +206,17 @@ function createPortalOrganizations() {
     const form = memberForm.value
     const editing = editingMember.value
     if (!editing && !form.username.trim()) { memberFormError.value = t('org.errorUsername'); return }
-    const limits = [parsePortalLimit(form.limit1d), parsePortalLimit(form.limit7d), parsePortalLimit(form.limit30d)]
-    if (limits.some(limit => limit === undefined)) { memberFormError.value = t('org.errorLimit'); return }
-    const body: Record<string, unknown> = { role: form.role, limit_1d_credits: limits[0], limit_7d_credits: limits[1], limit_30d_credits: limits[2] }
+    const limits = memberLimitsBody(form.limits, summary.value?.organization_limits)
+    if (!limits.ok) {
+      memberFormError.value = limits.reason === 'exceeds'
+        ? t('org.errorLimitExceedsOrg', { window: limits.window, cap: limits.cap })
+        : t('org.errorLimit')
+      return
+    }
+    const access = memberAccessBody(form.access)
+    if (!access.ok) { memberFormError.value = t('org.errorMaxKeys'); return }
+    const body: Record<string, unknown> = { role: form.role, ...limits.body, max_api_keys: access.body.max_api_keys }
+    if (modelGroupOptions.value) body.model_groups = access.body.model_groups
     if (!editing) body.username = form.username.trim()
     memberSaving.value = true
     memberFormError.value = ''
@@ -180,8 +235,11 @@ function createPortalOrganizations() {
 
   return {
     t, memberships, selectedId, summary, keys, members, charges, loading, unsupported, loadError, isOwner, memberName,
+    chargesTotal, chargesPage, chargesLoading, chargesPageSize, loadChargesPage,
+    canCreateKeys, memberKeysAllowed, settingsSupported, modelGroupOptions, modelGroupName,
     memberFormOpen, memberForm, memberFormError, memberSaving, editingMember, keyName, keyCreating, createdKey, pendingAction,
     loadMemberships, selectOrganization, createKey, deleteKey, removeMember, leaveOrganization, openMemberForm, saveMember,
+    setMemberKeysAllowed, createKeyForMember,
   }
 }
 

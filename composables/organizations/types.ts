@@ -1,4 +1,6 @@
-// Contracts for Home's /v8/management/organizations endpoints (see AI48Home docs/management/api.md).
+// Contracts for Home's /v8/management/organizations endpoints (see AI48Home docs/ai48home/management/api.md).
+import { emptyMemberLimits, type MemberLimitRecord, type MemberLimitsForm } from './memberLimits'
+import { emptyMemberAccess, type MemberAccessForm, type MemberAccessRecord } from './memberAccess'
 
 export type OrganizationRole = 'owner' | 'member'
 
@@ -13,6 +15,8 @@ export interface Organization {
   limit_7d_credits: number | null
   limit_30d_credits: number | null
   model_groups: number[]
+  /** Missing on older Home builds, which always allow member keys. */
+  allow_member_keys?: boolean
   member_count?: number
   owners?: string[]
   members?: OrganizationMember[]
@@ -20,13 +24,10 @@ export interface Organization {
   created_at: string
 }
 
-export interface OrganizationMember {
+export interface OrganizationMember extends MemberLimitRecord, MemberAccessRecord {
   user_id: number
   username: string
   role: OrganizationRole
-  limit_1d_credits: number | null
-  limit_7d_credits: number | null
-  limit_30d_credits: number | null
   spend_30d: number
   requests_30d: number
   created_at: string
@@ -40,11 +41,28 @@ export interface OrganizationAPIKey {
   created_at: string
 }
 
+/** Charge row from GET /billing/charges?user_id=<organization>. */
+export interface OrganizationCharge {
+  id: string
+  created_at: string
+  provider: string
+  model: string
+  amount: number
+  actor_user_id?: number | null
+  api_key_label?: string
+  input_tokens?: number
+  output_tokens?: number
+}
+
+export type OrganizationDetailTab = 'overview' | 'members' | 'keys' | 'charges'
+export const organizationDetailTabs: OrganizationDetailTab[] = ['overview', 'members', 'keys', 'charges']
+
 export interface OrganizationForm {
   name: string
   credits: string
   ownerUserId: number | null
   modelGroups: number[]
+  allowMemberKeys: boolean
 }
 
 /** Model group offered as a checkbox in the organization form. */
@@ -64,9 +82,8 @@ export interface OrganizationUserOption {
 export interface MemberForm {
   username: string
   role: OrganizationRole
-  limit1d: string
-  limit7d: string
-  limit30d: string
+  limits: MemberLimitsForm
+  access: MemberAccessForm
 }
 
 export interface ApiFailure {
@@ -87,19 +104,5 @@ export function isOrganizationsUnsupported(error: unknown): boolean {
   return failure.statusCode === 404 || failure.status === 404
 }
 
-/** Empty input means "no limit"; otherwise a non-negative number is required. */
-export function parseOptionalLimit(raw: string): { ok: true, value: number | null } | { ok: false } {
-  const trimmed = raw.trim()
-  if (trimmed === '') return { ok: true, value: null }
-  const value = Number(trimmed)
-  if (!Number.isFinite(value) || value < 0) return { ok: false }
-  return { ok: true, value }
-}
-
-
-export function limitText(value: number | null | undefined): string {
-  return value === null || value === undefined ? '∞' : String(value)
-}
-
-export const emptyOrganizationForm = (): OrganizationForm => ({ name: '', credits: '', ownerUserId: null, modelGroups: [] })
-export const emptyMemberForm = (): MemberForm => ({ username: '', role: 'member', limit1d: '', limit7d: '', limit30d: '' })
+export const emptyOrganizationForm = (): OrganizationForm => ({ name: '', credits: '', ownerUserId: null, modelGroups: [], allowMemberKeys: true })
+export const emptyMemberForm = (): MemberForm => ({ username: '', role: 'member', limits: emptyMemberLimits(), access: emptyMemberAccess() })

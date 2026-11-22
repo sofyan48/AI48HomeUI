@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import AppIcon from '~/components/AppIcon.vue'
+import PortalPagination from '~/components/app/general/PortalPagination.vue'
 import { usePortalOrganizations } from '~/composables/organizations-portal/usePortalOrganizations'
 
-const { t, charges, isOwner, memberName } = usePortalOrganizations()
+const { t, charges, chargesTotal, chargesPage, chargesLoading, chargesPageSize, loadChargesPage, isOwner, memberName } = usePortalOrganizations()
 const { intlLocale } = usePortalI18n()
 const formatTime = (value: string) => {
   const date = new Date(value)
@@ -18,7 +19,7 @@ const formatTime = (value: string) => {
         <p class="mt-1 text-xs text-[var(--ui-text-muted)]">{{ isOwner ? t('org.chargesOwnerHint') : t('org.chargesMemberHint') }}</p>
       </div>
     </template>
-    <ul v-if="charges.length" class="divide-y divide-[var(--ui-border)]">
+    <ul v-if="charges.length" class="divide-y divide-[var(--ui-border)]" :aria-busy="chargesLoading || undefined" :class="{ 'opacity-60': chargesLoading }">
       <li v-for="charge in charges" :key="charge.id" class="flex flex-wrap items-center justify-between gap-3 py-2 text-sm">
         <div class="min-w-0">
           <p class="truncate font-medium">{{ charge.model || '—' }}</p>
@@ -28,5 +29,16 @@ const formatTime = (value: string) => {
       </li>
     </ul>
     <p v-else class="text-sm text-[var(--ui-text-muted)]">{{ t('org.chargesEmpty') }}</p>
+    <div v-if="chargesTotal > chargesPageSize" class="mt-4 flex justify-end">
+      <PortalPagination
+        :page="chargesPage"
+        :total="chargesTotal"
+        :items-per-page="chargesPageSize"
+        :sibling-count="1"
+        :disabled="chargesLoading"
+        size="sm"
+        @update:page="loadChargesPage"
+      />
+    </div>
   </AppCard>
 </template>

@@ -8,8 +8,18 @@ import type { PortalSpendWindow } from '~/composables/organizations-portal/types
 const { t, summary, isOwner, memberships, selectedId, pendingAction, leaveOrganization } = usePortalOrganizations()
 const { currentUser } = useUserApi()
 
-const windows = computed(() => summary.value?.spend_limits || [])
-const windowLabel = (window: PortalSpendWindow) => t(window.id === '1d' ? 'org.window1d' : window.id === '7d' ? 'org.window7d' : 'org.window30d')
+// Unlimited windows are hidden once there is any configured limit, to keep the card compact.
+const windows = computed(() => {
+  const all = summary.value?.spend_limits || []
+  const limited = all.filter(window => window.limit !== null)
+  return limited.length ? limited : all.filter(window => window.id !== '5h')
+})
+const windowLabel = (window: PortalSpendWindow) => t(`org.limitWindow${window.id}`)
+const modeLabel = (window: PortalSpendWindow) => t(window.mode === 'first_use' ? 'org.modeFirstUse' : window.mode === 'calendar' ? 'org.modeCalendar' : 'org.modeSliding')
+const resetText = (window: PortalSpendWindow) => {
+  if (window.mode === 'first_use' && window.active === false) return t('org.opensOnUse')
+  return window.reset_at ? t('org.resetsAt', { time: new Date(window.reset_at).toLocaleString() }) : ''
+}
 const percent = (window: PortalSpendWindow) => (window.limit && window.limit > 0 ? Math.min(100, (window.used / window.limit) * 100) : 0)
 const canLeave = computed(() => !isOwner.value && Boolean(currentUser.value?.id) && memberships.value.some(item => item.id === selectedId.value))
 </script>
@@ -40,12 +50,13 @@ const canLeave = computed(() => !isOwner.value && Boolean(currentUser.value?.id)
     </AppCard>
     <AppCard class="finance-panel">
       <h3 class="text-sm font-semibold">{{ t('org.yourLimits') }}</h3>
-      <div class="mt-3 grid gap-4 sm:grid-cols-3">
+      <div class="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div v-for="window in windows" :key="window.id" class="min-w-0">
-          <p class="text-xs text-[var(--ui-text-muted)]">{{ windowLabel(window) }}</p>
+          <p class="text-xs text-[var(--ui-text-muted)]">{{ windowLabel(window) }}<span v-if="window.mode"> · {{ modeLabel(window) }}</span></p>
           <p class="mt-1 text-sm font-semibold tabular-nums">{{ window.used }} / {{ window.limit ?? '∞' }}</p>
           <PortalProgress v-if="window.limit !== null" class="mt-2" :model-value="percent(window)" />
           <p class="mt-1 text-xs text-[var(--ui-text-muted)]">{{ window.limit === null ? t('org.noLimit') : t('org.remaining', { amount: window.remaining ?? 0 }) }}</p>
+          <p v-if="window.limit !== null && resetText(window)" class="text-xs text-[var(--ui-text-muted)]">{{ resetText(window) }}</p>
         </div>
       </div>
     </AppCard>

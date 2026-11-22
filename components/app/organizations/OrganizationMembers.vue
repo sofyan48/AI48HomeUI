@@ -6,18 +6,27 @@ import PortalBadge from '~/components/app/general/PortalBadge.vue'
 import PortalField from '~/components/app/general/PortalField.vue'
 import PortalInput from '~/components/app/general/PortalInput.vue'
 import PortalSelect from '~/components/app/general/PortalSelect.vue'
+import PortalSwitch from '~/components/app/general/PortalSwitch.vue'
+import OrganizationMemberLimitFields from '~/components/app/organizations/OrganizationMemberLimitFields.vue'
+import OrganizationMemberAccessFields from '~/components/app/organizations/OrganizationMemberAccessFields.vue'
+import { memberLimitsSummary } from '~/composables/organizations/memberLimits'
+import { memberKeyUsage } from '~/composables/organizations/memberAccess'
+import type { PortalOrgMember } from '~/composables/organizations-portal/types'
 import { usePortalOrganizations } from '~/composables/organizations-portal/usePortalOrganizations'
 
 const {
-  t, members, memberFormOpen, memberForm, memberFormError, memberSaving, editingMember, pendingAction,
-  openMemberForm, saveMember, removeMember,
+  t, summary, members, memberFormOpen, memberForm, memberFormError, memberSaving, editingMember, pendingAction,
+  memberKeysAllowed, settingsSupported, modelGroupOptions, modelGroupName,
+  openMemberForm, saveMember, removeMember, setMemberKeysAllowed, createKeyForMember,
 } = usePortalOrganizations()
+
+const scopeText = (member: PortalOrgMember) =>
+  member.model_groups?.length ? member.model_groups.map(modelGroupName).join(', ') : t('org.inheritModelGroups')
 
 const roleItems = computed(() => [
   { label: t('org.roleMember'), value: 'member' },
   { label: t('org.roleOwner'), value: 'owner' },
 ])
-const limit = (value: number | null) => (value === null ? '∞' : value)
 </script>
 
 <template>
@@ -31,13 +40,27 @@ const limit = (value: number | null) => (value === null ? '∞' : value)
         <AppButton icon="i-tabler-user-plus" size="sm" class="rounded-full" @click="openMemberForm()">{{ t('org.memberAdd') }}</AppButton>
       </div>
     </template>
+    <div v-if="settingsSupported" class="mb-3 flex items-center justify-between gap-3 rounded-2xl border border-[var(--ui-border)] px-3 py-2.5">
+      <div>
+        <p class="text-sm font-medium">{{ t('org.allowMemberKeys') }}</p>
+        <p class="text-xs text-[var(--ui-text-muted)]">{{ t('org.allowMemberKeysHint') }}</p>
+      </div>
+      <PortalSwitch
+        :model-value="memberKeysAllowed"
+        :aria-label="t('org.allowMemberKeys')"
+        :disabled="pendingAction !== null"
+        @update:model-value="setMemberKeysAllowed($event === true)"
+      />
+    </div>
     <ul class="divide-y divide-[var(--ui-border)]">
       <li v-for="member in members" :key="member.user_id" class="flex flex-wrap items-center justify-between gap-3 py-3">
         <div class="min-w-0">
           <p class="flex items-center gap-2 text-sm font-medium">{{ member.username }} <PortalBadge :color="member.role === 'owner' ? 'primary' : 'neutral'" variant="subtle">{{ t(member.role === 'owner' ? 'org.roleOwner' : 'org.roleMember') }}</PortalBadge></p>
-          <p class="text-xs text-[var(--ui-text-muted)]">{{ t('org.memberUsage', { spend: member.spend_30d, requests: member.requests_30d }) }} · {{ t('org.memberLimits', { d1: limit(member.limit_1d_credits), d7: limit(member.limit_7d_credits), d30: limit(member.limit_30d_credits) }) }}</p>
+          <p class="text-xs text-[var(--ui-text-muted)]">{{ t('org.memberUsage', { spend: member.spend_30d, requests: member.requests_30d }) }} · {{ memberLimitsSummary(member, t('org.noLimit')) }}</p>
+                    <p class="text-xs text-[var(--ui-text-muted)]"><span v-if="modelGroupOptions">{{ scopeText(member) }} · </span>{{ t('org.keysUsed', { usage: memberKeyUsage(member) }) }}</p>
         </div>
         <div class="flex items-center gap-1">
+          <AppButton type="button" size="xs" color="neutral" variant="ghost" icon="i-tabler-key" :aria-label="t('org.issueKey')" :loading="pendingAction === `issue:${member.user_id}`" @click="createKeyForMember(member)" />
           <AppButton type="button" size="xs" color="neutral" variant="ghost" icon="i-tabler-pencil" :aria-label="t('org.memberEdit')" @click="openMemberForm(member)" />
           <AppButton type="button" size="xs" color="error" variant="ghost" icon="i-tabler-trash" :aria-label="t('org.memberRemove')" :loading="pendingAction === `member:${member.user_id}`" @click="removeMember(member)" />
         </div>
@@ -51,11 +74,8 @@ const limit = (value: number | null) => (value === null ? '∞' : value)
         <PortalAlert v-if="memberFormError" color="error" variant="subtle" :description="memberFormError" />
         <PortalField :label="t('org.username')"><PortalInput v-model="memberForm.username" icon="i-tabler-user" class="w-full" :disabled="!!editingMember" /></PortalField>
         <PortalField :label="t('org.role')"><PortalSelect v-model="memberForm.role" :items="roleItems" class="w-full" /></PortalField>
-        <div class="grid gap-3 sm:grid-cols-3">
-          <PortalField :label="t('org.window1d')"><PortalInput v-model="memberForm.limit1d" inputmode="decimal" placeholder="∞" class="w-full" /></PortalField>
-          <PortalField :label="t('org.window7d')"><PortalInput v-model="memberForm.limit7d" inputmode="decimal" placeholder="∞" class="w-full" /></PortalField>
-          <PortalField :label="t('org.window30d')"><PortalInput v-model="memberForm.limit30d" inputmode="decimal" placeholder="∞" class="w-full" /></PortalField>
-        </div>
+        <OrganizationMemberAccessFields :access="memberForm.access" :options="modelGroupOptions" :disabled="memberSaving" />
+        <OrganizationMemberLimitFields :limits="memberForm.limits" :organization="summary?.organization_limits" :disabled="memberSaving" />
         <p class="text-xs text-[var(--ui-text-muted)]">{{ t('org.limitHint') }}</p>
         <div class="flex justify-end gap-2">
           <AppButton type="button" color="neutral" variant="ghost" :disabled="memberSaving" @click="memberFormOpen = false">{{ t('common.cancel') }}</AppButton>

@@ -2,11 +2,16 @@ import { computed, inject, provide, ref, type InjectionKey } from 'vue'
 import { useApi, useAdminI18n } from '#imports'
 import { useAdminToast } from '~/composables/admin-feedback/useAdminToast'
 import { useWorkspaceState } from '~/composables/useWorkspaceState'
+import { memberLimitsBody, memberLimitsFromRecord } from './memberLimits'
+import { memberAccessBody, memberAccessFromRecord } from './memberAccess'
 import {
-  emptyMemberForm, emptyOrganizationForm, isOrganizationsUnsupported, organizationErrorMessage, parseOptionalLimit,
-  type MemberForm, type Organization, type OrganizationAPIKey, type OrganizationForm, type OrganizationMember,
+  emptyMemberForm, emptyOrganizationForm, isOrganizationsUnsupported, organizationErrorMessage,
+  type MemberForm, type Organization, type OrganizationAPIKey, type OrganizationCharge, type OrganizationDetailTab,
+  type OrganizationForm, type OrganizationMember,
   type OrganizationModelGroupOption, type OrganizationUserOption,
 } from './types'
+
+const chargesPageSize = 20
 
 function createOrganizationsWorkspace() {
   const { fetchAPI } = useApi()
@@ -23,6 +28,43 @@ function createOrganizationsWorkspace() {
   const selectedKeys = ref<OrganizationAPIKey[]>([])
   const detailOpen = ref(false)
   const detailLoading = ref(false)
+  const detailTab = ref<OrganizationDetailTab>('overview')
+
+  // Organization charges load lazily when the Charges tab opens.
+  const charges = ref<OrganizationCharge[]>([])
+  const chargesTotal = ref(0)
+  const chargesPage = ref(1)
+  const chargesLoading = ref(false)
+  const chargesError = ref('')
+  const chargesLoadedFor = ref<number | null>(null)
+  let chargesVersion = 0
+
+  async function loadCharges(page = chargesPage.value) {
+    const org = selected.value
+    if (!org) return
+    const version = ++chargesVersion
+    chargesPage.value = page
+    chargesLoading.value = true
+    chargesError.value = ''
+    try {
+      const response = await fetchAPI<{ items: OrganizationCharge[], total?: number }>('/billing/charges', {
+        query: { user_id: org.id, limit: chargesPageSize, offset: (Math.max(1, page) - 1) * chargesPageSize },
+      })
+      if (version !== chargesVersion || selected.value?.id !== org.id) return
+      charges.value = Array.isArray(response.items) ? response.items : []
+      chargesTotal.value = typeof response.total === 'number' ? response.total : charges.value.length
+      chargesLoadedFor.value = org.id
+    } catch (error) {
+      if (version === chargesVersion) chargesError.value = organizationErrorMessage(error, t('organizations.charges.loadFailed'))
+    } finally {
+      if (version === chargesVersion) chargesLoading.value = false
+    }
+  }
+
+  function setDetailTab(tab: OrganizationDetailTab) {
+    detailTab.value = tab
+    if (tab === 'charges' && chargesLoadedFor.value !== selected.value?.id) void loadCharges(1)
+  }
 
   const orgFormOpen = ref(false)
   const orgForm = ref<OrganizationForm>(emptyOrganizationForm())
@@ -59,6 +101,12 @@ function createOrganizationsWorkspace() {
   const modelGroupsError = ref('')
   // Disabled groups are only listed while the organization still uses them, so they can be unchecked.
   const modelGroupOptions = computed(() => modelGroups.value.filter(group => !group.disabled || orgForm.value.modelGroups.includes(group.id)))
+  // Member subsets must stay inside the organization scope (or any enabled group when unrestricted).
+  const memberModelGroupOptions = computed(() => {
+    const scope = selected.value?.model_groups || []
+    const chosen = memberForm.value.access.modelGroups
+    return modelGroups.value.filter(group => (scope.length ? scope.includes(group.id) : !group.disabled) || chosen.includes(group.id))
+  })
 
   async function loadModelGroups(force = false) {
     if (modelGroupsLoading.value || (modelGroupsLoaded.value && !force)) return
@@ -131,10 +179,18 @@ function createOrganizationsWorkspace() {
     }
   }
 
-  async function openDetail(org: Organization) {
+  async function openDetail(org: Organization, tab: OrganizationDetailTab = 'overview') {
     selected.value = org
     selectedKeys.value = []
+    chargesVersion++
+    charges.value = []
+    chargesTotal.value = 0
+    chargesPage.value = 1
+    chargesError.value = ''
+    chargesLoading.value = false
+    chargesLoadedFor.value = null
     detailOpen.value = true
+    setDetailTab(tab)
     await Promise.all([loadDetail(org.id), loadModelGroups()])
   }
 
@@ -149,7 +205,10 @@ function createOrganizationsWorkspace() {
 
   function openEditOrg(org: Organization) {
     editingOrg.value = org
-    orgForm.value = { name: org.name, credits: String(org.credits ?? ''), ownerUserId: null, modelGroups: [...(org.model_groups || [])] }
+    orgForm.value = {
+      name: org.name, credits: String(org.credits ?? ''), ownerUserId: null,
+      modelGroups: [...(org.model_groups || [])], allowMemberKeys: org.allow_member_keys !== false,
+    }
     orgFormError.value = ''
     orgFormOpen.value = true
     void loadModelGroups()
@@ -168,6 +227,8 @@ function createOrganizationsWorkspace() {
     }
     if (form.modelGroups.length || editing) body.model_groups = [...form.modelGroups]
     if (!editing && form.ownerUserId !== null) body.owner_user_id = form.ownerUserId
+    // Older Home builds omit the flag; only send it when it is known or changed.
+    if (editing ? form.allowMemberKeys !== (editing.allow_member_keys !== false) : !form.allowMemberKeys) body.allow_member_keys = form.allowMemberKeys
     orgSaving.value = true
     orgFormError.value = ''
     try {
@@ -190,18 +251,15 @@ function createOrganizationsWorkspace() {
     memberFormError.value = ''
     memberFormOpen.value = true
     void loadUsers()
+    void loadModelGroups()
   }
 
   function openEditMember(member: OrganizationMember) {
     editingMember.value = member
-    memberForm.value = {
-      username: member.username, role: member.role,
-      limit1d: member.limit_1d_credits === null ? '' : String(member.limit_1d_credits),
-      limit7d: member.limit_7d_credits === null ? '' : String(member.limit_7d_credits),
-      limit30d: member.limit_30d_credits === null ? '' : String(member.limit_30d_credits),
-    }
+    memberForm.value = { username: member.username, role: member.role, limits: memberLimitsFromRecord(member), access: memberAccessFromRecord(member) }
     memberFormError.value = ''
     memberFormOpen.value = true
+    void loadModelGroups()
   }
 
   async function saveMember() {
@@ -210,10 +268,16 @@ function createOrganizationsWorkspace() {
     const form = memberForm.value
     const editing = editingMember.value
     if (!editing && !form.username.trim()) { memberFormError.value = t('organizations.error.username'); return }
-    const limits = [parseOptionalLimit(form.limit1d), parseOptionalLimit(form.limit7d), parseOptionalLimit(form.limit30d)]
-    if (limits.some(limit => !limit.ok)) { memberFormError.value = t('organizations.error.limit'); return }
-    const [l1d, l7d, l30d] = limits.map(limit => (limit.ok ? limit.value : null))
-    const body: Record<string, unknown> = { role: form.role, limit_1d_credits: l1d, limit_7d_credits: l7d, limit_30d_credits: l30d }
+    const limits = memberLimitsBody(form.limits, org)
+    if (!limits.ok) {
+      memberFormError.value = limits.reason === 'exceeds'
+        ? t('organizations.error.limitExceedsOrg', { window: limits.window, cap: limits.cap })
+        : t('organizations.error.limit')
+      return
+    }
+    const access = memberAccessBody(form.access)
+    if (!access.ok) { memberFormError.value = t('organizations.error.maxKeys'); return }
+    const body: Record<string, unknown> = { role: form.role, ...limits.body, ...access.body }
     if (!editing) body.username = form.username.trim()
     memberSaving.value = true
     memberFormError.value = ''
@@ -294,11 +358,12 @@ function createOrganizationsWorkspace() {
 
   return {
     t, loading, unsupported, errorMessage, organizations,
-    selected, selectedKeys, detailOpen, detailLoading, openDetail,
+    selected, selectedKeys, detailOpen, detailLoading, openDetail, detailTab, setDetailTab,
+    charges, chargesTotal, chargesPage, chargesLoading, chargesError, chargesPageSize, loadCharges,
     orgFormOpen, orgForm, orgFormError, orgSaving, editingOrg, openCreateOrg, openEditOrg, saveOrg,
     memberFormOpen, memberForm, memberFormError, memberSaving, editingMember, openAddMember, openEditMember, saveMember,
     creatingKeyFor, createKeyFor, userOptions, memberUserOptions, usersLoading, loadUsers,
-    modelGroupOptions, modelGroupsLoading, modelGroupsError, loadModelGroups, toggleModelGroup, modelGroupName,
+    modelGroupOptions, memberModelGroupOptions, modelGroupsLoading, modelGroupsError, loadModelGroups, toggleModelGroup, modelGroupName,
     deleteTarget, deleting, deleteError, askDeleteOrg, askRemoveMember, askDeleteKey, confirmDelete,
     loadAll,
   }

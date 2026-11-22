@@ -27,18 +27,8 @@
     <AdminField :label="t('organizations.member.role')" required>
       <AdminSelect v-model="memberForm.role" :items="roleItems" class="w-full" />
     </AdminField>
-    <div class="grid gap-4 sm:grid-cols-3">
-      <AdminField :label="t('organizations.member.limit1d')">
-        <AdminInput v-model="memberForm.limit1d" inputmode="decimal" class="w-full" placeholder="∞" />
-      </AdminField>
-      <AdminField :label="t('organizations.member.limit7d')">
-        <AdminInput v-model="memberForm.limit7d" inputmode="decimal" class="w-full" placeholder="∞" />
-      </AdminField>
-      <AdminField :label="t('organizations.member.limit30d')">
-        <AdminInput v-model="memberForm.limit30d" inputmode="decimal" class="w-full" placeholder="∞" />
-      </AdminField>
-    </div>
-    <p class="text-xs text-[var(--ui-text-muted)]">{{ t('organizations.member.limitHelp') }}</p>
+    <OrganizationsMemberAccessFields :access="memberForm.access" :options="memberModelGroupOptions" :loading="modelGroupsLoading" :disabled="memberSaving" />
+    <OrganizationsMemberLimitFields :limits="memberForm.limits" :organization="selected" :disabled="memberSaving" />
   </AppFormModal>
 </template>
 
@@ -48,9 +38,14 @@ import AdminField from '~/components/admin/general/controls/AdminField.vue'
 import AdminInput from '~/components/admin/general/controls/AdminInput.vue'
 import AdminSelect from '~/components/admin/general/controls/AdminSelect.vue'
 import AdminSearchSelect from '~/components/admin/general/controls/AdminSearchSelect.vue'
+import OrganizationsMemberLimitFields from '~/components/admin/organizations/OrganizationsMemberLimitFields.vue'
+import OrganizationsMemberAccessFields from '~/components/admin/organizations/OrganizationsMemberAccessFields.vue'
 import { useOrganizationsWorkspace } from '~/composables/organizations/useOrganizationsWorkspace'
 
-const { t, memberFormOpen, memberForm, memberFormError, memberSaving, editingMember, saveMember, memberUserOptions, usersLoading } = useOrganizationsWorkspace()
+const {
+  t, selected, memberFormOpen, memberForm, memberFormError, memberSaving, editingMember, saveMember, memberUserOptions, usersLoading,
+  memberModelGroupOptions, modelGroupsLoading,
+} = useOrganizationsWorkspace()
 
 // The API takes a username; the dropdown works with user IDs.
 const selectedUserId = computed(() => memberUserOptions.value.find(option => option.label === memberForm.value.username)?.value ?? null)
