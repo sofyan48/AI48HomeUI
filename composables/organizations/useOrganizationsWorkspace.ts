@@ -3,6 +3,7 @@ import { useApi, useAdminI18n } from '#imports'
 import { useAdminToast } from '~/composables/admin-feedback/useAdminToast'
 import { useWorkspaceState } from '~/composables/useWorkspaceState'
 import { useCapabilities } from '~/composables/useCapabilities'
+import { datesForRange } from '~/composables/usage/useUsageFilters'
 import { useOrganizationKeyForm } from './useOrganizationKeyForm'
 import { memberLimitsBody, memberLimitsFromRecord } from './memberLimits'
 import { memberAccessBody, memberAccessFromRecord } from './memberAccess'
@@ -42,8 +43,8 @@ function createOrganizationsWorkspace() {
   // Transient detail and form state stays local to the mounted page.
   const selected = ref<Organization | null>(null)
   const selectedKeys = ref<OrganizationAPIKey[]>([])
-  const detailOpen = ref(false)
   const detailLoading = ref(false)
+  const detailError = ref('')
   const detailTab = ref<OrganizationDetailTab>('overview')
 
   // Organization charges load lazily when the Charges tab opens.
@@ -53,7 +54,20 @@ function createOrganizationsWorkspace() {
   const chargesLoading = ref(false)
   const chargesError = ref('')
   const chargesLoadedFor = ref<number | null>(null)
+  // Shared by the charges table and the usage summary so both show the same scope.
+  const chargesFilter = ref<{ range: string, member: string }>({ range: '30d', member: '' })
   let chargesVersion = 0
+
+  function chargesScopeQuery(orgId: number) {
+    const { from, to } = datesForRange(chargesFilter.value.range)
+    const query: Record<string, string | number> = { user_id: orgId }
+    if (from) query.from = from
+    if (to) query.to = to
+    if (chargesFilter.value.member) query.actor_user_id = chargesFilter.value.member
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+    if (timezone) query.timezone = timezone
+    return query
+  }
 
   async function loadCharges(page = chargesPage.value) {
     const org = selected.value
@@ -64,7 +78,7 @@ function createOrganizationsWorkspace() {
     chargesError.value = ''
     try {
       const response = await fetchAPI<{ items: OrganizationCharge[], total?: number }>('/billing/charges', {
-        query: { user_id: org.id, limit: chargesPageSize, offset: (Math.max(1, page) - 1) * chargesPageSize },
+        query: { ...chargesScopeQuery(org.id), limit: chargesPageSize, offset: (Math.max(1, page) - 1) * chargesPageSize },
       })
       if (version !== chargesVersion || selected.value?.id !== org.id) return
       charges.value = Array.isArray(response.items) ? response.items : []
@@ -180,6 +194,7 @@ function createOrganizationsWorkspace() {
 
   async function loadDetail(id: number) {
     detailLoading.value = true
+    detailError.value = ''
     try {
       const [orgResponse, keysResponse] = await Promise.all([
         fetchAPI<{ organization: Organization }>(`/organizations/${id}`),
@@ -188,15 +203,21 @@ function createOrganizationsWorkspace() {
       selected.value = orgResponse.organization
       selectedKeys.value = Array.isArray(keysResponse.api_keys) ? keysResponse.api_keys : []
     } catch (error) {
-      toast.add({ title: t('organizations.loadFailed'), description: organizationErrorMessage(error, ''), color: 'error' })
+      if (isOrganizationsUnsupported(error)) unsupported.value = true
+      detailError.value = organizationErrorMessage(error, t('organizations.loadFailed'))
     } finally {
       detailLoading.value = false
     }
   }
 
-  async function openDetail(org: Organization, tab: OrganizationDetailTab = 'overview') {
-    selected.value = org
-    selectedKeys.value = []
+  // Loads the dedicated detail page for one organization id.
+  async function openDetail(id: number, tab: OrganizationDetailTab = 'overview') {
+    const sameOrg = selected.value?.id === id
+    if (!sameOrg) {
+      selected.value = organizations.value.find(org => org.id === id) ?? null
+      selectedKeys.value = []
+      chargesFilter.value = { range: '30d', member: '' }
+    }
     chargesVersion++
     charges.value = []
     chargesTotal.value = 0
@@ -204,9 +225,9 @@ function createOrganizationsWorkspace() {
     chargesError.value = ''
     chargesLoading.value = false
     chargesLoadedFor.value = null
-    detailOpen.value = true
-    setDetailTab(tab)
-    await Promise.all([loadDetail(org.id), loadModelGroups()])
+    detailTab.value = tab
+    await Promise.all([loadDetail(id), loadModelGroups()])
+    if (selected.value?.id === id) setDetailTab(detailTab.value)
   }
 
   function openCreateOrg() {
@@ -316,10 +337,11 @@ function createOrganizationsWorkspace() {
     deleteTarget.value = { kind, label, run }
   }
 
-  function askDeleteOrg(org: Organization) {
+  function askDeleteOrg(org: Organization, afterDelete?: () => void) {
     askDelete('org', org.name, async () => {
       await fetchAPI(`/organizations/${org.id}`, { method: 'DELETE' })
-      if (selected.value?.id === org.id) detailOpen.value = false
+      if (selected.value?.id === org.id) selected.value = null
+      afterDelete?.()
       await loadAll()
     })
   }
@@ -360,8 +382,8 @@ function createOrganizationsWorkspace() {
 
   return {
     t, loading, unsupported, errorMessage, organizations, memberResetSupported, updateMemberReset,
-    selected, selectedKeys, detailOpen, detailLoading, openDetail, detailTab, setDetailTab,
-    charges, chargesTotal, chargesPage, chargesLoading, chargesError, chargesPageSize, loadCharges,
+    selected, selectedKeys, detailLoading, detailError, openDetail, detailTab, setDetailTab,
+    charges, chargesTotal, chargesPage, chargesLoading, chargesError, chargesPageSize, loadCharges, chargesFilter, chargesScopeQuery,
     orgFormOpen, orgForm, orgFormError, orgSaving, editingOrg, openCreateOrg, openEditOrg, saveOrg,
     memberFormOpen, memberForm, memberFormError, memberSaving, editingMember, openAddMember, openEditMember, saveMember,
     ...keyForm, userOptions, memberUserOptions, usersLoading, loadUsers,

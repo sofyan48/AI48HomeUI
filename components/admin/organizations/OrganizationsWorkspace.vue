@@ -23,21 +23,21 @@
         </template>
         <AppTable :columns="columns" :data="organizations" :loading="loading">
           <template #name-cell="{ row }">
-            <button type="button" class="text-left font-medium hover:underline" @click="openDetail(value(row))">{{ value(row).name }}</button>
+            <NuxtLink :to="detailPath(value(row))" class="text-left font-medium hover:underline">{{ value(row).name }}</NuxtLink>
           </template>
           <template #credits-cell="{ row }">
             <span class="tabular-nums">{{ value(row).credits_unlimited ? '∞' : value(row).credits }}</span>
           </template>
           <template #members-cell="{ row }">
-            <button type="button" class="tabular-nums hover:underline" :aria-label="t('organizations.openMembers', { name: value(row).name })" @click="openDetail(value(row), 'members')">{{ value(row).member_count ?? 0 }}</button>
+            <NuxtLink :to="detailPath(value(row), 'members')" class="tabular-nums hover:underline" :aria-label="t('organizations.openMembers', { name: value(row).name })">{{ value(row).member_count ?? 0 }}</NuxtLink>
           </template>
           <template #owners-cell="{ row }">
             <span class="text-sm">{{ (value(row).owners || []).join(', ') || '—' }}</span>
           </template>
           <template #actions-cell="{ row }">
             <div class="flex justify-end gap-1">
-              <AdminTableAction action="view" :label="t('organizations.view')" @click="openDetail(value(row))" />
-              <AdminTableAction action="view" icon="i-tabler-receipt" :label="t('organizations.openCharges')" @click="openDetail(value(row), 'charges')" />
+              <AdminTableAction action="view" :label="t('organizations.view')" @click="router.push(detailPath(value(row)))" />
+              <AdminTableAction action="view" icon="i-tabler-receipt" :label="t('organizations.openCharges')" @click="router.push(detailPath(value(row), 'charges'))" />
               <AdminTableAction action="edit" :label="t('organizations.edit')" @click="openEditOrg(value(row))" />
               <AdminTableAction action="delete" :label="t('organizations.delete')" destructive @click="askDeleteOrg(value(row))" />
             </div>
@@ -50,9 +50,6 @@
     </template>
 
     <OrganizationsFormDialog />
-    <OrganizationsDetailDialog />
-    <OrganizationsMemberDialog />
-    <OrganizationsKeyDialog />
 
     <AppConfirmModal
       :open="deleteTarget !== null"
@@ -71,18 +68,17 @@
 
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import PortalAlert from '~/components/app/general/PortalAlert.vue'
 import AdminTableAction from '~/components/admin/general/TableAction.vue'
 import OrganizationsFormDialog from '~/components/admin/organizations/OrganizationsFormDialog.vue'
-import OrganizationsDetailDialog from '~/components/admin/organizations/OrganizationsDetailDialog.vue'
-import OrganizationsMemberDialog from '~/components/admin/organizations/OrganizationsMemberDialog.vue'
-import OrganizationsKeyDialog from '~/components/admin/organizations/OrganizationsKeyDialog.vue'
+
 import { useDataSync } from '~/composables/useDataSync'
 import { provideOrganizationsWorkspace } from '~/composables/organizations/useOrganizationsWorkspace'
-import type { Organization } from '~/composables/organizations/types'
+import type { Organization, OrganizationDetailTab } from '~/composables/organizations/types'
 
 const {
-  t, unsupported, errorMessage, loading, organizations, openDetail, openCreateOrg, openEditOrg,
+  t, unsupported, errorMessage, loading, organizations, openCreateOrg, openEditOrg,
   askDeleteOrg, deleteTarget, deleting, deleteError, confirmDelete, loadAll,
 } = provideOrganizationsWorkspace()
 
@@ -103,6 +99,8 @@ const deleteMessage = computed(() => {
 })
 
 const value = (row: Organization | { original: Organization }): Organization => ('original' in row ? row.original : row)
+const router = useRouter()
+const detailPath = (org: Organization, tab?: OrganizationDetailTab) => ({ path: `/admin/organizations/${org.id}`, query: tab ? { tab } : {} })
 
 useDataSync('admin:organizations:sync', () => loadAll())
 onMounted(loadAll)

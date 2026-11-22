@@ -124,7 +124,7 @@ test('portal charge pages cannot overwrite a different organization after switch
 })
 
 test('charges use organization billing scope in both workspaces', () => {
-  expect(read('composables/organizations/useOrganizationsWorkspace.ts')).toContain('query: { user_id: org.id')
+  expect(read('composables/organizations/useOrganizationsWorkspace.ts')).toContain('{ user_id: orgId }')
   const portal = read('composables/organizations-portal/usePortalOrganizations.ts')
   expect(portal).toContain('`${base.value}/billing/charges`')
   expect(portal).toContain('version === chargesVersion && selectedId.value === orgId')

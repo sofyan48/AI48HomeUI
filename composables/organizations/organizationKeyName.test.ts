@@ -15,7 +15,7 @@ describe('organization API key names', () => {
   test('admin key tab offers rename only when Home supports it, members open the named create dialog', () => {
     expect(read('components/admin/organizations/detail/OrganizationsDetailKeys.vue')).toContain('v-if="canRenameKeys"')
     expect(read('components/admin/organizations/detail/OrganizationsDetailMembers.vue')).toContain('@click="openCreateKey(member(row))"')
-    expect(read('components/admin/organizations/OrganizationsWorkspace.vue')).toContain('<OrganizationsKeyDialog />')
+    expect(read('components/admin/organizations/OrganizationsDetailPage.vue')).toContain('<OrganizationsKeyDialog />')
   })
 
   test('portal renames inline and names member keys before issuing', () => {
@@ -23,6 +23,6 @@ describe('organization API key names', () => {
     expect(portal).toContain("{ method: 'PATCH', body: { display_name: name || null } }")
     expect(portal).toContain('if (displayName) body.display_name = displayName')
     expect(read('components/app/organizations/OrganizationKeys.vue')).toContain('@submit.prevent="saveRenameKey(key)"')
-    expect(read('components/app/organizations/OrganizationMembers.vue')).toContain('@click="openIssueKey(member)"')
+    expect(read('components/app/organizations/OrganizationMembers.vue')).toContain('@click="openIssueKey(row.original)"')
   })
 })

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { emptyMemberLimits, memberLimitsBody, memberLimitsFromRecord, memberLimitsSummary, memberWindowModes } from './memberLimits'
+import { enabledSpendWindows, emptyMemberLimits, memberLimitsBody, memberLimitsFromRecord, memberLimitsSummary, memberWindowModes } from './memberLimits'
 
 describe('organization member limits', () => {
   test('5h has no calendar mode; longer windows do', () => {
@@ -34,6 +34,17 @@ describe('organization member limits', () => {
     expect(memberLimitsBody(form, { limit_1d_credits: 20 })).toEqual({ ok: false, reason: 'exceeds', window: '1d', cap: 20 })
     form['1d'].limit = '20'
     expect(memberLimitsBody(form, { limit_1d_credits: 20 }).ok).toBe(true)
+  })
+
+  test('display omits disabled windows but keeps zero limits and unused first-use windows', () => {
+    const windows = [
+      { id: '5h', limit: null },
+      { id: '1d', limit: 0 },
+      { id: '7d', limit: 10, active: false, mode: 'first_use' },
+      { id: '30d' },
+    ]
+    expect(enabledSpendWindows(windows)).toEqual([windows[1]!, windows[2]!])
+    expect(enabledSpendWindows([{ limit: null }, {}])).toEqual([])
   })
 
   test('summary lists only enabled windows', () => {

@@ -65,7 +65,12 @@ export function memberLimitsBody(form: MemberLimitsForm, organization?: MemberLi
   return { ok: true, body }
 }
 
-/** Compact "5h 2 · 1d ∞ …" summary of the enabled member limits. */
+/** Configured windows remain visible before first use; zero is an enabled blocking limit. */
+export function enabledSpendWindows<T extends { limit?: number | null }>(windows: readonly T[]): T[] {
+  return windows.filter(window => typeof window.limit === 'number')
+}
+
+/** Compact summary of the enabled member limits. */
 export function memberLimitsSummary(record: MemberLimitRecord, noLimit: string): string {
   const parts = memberLimitWindows
     .map(window => ({ window, limit: record[`limit_${window}_credits`] }))

@@ -7,6 +7,7 @@ import PortalBadge from '~/components/app/general/PortalBadge.vue'
 import PortalField from '~/components/app/general/PortalField.vue'
 import PortalInput from '~/components/app/general/PortalInput.vue'
 import PortalSelect from '~/components/app/general/PortalSelect.vue'
+import PortalTable from '~/components/app/general/PortalTable.vue'
 import PortalSwitch from '~/components/app/general/PortalSwitch.vue'
 import OrganizationMemberLimitFields from '~/components/app/organizations/OrganizationMemberLimitFields.vue'
 import OrganizationMemberAccessFields from '~/components/app/organizations/OrganizationMemberAccessFields.vue'
@@ -18,7 +19,7 @@ import { usePortalOrganizations } from '~/composables/organizations-portal/usePo
 const {
   memberResetSupported, updateMemberReset, selectedId,
   t, summary, members, memberFormOpen, memberForm, memberFormError, memberSaving, editingMember, pendingAction,
-  memberKeysAllowed, settingsSupported, modelGroupOptions, modelGroupName,
+  memberKeysAllowed, settingsSupported, modelGroupOptions,
   openMemberForm, saveMember, removeMember, setMemberKeysAllowed, createKeyForMember,
 } = usePortalOrganizations()
 
@@ -34,8 +35,18 @@ async function submitIssueKey() {
   issueFor.value = null
 }
 
-const scopeText = (member: PortalOrgMember) =>
-  member.model_groups?.length ? member.model_groups.map(modelGroupName).join(', ') : t('org.inheritModelGroups')
+const { t: sharedText } = useAdminI18n()
+const columns = computed(() => [
+  { accessorKey: 'username', header: t('org.username') },
+  { accessorKey: 'role', header: t('org.role') },
+  { accessorKey: 'spend_30d', header: `${t('org.usage.charged')} · ${t('org.limitWindow30d')}` },
+  { accessorKey: 'requests_30d', header: t('org.usage.requests') },
+  { id: 'limits', header: t('org.limitAmount') },
+  { id: 'keys', header: t('org.tab.keys') },
+  { id: 'actions', header: sharedText('common.actions') },
+])
+const currentEditingMember = computed(() => members.value.find(member => member.user_id === editingMember.value?.user_id))
+
 
 const roleItems = computed(() => [
   { label: t('org.roleMember'), value: 'member' },
@@ -44,7 +55,7 @@ const roleItems = computed(() => [
 </script>
 
 <template>
-  <AppCard class="finance-panel">
+  <AppCard class="finance-panel" :ui="{ body: 'p-0 sm:p-0' }">
     <template #header>
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div>
@@ -54,39 +65,39 @@ const roleItems = computed(() => [
         <AppButton icon="i-tabler-user-plus" size="sm" class="rounded-full" @click="openMemberForm()">{{ t('org.memberAdd') }}</AppButton>
       </div>
     </template>
-    <div v-if="settingsSupported" class="mb-3 flex items-center justify-between gap-3 rounded-2xl border border-[var(--ui-border)] px-3 py-2.5">
+    <div v-if="settingsSupported" class="flex items-center justify-between gap-4 border-b border-border bg-muted/30 px-4 py-3 sm:px-5">
       <div>
-        <p class="text-sm font-medium">{{ t('org.allowMemberKeys') }}</p>
-        <p class="text-xs text-[var(--ui-text-muted)]">{{ t('org.allowMemberKeysHint') }}</p>
+        <p class="text-xs font-medium">{{ t('org.allowMemberKeys') }}</p>
+        <p class="mt-1 text-xs text-muted-foreground">{{ t('org.allowMemberKeysHint') }}</p>
       </div>
-      <PortalSwitch
-        :model-value="memberKeysAllowed"
-        :aria-label="t('org.allowMemberKeys')"
-        :disabled="pendingAction !== null"
-        @update:model-value="setMemberKeysAllowed($event === true)"
-      />
+      <PortalSwitch :model-value="memberKeysAllowed" :aria-label="t('org.allowMemberKeys')" :disabled="pendingAction !== null" class="shrink-0" @update:model-value="setMemberKeysAllowed($event === true)" />
     </div>
-    <ul class="divide-y divide-[var(--ui-border)]">
-      <li v-for="member in members" :key="member.user_id" class="flex flex-wrap items-center justify-between gap-3 py-3">
-        <div class="min-w-0">
-          <p class="flex items-center gap-2 text-sm font-medium">{{ member.username }} <PortalBadge :color="member.role === 'owner' ? 'primary' : 'neutral'" variant="subtle">{{ t(member.role === 'owner' ? 'org.roleOwner' : 'org.roleMember') }}</PortalBadge></p>
-          <p class="text-xs text-[var(--ui-text-muted)]">{{ t('org.memberUsage', { spend: member.spend_30d, requests: member.requests_30d }) }} · {{ memberLimitsSummary(member, t('org.noLimit')) }}</p>
-                    <p class="text-xs text-[var(--ui-text-muted)]"><span v-if="modelGroupOptions">{{ scopeText(member) }} · </span>{{ t('org.keysUsed', { usage: memberKeyUsage(member) }) }}</p>
+    <PortalTable :data="members" :columns="columns" :numbered="false" searchable :aria-label="t('org.membersTitle')">
+      <template #username-cell="{ row }">
+        <span class="font-medium">{{ row.original.username }}</span>
+      </template>
+      <template #role-cell="{ row }">
+        <PortalBadge :color="row.original.role === 'owner' ? 'primary' : 'neutral'" variant="subtle">{{ t(row.original.role === 'owner' ? 'org.roleOwner' : 'org.roleMember') }}</PortalBadge>
+      </template>
+      <template #limits-cell="{ row }">
+        <span class="text-xs tabular-nums">{{ memberLimitsSummary(row.original, t('org.noLimit')) }}</span>
+        <AppOrganizationMemberReset v-if="memberResetSupported" :key="`${selectedId}:${row.original.user_id}`" :member="row.original" can-configure
+          :save="(body, signal) => updateMemberReset(row.original.user_id, signal, body)"
+          :reset="signal => updateMemberReset(row.original.user_id, signal)" />
+      </template>
+      <template #keys-cell="{ row }"><span class="tabular-nums">{{ memberKeyUsage(row.original) }}</span></template>
+      <template #actions-cell="{ row }">
+        <div class="flex items-center justify-end gap-1 whitespace-nowrap">
+          <AppButton size="xs" color="neutral" variant="outline" :disabled="pendingAction !== null" @click="openMemberForm(row.original)">{{ t('org.memberEdit') }}</AppButton>
+          <AppButton size="xs" color="neutral" variant="ghost" icon="i-tabler-key" :aria-label="t('org.issueKey')" :title="t('org.issueKey')" :disabled="pendingAction !== null" @click="openIssueKey(row.original)" />
+
+          <AppButton size="xs" color="error" variant="ghost" icon="i-tabler-trash" :aria-label="t('org.memberRemove')" :title="t('org.memberRemove')" :disabled="pendingAction !== null" :loading="pendingAction === `member:${row.original.user_id}`" @click="removeMember(row.original)" />
         </div>
-        <AppOrganizationMemberReset
-          v-if="memberResetSupported" :key="`${selectedId}:${member.user_id}`"
-          :member="member" can-configure
-          :save="(body, signal) => updateMemberReset(member.user_id, signal, body)"
-          :reset="signal => updateMemberReset(member.user_id, signal)"
-        />
-        <div class="flex items-center gap-1">
-          <AppButton type="button" size="xs" color="neutral" variant="ghost" icon="i-tabler-key" :aria-label="t('org.issueKey')" :loading="pendingAction === `issue:${member.user_id}`" @click="openIssueKey(member)" />
-          <AppButton type="button" size="xs" color="neutral" variant="ghost" icon="i-tabler-pencil" :aria-label="t('org.memberEdit')" @click="openMemberForm(member)" />
-          <AppButton type="button" size="xs" color="error" variant="ghost" icon="i-tabler-trash" :aria-label="t('org.memberRemove')" :loading="pendingAction === `member:${member.user_id}`" @click="removeMember(member)" />
-        </div>
-      </li>
-    </ul>
+      </template>
+    </PortalTable>
+
   </AppCard>
+
 
   <AppModal v-model:open="issueOpen" :title="t('org.issueKeyTitle')" :description="t('org.issueKeyDescription', { name: issueFor?.username || '' })">
     <template #body>
@@ -114,6 +125,12 @@ const roleItems = computed(() => [
           <AppButton type="submit" :loading="memberSaving">{{ editingMember ? t('common.save') : t('org.memberAdd') }}</AppButton>
         </div>
       </form>
+      <AppOrganizationMemberReset
+        v-if="memberResetSupported && currentEditingMember" :key="`${selectedId}:${currentEditingMember.user_id}`"
+        class="mt-5 border-t border-border pt-4" :member="currentEditingMember" can-configure inline-configure
+        :save="(body, signal) => updateMemberReset(currentEditingMember!.user_id, signal, body)"
+        :reset="signal => updateMemberReset(currentEditingMember!.user_id, signal)"
+      />
     </template>
   </AppModal>
 </template>

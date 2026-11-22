@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AppIcon from '~/components/AppIcon.vue'
+import OrganizationUsageSummary from '~/components/app/organizations/OrganizationUsageSummary.vue'
 import PortalPagination from '~/components/app/general/PortalPagination.vue'
 import { usePortalOrganizations } from '~/composables/organizations-portal/usePortalOrganizations'
 
@@ -12,6 +13,7 @@ const formatTime = (value: string) => {
 </script>
 
 <template>
+  <OrganizationUsageSummary class="mb-4" />
   <AppCard class="finance-panel">
     <template #header>
       <div>

@@ -73,6 +73,8 @@ export function useAdminNavigation() {
     ? ['/admin/upstream', '/admin/providers', '/admin/credentials', '/admin/quota'].includes(route.path)
     : item.to === '/admin/usage'
       ? ['/admin/usage', '/admin/request-events'].includes(route.path)
+      : item.to === '/admin/organizations'
+        ? route.path === '/admin/organizations' || route.path.startsWith('/admin/organizations/')
       : item.to === '/admin/config'
         ? route.path === '/admin/config' || (route.path.startsWith('/admin/routing/') && route.path !== '/admin/routing/models')
         : route.path === item.to

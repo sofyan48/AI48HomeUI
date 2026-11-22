@@ -37,6 +37,7 @@
         </div>
       </div>
       <AccountsTable />
+      <AdminTablePager v-if="filteredCredentials.length" v-model:page="page" v-model:page-size="pageSize" :total="filteredCredentials.length" :loading="pending" />
     </div>
   </section>
 </template>
@@ -48,10 +49,11 @@ import AdminSelect from '~/components/admin/general/controls/AdminSelect.vue'
 import AdminSelectMenu from '~/components/admin/general/controls/AdminSelectMenu.vue'
 import { useUpstreamAccounts } from '~/composables/upstream-accounts/useUpstreamAccounts'
 import AccountsTable from '~/components/admin/upstream-accounts/list/AccountsTable.vue'
+import AdminTablePager from '~/components/admin/general/TablePager.vue'
 
 const {
   t, ALL_FILTER, busy, createOpen, search, statusFilter, statusOptions, providerFilter, providerOptions, attentionOnly,
   websocketsFilter, websocketsOptions, filteredCredentials, credentials, hasActiveFilters, clearFilters, selectedIDs,
-  selectedEnabledCount, selectedDisabledCount, bulkBusy, bulkAction, bulkStatus, pending, bulkDeleteOpen
+  selectedEnabledCount, selectedDisabledCount, bulkBusy, bulkAction, bulkStatus, pending, bulkDeleteOpen, page, pageSize
 } = useUpstreamAccounts()
 </script>

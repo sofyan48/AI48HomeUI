@@ -49,9 +49,16 @@ export function useAccountList(ctx: AccountShared) {
     websocketsFilter.value = ALL_FILTER
     attentionOnly.value = false
   }
-  const allVisibleSelected = computed(() => filteredCredentials.value.length > 0 && filteredCredentials.value.every(item => selectedIDs.value.has(item.id)))
-  const someVisibleSelected = computed(() => filteredCredentials.value.some(item => selectedIDs.value.has(item.id)))
-  watch([search, providerFilter, statusFilter, websocketsFilter, attentionOnly], () => { selectedIDs.value = new Set() })
+  const page = ref(1)
+  const pageSize = ref(20)
+  const pageCount = computed(() => Math.max(1, Math.ceil(filteredCredentials.value.length / pageSize.value)))
+  const pagedCredentials = computed(() => filteredCredentials.value.slice((page.value - 1) * pageSize.value, page.value * pageSize.value))
+  watch(pageSize, () => { page.value = 1 })
+  watch(pageCount, count => { if (page.value > count) page.value = count })
+  // "Visible" selection refers to the rows on the current page.
+  const allVisibleSelected = computed(() => pagedCredentials.value.length > 0 && pagedCredentials.value.every(item => selectedIDs.value.has(item.id)))
+  const someVisibleSelected = computed(() => pagedCredentials.value.some(item => selectedIDs.value.has(item.id)))
+  watch([search, providerFilter, statusFilter, websocketsFilter, attentionOnly], () => { selectedIDs.value = new Set(); page.value = 1 })
   watch(() => route.query.q, q => { search.value = typeof q === 'string' ? q : '' })
   function toggleSelected(id: string, checked: boolean) {
     const next = new Set(selectedIDs.value)
@@ -61,7 +68,7 @@ export function useAccountList(ctx: AccountShared) {
   }
   function toggleAllVisible(checked: boolean) {
     const next = new Set(selectedIDs.value)
-    for (const item of filteredCredentials.value) {
+    for (const item of pagedCredentials.value) {
       if (checked) next.add(item.id)
       else next.delete(item.id)
     }
@@ -122,7 +129,7 @@ export function useAccountList(ctx: AccountShared) {
 
   return {
     search, providerFilter, statusFilter, websocketsFilter, attentionOnly, columns, providerOptions, statusOptions,
-    websocketsOptions, filteredCredentials, hasActiveFilters, selectedEnabledCount, selectedDisabledCount, clearFilters,
+    websocketsOptions, filteredCredentials, pagedCredentials, page, pageSize, hasActiveFilters, selectedEnabledCount, selectedDisabledCount, clearFilters,
     allVisibleSelected, someVisibleSelected, toggleSelected, toggleAllVisible, bulkDeleteOpen, bulkStatus, bulkDelete,
     setInlineField, toggleStatus, deleteOpen, deleteTarget, confirmDelete, deleteCredential
   }

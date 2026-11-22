@@ -3,6 +3,8 @@ import { computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppIcon from '~/components/AppIcon.vue'
 import AppPanelTabs from '~/components/AppPanelTabs.vue'
+import PortalBadge from '~/components/app/general/PortalBadge.vue'
+import OrganizationOwnerOverview from '~/components/app/organizations/OrganizationOwnerOverview.vue'
 import PortalAlert from '~/components/app/general/PortalAlert.vue'
 import PortalSelect from '~/components/app/general/PortalSelect.vue'
 import PortalSkeleton from '~/components/app/general/PortalSkeleton.vue'
@@ -36,6 +38,7 @@ const activeTab = computed<OrganizationTab>({
   },
 })
 
+
 const onSelect = (value: unknown) => {
   const id = Number(value)
   if (Number.isInteger(id) && id > 0) void selectOrganization(id)
@@ -46,7 +49,7 @@ onMounted(loadMemberships)
 </script>
 
 <template>
-  <section class="organization-workspace min-w-0 space-y-5" aria-labelledby="org-title">
+  <section class="organization-workspace flex min-w-0 flex-col gap-4" aria-labelledby="org-title">
     <PortalAlert v-if="unsupported" color="warning" variant="subtle" :title="t('org.unsupportedTitle')" :description="t('org.unsupportedDescription')" />
     <PortalAlert v-else-if="loadError" color="error" variant="subtle" :title="t('org.loadFailed')" :description="loadError" />
 
@@ -62,21 +65,38 @@ onMounted(loadMemberships)
       </AppCard>
 
       <template v-else>
-        <div class="flex flex-wrap items-end justify-between gap-3">
-          <h2 id="org-title" class="flex items-center gap-2 text-sm font-semibold"><AppIcon name="i-tabler-building" class="size-4 text-[var(--ui-text-muted)]" aria-hidden="true" /> {{ summary?.name || t('org.title') }}</h2>
+        <AppCard>
+        <header class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex min-w-0 items-center gap-3">
+
+            <div class="min-w-0">
+              <p class="mb-1 text-xs text-muted-foreground">{{ t('org.title') }}</p>
+              <div class="flex flex-wrap items-center gap-2">
+                <h2 id="org-title" class="flex min-w-0 items-center gap-2 break-words text-xl font-semibold tracking-tight"><AppIcon name="i-tabler-building" class="size-5 shrink-0 text-muted-foreground" aria-hidden="true" />{{ summary?.name || memberships.find(item => item.id === selectedId)?.name }}</h2>
+                <PortalBadge v-if="summary" :color="isOwner ? 'primary' : 'neutral'" variant="subtle">{{ t(isOwner ? 'org.roleOwner' : 'org.roleMember') }}</PortalBadge>
+              </div>
+            </div>
+          </div>
           <PortalSelect
             v-if="memberships.length > 1"
             :model-value="selectedId ?? undefined"
             :items="memberships.map(item => ({ label: `${item.name} · ${t(item.role === 'owner' ? 'org.roleOwner' : 'org.roleMember')}`, value: item.id }))"
             :aria-label="t('org.switch')"
-            class="w-64"
+            class="w-full sm:w-64"
+            :disabled="loading"
             @update:model-value="onSelect"
           />
-        </div>
+        </header>
+        </AppCard>
         <AppPanelTabs v-model="activeTab" :items="tabItems" :label="t('org.tabsAria')" />
         <OrganizationCreatedKey />
-        <div class="min-w-0" role="tabpanel">
-          <OrganizationSummary v-if="activeTab === 'overview'" />
+        <div v-if="loading" class="grid gap-4" :aria-label="t('org.title')" aria-busy="true"><PortalSkeleton class="h-28 rounded-xl" /><PortalSkeleton class="h-56 rounded-xl" /></div>
+        <div v-else-if="summary" class="flex min-w-0 flex-col gap-4" role="tabpanel" :aria-label="t(`org.tab.${activeTab}`)">
+
+          <template v-if="activeTab === 'overview'">
+            <OrganizationOwnerOverview v-if="isOwner" @navigate="activeTab = $event" />
+            <OrganizationSummary />
+          </template>
           <OrganizationKeys v-else-if="activeTab === 'keys'" />
           <OrganizationMembers v-else-if="activeTab === 'members' && isOwner" />
           <OrganizationCharges v-else-if="activeTab === 'charges'" />
@@ -87,5 +107,8 @@ onMounted(loadMemberships)
 </template>
 
 <style scoped>
-.organization-workspace { max-width: 80rem; margin-inline: auto; padding-block: 0.75rem; }
+.organization-workspace {
+  max-width: 80rem;
+  margin-inline: auto;
+}
 </style>

@@ -22,7 +22,8 @@
 
     <AppTable
       :columns="visibleColumns"
-      :data="filteredUsers"
+      :data="pagedUsers"
+      :number-offset="(page - 1) * pageSize"
       :virtualize="{ estimateSize: 64, overscan: 8 }"
       :get-row-id="(user: AnyRecord) => String(user.id)"
       :ui="{ base: 'w-full table-fixed lg:min-w-[90rem]' }"
@@ -102,6 +103,10 @@
         />
       </template>
     </AppTable>
+
+    <template v-if="filteredUsers.length" #footer>
+      <AdminTablePager v-model:page="page" v-model:page-size="pageSize" :total="filteredUsers.length" :loading="loading" />
+    </template>
   </AdminTablePanel>
 </template>
 
@@ -111,7 +116,8 @@ import AdminCheckbox from '~/components/admin/general/controls/AdminCheckbox.vue
 import PortalBadge from '~/components/app/general/PortalBadge.vue'
 import AppIcon from '~/components/AppIcon.vue'
 import AdminTablePanel from '~/components/admin/general/TablePanel.vue'
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import AdminTablePager from '~/components/admin/general/TablePager.vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import UsersResetAllowanceCell from './UsersResetAllowanceCell.vue'
 import UsersRowActions from './UsersRowActions.vue'
 import { useUserSegments } from '~/composables/users/useUserSegments'
@@ -137,6 +143,13 @@ const {
 const { segments, inSegment } = useUserSegments()
 
 const filteredUsers = computed(() => users.value.filter(user => inSegment(user) && matches([user.id, user.username, userStatus(user)])))
+const page = ref(1)
+const pageSize = ref(20)
+const pageCount = computed(() => Math.max(1, Math.ceil(filteredUsers.value.length / pageSize.value)))
+const pagedUsers = computed(() => filteredUsers.value.slice((page.value - 1) * pageSize.value, page.value * pageSize.value))
+watch([search, userSegment, pageSize], () => { page.value = 1 })
+watch(pageCount, count => { if (page.value > count) page.value = count })
+
 const description = computed(() => {
   const counts = t('users.usersCount', { shown: compactNumber(filteredUsers.value.length), total: compactNumber(users.value.length) })
   const segment = userSegment.value !== 'all' ? segments.value.find(item => item.value === userSegment.value)?.label : ''
@@ -173,7 +186,8 @@ onMounted(() => {
 })
 onBeforeUnmount(() => media?.removeEventListener('change', updateLayout))
 
-const operableUsers = computed(() => filteredUsers.value.filter(isOperableUser))
+// Header selection applies to the rows on the current page.
+const operableUsers = computed(() => pagedUsers.value.filter(isOperableUser))
 const selectedUsers = computed(() => users.value.filter(user => selectedUserIds.value.has(user.id) && isOperableUser(user)))
 const allSelected = computed(() => operableUsers.value.length > 0 && operableUsers.value.every(user => selectedUserIds.value.has(user.id)))
 const someSelected = computed(() => !allSelected.value && operableUsers.value.some(user => selectedUserIds.value.has(user.id)))
