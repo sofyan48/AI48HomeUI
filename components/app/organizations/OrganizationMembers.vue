@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import AppOrganizationMemberReset from '~/components/AppOrganizationMemberReset.vue'
 import AppIcon from '~/components/AppIcon.vue'
 import PortalAlert from '~/components/app/general/PortalAlert.vue'
 import PortalBadge from '~/components/app/general/PortalBadge.vue'
@@ -15,6 +16,7 @@ import type { PortalOrgMember } from '~/composables/organizations-portal/types'
 import { usePortalOrganizations } from '~/composables/organizations-portal/usePortalOrganizations'
 
 const {
+  memberResetSupported, updateMemberReset, selectedId,
   t, summary, members, memberFormOpen, memberForm, memberFormError, memberSaving, editingMember, pendingAction,
   memberKeysAllowed, settingsSupported, modelGroupOptions, modelGroupName,
   openMemberForm, saveMember, removeMember, setMemberKeysAllowed, createKeyForMember,
@@ -71,6 +73,12 @@ const roleItems = computed(() => [
           <p class="text-xs text-[var(--ui-text-muted)]">{{ t('org.memberUsage', { spend: member.spend_30d, requests: member.requests_30d }) }} · {{ memberLimitsSummary(member, t('org.noLimit')) }}</p>
                     <p class="text-xs text-[var(--ui-text-muted)]"><span v-if="modelGroupOptions">{{ scopeText(member) }} · </span>{{ t('org.keysUsed', { usage: memberKeyUsage(member) }) }}</p>
         </div>
+        <AppOrganizationMemberReset
+          v-if="memberResetSupported" :key="`${selectedId}:${member.user_id}`"
+          :member="member" can-configure
+          :save="(body, signal) => updateMemberReset(member.user_id, signal, body)"
+          :reset="signal => updateMemberReset(member.user_id, signal)"
+        />
         <div class="flex items-center gap-1">
           <AppButton type="button" size="xs" color="neutral" variant="ghost" icon="i-tabler-key" :aria-label="t('org.issueKey')" :loading="pendingAction === `issue:${member.user_id}`" @click="openIssueKey(member)" />
           <AppButton type="button" size="xs" color="neutral" variant="ghost" icon="i-tabler-pencil" :aria-label="t('org.memberEdit')" @click="openMemberForm(member)" />

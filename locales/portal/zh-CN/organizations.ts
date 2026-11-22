@@ -2,6 +2,20 @@ import type { PortalAreaTranslation } from '../define'
 import type area from '../organizations'
 
 export default {
+  'org.reset.title': '组织成员重置额度',
+  'org.reset.configure': '配置成员重置额度',
+  'org.reset.mode': '模式',
+  'org.reset.oneTime': '一次性',
+  'org.reset.monthly': '每月',
+  'org.reset.amount': '重置次数',
+  'org.reset.expiry': '到期时间（可选）',
+  'org.reset.localTime': '日期和时间使用浏览器的本地时区。',
+  'org.reset.invalidAmount': '请输入大于或等于 0 的整数。',
+  'org.reset.invalidExpiry': '请输入有效的未来到期时间。',
+  'org.reset.replaceHint': '保存将替换此成员的组织重置额度，并立即授予指定次数。输入 0 可禁用重置。每月额度按组织时区更新，未使用次数不会结转。',
+  'org.reset.confirm': '使用一次组织成员重置来清除所有已启用的成员消费窗口？组织限制、个人限制、余额和扣费记录均保持不变。',
+  'org.reset.saved': '组织成员重置额度已保存。',
+  'org.reset.failed': '组织成员重置操作失败。',
   'org.title': '组织',
   'org.loadFailed': '无法加载组织',
   'org.unsupportedTitle': '组织功能不可用',

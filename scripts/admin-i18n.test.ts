@@ -4,6 +4,7 @@ import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { adminAreas, adminMessages } from '../locales/admin'
 import consoleEn from '../locales/en'
+import { portalMessages } from '../locales/portal'
 
 const root = new URL('..', import.meta.url).pathname
 const en = adminMessages.en as Record<string, string>
@@ -101,7 +102,8 @@ describe('admin console i18n', () => {
         expect(template.errors).toEqual([])
       }
       const used = [...source.matchAll(/\bt\(\s*['"]([\w.-]+)['"]/g)].map(match => match[1]!)
-      expect(used.filter(key => !(key in en) && !(key in consoleEn))).toEqual([])
+      const messages = file.startsWith('components/App') && source.includes('usePortalI18n') ? portalMessages.en : en
+      expect(used.filter(key => !(key in messages) && !(key in consoleEn))).toEqual([])
     })
   }
 })

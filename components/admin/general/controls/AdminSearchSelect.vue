@@ -8,11 +8,12 @@
     :disabled="disabled"
     by="value"
     @update:model-value="onSelect"
+    @update:open="search = ''"
   >
     <ComboboxAnchor :class="cn('relative w-full', props.class)">
       <ComboboxInputRaw
-        v-model="search"
         :display-value="displayValue"
+        @input="onSearchInput"
         :placeholder="placeholder"
         :aria-label="ariaLabel || placeholder"
         :disabled="disabled"
@@ -83,7 +84,12 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{ 'update:modelValue': [value: string | number | null] }>()
 
+// Reka also updates its input model when restoring the selected display label.
+// Only user input is a search query; otherwise "All" hides every real option.
 const search = ref('')
+function onSearchInput(event: Event) {
+  search.value = (event.target as HTMLInputElement).value
+}
 const selectedItem = computed(() => props.items.find(item => item.value === props.modelValue) ?? null)
 const matches = computed(() => {
   const query = search.value.trim().toLowerCase()

@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import AppOrganizationMemberReset from '~/components/AppOrganizationMemberReset.vue'
 import PortalBadge from '~/components/app/general/PortalBadge.vue'
 import PortalProgress from '~/components/app/general/PortalProgress.vue'
 import { usePortalOrganizations } from '~/composables/organizations-portal/usePortalOrganizations'
 import type { PortalSpendWindow } from '~/composables/organizations-portal/types'
 
-const { t, summary, isOwner, memberships, selectedId, pendingAction, leaveOrganization } = usePortalOrganizations()
+const { t, summary, isOwner, memberships, selectedId, pendingAction, leaveOrganization, memberResetSupported, updateMemberReset } = usePortalOrganizations()
 const { currentUser } = useUserApi()
 
 // Unlimited windows are hidden once there is any configured limit, to keep the card compact.
@@ -50,6 +51,12 @@ const canLeave = computed(() => !isOwner.value && Boolean(currentUser.value?.id)
     </AppCard>
     <AppCard class="finance-panel">
       <h3 class="text-sm font-semibold">{{ t('org.yourLimits') }}</h3>
+      <AppOrganizationMemberReset
+        v-if="memberResetSupported && summary?.member" :key="`${selectedId}:${summary.member.user_id}`"
+        class="mt-3" :member="summary.member" :can-configure="isOwner"
+        :save="(body, signal) => updateMemberReset(summary!.member!.user_id, signal, body)"
+        :reset="signal => updateMemberReset(summary!.member!.user_id, signal)"
+      />
       <div class="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div v-for="window in windows" :key="window.id" class="min-w-0">
           <p class="text-xs text-[var(--ui-text-muted)]">{{ windowLabel(window) }}<span v-if="window.mode"> · {{ modeLabel(window) }}</span></p>

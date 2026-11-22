@@ -5,6 +5,7 @@ import { usePortalToast } from '~/composables/portal/usePortalToast'
 import { useWorkspaceState } from '~/composables/useWorkspaceState'
 import { memberLimitsBody, memberLimitsFromRecord } from '~/composables/organizations/memberLimits'
 import { memberAccessBody, memberAccessFromRecord } from '~/composables/organizations/memberAccess'
+import type { MemberResetPolicy } from '~/composables/organizations/memberResetAllowance'
 import {
   emptyPortalMemberForm, isPortalOrgUnsupported, portalOrgError,
   type PortalMemberForm, type PortalOrgCharge, type PortalOrgKey, type PortalOrgMember, type PortalOrgMembership, type PortalOrgSummary,
@@ -15,7 +16,8 @@ const chargesPageSize = 20
 function createPortalOrganizations() {
   const { t } = usePortalI18n()
   const toast = usePortalToast()
-  const { fetchAPI } = useUserApi()
+  const { fetchAPI, capabilities } = useUserApi()
+  const memberResetSupported = computed(() => capabilities.value.organization_member_reset_allowance === true)
 
   const memberships = useWorkspaceState<PortalOrgMembership[]>('user:organizations:memberships', () => [])
   const selectedId = useWorkspaceState<number | null>('user:organizations:selected', () => null)
@@ -58,6 +60,22 @@ function createPortalOrganizations() {
     return members.value.find(member => member.user_id === id)?.username || `#${id}`
   }
 
+  async function updateMemberReset(userId: number, signal: AbortSignal, policy?: MemberResetPolicy) {
+    const orgId = selectedId.value
+    if (!orgId || !memberResetSupported.value || (policy && !isOwner.value)
+      || (!isOwner.value && summary.value?.member?.user_id !== userId)) return
+    const path = `/organizations/${orgId}/members/${userId}`
+    const response = policy
+      ? await fetchAPI<{ member: PortalOrgMember }>(`${path}/reset-allowance`, { method: 'PUT', body: policy, signal })
+      : await fetchAPI<{ member: PortalOrgMember }>(`${path}/period-limits/reset`, { method: 'POST', signal })
+    if (signal.aborted || selectedId.value !== orgId) return
+    members.value = members.value.map(member => member.user_id === userId ? { ...member, ...response.member } : member)
+    if (summary.value?.member?.user_id === userId) {
+      summary.value.member = { ...summary.value.member, ...response.member }
+      if (response.member.spend_windows) summary.value.spend_limits = response.member.spend_windows
+    }
+  }
+
   async function loadMemberships() {
     loading.value = true
     loadError.value = ''
@@ -75,19 +93,27 @@ function createPortalOrganizations() {
     }
   }
 
+  let selectionVersion = 0
   async function loadSelected() {
-    if (!base.value) return
+    const orgId = selectedId.value
+    if (!orgId) return
+    const version = ++selectionVersion
+    const chargeVersion = ++chargesVersion
+    chargesLoading.value = false
+    const path = `/organizations/${orgId}`
     const [summaryResponse, keysResponse, chargesResponse] = await Promise.all([
-      fetchAPI<{ organization: PortalOrgSummary }>(base.value),
-      fetchAPI<{ api_keys: PortalOrgKey[] }>(`${base.value}/api-keys`),
+      fetchAPI<{ organization: PortalOrgSummary }>(path),
+      fetchAPI<{ api_keys: PortalOrgKey[] }>(`${path}/api-keys`),
       fetchCharges(chargesPage.value),
     ])
+    if (version !== selectionVersion || selectedId.value !== orgId) return
     summary.value = summaryResponse.organization
     keys.value = Array.isArray(keysResponse.api_keys) ? keysResponse.api_keys : []
-    applyCharges(chargesResponse)
+    if (chargeVersion === chargesVersion) applyCharges(chargesResponse)
     members.value = []
     if (summary.value?.role === 'owner') {
-      const membersResponse = await fetchAPI<{ members: PortalOrgMember[] }>(`${base.value}/members`)
+      const membersResponse = await fetchAPI<{ members: PortalOrgMember[] }>(`${path}/members`)
+      if (version !== selectionVersion || selectedId.value !== orgId) return
       members.value = Array.isArray(membersResponse.members) ? membersResponse.members : []
     }
   }
@@ -106,13 +132,14 @@ function createPortalOrganizations() {
   // Version guard: a slow page response must not overwrite a newer page.
   let chargesVersion = 0
   async function loadChargesPage(page: number) {
-    if (!base.value) return
+    const orgId = selectedId.value
+    if (!orgId) return
     const version = ++chargesVersion
     chargesPage.value = page
     chargesLoading.value = true
     try {
       const response = await fetchCharges(page)
-      if (version === chargesVersion) applyCharges(response)
+      if (version === chargesVersion && selectedId.value === orgId) applyCharges(response)
     } catch (error) {
       if (version === chargesVersion) toast.add({ title: t('org.chargesLoadFailed'), description: portalOrgError(error, ''), color: 'error' })
     } finally {
@@ -122,6 +149,13 @@ function createPortalOrganizations() {
 
   async function selectOrganization(id: number) {
     selectedId.value = id
+    chargesVersion++
+    charges.value = []
+    chargesTotal.value = 0
+    chargesLoading.value = false
+    summary.value = null
+    members.value = []
+    loadError.value = ''
     chargesPage.value = 1
     createdKey.value = ''
     loading.value = true
@@ -256,6 +290,7 @@ function createPortalOrganizations() {
 
   return {
     t, memberships, selectedId, summary, keys, members, charges, loading, unsupported, loadError, isOwner, memberName,
+    memberResetSupported, updateMemberReset,
     chargesTotal, chargesPage, chargesLoading, chargesPageSize, loadChargesPage,
     canCreateKeys, memberKeysAllowed, settingsSupported, modelGroupOptions, modelGroupName,
     memberFormOpen, memberForm, memberFormError, memberSaving, editingMember, keyName, keyCreating, createdKey, pendingAction,

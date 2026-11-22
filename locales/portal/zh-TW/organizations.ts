@@ -2,6 +2,20 @@ import type { PortalAreaTranslation } from '../define'
 import type area from '../organizations'
 
 export default {
+  'org.reset.title': '組織成員重設額度',
+  'org.reset.configure': '設定成員重設額度',
+  'org.reset.mode': '模式',
+  'org.reset.oneTime': '一次性',
+  'org.reset.monthly': '每月',
+  'org.reset.amount': '重設次數',
+  'org.reset.expiry': '到期時間（選填）',
+  'org.reset.localTime': '日期和時間使用瀏覽器的本地時區。',
+  'org.reset.invalidAmount': '請輸入大於或等於 0 的整數。',
+  'org.reset.invalidExpiry': '請輸入有效的未來到期時間。',
+  'org.reset.replaceHint': '儲存將取代此成員的組織重設額度，並立即授予指定次數。輸入 0 可停用重設。每月額度按組織時區更新，未使用次數不會結轉。',
+  'org.reset.confirm': '使用一次組織成員重設來清除所有已啟用的成員消費視窗？組織限制、個人限制、餘額和扣費記錄均保持不變。',
+  'org.reset.saved': '組織成員重設額度已儲存。',
+  'org.reset.failed': '組織成員重設操作失敗。',
   'org.title': '組織',
   'org.loadFailed': '無法載入組織',
   'org.unsupportedTitle': '組織功能不可用',

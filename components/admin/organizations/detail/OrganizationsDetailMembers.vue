@@ -14,6 +14,12 @@
       <template #limits-cell="{ row }">
         <p class="font-mono text-xs">{{ memberLimitsSummary(member(row), t('organizations.member.noLimits')) }}</p>
         <p class="text-xs text-[var(--ui-text-muted)]">{{ scopeText(member(row)) }} · {{ t('organizations.member.keysUsed', { usage: memberKeyUsage(member(row)) }) }}</p>
+        <AppOrganizationMemberReset
+          v-if="memberResetSupported" :key="`${selected?.id}:${member(row).user_id}`"
+          :member="member(row)" can-configure
+          :save="(body, signal) => updateMemberReset(member(row).user_id, signal, body)"
+          :reset="signal => updateMemberReset(member(row).user_id, signal)"
+        />
       </template>
       <template #spend-cell="{ row }">
         <span class="tabular-nums">{{ member(row).spend_30d }}</span>
@@ -35,6 +41,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import AppOrganizationMemberReset from '~/components/AppOrganizationMemberReset.vue'
 import PortalBadge from '~/components/app/general/PortalBadge.vue'
 import AdminTableAction from '~/components/admin/general/TableAction.vue'
 import { useOrganizationsWorkspace } from '~/composables/organizations/useOrganizationsWorkspace'
@@ -43,6 +50,7 @@ import { memberLimitsSummary } from '~/composables/organizations/memberLimits'
 import { memberKeyUsage } from '~/composables/organizations/memberAccess'
 
 const {
+  memberResetSupported, updateMemberReset,
   t, selected, detailLoading, openAddMember, openEditMember, askRemoveMember, openCreateKey, modelGroupName,
 } = useOrganizationsWorkspace()
 

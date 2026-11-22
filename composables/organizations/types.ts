@@ -1,6 +1,7 @@
 // Contracts for Home's /v8/management/organizations endpoints (see AI48Home docs/ai48home/management/api.md).
 import { emptyMemberLimits, type MemberLimitRecord, type MemberLimitsForm } from './memberLimits'
 import { emptyMemberAccess, type MemberAccessForm, type MemberAccessRecord } from './memberAccess'
+import type { MemberResetRecord } from './memberResetAllowance'
 
 export type OrganizationRole = 'owner' | 'member'
 
@@ -24,7 +25,7 @@ export interface Organization {
   created_at: string
 }
 
-export interface OrganizationMember extends MemberLimitRecord, MemberAccessRecord {
+export interface OrganizationMember extends MemberLimitRecord, MemberAccessRecord, MemberResetRecord {
   user_id: number
   username: string
   role: OrganizationRole

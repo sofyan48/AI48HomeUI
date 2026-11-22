@@ -2,6 +2,8 @@
 import { emptyMemberLimits, type MemberLimitRecord, type MemberLimitWindow, type MemberLimitsForm } from '~/composables/organizations/memberLimits'
 import { emptyMemberAccess, type MemberAccessForm, type MemberAccessRecord } from '~/composables/organizations/memberAccess'
 
+import type { MemberResetRecord } from '~/composables/organizations/memberResetAllowance'
+
 export type PortalOrgRole = 'owner' | 'member'
 
 export interface PortalOrgMembership {
@@ -26,6 +28,8 @@ export interface PortalOrgSummary {
   name: string
   role: PortalOrgRole
   spend_limits: PortalSpendWindow[]
+  /** Self membership is absent on older Home builds. */
+  member?: PortalOrgMember
   credits?: number
   credits_unlimited?: boolean
   /** Older Home builds omit these and always allow member keys. */
@@ -37,7 +41,7 @@ export interface PortalOrgSummary {
   model_group_options?: Array<{ id: number, name: string }>
 }
 
-export interface PortalOrgMember extends MemberLimitRecord, MemberAccessRecord {
+export interface PortalOrgMember extends MemberLimitRecord, MemberAccessRecord, MemberResetRecord {
   user_id: number
   username: string
   role: PortalOrgRole

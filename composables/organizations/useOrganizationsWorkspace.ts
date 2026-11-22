@@ -6,6 +6,7 @@ import { useCapabilities } from '~/composables/useCapabilities'
 import { useOrganizationKeyForm } from './useOrganizationKeyForm'
 import { memberLimitsBody, memberLimitsFromRecord } from './memberLimits'
 import { memberAccessBody, memberAccessFromRecord } from './memberAccess'
+import type { MemberResetPolicy } from './memberResetAllowance'
 import {
   emptyMemberForm, emptyOrganizationForm, isOrganizationsUnsupported, organizationErrorMessage,
   type MemberForm, type Organization, type OrganizationAPIKey, type OrganizationCharge, type OrganizationDetailTab,
@@ -19,6 +20,19 @@ function createOrganizationsWorkspace() {
   const { fetchAPI } = useApi()
   const { t } = useAdminI18n()
   const toast = useAdminToast()
+  const { capabilities } = useCapabilities()
+  const memberResetSupported = computed(() => capabilities.value.organization_member_reset_allowance === true)
+
+  async function updateMemberReset(userId: number, signal: AbortSignal, policy?: MemberResetPolicy) {
+    const org = selected.value
+    if (!org || !memberResetSupported.value) return
+    const path = `/organizations/${org.id}/members/${userId}`
+    const response = policy
+      ? await fetchAPI<{ member: OrganizationMember }>(`${path}/reset-allowance`, { method: 'PUT', body: policy, signal })
+      : await fetchAPI<{ member: OrganizationMember }>(`${path}/period-limits/reset`, { method: 'POST', signal })
+    if (signal.aborted || selected.value?.id !== org.id) return
+    selected.value.members = selected.value.members?.map(member => member.user_id === userId ? { ...member, ...response.member } : member)
+  }
 
   const loading = useWorkspaceState<boolean>('admin:organizations:loading', () => false)
   const unsupported = useWorkspaceState<boolean>('admin:organizations:unsupported', () => false)
@@ -345,7 +359,7 @@ function createOrganizationsWorkspace() {
   }
 
   return {
-    t, loading, unsupported, errorMessage, organizations,
+    t, loading, unsupported, errorMessage, organizations, memberResetSupported, updateMemberReset,
     selected, selectedKeys, detailOpen, detailLoading, openDetail, detailTab, setDetailTab,
     charges, chargesTotal, chargesPage, chargesLoading, chargesError, chargesPageSize, loadCharges,
     orgFormOpen, orgForm, orgFormError, orgSaving, editingOrg, openCreateOrg, openEditOrg, saveOrg,
