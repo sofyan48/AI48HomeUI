@@ -183,6 +183,7 @@ describe('extracted config workspace', () => {
   test('workspace keeps save readback, sync ownership and editor preservation guards', () => {
     const workspace = readFileSync(new URL('./config/useConfigWorkspace.ts', import.meta.url), 'utf8')
     const editors = readFileSync(new URL('./config/useConfigEditors.ts', import.meta.url), 'utf8')
+    const oauth = readFileSync(new URL('./config/useOAuthExclusions.ts', import.meta.url), 'utf8')
     expect(workspace).toContain('await applyConfigWrites(writes, fetchAPI)')
     expect(workspace).toContain('await loadWorkspace(true)')
     expect(workspace).toContain('reconcileConfigDraft(previous, intended, baseline.value)')
@@ -191,14 +192,19 @@ describe('extracted config workspace', () => {
     expect(workspace).toContain("useDataSync('admin:config:sync'")
     expect(workspace).toContain('onMounted(loadWorkspace)')
     expect(workspace).toContain('if (saving.value) return;')
-    expect(editors).toContain('if (version !== modelRequestVersion) return;')
-    expect(editors).toContain('if (version === modelRequestVersion) modelsLoading.value = false;')
+    expect(editors).toContain('useOAuthExclusions(draft, fetchAPI, t, channelModels, modelsLoading)')
+    expect(editors).toContain('...oauthEditors, modelsLoading')
+    expect(oauth).toContain('const version = ++requestVersion')
+    expect(oauth.match(/if \(version !== requestVersion\) return/g)).toHaveLength(2)
+    expect(oauth).toContain('if (version === requestVersion) modelsLoading.value = false')
+    expect(oauth).toContain('if (disposed) return')
+    expect(oauth).toContain('onScopeDispose(() => { disposed = true; requestVersion++ })')
     expect(editors).toContain('watch(aliasRows, syncSpecialDrafts, { deep: true })')
     expect(editors).toContain('...row.original')
     expect(editors).toContain('...parseJSON(payloadEditorSource, {})')
     expect(editors).toContain('draft.value.oauthModelAliasJson = aliasEditorSource')
     expect(editors).toContain('JSON.stringify(payloadDraft) === payloadEditorBaseline')
-    const keys = [...(workspace + editors).matchAll(/useWorkspaceState(?:<[^\n]+?>)?\('([^']+)'/g)].map(match => match[1])
+    const keys = [...(workspace + editors + oauth).matchAll(/useWorkspaceState(?:<[^\n]+?>)?\('([^']+)'/g)].map(match => match[1])
     expect(keys.sort()).toEqual([
       'admin:config:loading', 'admin:config:loaded', 'admin:config:saving',
       'admin:config:pageError', 'admin:config:updatedAt', 'admin:config:runtimeMode',

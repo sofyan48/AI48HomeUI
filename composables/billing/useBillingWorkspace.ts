@@ -10,6 +10,7 @@ import type { BillingSection, BillingRangeFilters, BillingCharge, BillingBalance
 import { useApi, useAdminI18n } from '#imports'
 import { useAdminToast } from '~/composables/admin-feedback/useAdminToast'
 import { useBillingPresentation } from '~/composables/billing/useBillingPresentation'
+import { billingTierChoices, billingTierLabel } from './priceEvidence'
 
 const billingWorkspaceKey: InjectionKey<ReturnType<typeof provideBillingWorkspace>> = Symbol('billingWorkspace')
 
@@ -165,7 +166,7 @@ const enabledOptions = computed(() => [{ label: t('billing.prices.allRules'), va
 const sourceOptions = computed(() => [{ label: t('billing.source.manual'), value: 'manual' }, { label: t('common.default'), value: 'default' }, { label: t('billing.source.sync'), value: 'sync' }])
 const priceSourceOptions = computed(() => [{ label: t('billing.prices.allSources'), value: allOptionValue }, ...sourceOptions.value])
 const tierSourceOptions = computed(() => [{ label: t('billing.tierSource.request'), value: 'request' }, { label: t('billing.tierSource.response'), value: 'response' }])
-const serviceTierOptions = computed(() => [{ label: t('billing.tier.all'), value: '*' }, { label: t('billing.tier.standard'), value: 'standard' }, { label: t('billing.tier.flex'), value: 'flex' }, { label: t('billing.tier.priority'), value: 'priority' }])
+const serviceTierOptions = computed(() => billingTierChoices([priceForm.value.service_tier]).map(value => ({ label: billingTierLabel(value, t), value })))
 const contextPresetOptions = computed(() => [{ label: t('billing.context.base'), value: 'base' }, { label: t('billing.context.272k'), value: '272k' }, { label: t('billing.context.custom'), value: 'custom' }])
 function priceSourceLabel(source: string) { return sourceOptions.value.find(option => option.value === source)?.label || source }
 function balanceTypeLabel(type: string) { return type === 'recharge' ? t('billing.balances.recharge') : type === 'deduct' ? t('billing.balances.deduct') : type }
@@ -197,7 +198,7 @@ const balanceRecords = computed(() => Array.isArray(balancesResponse.value?.item
 const balancesTotal = computed(() => Number(balancesResponse.value?.total) || 0)
 const priceRules = computed(() => Array.isArray(priceResponse.value?.items) ? priceResponse.value.items : [])
 const priceSchemaVersion = computed(() => Number(priceResponse.value?.price_rule_schema_version || priceResponse.value?.schema_version || 1))
-const priceTierOptions = computed(() => [...new Set(priceRules.value.map(rule => rule.service_tier).filter(Boolean))].sort())
+const priceTierOptions = computed(() => billingTierChoices(priceRules.value.map(rule => rule.service_tier)))
 const filteredPriceRules = computed(() => {
   const search = priceFilters.value.search.trim().toLowerCase()
   return [...priceRules.value].filter(rule =>

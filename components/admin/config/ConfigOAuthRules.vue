@@ -10,8 +10,8 @@
                   </p>
                 </div></template
               >
-              <div class="space-y-6">
-                <section class="space-y-3">
+              <div class="flex flex-col gap-6">
+                <section class="flex flex-col gap-3">
                   <div class="flex flex-col gap-3 lg:flex-row lg:items-end">
                     <AdminField :label="t('config.oauthRules.channel')" class="lg:w-64 lg:shrink-0"
                       ><AdminSelect
@@ -19,21 +19,39 @@
                         :items="channelOptions"
                         value-key="value"
                         label-key="label"
-                        class="w-full"
-                        @update:model-value="loadChannelModels" /></AdminField
+                        :disabled="loading || saving"
+                        class="w-full" /></AdminField
                     ><AdminInput
+                      v-if="hasModelCatalog"
                       v-model="modelSearch"
+                      :aria-label="t('config.oauthRules.searchPlaceholder')"
                       icon="i-tabler-search"
                       :placeholder="t('config.oauthRules.searchPlaceholder')"
                       class="min-w-0 flex-1"
                     /><AppButton
+                      v-if="hasModelCatalog"
                       color="neutral"
                       variant="outline"
                       :loading="modelsLoading"
+                      :disabled="loading || saving || modelsLoading"
                       @click="loadChannelModels"
                       >{{ t('config.oauthRules.reloadModels') }}</AppButton
                     >
                   </div>
+                  <AdminField
+                    :label="t('config.oauthRules.channelRulesLabel')"
+                    :hint="t(hasModelCatalog ? 'config.oauthRules.catalogHint' : 'config.oauthRules.noCatalogHint')"
+                    :error="validationErrors.oauthExcludedModelsJson"
+                  >
+                    <AdminTextarea
+                      :model-value="exclusionRulesText"
+                      :disabled="loading || saving || Boolean(validationErrors.oauthExcludedModelsJson)"
+                      :placeholder="t('config.oauthRules.rulesPlaceholder')"
+                      :rows="4"
+                      spellcheck="false"
+                      @update:model-value="updateExclusionRules"
+                    />
+                  </AdminField>
                   <PortalAlert
                     v-if="modelsError"
                     color="warning"
@@ -42,6 +60,7 @@
                     :description="modelsError"
                   />
                   <div
+                    v-if="hasModelCatalog && !modelsError"
                     class="max-h-80 overflow-y-auto rounded-md border border-[var(--ui-border)]"
                   >
                     <label
@@ -87,7 +106,7 @@
                 </section>
 
                 <section
-                  class="space-y-3 border-t border-[var(--ui-border)] pt-5"
+                  class="flex flex-col gap-3 border-t border-[var(--ui-border)] pt-5"
                 >
                   <div class="flex flex-wrap items-center justify-between gap-3">
                     <div class="min-w-0 flex-1">
@@ -150,6 +169,7 @@ import { useConfigWorkspace } from '~/composables/config/useConfigWorkspace'
 const {
   t, draft, loading, saving, validationErrors, exclusionChannel, channelOptions,
   loadChannelModels, modelSearch, modelsLoading, modelsError, filteredChannelModels,
+  hasModelCatalog, exclusionRulesText, updateExclusionRules,
   excludedForChannel, toggleExcluded, clearExcludedChannel, addAlias, aliasRows,
 } = useConfigWorkspace()
 </script>

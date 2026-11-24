@@ -1,4 +1,5 @@
 import { computed } from 'vue'
+import { normalizeBillingPriceSnapshot } from './priceEvidence'
 import type { BillingPresentationOptions, BillingCharge } from './types'
 
 export function useBillingPresentation({ overview, selectedBalance, selectedCharge, t, formatCredits, formatNumber, formatDateTime, balanceTypeLabel }: BillingPresentationOptions) {
@@ -41,25 +42,20 @@ const balanceDetailItems = computed(() => selectedBalance.value ? [
   { label: t('billing.col.note'), value: selectedBalance.value.note || '—' }
 ] : [])
 const snapshotDetailItems = computed(() => {
-  const source = selectedCharge.value?.price_snapshot
-  if (!source) return []
-  let snapshot: unknown = source
-  if (typeof source === 'string') {
-    try { snapshot = JSON.parse(source) } catch { return [] }
-  }
-  if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot)) return []
-  const record = snapshot as Record<string, unknown>
+  const record = normalizeBillingPriceSnapshot(selectedCharge.value?.price_snapshot)
+  if (!record) return []
     const fields: [string, string][] = [
     ['provider', t('common.provider')], ['model', t('common.model')],
     ['matched_service_tier', t('billing.snapshot.matchedTier')], ['min_input_tokens', t('billing.snapshot.minInputTokens')],
     ['requested_service_tier', t('billing.snapshot.requestedTier')], ['response_service_tier', t('billing.snapshot.responseTier')],
     ['service_tier_source', t('billing.snapshot.tierSource')], ['effective_service_tier', t('billing.snapshot.effectiveTier')],
     ['response_tier_fallback', t('billing.snapshot.responseFallback')],
+    ['context_input_tokens', t('billing.snapshot.contextInputTokens')],
     ['input_price_per_million', t('billing.snapshot.inputPerMillion')], ['output_price_per_million', t('billing.snapshot.outputPerMillion')],
     ['cache_read_price_per_million', t('billing.snapshot.cacheReadPerMillion')], ['cache_write_price_per_million', t('billing.snapshot.cacheWritePerMillion')],
     ['request_price', t('billing.snapshot.requestPrice')]
   ]
-  return fields.filter(([key]) => Object.hasOwn(record, key)).map(([key, label]) => ({ label, value: typeof record[key] === 'boolean' ? (record[key] ? t('common.yes') : t('common.no')) : String(record[key]) }))
+  return fields.filter(([key]) => record[key] != null && (key !== 'min_input_tokens' || Boolean(record.matched_service_tier))).map(([key, label]) => ({ label, value: typeof record[key] === 'boolean' ? (record[key] ? t('common.yes') : t('common.no')) : String(record[key]) }))
 })
 const chargeDetailItems = computed(() => selectedCharge.value ? [
   { label: t('billing.detail.chargeId'), value: selectedCharge.value.id || '—', mono: true },

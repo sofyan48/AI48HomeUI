@@ -1,15 +1,14 @@
-import { computed, reactive, ref, toRaw, watch, type Ref } from 'vue'
+import { reactive, ref, toRaw, watch, type Ref } from 'vue'
+import { useOAuthExclusions, type OAuthChannelModel } from './useOAuthExclusions'
 import { useWorkspaceState } from '~/composables/useWorkspaceState'
 import { parseJSON } from './draft'
 import type { ConfigDraft, ConfigFetch, ConfigTranslator } from './types'
 
 export function useConfigEditors(draft: Ref<ConfigDraft>, fetchAPI: ConfigFetch, t: ConfigTranslator) {
-const modelSearch = ref("");
-const exclusionChannel = ref("claude");
-const channelModels = useWorkspaceState<ConfigDraft[]>('admin:config:channelModels', () => ([]));
+
+const channelModels = useWorkspaceState<OAuthChannelModel[]>('admin:config:channelModels', () => ([]));
 const modelsLoading = useWorkspaceState('admin:config:modelsLoading', () => (false));
-const modelsError = ref("");
-let modelRequestVersion = 0;
+const oauthEditors = useOAuthExclusions(draft, fetchAPI, t, channelModels, modelsLoading);
 const aliasRows = ref<ConfigDraft[]>([]);
 let aliasKey = 0;
 let aliasEditorBaseline = "";
@@ -45,53 +44,6 @@ const payloadEditMode = ref("default");
 const payloadEditIndex = ref(-1);
 const payloadEditor = reactive({ models: "[]", params: "{}" });
 const payloadEditorError = ref("");
-const channelOptions = [
-  ["claude", "Claude"],
-  ["gemini", "Gemini"],
-  ["gemini-interactions", "Google Interactions"],
-  ["vertex", "Vertex"],
-  ["aistudio", "AI Studio"],
-  ["codex", "Codex"],
-  ["codex-free", "Codex Free"],
-  ["codex-team", "Codex Team"],
-  ["codex-plus", "Codex Plus"],
-  ["codex-pro", "Codex Pro"],
-  ["kimi", "Kimi"],
-  ["kimi-ai", "Kimi AI"],
-  ["antigravity", "Antigravity"],
-  ["xai", "xAI"],
-  ["devin", "Devin"],
-  ["meta", "Meta"],
-].map(([value, label]) => ({ value, label }));
-const excludedMap = computed(() => {
-  const value = parseJSON(draft.value.oauthExcludedModelsJson, {});
-  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
-});
-const excludedForChannel = computed(() =>
-  Array.isArray(excludedMap.value[exclusionChannel.value])
-    ? excludedMap.value[exclusionChannel.value]
-    : [],
-);
-
-const filteredChannelModels = computed(() => {
-  const q = modelSearch.value.trim().toLowerCase();
-  return channelModels.value.filter(
-    (model) =>
-      !q ||
-      [
-        model.id,
-        model.display_name,
-        model.name,
-        model.owned_by,
-        model.type,
-        model.description,
-      ].some((value) =>
-        String(value || "")
-          .toLowerCase()
-          .includes(q),
-      ),
-  );
-});
 function syncEditors() {
   const aliases = parseJSON(draft.value.oauthModelAliasJson, {});
   aliasRows.value = Object.entries<ConfigDraft[]>(aliases).flatMap(([channel, entries]) =>
@@ -141,37 +93,6 @@ function syncSpecialDrafts() {
         ...parseJSON(payloadEditorSource, {}),
         ...Object.fromEntries(payloadModes.map((mode) => [mode.value, payloadDraft[mode.value]])),
       }, null, 2);
-}
-async function loadChannelModels() {
-  const version = ++modelRequestVersion;
-  const channel = exclusionChannel.value;
-  modelsLoading.value = true;
-  modelsError.value = "";
-  channelModels.value = [];
-  try {
-    const response = await fetchAPI(`/routing/model-definitions/${encodeURIComponent(channel)}`);
-    if (version !== modelRequestVersion) return;
-    if (!Array.isArray(response?.models)) throw new Error(t('config.models.invalidResponse'));
-    channelModels.value = response.models;
-  } catch (error: any) {
-    if (version !== modelRequestVersion) return;
-    modelsError.value = error?.message || t('config.models.loadFailed');
-  } finally {
-    if (version === modelRequestVersion) modelsLoading.value = false;
-  }
-}
-function toggleExcluded(id: string, checked: boolean | 'indeterminate') {
-  const map = structuredClone(excludedMap.value);
-  const selected = new Set(map[exclusionChannel.value] || []);
-  checked ? selected.add(id) : selected.delete(id);
-  if (selected.size) map[exclusionChannel.value] = [...selected];
-  else delete map[exclusionChannel.value];
-  draft.value.oauthExcludedModelsJson = JSON.stringify(map, null, 2);
-}
-function clearExcludedChannel() {
-  const map = structuredClone(excludedMap.value);
-  delete map[exclusionChannel.value];
-  draft.value.oauthExcludedModelsJson = JSON.stringify(map, null, 2);
 }
 function addAlias() {
   aliasRows.value.push({
@@ -256,9 +177,8 @@ function savePayloadEditor() {
 }
 watch(aliasRows, syncSpecialDrafts, { deep: true });
 return {
-  modelSearch, exclusionChannel, modelsLoading, modelsError, channelOptions,
-  excludedForChannel, filteredChannelModels, loadChannelModels, toggleExcluded,
-  clearExcludedChannel, aliasRows, addAlias, payloadDraft, payloadModes,
+  ...oauthEditors, modelsLoading,
+  aliasRows, addAlias, payloadDraft, payloadModes,
   payloadModeLabel, payloadEditorOpen, payloadEditMode, payloadEditIndex,
   payloadEditor, payloadEditorError, payloadRuleSummary, payloadRulePaths,
   addPayloadRule, editPayload, duplicatePayload, removePayload, savePayloadEditor,
