@@ -448,15 +448,16 @@ export const useUserSessionStore = defineStore('userSession', () => {
     return response
   }
 
-  const loginWithPasskey = async (username: string, remembered = true) => {
+  const loginWithPasskey = async (username = '', remembered = true) => {
     if (!import.meta.client || !window.PublicKeyCredential) throw new UserApiError('Passkeys are not supported by this browser.')
+    const identity = username.trim() ? { username: username.trim() } : {} // empty = usernameless (discoverable) login
     const begin = await fetchAPI<{ challenge_id: string; publicKey: any }>('/login/passkey/begin', {
-      method: 'POST', auth: false, body: { username }
+      method: 'POST', auth: false, body: identity
     })
     const credential = await navigator.credentials.get({ publicKey: requestOptions(begin.publicKey) }) as PublicKeyCredential | null
     if (!credential) throw new UserApiError('Passkey authentication was cancelled.')
     const response = await fetchAPI<UserSessionResponse>('/login/passkey', {
-      method: 'POST', auth: false, body: { username, challenge_id: begin.challenge_id, credential: credentialJSON(credential) }
+      method: 'POST', auth: false, body: { ...identity, challenge_id: begin.challenge_id, credential: credentialJSON(credential) }
     })
     saveSession(response, remembered)
     return response

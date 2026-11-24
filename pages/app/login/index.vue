@@ -81,7 +81,6 @@ async function submit() {
 }
 async function passkeyLogin() {
   if (loading.value || passkeyLoading.value) return
-  if (!form.username.trim()) { error.value = t('auth.usernameRequired'); return focusError() }
   error.value = ''; passkeyLoading.value = true
   try { await loginWithPasskey(form.username.trim(), remember.value); await router.replace(destination.value) }
   catch (cause: any) { error.value = cause?.name === 'NotAllowedError' ? t('login.passkeyCancelled') : (cause?.message || t('login.passkeyFailed')); await focusError() }
