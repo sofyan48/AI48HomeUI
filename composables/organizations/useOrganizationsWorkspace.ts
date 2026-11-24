@@ -134,7 +134,7 @@ function createOrganizationsWorkspace() {
     return userOptions.value.map(option => ({ ...option, disabled: existing.has(option.value) }))
   })
 
-  // Model groups for the organization form checkboxes. Loaded lazily when the form opens.
+  // Shared catalog for list summaries and form checkboxes.
   const modelGroups = ref<OrganizationModelGroupOption[]>([])
   const modelGroupsLoading = ref(false)
   const modelGroupsLoaded = ref(false)
@@ -148,24 +148,36 @@ function createOrganizationsWorkspace() {
     return modelGroups.value.filter(group => (scope.length ? scope.includes(group.id) : !group.disabled) || chosen.includes(group.id))
   })
 
+  let modelGroupsVersion = 0
+  let modelGroupsController: AbortController | undefined
+  onScopeDispose(() => { modelGroupsVersion++; modelGroupsController?.abort() })
+
   async function loadModelGroups(force = false) {
-    if (modelGroupsLoading.value || (modelGroupsLoaded.value && !force)) return
+    if (!force && (modelGroupsLoading.value || modelGroupsLoaded.value)) return
+    const version = ++modelGroupsVersion
+    modelGroupsController?.abort()
+    modelGroupsController = new AbortController()
     modelGroupsLoading.value = true
     modelGroupsError.value = ''
     try {
-      const response = await fetchAPI<{ model_groups: Array<{ id: number, group_name: string, disabled?: boolean, deleted_at?: string | null }> }>('/model-groups')
-      modelGroups.value = (Array.isArray(response.model_groups) ? response.model_groups : [])
+      const response = await fetchAPI<{ model_groups: Array<{ id: number, group_name: string, disabled?: boolean, deleted_at?: string | null }> }>('/model-groups', { signal: modelGroupsController.signal })
+      if (version !== modelGroupsVersion) return
+      if (!Array.isArray(response.model_groups)) throw new Error(t('organizations.modelGroupsLoadFailed'))
+      modelGroups.value = response.model_groups
         .filter(group => !group.deleted_at)
-        .map(group => ({ id: group.id, name: group.group_name || t('organizations.unnamedModelGroup'), disabled: Boolean(group.disabled) }))
+        .map(group => ({ id: group.id, name: group.group_name?.trim() || `#${group.id}`, disabled: Boolean(group.disabled) }))
       modelGroupsLoaded.value = true
     } catch (error) {
+      if (version !== modelGroupsVersion) return
+      modelGroups.value = []
+      modelGroupsLoaded.value = false
       modelGroupsError.value = organizationErrorMessage(error, t('organizations.modelGroupsLoadFailed'))
     } finally {
-      modelGroupsLoading.value = false
+      if (version === modelGroupsVersion) modelGroupsLoading.value = false
     }
   }
 
-  const modelGroupName = (id: number) => modelGroups.value.find(group => group.id === id)?.name || t('organizations.unknownModelGroup')
+  const modelGroupName = (id: number) => modelGroups.value.find(group => group.id === id)?.name || `#${id}`
 
   function toggleModelGroup(id: number, checked: boolean) {
     const current = orgForm.value.modelGroups.filter(item => item !== id)
@@ -188,18 +200,30 @@ function createOrganizationsWorkspace() {
     }
   }
 
+  const loadScopeCatalogs = () => Promise.all([loadModelGroups(true), credentialScopes.loadCredentialScopes()])
+  let listVersion = 0
+  let listController: AbortController | undefined
+  onScopeDispose(() => { listVersion++; listController?.abort() })
+
   async function loadAll() {
+    const version = ++listVersion
+    listController?.abort()
+    listController = new AbortController()
+    const catalogs = loadScopeCatalogs()
     loading.value = true
     errorMessage.value = ''
     try {
-      const response = await fetchAPI<{ organizations: Organization[] }>('/organizations')
+      const response = await fetchAPI<{ organizations: Organization[] }>('/organizations', { signal: listController.signal })
+      if (version !== listVersion) return
       unsupported.value = false
       organizations.value = Array.isArray(response.organizations) ? response.organizations : []
     } catch (error) {
+      if (version !== listVersion) return
       if (isOrganizationsUnsupported(error)) unsupported.value = true
       else errorMessage.value = organizationErrorMessage(error, t('organizations.loadFailed'))
     } finally {
-      loading.value = false
+      if (version === listVersion) loading.value = false
+      await catalogs
     }
   }
 
@@ -437,7 +461,7 @@ function createOrganizationsWorkspace() {
     ...keyForm, userOptions, memberUserOptions, usersLoading, loadUsers,
     modelGroupOptions, memberModelGroupOptions, modelGroupsLoading, modelGroupsError, loadModelGroups, toggleModelGroup, modelGroupName,
     deleteTarget, deleting, deleteError, askDeleteOrg, askRemoveMember, askDeleteKey, confirmDelete,
-    loadAll,
+    loadAll, loadScopeCatalogs,
   }
 }
 

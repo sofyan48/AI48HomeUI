@@ -14,12 +14,14 @@ const deferred = <T>() => {
 const org = (id: number, channel_groups?: number[]) => ({ id, name: `org-${id}`, credits: 10, model_groups: [1], ...(channel_groups === undefined ? {} : { channel_groups }) })
 const tick = async () => { await Vue.nextTick(); await Vue.nextTick(); await Vue.nextTick() }
 
-function harness() {
-  const calls: Array<{ path: string, method?: string, body?: Record<string, unknown> }> = []
+function harness(overrides?: (path: string) => Promise<unknown> | undefined) {
+  const calls: Array<{ path: string, method?: string, body?: Record<string, unknown>, signal?: AbortSignal }> = []
   const details = new Map<number, ReturnType<typeof deferred<{ organization: ReturnType<typeof org> }>>>()
   let scopes = deferred<{ channel_groups: Array<{ id: number, channel_name: string, disabled?: boolean }> }>()
-  const fetchAPI = async (path: string, options: { method?: string, body?: Record<string, unknown> } = {}) => {
+  const fetchAPI = async (path: string, options: { method?: string, body?: Record<string, unknown>, signal?: AbortSignal } = {}) => {
     calls.push({ path, ...options })
+    const override = overrides?.(path)
+    if (override) return override
     if (options.method) return {}
     if (path === '/channel-groups') return scopes.promise
     if (path === '/organizations') return { organizations: [] }
@@ -48,6 +50,95 @@ function harness() {
   const state = owner.run(create)!
   return { state, calls, details, owner, scopes, retryScopes: () => { scopes = deferred(); return scopes } }
 }
+
+describe('organization list catalogs', () => {
+  test('initial load and manual sync refresh both catalogs without detail requests', async () => {
+    let name = 'Initial'
+    const h = harness(path => {
+      if (path === '/organizations') return Promise.resolve({ organizations: [org(1, [2])] })
+      if (path === '/model-groups') return Promise.resolve({ model_groups: [{ id: 1, group_name: name, disabled: true }, { id: 3, group_name: ' ' }, { id: 4, group_name: 'Deleted', deleted_at: '2026-01-01' }] })
+      if (path === '/channel-groups') return Promise.resolve({ channel_groups: [{ id: 2, channel_name: name, disabled: true }, { id: 3, channel_name: ' ' }, { id: 4, channel_name: 'Deleted', deleted_at: '2026-01-01' }] })
+    })
+    await h.state.loadAll()
+    expect(h.state.organizations.value).toHaveLength(1)
+    expect(h.state.modelGroupName(1)).toBe('Initial')
+    expect(h.state.credentialScopeName(2)).toBe('Initial')
+    expect(h.state.modelGroupName(3)).toBe('#3')
+    expect(h.state.credentialScopeName(3)).toBe('#3')
+    expect(h.state.modelGroupName(4)).toBe('#4')
+    expect(h.state.credentialScopeName(4)).toBe('#4')
+    expect(h.state.modelGroupName(99)).toBe('#99')
+    expect(h.state.credentialScopeName(99)).toBe('#99')
+    name = 'Synced'
+    await h.state.loadAll()
+    expect(h.state.modelGroupName(1)).toBe('Synced')
+    expect(h.state.credentialScopeName(2)).toBe('Synced')
+    expect(h.calls.map(call => call.path).sort()).toEqual(['/channel-groups', '/channel-groups', '/model-groups', '/model-groups', '/organizations', '/organizations'])
+    h.owner.stop()
+  })
+
+  test('catalog failure preserves list and IDs; retry recovers names; malformed responses fail', async () => {
+    let fail = true
+    const h = harness(path => {
+      if (path === '/organizations') return Promise.resolve({ organizations: [org(1, [2])] })
+      if (path === '/model-groups' || path === '/channel-groups') {
+        if (fail) return Promise.resolve({})
+        return Promise.resolve(path === '/model-groups'
+          ? { model_groups: [{ id: 1, group_name: 'Models' }] }
+          : { channel_groups: [{ id: 2, channel_name: 'Credentials' }] })
+      }
+    })
+    await h.state.loadAll()
+    expect(h.state.errorMessage.value).toBe('')
+    expect(h.state.organizations.value[0]?.model_groups).toEqual([1])
+    expect(h.state.modelGroupsError.value).toBeTruthy()
+    expect(h.state.scopesError.value).toBeTruthy()
+    expect(h.state.modelGroupName(1)).toBe('#1')
+    expect(h.state.credentialScopeName(2)).toBe('#2')
+    fail = false
+    await h.state.loadScopeCatalogs()
+    expect(h.state.modelGroupsError.value).toBe('')
+    expect(h.state.scopesError.value).toBe('')
+    expect(h.state.modelGroupName(1)).toBe('Models')
+    expect(h.state.credentialScopeName(2)).toBe('Credentials')
+    fail = true
+    await h.state.loadScopeCatalogs()
+    expect(h.state.modelGroupName(1)).toBe('#1')
+    expect(h.state.credentialScopeName(2)).toBe('#2')
+    h.owner.stop()
+  })
+
+  test('superseded and disposed list/catalog requests cannot publish late results', async () => {
+    const pending: Array<{ path: string, request: ReturnType<typeof deferred<unknown>> }> = []
+    const h = harness(path => {
+      const request = deferred<unknown>()
+      pending.push({ path, request })
+      return request.promise
+    })
+    const first = h.state.loadAll()
+    const second = h.state.loadAll()
+    expect(h.calls.slice(0, 3).every(call => call.signal?.aborted)).toBe(true)
+    const result = (path: string, name: string) => path === '/organizations'
+      ? { organizations: [{ ...org(1, [2]), name }] }
+      : path === '/model-groups' ? { model_groups: [{ id: 1, group_name: name }] }
+      : { channel_groups: [{ id: 2, channel_name: name }] }
+    for (const item of pending.slice(3)) item.request.resolve(result(item.path, 'New'))
+    await second
+    for (const item of pending.slice(0, 3)) item.request.resolve(result(item.path, 'Old'))
+    await first
+    expect(h.state.organizations.value[0]?.name).toBe('New')
+    expect(h.state.modelGroupName(1)).toBe('New')
+    expect(h.state.credentialScopeName(2)).toBe('New')
+    const late = h.state.loadAll()
+    h.owner.stop()
+    expect(h.calls.slice(6).every(call => call.signal?.aborted)).toBe(true)
+    for (const item of pending.slice(6)) item.request.resolve(result(item.path, 'Disposed'))
+    await late
+    expect(h.state.organizations.value[0]?.name).toBe('New')
+    expect(h.state.modelGroupName(1)).toBe('New')
+    expect(h.state.credentialScopeName(2)).toBe('New')
+  })
+})
 
 describe('dedicated organization credential scopes', () => {
   test('create posts selected scope IDs and preserves unknown/disabled choices', async () => {

@@ -27,13 +27,16 @@ export function useOrganizationCredentialScopes(fetchAPI: FetchScopes, form: Ref
       groups.value = response.channel_groups.filter(group => !group.deleted_at)
       scopesLoaded.value = true
     } catch {
-      if (current === version) scopesError.value = t('organizations.credentialScopesLoadFailed')
+      if (current === version) {
+        groups.value = []
+        scopesError.value = t('organizations.credentialScopesLoadFailed')
+      }
     } finally {
       if (current === version) scopesLoading.value = false
     }
   }
 
-  const credentialScopeName = (id: number) => groups.value.find(group => group.id === id)?.channel_name || t('organizations.unknownCredentialScope', { id })
+  const credentialScopeName = (id: number) => groups.value.find(group => group.id === id)?.channel_name?.trim() || `#${id}`
   const credentialScopeOptions = computed(() => {
     const selected = form.value.channelGroups
     const options = groups.value.filter(group => !group.disabled || selected.includes(group.id))

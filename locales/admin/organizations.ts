@@ -1,7 +1,7 @@
 import { defineAdminMessages } from './define'
 
 export default defineAdminMessages({
-  'organizations.credentialScopes': 'Credential scope',
+  'organizations.credentialScopes': 'Credential scopes',
   'organizations.credentialScopesHelp': 'Select credential scopes available to all organization keys. Leave empty for unrestricted access.',
   'organizations.credentialScopesSelected': '{count} credential scopes selected',
   'organizations.allCredentials': 'All credentials (unrestricted)',

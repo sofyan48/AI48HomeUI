@@ -11,6 +11,16 @@
     <template v-else>
       <PortalAlert v-if="errorMessage" color="error" variant="subtle" icon="i-tabler-alert-circle" :title="t('organizations.loadFailed')" :description="errorMessage" />
 
+      <PortalAlert v-if="modelGroupsError || scopesError" color="warning" variant="subtle" icon="i-tabler-alert-triangle">
+        <template #description>
+          <p v-if="modelGroupsError">{{ t('organizations.modelGroupsLoadFailed') }}</p>
+          <p v-if="scopesError">{{ scopesError }}</p>
+        </template>
+        <template #actions>
+          <AppButton size="xs" variant="outline" :loading="modelGroupsLoading || scopesLoading" @click="loadScopeCatalogs">{{ t('common.retry') }}</AppButton>
+        </template>
+      </PortalAlert>
+
       <AppCard :ui="{ body: 'p-0' }">
         <template #header>
           <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -33,6 +43,12 @@
           </template>
           <template #owners-cell="{ row }">
             <span class="text-sm">{{ (value(row).owners || []).join(', ') || '—' }}</span>
+          </template>
+          <template #model_groups-cell="{ row }">
+            <OrganizationScopeBadges :ids="value(row).model_groups" :name="modelGroupName" :unrestricted="t('organizations.allModels')" :unsupported="t('organizations.credentialScopesUnsupported')" />
+          </template>
+          <template #channel_groups-cell="{ row }">
+            <OrganizationScopeBadges :ids="value(row).channel_groups" :name="credentialScopeName" :unrestricted="t('organizations.allCredentials')" :unsupported="t('organizations.credentialScopesUnsupported')" />
           </template>
           <template #actions-cell="{ row }">
             <div class="flex justify-end gap-1">
@@ -71,6 +87,7 @@ import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import PortalAlert from '~/components/app/general/PortalAlert.vue'
 import AdminTableAction from '~/components/admin/general/TableAction.vue'
+import OrganizationScopeBadges from '~/components/admin/organizations/OrganizationScopeBadges.vue'
 import OrganizationsFormDialog from '~/components/admin/organizations/OrganizationsFormDialog.vue'
 
 import { useDataSync } from '~/composables/useDataSync'
@@ -80,6 +97,8 @@ import type { Organization, OrganizationDetailTab } from '~/composables/organiza
 const {
   t, unsupported, errorMessage, loading, organizations, openCreateOrg, openEditOrg,
   askDeleteOrg, deleteTarget, deleting, deleteError, confirmDelete, loadAll,
+  modelGroupName, credentialScopeName, modelGroupsError, scopesError,
+  modelGroupsLoading, scopesLoading, loadScopeCatalogs,
 } = provideOrganizationsWorkspace()
 
 const columns = computed(() => [
@@ -87,6 +106,8 @@ const columns = computed(() => [
   { accessorKey: 'credits', header: t('organizations.col.credits') },
   { accessorKey: 'members', header: t('organizations.col.members') },
   { accessorKey: 'owners', header: t('organizations.col.owners') },
+  { accessorKey: 'model_groups', header: t('organizations.modelGroups') },
+  { accessorKey: 'channel_groups', header: t('organizations.credentialScopes') },
   { accessorKey: 'actions', header: '', meta: { class: { th: 'table-action-head', td: 'table-action-cell' } } },
 ])
 
