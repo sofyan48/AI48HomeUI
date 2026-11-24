@@ -21,6 +21,10 @@
         <p class="mt-1 text-sm font-medium">{{ (selected.model_groups || []).map(modelGroupName).join(', ') || t('organizations.allModels') }}</p>
       </div>
       <div class="rounded-lg border border-[var(--ui-border)] p-3">
+        <p class="text-xs text-[var(--ui-text-muted)]">{{ t('organizations.credentialScopes') }}</p>
+        <p class="mt-1 text-sm font-medium">{{ selected.channel_groups === undefined ? t('organizations.credentialScopesUnsupported') : selected.channel_groups.map(credentialScopeName).join(', ') || t('organizations.allCredentials') }}</p>
+      </div>
+      <div class="rounded-lg border border-[var(--ui-border)] p-3">
         <p class="text-xs text-[var(--ui-text-muted)]">{{ t('organizations.overview.limits') }}</p>
         <p class="mt-1 font-mono text-xs">{{ memberLimitsSummary(selected, t('organizations.member.noLimits')) }}</p>
       </div>
@@ -40,7 +44,7 @@ import { computed } from 'vue'
 import { useOrganizationsWorkspace } from '~/composables/organizations/useOrganizationsWorkspace'
 import { memberLimitsSummary } from '~/composables/organizations/memberLimits'
 
-const { t, selected, selectedKeys, modelGroupName } = useOrganizationsWorkspace()
+const { t, selected, selectedKeys, modelGroupName, credentialScopeName } = useOrganizationsWorkspace()
 
 const members = computed(() => selected.value?.members || [])
 const owners = computed(() => members.value.filter(member => member.role === 'owner').map(member => member.username).join(', '))

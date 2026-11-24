@@ -2,6 +2,15 @@ import type { AdminAreaTranslation } from '../define'
 import type area from '../organizations'
 
 export default {
+  'organizations.credentialScopes': '凭据范围',
+  'organizations.credentialScopesHelp': '选择所有组织密钥可用的凭据范围。留空表示不限制。',
+  'organizations.credentialScopesSelected': '已选择 {count} 个凭据范围',
+  'organizations.allCredentials': '所有凭据（不限制）',
+  'organizations.credentialScopesEmpty': '尚未配置凭据范围。',
+  'organizations.credentialScopesLoadFailed': '无法加载凭据范围。请重试后再保存。',
+  'organizations.credentialScopeUnavailable': '已停用或不可用的范围（移除前保留）',
+  'organizations.unknownCredentialScope': '凭据范围 #{id}',
+  'organizations.credentialScopesUnsupported': '此 Home 版本未提供范围信息',
   'organizations.title': '组织',
   'organizations.description': '团队共享的计费账户。成员通过自己的 Key 使用组织余额。',
   'organizations.loadFailed': '无法加载组织',

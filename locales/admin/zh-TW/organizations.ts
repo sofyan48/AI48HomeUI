@@ -2,6 +2,15 @@ import type { AdminAreaTranslation } from '../define'
 import type area from '../organizations'
 
 export default {
+  'organizations.credentialScopes': '憑證範圍',
+  'organizations.credentialScopesHelp': '選擇所有組織金鑰可用的憑證範圍。留空表示不限制。',
+  'organizations.credentialScopesSelected': '已選擇 {count} 個憑證範圍',
+  'organizations.allCredentials': '所有憑證（不限制）',
+  'organizations.credentialScopesEmpty': '尚未設定憑證範圍。',
+  'organizations.credentialScopesLoadFailed': '無法載入憑證範圍。請重試後再儲存。',
+  'organizations.credentialScopeUnavailable': '已停用或無法使用的範圍（移除前保留）',
+  'organizations.unknownCredentialScope': '憑證範圍 #{id}',
+  'organizations.credentialScopesUnsupported': '此 Home 版本未提供範圍資訊',
   'organizations.title': '組織',
   'organizations.description': '團隊共享的計費帳戶。成員透過自己的 Key 使用組織餘額。',
   'organizations.loadFailed': '無法載入組織',

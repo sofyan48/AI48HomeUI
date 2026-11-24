@@ -1,6 +1,15 @@
 import { defineAdminMessages } from './define'
 
 export default defineAdminMessages({
+  'organizations.credentialScopes': 'Credential scope',
+  'organizations.credentialScopesHelp': 'Select credential scopes available to all organization keys. Leave empty for unrestricted access.',
+  'organizations.credentialScopesSelected': '{count} credential scopes selected',
+  'organizations.allCredentials': 'All credentials (unrestricted)',
+  'organizations.credentialScopesEmpty': 'No credential scopes configured.',
+  'organizations.credentialScopesLoadFailed': 'Credential scopes could not be loaded. Retry before saving.',
+  'organizations.credentialScopeUnavailable': 'Disabled or unavailable scope (preserved until removed)',
+  'organizations.unknownCredentialScope': 'Credential scope #{id}',
+  'organizations.credentialScopesUnsupported': 'Not reported by this Home version',
   'organizations.title': 'Organizations',
   'organizations.description': 'Shared billing accounts for teams. Members use the organization balance through their own keys.',
   'organizations.loadFailed': 'Organizations could not be loaded',
@@ -172,6 +181,15 @@ export default defineAdminMessages({
   'organizations.usage.byModel': 'Credits by model',
   'organizations.usage.empty': 'No usage in this range.',
 }, {
+  'organizations.credentialScopes': 'Cakupan kredensial',
+  'organizations.credentialScopesHelp': 'Pilih cakupan kredensial untuk semua kunci organisasi. Kosongkan untuk akses tanpa batas.',
+  'organizations.credentialScopesSelected': '{count} cakupan kredensial dipilih',
+  'organizations.allCredentials': 'Semua kredensial (tanpa batas)',
+  'organizations.credentialScopesEmpty': 'Belum ada cakupan kredensial.',
+  'organizations.credentialScopesLoadFailed': 'Cakupan kredensial gagal dimuat. Coba lagi sebelum menyimpan.',
+  'organizations.credentialScopeUnavailable': 'Cakupan nonaktif atau tidak tersedia (dipertahankan hingga dihapus)',
+  'organizations.unknownCredentialScope': 'Cakupan kredensial #{id}',
+  'organizations.credentialScopesUnsupported': 'Tidak dilaporkan oleh versi Home ini',
   'organizations.title': 'Organisasi',
   'organizations.description': 'Akun billing bersama untuk tim. Member memakai saldo organisasi lewat key milik mereka sendiri.',
   'organizations.loadFailed': 'Organisasi tidak dapat dimuat',

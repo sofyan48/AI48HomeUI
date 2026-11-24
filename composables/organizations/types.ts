@@ -16,6 +16,8 @@ export interface Organization {
   limit_7d_credits: number | null
   limit_30d_credits: number | null
   model_groups: number[]
+  /** Omitted by older Home builds; an empty array means unrestricted. */
+  channel_groups?: number[]
   /** Missing on older Home builds, which always allow member keys. */
   allow_member_keys?: boolean
   member_count?: number
@@ -63,6 +65,7 @@ export interface OrganizationForm {
   credits: string
   ownerUserId: number | null
   modelGroups: number[]
+  channelGroups: number[]
   allowMemberKeys: boolean
 }
 
@@ -105,5 +108,5 @@ export function isOrganizationsUnsupported(error: unknown): boolean {
   return failure.statusCode === 404 || failure.status === 404
 }
 
-export const emptyOrganizationForm = (): OrganizationForm => ({ name: '', credits: '', ownerUserId: null, modelGroups: [], allowMemberKeys: true })
+export const emptyOrganizationForm = (): OrganizationForm => ({ name: '', credits: '', ownerUserId: null, modelGroups: [], channelGroups: [], allowMemberKeys: true })
 export const emptyMemberForm = (): MemberForm => ({ username: '', role: 'member', limits: emptyMemberLimits(), access: emptyMemberAccess() })

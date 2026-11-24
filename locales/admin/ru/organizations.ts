@@ -2,6 +2,15 @@ import type { AdminAreaTranslation } from '../define'
 import type area from '../organizations'
 
 export default {
+  'organizations.credentialScopes': 'Область учётных данных',
+  'organizations.credentialScopesHelp': 'Выберите области учётных данных для всех ключей организации. Пустой список означает доступ без ограничений.',
+  'organizations.credentialScopesSelected': 'Выбрано областей: {count}',
+  'organizations.allCredentials': 'Все учётные данные (без ограничений)',
+  'organizations.credentialScopesEmpty': 'Области учётных данных не настроены.',
+  'organizations.credentialScopesLoadFailed': 'Не удалось загрузить области учётных данных. Повторите перед сохранением.',
+  'organizations.credentialScopeUnavailable': 'Область отключена или недоступна (сохраняется до удаления)',
+  'organizations.unknownCredentialScope': 'Область учётных данных №{id}',
+  'organizations.credentialScopesUnsupported': 'Эта версия Home не сообщает область',
   'organizations.title': 'Организации',
   'organizations.description': 'Общие платёжные аккаунты для команд. Участники используют баланс организации через свои ключи.',
   'organizations.loadFailed': 'Не удалось загрузить организации',

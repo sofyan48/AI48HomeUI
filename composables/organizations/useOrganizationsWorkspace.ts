@@ -1,9 +1,10 @@
-import { computed, inject, provide, ref, type InjectionKey } from 'vue'
+import { computed, inject, onScopeDispose, provide, ref, watch, type InjectionKey } from 'vue'
 import { useApi, useAdminI18n } from '#imports'
 import { useAdminToast } from '~/composables/admin-feedback/useAdminToast'
 import { useWorkspaceState } from '~/composables/useWorkspaceState'
 import { useCapabilities } from '~/composables/useCapabilities'
 import { datesForRange } from '~/composables/usage/useUsageFilters'
+import { useOrganizationCredentialScopes } from './useOrganizationCredentialScopes'
 import { useOrganizationKeyForm } from './useOrganizationKeyForm'
 import { memberLimitsBody, memberLimitsFromRecord } from './memberLimits'
 import { memberAccessBody, memberAccessFromRecord } from './memberAccess'
@@ -101,6 +102,16 @@ function createOrganizationsWorkspace() {
   const orgFormError = ref('')
   const orgSaving = ref(false)
   const editingOrg = ref<Organization | null>(null)
+  const orgFormLoading = ref(false)
+  const orgFormLoadError = ref('')
+  const credentialScopes = useOrganizationCredentialScopes(fetchAPI, orgForm, t)
+  const orgSubmitDisabled = computed(() => orgSaving.value || orgFormLoading.value || Boolean(orgFormLoadError.value)
+    || credentialScopes.scopesLoading.value || !credentialScopes.scopesLoaded.value || Boolean(credentialScopes.scopesError.value))
+  let orgFormVersion = 0
+  let orgFormController: AbortController | undefined
+  const invalidateOrgForm = () => { orgFormVersion++; orgFormController?.abort() }
+  watch(orgFormOpen, open => { if (!open) invalidateOrgForm() }, { flush: 'sync' })
+  onScopeDispose(invalidateOrgForm)
 
   const memberFormOpen = ref(false)
   const memberForm = ref<MemberForm>(emptyMemberForm())
@@ -226,32 +237,66 @@ function createOrganizationsWorkspace() {
     chargesLoading.value = false
     chargesLoadedFor.value = null
     detailTab.value = tab
-    await Promise.all([loadDetail(id), loadModelGroups()])
+    await Promise.all([loadDetail(id), loadModelGroups(), credentialScopes.loadCredentialScopes()])
     if (selected.value?.id === id) setDetailTab(detailTab.value)
   }
 
   function openCreateOrg() {
+    if (orgSaving.value) return
+    invalidateOrgForm()
+    orgFormLoading.value = false
+    orgFormLoadError.value = ''
     editingOrg.value = null
     orgForm.value = emptyOrganizationForm()
     orgFormError.value = ''
     orgFormOpen.value = true
     void loadUsers()
     void loadModelGroups()
+    void credentialScopes.loadCredentialScopes()
   }
 
   function openEditOrg(org: Organization) {
+    if (orgSaving.value) return
+    invalidateOrgForm()
     editingOrg.value = org
     orgForm.value = {
       name: org.name, credits: String(org.credits ?? ''), ownerUserId: null,
-      modelGroups: [...(org.model_groups || [])], allowMemberKeys: org.allow_member_keys !== false,
+      modelGroups: [...(org.model_groups || [])], channelGroups: [...(org.channel_groups || [])], allowMemberKeys: org.allow_member_keys !== false,
     }
     orgFormError.value = ''
     orgFormOpen.value = true
     void loadModelGroups()
+    void credentialScopes.loadCredentialScopes()
+    void reloadOrgForm()
+  }
+
+  async function reloadOrgForm() {
+    const id = editingOrg.value?.id
+    if (!id) return
+    invalidateOrgForm()
+    const version = orgFormVersion
+    orgFormController = new AbortController()
+    orgFormLoading.value = true
+    orgFormLoadError.value = ''
+    try {
+      const response = await fetchAPI<{ organization: Organization }>(`/organizations/${id}`, { signal: orgFormController.signal })
+      if (version !== orgFormVersion || !orgFormOpen.value) return
+      const org = response.organization
+      if (!org || org.id !== id) throw new Error(t('organizations.loadFailed'))
+      editingOrg.value = org
+      orgForm.value = {
+        name: org.name, credits: String(org.credits ?? ''), ownerUserId: null,
+        modelGroups: [...(org.model_groups || [])], channelGroups: [...(org.channel_groups || [])], allowMemberKeys: org.allow_member_keys !== false,
+      }
+    } catch (error) {
+      if (version === orgFormVersion) orgFormLoadError.value = organizationErrorMessage(error, t('organizations.loadFailed'))
+    } finally {
+      if (version === orgFormVersion) orgFormLoading.value = false
+    }
   }
 
   async function saveOrg() {
-    if (orgSaving.value) return
+    if (orgSubmitDisabled.value) return
     const form = orgForm.value
     const editing = editingOrg.value
     if (!form.name.trim()) { orgFormError.value = t('organizations.error.name'); return }
@@ -262,6 +307,8 @@ function createOrganizationsWorkspace() {
       body.credits = credits
     }
     if (form.modelGroups.length || editing) body.model_groups = [...form.modelGroups]
+    // Do not introduce an empty scope field when older Home responses omit it.
+    if (form.channelGroups.length || editing?.channel_groups !== undefined) body.channel_groups = [...form.channelGroups]
     if (!editing && form.ownerUserId !== null) body.owner_user_id = form.ownerUserId
     // Older Home builds omit the flag; only send it when it is known or changed.
     if (editing ? form.allowMemberKeys !== (editing.allow_member_keys !== false) : !form.allowMemberKeys) body.allow_member_keys = form.allowMemberKeys
@@ -385,6 +432,7 @@ function createOrganizationsWorkspace() {
     selected, selectedKeys, detailLoading, detailError, openDetail, detailTab, setDetailTab,
     charges, chargesTotal, chargesPage, chargesLoading, chargesError, chargesPageSize, loadCharges, chargesFilter, chargesScopeQuery,
     orgFormOpen, orgForm, orgFormError, orgSaving, editingOrg, openCreateOrg, openEditOrg, saveOrg,
+    orgFormLoading, orgFormLoadError, orgSubmitDisabled, reloadOrgForm, ...credentialScopes,
     memberFormOpen, memberForm, memberFormError, memberSaving, editingMember, openAddMember, openEditMember, saveMember,
     ...keyForm, userOptions, memberUserOptions, usersLoading, loadUsers,
     modelGroupOptions, memberModelGroupOptions, modelGroupsLoading, modelGroupsError, loadModelGroups, toggleModelGroup, modelGroupName,
