@@ -45,7 +45,7 @@ function createUsersWorkspace() {
   const topupApprovalSupported = computed(() => supports('topup_approval', false))
 
   // Shared by every tab: switching tabs keeps the query.
-  const activeTab = ref<'users' | 'keys' | 'channelGroups' | 'modelGroups'>('users')
+  const activeTab = ref<'users' | 'keys' | 'channelGroups' | 'modelGroups' | 'organizations'>('users')
   const userSegment = ref('all')
   const search = ref('')
   const selectedUserIds = ref(new Set<number | string>())

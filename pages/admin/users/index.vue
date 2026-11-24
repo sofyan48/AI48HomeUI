@@ -33,6 +33,7 @@
         @bind="binding?.openFor('credential', $event)"
         @delete-detail="remove?.openFor('detail', $event, 'channel')"
       />
+      <UsersOrganizationsTab v-else-if="activeTab === 'organizations'" />
       <UsersModelScopesTab
         v-else
         @create="groupForm?.openFor('model')"
@@ -73,6 +74,7 @@ import UsersKeyFormDialog from '~/components/admin/users/UsersKeyFormDialog.vue'
 import UsersKeysTab from '~/components/admin/users/UsersKeysTab.vue'
 import UsersMembersSummary from '~/components/admin/users/UsersMembersSummary.vue'
 import UsersModelScopesTab from '~/components/admin/users/UsersModelScopesTab.vue'
+import UsersOrganizationsTab from '~/components/admin/users/UsersOrganizationsTab.vue'
 import UsersResetAllowance from '~/components/admin/users/UsersResetAllowance.vue'
 import UsersTopupApprovalDialog from '~/components/admin/users/UsersTopupApprovalDialog.vue'
 import UsersUserFormDialog from '~/components/admin/users/UsersUserFormDialog.vue'
@@ -85,7 +87,8 @@ const tabs = computed(() => [
   { label: t('common.users'), value: 'users' },
   { label: t('users.clientKeys'), value: 'keys' },
   { label: t('users.credentialScopes'), value: 'channelGroups' },
-  { label: t('users.modelScopes'), value: 'modelGroups' }
+  { label: t('users.modelScopes'), value: 'modelGroups' },
+    { label: t('users.organizations'), value: 'organizations' }
 ])
 
 const userForm = ref<InstanceType<typeof UsersUserFormDialog> | null>(null)

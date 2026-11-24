@@ -11,6 +11,7 @@
           :id="`${pickerId}-${item.value}`"
           :model-value="selected.includes(item.value)"
           :aria-label="item.label"
+                    :disabled="disabled"
           class="shrink-0"
           @update:model-value="$emit('toggle', item.value)"
         />
@@ -32,6 +33,7 @@ const props = defineProps<{
   emptyLabel: string
   items: ScopeItem[]
   selected: number[]
+  disabled?: boolean
 }>()
 
 defineEmits<{ toggle: [value: number] }>()
