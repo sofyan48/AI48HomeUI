@@ -8,7 +8,11 @@
         <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <AdminField :label="t('common.from')"><AppDateInput v-model="filters.from" type="datetime-local" :max="filters.to" class="w-full" /></AdminField>
           <AdminField :label="t('common.to')"><AppDateInput v-model="filters.to" type="datetime-local" :min="filters.from" class="w-full" /></AdminField>
-          <AdminField v-for="field in fields" :key="field.key" :label="fieldLabel(field.key)"><AdminInput v-model="filters[field.key]" class="w-full" /></AdminField>
+          <AdminField v-for="field in fields" :key="field.key" :label="fieldLabel(field.key)">
+                      <AdminSearchSelect v-if="field.key === 'provider' || field.key === 'model'" :model-value="filters[field.key]" :items="choiceOptions(field.key)" :placeholder="field.key === 'provider' ? t('usage.allProviders') : t('usage.allModels')" :aria-label="fieldLabel(field.key)" :clear-label="t('common.reset')" :empty-text="t('common.noResults')" class="w-full" @update:model-value="filters[field.key] = String($event ?? '')" />
+                      <AdminInput v-else v-model="filters[field.key]" class="w-full" />
+                    </AdminField>
+          <AdminField v-if="organizationScope.supported.value" :label="t('organizations.scope.organization')" class="sm:col-span-2"><OrganizationScopeFilter v-model:organization="filters.user_id" v-model:member="filters.actor_user_id" :scope="organizationScope" organization-class="w-full sm:flex-1" member-class="w-full sm:flex-1" class="sm:w-full sm:flex-nowrap" /></AdminField>
           <AdminField :label="t('common.status')"><AdminSelect v-model="filters.status" :items="statusOptions" value-key="value" label-key="label" class="w-full" /></AdminField>
           <AdminField :label="t('requests.sort')"><AdminSelect v-model="sort" :items="sortOptions" value-key="value" label-key="label" class="w-full" /></AdminField>
           <AdminField :label="t('usage.rows')"><AdminSelect v-model="limit" :items="[25, 50, 100, 200]" class="w-full" /></AdminField>
@@ -45,6 +49,9 @@
 </template>
 
 <script setup lang="ts">
+import AdminSearchSelect from '~/components/admin/general/controls/AdminSearchSelect.vue'
+import OrganizationScopeFilter from '~/components/admin/general/OrganizationScopeFilter.vue'
+import { useUsagePage } from '~/composables/usage/useUsagePage'
 import AdminField from '~/components/admin/general/controls/AdminField.vue'
 import AdminInput from '~/components/admin/general/controls/AdminInput.vue'
 import AdminSelect from '~/components/admin/general/controls/AdminSelect.vue'
@@ -81,8 +88,10 @@ function fieldLabel(key: string) {
     default: return key
   }
 }
-const defaults = (): Record<string, string> => ({ from: '', to: '', status: '__all__', ...Object.fromEntries(fields.map(field => [field.key, ''])) })
-const filters = ref(defaults()), applied = ref(defaults())
+const { organizationScope, appliedFilters: overviewScope, overview: { providerSuggestions, modelSuggestions } } = useUsagePage()
+const defaults = (): Record<string, string> => ({ from: '', to: '', status: '__all__', user_id: '', actor_user_id: '', ...Object.fromEntries(fields.map(field => [field.key, ''])) })
+const scoped = (): Record<string, string> => ({ ...defaults(), user_id: overviewScope.value.organization, actor_user_id: overviewScope.value.organization ? overviewScope.value.member : '' })
+const filters = ref(scoped()), applied = ref(scoped())
 const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
 const sort = ref('timestamp_desc'), limit = ref(50), page = ref(1)
 const sortOptions = computed(() => [
@@ -94,6 +103,11 @@ const columnHeaders = (): Record<string, string> => ({ request: t('requests.deta
 const columns = computed(() => ['request', 'model', 'status', 'tokens', 'latency', 'cost', 'actions'].map(key => ({ accessorKey: key, header: columnHeaders()[key] })))
 const response = ref<any>(null), loading = ref(false), error = ref('')
 const items = computed(() => response.value?.items || [])
+function choiceOptions(field: 'provider' | 'model') {
+  const suggestions = field === 'provider' ? providerSuggestions.value : modelSuggestions.value
+  const values = [...new Set<string>([...suggestions, ...items.value.map((item: Record<string, string>) => item[field]), filters.value[field]].filter(Boolean))].sort()
+  return [{ label: field === 'provider' ? t('usage.allProviders') : t('usage.allModels'), value: '' }, ...values.map(value => ({ label: value, value }))]
+}
 const total = computed(() => Number(response.value?.total) || 0)
 const pages = computed(() => Math.max(1, Math.ceil(total.value / limit.value)))
 const exportFormat = ref('csv'), exporting = ref(false)

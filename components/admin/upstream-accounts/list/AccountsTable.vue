@@ -1,7 +1,7 @@
 <template>
   <div class="min-w-0 overflow-x-auto">
-    <AppTable :columns="columns" :data="filteredCredentials" :loading="pending" class="accounts-table min-w-0">
-      <template #select-header><input type="checkbox" :aria-label="t('cred.selectAll')" :checked="allVisibleSelected" :indeterminate="someVisibleSelected && !allVisibleSelected" :disabled="bulkBusy || pending || !filteredCredentials.length" @change="toggleAllVisible($event.target.checked)"></template>
+    <AppTable :columns="columns" :data="pagedCredentials" :loading="pending" :number-offset="(page - 1) * pageSize" class="accounts-table min-w-0">
+      <template #select-header><input type="checkbox" :aria-label="t('cred.selectAll')" :checked="allVisibleSelected" :indeterminate="someVisibleSelected && !allVisibleSelected" :disabled="bulkBusy || pending || !pagedCredentials.length" @change="toggleAllVisible($event.target.checked)"></template>
       <template #select-cell="{ row }"><input type="checkbox" :aria-label="t('cred.selectOne', { name: value(row).label || value(row).name || value(row).id })" :checked="selectedIDs.has(value(row).id)" :disabled="bulkBusy || pending" @change="toggleSelected(value(row).id, $event.target.checked)"></template>
       <template #identity-cell="{ row }"><div class="flex min-w-0 items-center gap-2.5"><span class="flex size-8 shrink-0 items-center justify-center rounded-md bg-[var(--ui-bg-elevated)] text-[var(--ui-primary)]"><AppIcon name="i-tabler-key" class="size-4" /></span><div class="min-w-0"><p class="truncate font-medium">{{ value(row).label || value(row).name }}</p><p class="mt-1 truncate font-mono text-xs text-[var(--ui-text-muted)]" :title="credentialIdentifier(value(row))">{{ compactIdentifier(credentialIdentifier(value(row))) }}</p><p v-if="value(row).note" class="mt-0.5 truncate text-xs text-[var(--ui-text-muted)]">{{ value(row).note }}</p></div></div></template>
       <template #provider-cell="{ row }"><div class="flex flex-col items-start gap-1"><PortalBadge color="primary" variant="subtle">{{ value(row).provider || value(row).type || t('common.unknown') }}</PortalBadge><PortalBadge v-if="value(row).type && String(value(row).type).toLowerCase() !== String(value(row).provider || '').toLowerCase()" color="neutral" variant="subtle" class="font-mono text-xs">{{ value(row).type }}</PortalBadge></div></template>
@@ -26,6 +26,7 @@
       </template>
       <template #empty><div class="py-8 text-center text-sm text-[var(--ui-text-muted)]"><p>{{ pending ? t('cred.loadingAccounts') : pageError ? t('cred.loadAccountsFailed') : hasActiveFilters ? t('cred.noMatching') : t('cred.none') }}</p><AppButton v-if="hasActiveFilters && !pending" class="mt-3" color="neutral" variant="outline" size="sm" @click="clearFilters">{{ t('cred.clearFilters') }}</AppButton></div></template>
     </AppTable>
+
   </div>
 </template>
 
@@ -33,13 +34,14 @@
 import AppIcon from '~/components/AppIcon.vue'
 import AdminCredentialQuotaPreview from '~/components/admin/credentials/CredentialQuotaPreview.vue'
 import AdminRowActions from '~/components/admin/general/RowActions.vue'
+
 import AdminSwitch from '~/components/admin/general/controls/AdminSwitch.vue'
 import PortalBadge from '~/components/app/general/PortalBadge.vue'
 import { credentialWebsocketState } from '~/composables/credentialTransport'
 import { useUpstreamAccounts } from '~/composables/upstream-accounts/useUpstreamAccounts'
 
 const {
-  t, value, columns, filteredCredentials, pending, allVisibleSelected, someVisibleSelected, bulkBusy, toggleAllVisible,
+  t, value, columns, filteredCredentials, pagedCredentials, page, pageSize, pending, allVisibleSelected, someVisibleSelected, bulkBusy, toggleAllVisible,
   selectedIDs, toggleSelected, credentialIdentifier, compactIdentifier, busy, changing, toggleStatus, credentialColor,
   credentialStatusLabel, credentialStatus, concurrency, openAccountQuota, quotaByID, quotaPending, quotaError,
   inlineChanging, setInlineField, supportsWebsockets, credentialRowActions, pageError, hasActiveFilters, clearFilters

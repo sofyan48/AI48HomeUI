@@ -7,10 +7,12 @@ import { computed, ref, provide, inject, onMounted, type InjectionKey } from 'vu
 import type { ApiQuery } from '~/composables/useApi'
 import type { BillingModelCandidate } from '~/composables/billingModelCandidates'
 import type { BillingSection, BillingRangeFilters, BillingCharge, BillingBalanceRecord, BillingRankingItem, BillingOverviewResponse, BillingListResponse, BillingPriceRule, BillingPricesResponse, BillingUsersResponse, BillingTierDiagnostics, BillingSettings, BillingPriceImporter, BillingNumericField, BillingPricePayload } from './types'
-import { useApi, useAdminI18n } from '#imports'
+import { useApi, useAdminI18n, useRoute } from '#imports'
 import { useAdminToast } from '~/composables/admin-feedback/useAdminToast'
 import { useBillingPresentation } from '~/composables/billing/useBillingPresentation'
 import { billingTierChoices, billingTierLabel } from './priceEvidence'
+import { useOrganizationScope } from '~/composables/organizations/useOrganizationScope'
+import { applyOrganizationScope, organizationScopeFromQuery } from '~/composables/organizations/organizationScope'
 
 const billingWorkspaceKey: InjectionKey<ReturnType<typeof provideBillingWorkspace>> = Symbol('billingWorkspace')
 
@@ -54,7 +56,9 @@ const sections = computed(() => [
   { label: t('billing.section.balances'), value: 'balances', icon: 'i-tabler-cash-banknote' },
   { label: t('billing.section.prices'), value: 'prices', icon: 'i-tabler-tag' }
 ])
-const activeSection = ref<BillingSection>('overview')
+const route = useRoute()
+const linkedSection = String(route.query.section || '')
+const activeSection = ref<BillingSection>(linkedSection === 'charges' || linkedSection === 'balances' ? linkedSection : 'overview')
 const pageError = useWorkspaceState('admin:billing:pageError', () => (''))
 const overview = useWorkspaceState<BillingOverviewResponse | null>('admin:billing:overview', () => (null))
 const chargesResponse = useWorkspaceState<BillingListResponse<BillingCharge> | null>('admin:billing:chargesResponse', () => (null))
@@ -90,11 +94,15 @@ const timezoneError = computed(() => {
   try { new Intl.DateTimeFormat('en', { timeZone: timezone }); return '' }
   catch { return t('billing.settings.timezoneInvalid') }
 })
-const overviewFilters = ref({ ...defaultRange(), user: '', provider: '', model: '' })
+// Organization deep links (/admin/billing?organization=<id>&member=<id>) preselect the scope.
+const organizationScope = useOrganizationScope()
+const linkedScope = organizationScopeFromQuery(route.query)
+const emptyScopedFilters = () => ({ ...defaultRange(), user: '', organization: '', member: '', provider: '', model: '' })
+const overviewFilters = ref({ ...emptyScopedFilters(), ...linkedScope })
 const appliedOverviewFilters = ref({ ...overviewFilters.value })
-const chargeFilters = ref({ ...defaultRange(), user: '', provider: '', model: '' })
+const chargeFilters = ref({ ...emptyScopedFilters(), ...linkedScope })
 const appliedChargeFilters = ref({ ...chargeFilters.value })
-const balanceFilters = ref({ ...defaultRange(), user: '' })
+const balanceFilters = ref({ ...defaultRange(), user: '', organization: linkedScope.organization })
 const appliedBalanceFilters = ref({ ...balanceFilters.value })
 const priceFilters = ref({ search: '', enabled: '', service_tier: '', source: '' })
 const overviewPreset = ref('7d')
@@ -216,7 +224,8 @@ const userSearchOptions = computed(() => users.value.map(user => user.username))
 const providerSearchOptions = computed(() => [...new Set([
   ...priceRules.value.map(rule => rule.provider),
   ...charges.value.map(charge => charge.provider),
-  ...topProviders.value.map(item => item.label || item.provider)
+  ...topProviders.value.map(item => item.label || item.provider),
+    ...modelCandidates.value.map(item => item.provider)
 ].filter(Boolean))].sort())
 const modelSearchOptions = computed(() => [...new Set([
   ...priceRules.value.map(rule => rule.model),
@@ -239,7 +248,9 @@ function buildRangeQuery(source: BillingRangeFilters) {
   if (source.from) query.from = source.from
   if (source.to) query.to = source.to
 
-  if (source.user?.trim()) (/^\d+$/.test(source.user.trim()) ? query.user_id = source.user.trim() : query.user = source.user.trim())
+  // An organization is the billed owner, so it replaces the user filter rather than combining with it.
+  if (source.organization) applyOrganizationScope(query, source)
+  else if (source.user?.trim()) (/^\d+$/.test(source.user.trim()) ? query.user_id = source.user.trim() : query.user = source.user.trim())
   if (source.provider?.trim()) query.provider = source.provider.trim()
   if (source.model?.trim()) query.model = source.model.trim()
   return query
@@ -294,11 +305,11 @@ async function changePageSize(section: string) {
 }
 async function openMatchingSettings() { await safely(async () => { await loadSettings(); settingsError.value = ''; matchingSettingsOpen.value = true; if (priceSchemaVersion.value >= 2) await loadDiagnostics() }, t('billing.settings.loadFailed')) }
 async function applyOverviewFilters() { const error = dateRangeError(overviewFilters.value.from, overviewFilters.value.to); if (error) { pageError.value = dateErrorLabel(error); return }; appliedOverviewFilters.value = { ...overviewFilters.value }; await safely(loadOverview, t('billing.error.loadOverview')) }
-async function resetOverviewFilters() { overviewPreset.value = '7d'; overviewFilters.value = { ...defaultRange(), user: '', provider: '', model: '' }; appliedOverviewFilters.value = { ...overviewFilters.value }; await safely(loadOverview, t('billing.error.loadOverview')) }
+async function resetOverviewFilters() { overviewPreset.value = '7d'; overviewFilters.value = emptyScopedFilters(); appliedOverviewFilters.value = { ...overviewFilters.value }; await safely(loadOverview, t('billing.error.loadOverview')) }
 async function applyChargeFilters() { const error = dateRangeError(chargeFilters.value.from, chargeFilters.value.to); if (error) { pageError.value = dateErrorLabel(error); return }; appliedChargeFilters.value = { ...chargeFilters.value }; chargePage.value = 1; await safely(loadCharges, t('billing.error.loadCharges')) }
-async function resetChargeFilters() { chargePreset.value = '7d'; chargeFilters.value = { ...defaultRange(), user: '', provider: '', model: '' }; appliedChargeFilters.value = { ...chargeFilters.value }; chargePage.value = 1; await safely(loadCharges, t('billing.error.loadCharges')) }
+async function resetChargeFilters() { chargePreset.value = '7d'; chargeFilters.value = emptyScopedFilters(); appliedChargeFilters.value = { ...chargeFilters.value }; chargePage.value = 1; await safely(loadCharges, t('billing.error.loadCharges')) }
 async function applyBalanceFilters() { const error = dateRangeError(balanceFilters.value.from, balanceFilters.value.to); if (error) { pageError.value = dateErrorLabel(error); return }; appliedBalanceFilters.value = { ...balanceFilters.value }; balancePage.value = 1; await safely(loadBalances, t('billing.error.loadBalances')) }
-async function resetBalanceFilters() { balancePreset.value = '7d'; balanceFilters.value = { ...defaultRange(), user: '' }; appliedBalanceFilters.value = { ...balanceFilters.value }; balancePage.value = 1; await safely(loadBalances, t('billing.error.loadBalances')) }
+async function resetBalanceFilters() { balancePreset.value = '7d'; balanceFilters.value = { ...defaultRange(), user: '', organization: '' }; appliedBalanceFilters.value = { ...balanceFilters.value }; balancePage.value = 1; await safely(loadBalances, t('billing.error.loadBalances')) }
 async function changeChargePage(delta: number) { const next = chargePage.value + delta; const pages = Math.max(1, Math.ceil(chargesTotal.value / chargePageSize.value)); if (next < 1 || next > pages) return; chargePage.value = next; await safely(loadCharges, t('billing.error.loadCharges')) }
 async function changeBalancePage(delta: number) { const next = balancePage.value + delta; const pages = Math.max(1, Math.ceil(balancesTotal.value / balancePageSize.value)); if (next < 1 || next > pages) return; balancePage.value = next; await safely(loadBalances, t('billing.error.loadBalances')) }
 
@@ -409,11 +420,16 @@ function chargeUserName(charge: BillingCharge) {
   if (charge.username) return charge.username
   const user = users.value.find(item => String(item.id) === String(charge.user_id))
   if (user?.username) return user.username
+  const organization = organizationScope.organizationName(charge.user_id)
+  if (organization) {
+    const actor = charge.actor_user_id ? users.value.find(item => String(item.id) === String(charge.actor_user_id))?.username : ''
+    return actor ? `${organization} · ${actor}` : organization
+  }
   return charge.user_id ? t('billing.userNumber', { id: charge.user_id }) : t('billing.unknownUser')
 }
 function balanceUserName(record: BillingBalanceRecord) {
   const user = users.value.find(item => String(item.id) === String(record.user_id))
-  return user?.username || (record.user_id ? t('billing.userNumber', { id: record.user_id }) : '—')
+  return user?.username || organizationScope.organizationName(record.user_id) || (record.user_id ? t('billing.userNumber', { id: record.user_id }) : '—')
 }
 function share(amount: unknown, items: BillingRankingItem[]) {
   const max = Math.max(0.000001, ...items.map(item => Number(item.amount) || 0))
@@ -439,7 +455,7 @@ async function loadBilling(preserveDraft = false) {
 const presentation = useBillingPresentation({ overview, selectedBalance, selectedCharge, t, formatCredits, formatNumber, formatDateTime, balanceTypeLabel })
 const { dailyTrend, topModels, topProviders } = presentation
 const workspace = {
-  ...presentation, t, activeSection, sections, pageError, savedReportTimezone, loading, refreshCurrent,
+  ...presentation, t, activeSection, sections, organizationScope, pageError, savedReportTimezone, loading, refreshCurrent,
   settingsLoading, settingsSaving, openMatchingSettings, rangeOptions, rowValue,
   overview, overviewFilters, overviewPreset, overviewLoading, applyOverviewFilters, resetOverviewFilters,
   userSearchOptions, providerSearchOptions, modelSearchOptions, selectRange, trendWidth, share,

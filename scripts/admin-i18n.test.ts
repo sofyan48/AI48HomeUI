@@ -4,6 +4,7 @@ import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { adminAreas, adminMessages } from '../locales/admin'
 import consoleEn from '../locales/en'
+import { portalMessages } from '../locales/portal'
 
 const root = new URL('..', import.meta.url).pathname
 const en = adminMessages.en as Record<string, string>
@@ -26,8 +27,9 @@ const adminFiles = [
 describe('admin console i18n', () => {
   test('recursive discovery covers every admin route, including nested routing features', () => {
     const routes = adminFiles.filter(file => file.startsWith('pages/admin/'))
-    expect(routes).toHaveLength(22)
+    expect(routes).toHaveLength(24)
     expect(routes).toContain('pages/admin/index.vue')
+    expect(routes).toContain('pages/admin/organizations/[id]/index.vue')
     expect(routes).toContain('pages/admin/dashboard/index.vue')
     expect(routes).toContain('pages/admin/routing/channels/index.vue')
     expect(routes).toContain('pages/admin/routing/model-groups/index.vue')
@@ -41,6 +43,40 @@ describe('admin console i18n', () => {
         seen.set(key, area)
       }
     }
+  })
+
+  for (const [locale, table] of Object.entries(adminMessages)) {
+    test(`${locale} uses Worker terminology in Alerting and System Info`, () => {
+      const messages = table as Record<string, string>
+      const visibleText = Object.entries(messages)
+        .filter(([key]) => key.startsWith('system.') || key.startsWith('alerting.'))
+        .map(([, text]) => text.replace(/\{\w+\}/g, ''))
+      expect(visibleText.filter(text => /\bCPAs?\b/i.test(text))).toEqual([])
+
+      for (const key of [
+        'alerting.rule.nodeOffline', 'alerting.rule.nodeOfflineHelp',
+        'system.topology.title', 'system.topology.cpaCount', 'system.topology.unmatched',
+        'system.topology.noCpa', 'system.topology.nodeName', 'system.topology.nodeIp',
+        'system.topology.nodeId', 'system.topology.descCluster', 'system.topology.descInferred',
+        'system.fact.nodesWithHome', 'system.rename.title', 'system.rename.description'
+      ]) {
+        expect(messages[key]).toContain('Worker')
+      }
+      for (const key of ['system.topology.descCluster', 'system.topology.descInferred', 'system.fact.nodesWithHome']) {
+        expect(names(messages[key]!)).toEqual(['cpa', 'home'])
+      }
+    })
+  }
+
+  test('System Info uses Worker labels without renaming CPA data fields', () => {
+    const source = readFileSync(join(root, 'components/admin/system-nodes/SystemTopology.vue'), 'utf8')
+    expect(source).not.toMatch(/\bCPA\b/)
+    expect(source).toContain('{{ nodes.length }} Worker')
+    expect(source).toContain("t('system.runtime.homeRuntime') : 'Worker'")
+    expect(source).toContain("{ key: 'cpa', label: 'Worker', value: String(cpaCount.value)")
+    expect(source).toContain('topology.value.cpas')
+    expect(source).toContain('summary.value.cpa_count')
+    expect(source).toContain('summary.value.healthy_cpa_count')
   })
 
   for (const [locale, table] of Object.entries(adminMessages)) {
@@ -67,7 +103,8 @@ describe('admin console i18n', () => {
         expect(template.errors).toEqual([])
       }
       const used = [...source.matchAll(/\bt\(\s*['"]([\w.-]+)['"]/g)].map(match => match[1]!)
-      expect(used.filter(key => !(key in en) && !(key in consoleEn))).toEqual([])
+      const messages = file.startsWith('components/App') && source.includes('usePortalI18n') ? portalMessages.en : en
+      expect(used.filter(key => !(key in messages) && !(key in consoleEn))).toEqual([])
     })
   }
 })

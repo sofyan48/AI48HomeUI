@@ -56,6 +56,8 @@ export default {
   'nav.systemDescription': '執行狀態與診斷',
   'nav.alerting': '告警',
   'nav.alertingDescription': 'Telegram 與 Teams 通知',
+  'nav.organizations': '組織',
+  'nav.organizationsDescription': '共享餘額的團隊工作區',
   'connect.controlPlane': '管理控制平面',
   'connect.heading': '從容管理您的 CPA 叢集。',
   'connect.description': '在一個安全的主控台中監控拓撲、分析用量、管理存取，並查看每個已連線節點的狀態。',

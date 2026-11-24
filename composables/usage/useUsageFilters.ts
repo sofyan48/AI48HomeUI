@@ -15,6 +15,9 @@ export type UsageFilters = {
   statusCode: string
   requestId: string
   user: string
+  /** Organization ID ('' = all) and optional member user ID inside it. */
+  organization: string
+  member: string
   clientKey: string
   credentialId: string
   credentialType: string
@@ -53,6 +56,8 @@ export const defaultFilters = (): UsageFilters => ({
   statusCode: '',
   requestId: '',
   user: '',
+  organization: '',
+  member: '',
   clientKey: '',
   credentialId: '',
   credentialType: '',
@@ -63,7 +68,9 @@ export const defaultFilters = (): UsageFilters => ({
 })
 
 /** Draft and applied overview filters, the saved range preset and the shared query builder. */
-export function useUsageFilters(t: Translate) {
+type ScopeLabels = { organizationName: (id: string) => string, memberName: (organization: string, member: string) => string }
+
+export function useUsageFilters(t: Translate, initialScope: Partial<Pick<UsageFilters, 'organization' | 'member'>> = {}, labels?: ScopeLabels) {
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
 
   const rangeOptions = computed(() => [
@@ -80,7 +87,7 @@ export function useUsageFilters(t: Translate) {
   const showAdvancedFilters = ref(false)
   const credentialTypeOptions = computed(() => [{ label: t('usage.allCredentialTypes'), value: allOptionValue }, { label: 'OAuth', value: 'oauth' }, { label: t('usage.providerApiKey'), value: 'provider_api_key' }, { label: t('usage.fileAuth'), value: 'file_auth' }, { label: 'Vertex', value: 'vertex' }, { label: t('common.unknown'), value: 'unknown' }])
 
-  const filters = ref<UsageFilters>({ ...defaultFilters(), ...datesForRange(rangePreset.value) })
+  const filters = ref<UsageFilters>({ ...defaultFilters(), ...datesForRange(rangePreset.value), ...initialScope })
   const appliedFilters = ref<UsageFilters>({ ...filters.value })
   // Auto-refresh eligibility follows the applied range, not the draft selection.
   const appliedPreset = ref(rangePreset.value)
@@ -88,7 +95,10 @@ export function useUsageFilters(t: Translate) {
   const overviewScopeLabel = computed(() => {
     const source = appliedFilters.value
     const range = source.from || source.to ? `${source.from || t('common.last24h')} – ${source.to || t('usage.scope.now')}` : t('usage.scope.defaultRange')
+    const organization = source.organization && (labels?.organizationName(source.organization) || `#${source.organization}`)
+    const member = source.member && (labels?.memberName(source.organization, source.member) || `#${source.member}`)
     const extras = [
+      organization && (member ? t('organizations.scope.chipMember', { name: organization, member }) : t('organizations.scope.chip', { name: organization })),
       source.provider && t('usage.scope.provider', { value: source.provider }),
       source.model && t('usage.scope.model', { value: source.model }),
       source.endpoint && t('usage.scope.endpoint', { value: source.endpoint }),
@@ -108,6 +118,10 @@ export function useUsageFilters(t: Translate) {
     if (source.endpoint.trim()) params.set('endpoint', source.endpoint.trim())
     if (source.homeIp.trim()) params.set('home_ip', source.homeIp.trim())
     if (source.credentialType.trim()) params.set('credential_type', source.credentialType.trim())
+    if (source.organization) {
+      params.set('user_id', source.organization)
+      if (source.member) params.set('actor_user_id', source.member)
+    }
     return params
   }
 

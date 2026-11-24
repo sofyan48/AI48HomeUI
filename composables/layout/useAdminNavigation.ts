@@ -34,7 +34,8 @@ export function useAdminNavigation() {
         { label: tc('nav.upstream'), to: '/admin/upstream', icon: 'i-tabler-cloud-upload', subtitle: tc('nav.upstreamDescription') },
         { label: tc('nav.models'), to: '/admin/routing/models', icon: 'i-tabler-box-multiple', subtitle: tc('nav.modelsDescription') },
         { label: tc('nav.accessKeys'), to: '/admin/access-keys', icon: 'i-tabler-key', subtitle: tc('nav.accessKeysDescription') },
-        { label: tc('nav.users'), to: '/admin/users', icon: 'i-tabler-users', subtitle: tc('nav.usersDescription'), capability: 'users' }
+        { label: tc('nav.users'), to: '/admin/users', icon: 'i-tabler-users', subtitle: tc('nav.usersDescription'), capability: 'users' },
+        { label: tc('nav.organizations'), to: '/admin/organizations', icon: 'i-tabler-building', subtitle: tc('nav.organizationsDescription'), capability: 'organizations' }
       ]
     },
     {
@@ -72,6 +73,8 @@ export function useAdminNavigation() {
     ? ['/admin/upstream', '/admin/providers', '/admin/credentials', '/admin/quota'].includes(route.path)
     : item.to === '/admin/usage'
       ? ['/admin/usage', '/admin/request-events'].includes(route.path)
+      : item.to === '/admin/organizations'
+        ? route.path === '/admin/organizations' || route.path.startsWith('/admin/organizations/')
       : item.to === '/admin/config'
         ? route.path === '/admin/config' || (route.path.startsWith('/admin/routing/') && route.path !== '/admin/routing/models')
         : route.path === item.to

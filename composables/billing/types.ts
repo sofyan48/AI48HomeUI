@@ -5,9 +5,10 @@ import type { normalizeBillingSettings } from '~/composables/billingPreferences'
 import type { provideBillingPriceImport } from './useBillingPriceImport'
 
 export type BillingSection = 'overview' | 'charges' | 'balances' | 'prices'
-export interface BillingRangeFilters { from: string; to: string; user?: string; provider?: string; model?: string }
+export interface BillingRangeFilters { from: string; to: string; user?: string; organization?: string; member?: string; provider?: string; model?: string }
 export interface BillingCharge extends UserBillingCharge {
   user_id?: number;
+  actor_user_id?: number | null;
   username?: string;
   actual_model?: string;
   endpoint?: string;

@@ -13,12 +13,12 @@ const pages = (folder = 'pages'): string[] => readdirSync(join(root, folder), { 
 // Public URLs before the feature-directory migration, including redirect routes.
 const adminFeatures = [
   'access-keys', 'alerting', 'billing', 'config', 'connect', 'credentials', 'dashboard',
-  'diagnostics', 'logs', 'plugins', 'providers', 'proxy-network', 'quota',
+  'diagnostics', 'logs', 'organizations', 'organizations/[id]', 'plugins', 'providers', 'proxy-network', 'quota',
   'request-events', 'routing/channels', 'routing/model-groups', 'routing/models',
   'system-nodes', 'upstream', 'usage', 'users',
 ]
 const appFeatures = [
-  'analytics', 'api-keys', 'balance', 'forgot-password', 'login', 'logs', 'models', 'models/price',
+  'analytics', 'api-keys', 'balance', 'forgot-password', 'login', 'logs', 'models', 'models/price', 'organizations',
   'playground', 'profile', 'register', 'reset-password', 'settings', 'verify-email',
 ]
 const expectedRoutes = [
@@ -29,10 +29,10 @@ const expectedRoutes = [
 const routeFor = (file: string) => file.replace(/^pages/, '').replace(/\/index\.vue$/, '').replace(/\.vue$/, '')
 
 describe('feature page folders', () => {
-  test('all 37 public URLs remain unique and match the expected routes', () => {
+  test('all 40 public URLs remain unique and match the expected routes', () => {
     const routes = pages().map(routeFor)
     expect(routes.sort()).toEqual(expectedRoutes)
-    expect(new Set(routes).size).toBe(37)
+    expect(new Set(routes).size).toBe(40)
   })
 
   test('every feature uses index.vue without inventing general pages', () => {

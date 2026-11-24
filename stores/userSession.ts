@@ -51,6 +51,7 @@ export interface UserSessionResponse {
 export interface UserCapabilities {
   profile_edit?: boolean
   user_reset_allowance?: boolean
+  organization_member_reset_allowance?: boolean
   topup_approval?: boolean
   request_logs?: boolean
   analytics?: boolean
@@ -59,8 +60,8 @@ export interface UserCapabilities {
   password_recovery?: boolean
   model_catalog?: boolean
   chat_history?: boolean
+  organizations?: boolean
 }
-
 export interface UserServerInfo {
   cpa_public_url?: string
   home_version?: string

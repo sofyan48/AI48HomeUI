@@ -34,6 +34,8 @@ export default {
   'shell.nav.logs': '请求日志',
   'shell.nav.settings': '设置',
   'shell.sub.logs': '仅显示您账户的请求摘要',
+  'shell.nav.organizations': '组织',
+  'shell.sub.organizations': '共享组织余额的团队工作区',
   'shell.sub.dashboard': '计费与账户概览',
   'shell.sub.balance': '充值额度并跟踪余额',
   'shell.sub.playground': '使用您自己的 API 密钥试用模型',

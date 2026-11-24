@@ -4,6 +4,7 @@ import { useApi } from '~/composables/useApi'
 
 export interface ManagementCapabilities {
   [key: string]: boolean | undefined
+  organization_member_reset_allowance?: boolean
   topology?: boolean
   users?: boolean
   access_groups?: boolean

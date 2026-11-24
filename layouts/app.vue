@@ -53,7 +53,7 @@
     <template v-else>
       <header v-if="route.path !== '/app/login'" class="user-shell__header sticky top-0 z-30 border-b border-[var(--ui-border)]">
         <div class="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
-          <NuxtLink :to="homeTarget" class="user-brand flex min-w-0 items-center gap-3 rounded-lg" :aria-label="t('shell.backHome')"><AppBrandMark /><span class="min-w-0 leading-tight"><span class="block truncate text-[15px] font-bold tracking-tight text-[var(--ui-text-highlighted)]">AI48<span class="user-brand-accent">Hub</span></span><span class="block truncate text-[11px] text-[var(--ui-text-muted)]">{{ pageSubtitle }}</span></span></NuxtLink>
+          <NuxtLink :to="homeTarget" class="user-brand flex min-w-0 items-center gap-3 rounded-lg" :aria-label="t('shell.backHome')"><AppBrandMark /><span class="min-w-0 leading-tight"><span class="block truncate text-[15px] font-bold tracking-tight text-[var(--ui-text-highlighted)]">AI48<span class="user-brand-accent">Home</span></span><span class="block truncate text-[11px] text-[var(--ui-text-muted)]">{{ pageSubtitle }}</span></span></NuxtLink>
           <div class="flex shrink-0 items-center gap-1 sm:gap-2"><AppButton v-if="route.path === '/app/login'" to="/app/models" color="neutral" variant="ghost" size="sm" icon="i-tabler-box-multiple">{{ t('shell.nav.models') }}</AppButton><PortalThemeSwitcher /><PortalLanguageSwitcher /><template v-if="route.path === '/app/models'"><AppButton :to="homeTarget" color="neutral" variant="ghost" size="sm" icon="i-tabler-home">{{ t('shell.home') }}</AppButton><AppButton v-if="!token" to="/app/login" color="primary" size="sm" class="rounded-full">{{ t('shell.signIn') }}</AppButton></template></div>
         </div>
       </header>
@@ -104,12 +104,13 @@ const workspaceNavigation = computed(() => [
   { label: t('shell.nav.catalog'), to: '/app/models', icon: 'i-tabler-box-multiple' },
   { label: t('shell.nav.price'), to: '/app/models/price', icon: 'i-tabler-tag' },
   { label: t('shell.nav.apiKeys'), to: '/app/api-keys', icon: 'i-tabler-key' },
+  ...(capabilities.value.organizations === true ? [{ label: t('shell.nav.organizations'), to: '/app/organizations', icon: 'i-tabler-building' }] : []),
   ...(capabilities.value.request_logs === true ? [{ label: t('shell.nav.logs'), to: '/app/logs', icon: 'i-tabler-list-details' }] : []),
   { label: t('shell.nav.settings'), to: '/app/settings', icon: 'i-tabler-settings' }
 ])
 const navigationGroups = computed(() => [
   { key: 'overview', label: t('shell.group.overview'), items: workspaceNavigation.value.filter(item => item.to === '/app') },
-  { key: 'build', label: t('shell.group.build'), items: workspaceNavigation.value.filter(item => item.to === '/app/api-keys') },
+  { key: 'build', label: t('shell.group.build'), items: workspaceNavigation.value.filter(item => ['/app/api-keys', '/app/organizations'].includes(item.to)) },
   { key: 'playground', label: t('shell.group.playground'), items: workspaceNavigation.value.filter(item => item.to === '/app/playground') },
   { key: 'model', label: t('shell.group.model'), items: workspaceNavigation.value.filter(item => ['/app/models', '/app/models/price'].includes(item.to)) },
   { key: 'statistic', label: t('shell.group.statistic'), items: workspaceNavigation.value.filter(item => ['/app/balance', '/app/analytics', '/app/logs'].includes(item.to)) },
@@ -118,9 +119,9 @@ const navigationGroups = computed(() => [
 ].filter(group => group.items.length))
 const currentNavigation = computed(() => [...workspaceNavigation.value, { label: t('shell.profile'), to: '/app/profile', icon: 'i-tabler-user-circle' }].find(item => isActive(item.to)))
 const userInitial = computed(() => (currentUser.value?.username || '?').trim().charAt(0).toUpperCase() || '?')
-const workspaceRoute = computed(() => ['/app', '/app/analytics', '/app/balance', '/app/playground', '/app/models/price', '/app/api-keys', '/app/settings', '/app/profile', '/app/logs'].includes(route.path) || (route.path === '/app/models' && Boolean(token.value)))
-const pageTitles = computed<Record<string, string>>(() => ({ '/app/analytics': t('shell.nav.usage'), '/app/playground': t('shell.nav.playground'), '/app/logs': t('shell.nav.logs'), '/app': t('shell.nav.dashboard'), '/app/balance': t('shell.nav.balance'), '/app/models': t(workspaceRoute.value ? 'shell.nav.catalog' : 'shell.nav.models'), '/app/models/price': t('shell.nav.price'), '/app/api-keys': t('shell.nav.apiKeys'), '/app/settings': t('shell.nav.settings'), '/app/profile': t('shell.profile') }))
-const workspaceSubtitles = computed<Record<string, string>>(() => ({ '/app/analytics': t('analytics.description'), '/app/playground': t('shell.sub.playground'), '/app/logs': t('shell.sub.logs'), '/app': t('shell.sub.dashboard'), '/app/balance': t('shell.sub.balance'), '/app/models': t('shell.sub.models'), '/app/models/price': t('shell.sub.price'), '/app/api-keys': t('shell.sub.apiKeys'), '/app/profile': t('shell.sub.profile') }))
+const workspaceRoute = computed(() => ['/app', '/app/analytics', '/app/balance', '/app/playground', '/app/models/price', '/app/api-keys', '/app/settings', '/app/profile', '/app/logs', '/app/organizations'].includes(route.path) || (route.path === '/app/models' && Boolean(token.value)))
+const pageTitles = computed<Record<string, string>>(() => ({ '/app/analytics': t('shell.nav.usage'), '/app/playground': t('shell.nav.playground'), '/app/logs': t('shell.nav.logs'), '/app': t('shell.nav.dashboard'), '/app/balance': t('shell.nav.balance'), '/app/models': t(workspaceRoute.value ? 'shell.nav.catalog' : 'shell.nav.models'), '/app/models/price': t('shell.nav.price'), '/app/api-keys': t('shell.nav.apiKeys'), '/app/organizations': t('shell.nav.organizations'), '/app/settings': t('shell.nav.settings'), '/app/profile': t('shell.profile') }))
+const workspaceSubtitles = computed<Record<string, string>>(() => ({ '/app/analytics': t('analytics.description'), '/app/playground': t('shell.sub.playground'), '/app/logs': t('shell.sub.logs'), '/app': t('shell.sub.dashboard'), '/app/balance': t('shell.sub.balance'), '/app/models': t('shell.sub.models'), '/app/models/price': t('shell.sub.price'), '/app/api-keys': t('shell.sub.apiKeys'), '/app/organizations': t('shell.sub.organizations'), '/app/profile': t('shell.sub.profile') }))
 const accessSubtitles = computed<Record<string, string>>(() => ({ '/app/login': t('shell.access.login'), '/app/register': t('shell.access.register'), '/app/models': t('shell.access.models'), '/app/forgot-password': t('shell.access.forgot'), '/app/reset-password': t('shell.access.reset'), '/app/verify-email': t('shell.access.verify') }))
 const pageTitle = computed(() => pageTitles.value[route.path] || t('shell.userWorkspace'))
 const pageSubtitle = computed(() => workspaceRoute.value

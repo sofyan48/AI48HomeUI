@@ -34,6 +34,8 @@ export default {
   'shell.nav.logs': 'Журнал запросов',
   'shell.nav.settings': 'Настройки',
   'shell.sub.logs': 'Сводка запросов только по вашему аккаунту',
+  'shell.nav.organizations': 'Организации',
+  'shell.sub.organizations': 'Командные пространства с общим балансом',
   'shell.sub.dashboard': 'Обзор биллинга и аккаунта',
   'shell.sub.balance': 'Пополнение кредитов и контроль баланса',
   'shell.sub.playground': 'Пробуйте модели со своим API-ключом',
