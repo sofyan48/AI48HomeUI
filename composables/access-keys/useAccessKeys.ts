@@ -8,12 +8,14 @@ import {
   isPlainObject,
   normalizeGroups,
   normalizeResource,
-  normalizeUsers,
+
   selectAPIKeyEntries,
   type AccessKeyGroup,
   type AccessKeyResource,
   type AccessKeyUser,
 } from '~/composables/access-keys/normalize'
+
+import { keyOwnerName, loadKeyOwnerOrganizations, normalizeKeyOwners } from '~/composables/users/keyOwners'
 
 export type AccessKeySheetMode = 'detail' | 'create' | 'edit'
 
@@ -52,11 +54,7 @@ function createAccessKeys() {
   const selectedResource = ref<AccessKeyResource | null>(null)
 
   function ownerName(resource: AccessKeyResource) {
-    if (resource.userId == null || resource.userId === 0) return t('keys.unassigned')
-    return (
-      users.value.find((user) => user.id === resource.userId)?.name ||
-      String(resource.userId)
-    )
+    return keyOwnerName(resource.userId, users.value, t('keys.unassigned'))
   }
 
   function groupName(id: number, groups: AccessKeyGroup[]) {
@@ -182,12 +180,18 @@ function createAccessKeys() {
     supplementalError.value = ""
     const tasks: Promise<unknown>[] = []
     let usersIndex = -1
+    let organizationsIndex = -1
     let channelGroupsIndex = -1
     let modelGroupsIndex = -1
 
     if (supports("users", true)) {
       usersIndex = tasks.length
       tasks.push(supplementalRequest("/users"))
+      organizationsIndex = tasks.length
+      tasks.push(loadKeyOwnerOrganizations(() => fetchAPI('/organizations')).catch(() => {
+        supplementalError.value = 'Some owner or group metadata could not be loaded.'
+        return null
+      }))
     }
 
     if (supports("access_groups", true)) {
@@ -199,7 +203,7 @@ function createAccessKeys() {
     }
 
     const results = await Promise.all(tasks)
-    users.value = usersIndex >= 0 ? normalizeUsers(results[usersIndex]) : []
+    users.value = normalizeKeyOwners(results[usersIndex], results[organizationsIndex])
     channelGroups.value =
       channelGroupsIndex >= 0
         ? normalizeGroups(results[channelGroupsIndex], "channel")

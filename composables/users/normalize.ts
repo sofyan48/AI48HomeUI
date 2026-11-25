@@ -38,6 +38,14 @@ export function credentialAuthId(item: AnyRecord | null | undefined): string {
   return String(item?.auth_id || item?.auth_index || item?.['auth-index'] || item?.id || item?.uuid || '').trim()
 }
 
+export function credentialAccountName(item: AnyRecord): string {
+  for (const field of ['label', 'email', 'account', 'name', 'identifier']) {
+    const value = item[field]
+    if (typeof value === 'string' && value.trim()) return value.trim()
+  }
+  return credentialAuthId(item)
+}
+
 const channelBucketOf = (item: AnyRecord, fallback = '') =>
   item?.channel || item?.channel_bucket || item?.['channel-bucket'] || fallback
 

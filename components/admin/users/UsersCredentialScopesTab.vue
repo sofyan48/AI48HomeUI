@@ -59,7 +59,7 @@
           </template>
           <AppTable :columns="columns" :data="bindings" :loading="loading" class="min-w-0">
             <template #credential-cell="{ row }">
-              <p class="truncate font-mono text-xs font-medium text-[var(--ui-text-highlighted)]" :title="row.original.auth_id">{{ row.original.auth_id }}</p>
+              <p class="truncate font-mono text-xs font-medium text-[var(--ui-text-highlighted)]" :title="row.original.auth_id">{{ credentialName(row.original.auth_id) }}</p>
             </template>
             <template #updated-cell="{ row }">
               <span class="whitespace-nowrap text-xs text-muted-foreground">{{ formatDate(row.original.updated_at) }}</span>
@@ -97,12 +97,13 @@ const emit = defineEmits<{
   deleteDetail: [detail: AnyRecord]
 }>()
 
-const { t, loading, accessGroupsSupported, channelGroups, matches, channelDetailsFor, formatDate } = useUsersWorkspace()
+const { t, loading, accessGroupsSupported, channelGroups, matches, channelDetailsFor, formatDate, bindingCandidates } = useUsersWorkspace()
+const credentialName = (id: string) => bindingCandidates.credentialNames.value.get(id) || id
 
 const selectedId = ref<number | string | null>(null)
 
 const filteredGroups = computed(() => channelGroups.value.filter(group => matches([
-  group.id, group.channel_name, ...channelDetailsFor(group.id).map(item => item.auth_id)
+  group.id, group.channel_name, ...channelDetailsFor(group.id).flatMap(item => [item.auth_id, credentialName(item.auth_id)])
 ])))
 const scopeOptions = computed(() => filteredGroups.value.map(group => ({
   label: `${group.channel_name} · ${t('users.credentialsCount', { count: channelDetailsFor(group.id).length })}`,
@@ -121,7 +122,7 @@ watch(filteredGroups, (groups) => {
 
 const actionsMeta = { class: { th: 'w-px whitespace-nowrap text-right', td: 'w-px whitespace-nowrap text-right' } }
 const columns = computed(() => [
-  { accessorKey: 'credential', header: t('users.credentialId') },
+  { accessorKey: 'credential', header: t('channels.columnCredential') },
   { accessorKey: 'updated', header: t('common.updated') },
   { id: 'actions', header: t('common.actions'), meta: actionsMeta }
 ])

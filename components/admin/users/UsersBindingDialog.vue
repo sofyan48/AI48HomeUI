@@ -49,10 +49,10 @@
 import { computed, ref } from 'vue'
 import UsersCandidatePicker from './UsersCandidatePicker.vue'
 import UsersScopePicker from './UsersScopePicker.vue'
-import { useBindingCandidates } from '~/composables/users/useBindingCandidates'
+
 import { useUsersWorkspace } from '~/composables/users/useUsersWorkspace'
 import { listFrom, toggleId, uniquePositiveIds, type AnyRecord } from '~/composables/users/common'
-import { credentialAuthId } from '~/composables/users/normalize'
+import { credentialAuthId, credentialAccountName } from '~/composables/users/normalize'
 
 type BindingKind = 'credential' | 'model'
 
@@ -64,7 +64,7 @@ const {
 const {
   credentials, models, loadCredentials, loadModels,
   credentialPending, credentialIssue, credentialError, modelPending, modelIssue, modelError
-} = useBindingCandidates(workspace)
+} = workspace.bindingCandidates
 
 const open = ref(false)
 const kind = ref<BindingKind>('credential')
@@ -88,7 +88,7 @@ const candidates = computed(() => {
       return {
         id: `${item.source || 'credential'}:${value}`,
         value,
-        label: item.label || item.email || item.account || item.name || item.identifier || value,
+        label: credentialAccountName(item),
         description: value,
         provider,
         type: item.type || '',

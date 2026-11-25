@@ -422,7 +422,6 @@ export const useUserSessionStore = defineStore('userSession', () => {
     serverInfo.value = response.server_info || {}
     return response
   }
-
   const loadCurrentUser = async () => {
     const generation = sessionGeneration
     const response = await fetchAPI<{ user: UserAccount }>('/me')

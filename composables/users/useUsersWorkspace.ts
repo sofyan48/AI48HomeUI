@@ -5,6 +5,8 @@ import { useApi } from '~/composables/useApi'
 import { useCapabilities } from '~/composables/useCapabilities'
 import { useWorkspaceState } from '~/composables/useWorkspaceState'
 import { apiErrorMessage, listFrom, type AnyRecord } from '~/composables/users/common'
+import { keyOwnerName, loadKeyOwnerOrganizations, normalizeKeyOwners } from '~/composables/users/keyOwners'
+import { useBindingCandidates } from '~/composables/users/useBindingCandidates'
 import { keyEntries, normalizeKey } from '~/composables/users/normalize'
 
 /**
@@ -26,6 +28,7 @@ function createUsersWorkspace() {
   const saving = useWorkspaceState('admin:users:saving', () => false)
   const pageErrors = useWorkspaceState<string[]>('admin:users:pageErrors', () => [])
   const usersData = useWorkspaceState<AnyRecord[]>('admin:users:usersData', () => [])
+  const keyOwnerOrganizations = ref<unknown>(null)
   const keysData = useWorkspaceState<AnyRecord[]>('admin:users:keysData', () => [])
   const channelGroupsData = useWorkspaceState<AnyRecord[]>('admin:users:channelGroupsData', () => [])
   const channelDetailsData = useWorkspaceState<AnyRecord[]>('admin:users:channelDetailsData', () => [])
@@ -74,6 +77,10 @@ function createUsersWorkspace() {
     const query = normalize(search.value).trim()
     return !query || values.some(value => normalize(value).includes(query))
   }
+
+  const keyOwners = computed(() => normalizeKeyOwners(users.value, keyOwnerOrganizations.value))
+  const ownerName = (id: number | null | undefined) => keyOwnerName(id, keyOwners.value, t('users.unassigned'))
+  const bindingCandidates = useBindingCandidates({ fetchAPI: api.fetchAPI, errorMessage })
 
   const userById = (id: unknown) => users.value.find(user => Number(user.id) === Number(id))
   const channelName = (id: unknown) => channelGroups.value.find(group => Number(group.id) === Number(id))?.channel_name || `#${id}`
@@ -138,6 +145,9 @@ function createUsersWorkspace() {
         return
       }
       const tasks: Promise<void>[] = [
+        safeLoad<unknown>(t('users.owner'), () => loadKeyOwnerOrganizations(() => fetchAPI('/organizations')), null).then(value => {
+          keyOwnerOrganizations.value = value
+        }),
         safeLoad<any>(t('common.users'), () => fetchAPI('/users'), { users: [] }).then((value) => {
           usersData.value = Array.isArray(value) ? value : listFrom(value, ['users', 'items', 'records', 'data'])
         }),
@@ -147,6 +157,7 @@ function createUsersWorkspace() {
       ]
       if (accessGroupsSupported.value) {
         tasks.push(
+          bindingCandidates.loadCredentials(),
           safeLoad<any>(t('users.credentialScopes'), () => fetchAPI('/channel-groups'), { channel_groups: [] }).then((value) => {
             channelGroupsData.value = listFrom(value, ['channel_groups', 'items'])
           }),
@@ -179,7 +190,7 @@ function createUsersWorkspace() {
     usersSupported, accessGroupsSupported, periodLimitsSupported, modelChannelBindingsSupported,
     resetAllowanceSupported, topupApprovalSupported,
     errorMessage, formatCredits, formatDate, compactNumber, userStatus, periodWindowLabel, periodModeLabel, matches,
-    userById, channelName, modelGroupName, keyChannelNames, keyModelNames, keysForUser,
+    bindingCandidates, ownerName, userById, channelName, modelGroupName, keyChannelNames, keyModelNames, keysForUser,
     effectiveChannelScopes, effectiveModelScopes, scopeSummary, channelDetailsFor, modelDetailsFor,
     channelOptions, modelGroupOptions,
     syncAll

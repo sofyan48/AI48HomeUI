@@ -10,8 +10,7 @@
         <p class="mt-1 text-xs text-[var(--ui-text-muted)]">{{ t('users.sequence', { sequence: sequence(row.original) }) }}</p>
       </template>
       <template #owner-cell="{ row }">
-        <span v-if="userById(row.original.user_id)">{{ userById(row.original.user_id)?.username }}</span>
-        <span v-else class="text-[var(--ui-text-muted)]">{{ t('users.unassigned') }}</span>
+        <span :class="{ 'text-[var(--ui-text-muted)]': !row.original.user_id }">{{ ownerName(row.original.user_id) }}</span>
       </template>
       <template #credentialScope-cell="{ row }">
         <span class="block max-w-60 truncate">{{ scopeSummary(keyChannelNames(row.original)) }}</span>
@@ -43,10 +42,10 @@ import { maskKey, type AnyRecord } from '~/composables/users/common'
 
 const emit = defineEmits<{ create: []; edit: [key: AnyRecord]; delete: [key: AnyRecord] }>()
 
-const { t, loading, keys, search, matches, userById, keyChannelNames, keyModelNames, scopeSummary } = useUsersWorkspace()
+const { t, loading, keys, search, matches, ownerName, keyChannelNames, keyModelNames, scopeSummary } = useUsersWorkspace()
 
 const filteredKeys = computed(() => keys.value.filter(key => matches([
-  key.api_key, userById(key.user_id)?.username, ...keyChannelNames(key), ...keyModelNames(key)
+  key.api_key, ownerName(key.user_id), ...keyChannelNames(key), ...keyModelNames(key)
 ])))
 
 const actionsMeta = { class: { th: 'w-px whitespace-nowrap text-right', td: 'w-px whitespace-nowrap text-right' } }

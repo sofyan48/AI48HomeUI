@@ -1,7 +1,8 @@
 import { useWorkspaceState } from '~/composables/useWorkspaceState'
-import type { UsersWorkspace } from '~/composables/users/useUsersWorkspace'
+import { computed } from 'vue'
+import type { useApi } from '~/composables/useApi'
 import type { AnyRecord } from '~/composables/users/common'
-import { credentialAuthId, flattenModels, mergeModelCandidates } from '~/composables/users/normalize'
+import { credentialAuthId, credentialAccountName, flattenModels, mergeModelCandidates } from '~/composables/users/normalize'
 
 const providerCandidateRoutes = [
   { id: 'gemini', path: '/config/api-keys/gemini' },
@@ -15,7 +16,10 @@ const providerCandidateRoutes = [
 ]
 
 /** Loads the credentials and models that can be bound to a credential or model scope. */
-export function useBindingCandidates({ fetchAPI, errorMessage }: Pick<UsersWorkspace, 'fetchAPI' | 'errorMessage'>) {
+export function useBindingCandidates({ fetchAPI, errorMessage }: {
+  fetchAPI: ReturnType<typeof useApi>['fetchAPI']
+  errorMessage: (error: unknown) => string
+}) {
   const credentials = useWorkspaceState<AnyRecord[]>('admin:users:credentialsData', () => [])
   const runtimeModels = useWorkspaceState<AnyRecord[]>('admin:users:runtimeModelsData', () => [])
   const staticModels = useWorkspaceState<AnyRecord[]>('admin:users:staticModelsData', () => [])
@@ -27,7 +31,7 @@ export function useBindingCandidates({ fetchAPI, errorMessage }: Pick<UsersWorks
   const modelError = useWorkspaceState('admin:users:modelCandidatesError', () => '')
 
   const models = () => mergeModelCandidates(runtimeModels.value, staticModels.value)
-
+  const credentialNames = computed(() => new Map(credentials.value.map(item => [credentialAuthId(item), credentialAccountName(item)])))
   async function loadCredentials() {
     credentialPending.value = true
     credentialIssue.value = ''
@@ -85,7 +89,7 @@ export function useBindingCandidates({ fetchAPI, errorMessage }: Pick<UsersWorks
   }
 
   return {
-    credentials, models, loadCredentials, loadModels,
+    credentials, credentialNames, models, loadCredentials, loadModels,
     credentialPending, credentialIssue, credentialError,
     modelPending, modelIssue, modelError
   }
