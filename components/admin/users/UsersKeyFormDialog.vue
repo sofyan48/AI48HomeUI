@@ -58,16 +58,18 @@ import { keyEntries, keyPayload, normalizeKey } from '~/composables/users/normal
 
 type KeyForm = { api_key: string; user_id: number; channels: number[]; model_groups: number[] }
 
-const { t, fetchAPI, toast, saving, users, channelOptions, modelGroupOptions, errorMessage, syncAll } = useUsersWorkspace()
+const { t, fetchAPI, toast, saving, keyOwners, channelOptions, modelGroupOptions, errorMessage, syncAll } = useUsersWorkspace()
 
 const open = ref(false)
 const editingKey = ref<AnyRecord | null>(null)
 const form = ref<KeyForm>({ api_key: '', user_id: 0, channels: [], model_groups: [] })
 const formError = ref('')
 
-const ownerOptions = computed(() => usersKeyOwnerOptions(users.value as any, Number(form.value.user_id) || 0))
+const ownerOptions = computed(() => usersKeyOwnerOptions(keyOwners.value.map(owner => ({
+  id: owner.id, username: owner.name, deleted_at: owner.deletedAt ? String(owner.deletedAt) : null
+})), Number(form.value.user_id) || 0))
 const ownerUnavailable = computed(() => Number(form.value.user_id) > 0
-  && !users.value.some(user => Number(user.id) === Number(form.value.user_id) && !user.deleted_at))
+  && !keyOwners.value.some(owner => owner.id === Number(form.value.user_id) && !owner.deletedAt))
 
 function openCreate() {
   editingKey.value = null

@@ -15,7 +15,7 @@ import {
   type AccessKeyUser,
 } from '~/composables/access-keys/normalize'
 
-import { keyOwnerName, loadKeyOwnerOrganizations, normalizeKeyOwners } from '~/composables/users/keyOwners'
+import { keyOwnerName, loadKeyOwnerOrganizations, normalizeKeyOwners, withoutOrganizationKeys } from '~/composables/users/keyOwners'
 
 export type AccessKeySheetMode = 'detail' | 'create' | 'edit'
 
@@ -188,10 +188,7 @@ function createAccessKeys() {
       usersIndex = tasks.length
       tasks.push(supplementalRequest("/users"))
       organizationsIndex = tasks.length
-      tasks.push(loadKeyOwnerOrganizations(() => fetchAPI('/organizations')).catch(() => {
-        supplementalError.value = 'Some owner or group metadata could not be loaded.'
-        return null
-      }))
+      tasks.push(loadKeyOwnerOrganizations(() => fetchAPI('/organizations')))
     }
 
     if (supports("access_groups", true)) {
@@ -203,7 +200,8 @@ function createAccessKeys() {
     }
 
     const results = await Promise.all(tasks)
-    users.value = normalizeKeyOwners(results[usersIndex], results[organizationsIndex])
+    users.value = normalizeKeyOwners(results[usersIndex], null)
+    resources.value = withoutOrganizationKeys(resources.value, results[organizationsIndex], resource => resource.userId)
     channelGroups.value =
       channelGroupsIndex >= 0
         ? normalizeGroups(results[channelGroupsIndex], "channel")
