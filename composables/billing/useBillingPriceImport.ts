@@ -1,3 +1,4 @@
+import { resolveImportSelection } from './importSelection'
 import { billingImportApplySupportError, createBillingImportIdempotencyKey, billingImportStorageKey, isDefinitiveBillingImportFailure, readBillingImportPending, validateBillingImportResult, writeBillingImportPending, type BillingImportPendingApply } from '~/composables/billingImport'
 import { billingCatalogSources, defaultBillingImportPreferences, readBillingImportPreferences, writeBillingImportPreferences, type BillingCatalogSource, type BillingImportPreferences } from '~/composables/billingPreferences'
 import { computed, ref, reactive, watch, onMounted, onScopeDispose, provide, inject, type InjectionKey } from 'vue'
@@ -280,6 +281,7 @@ const validationError = computed(() => {
 const requiresOverwrite = computed(() => (preview.value?.rows || []).some((row: any) => selected.value.includes(row.row_key) && row.action === 'overwrite'))
 async function previewPrices(updates = false, preferredSelection?: string[]) {
   if (busy.value || pendingApply.value || importUnavailable.value) return
+  const priorSelection = preferredSelection ?? (preview.value ? [...selected.value] : undefined)
   loading.value = true
   error.value = ''
   invalidatePreview()
@@ -310,7 +312,7 @@ async function previewPrices(updates = false, preferredSelection?: string[]) {
     })
     if (disposed || session !== sessionVersion || controller.signal.aborted || version !== inputVersion) return
     preview.value = result
-    selected.value = (result.rows || []).filter((row: any) => selectable(row) && (!preferredSelection || preferredSelection.includes(row.row_key))).map((row: any) => row.row_key)
+    selected.value = resolveImportSelection(result.rows || [], priorSelection, selectable)
     confirmOverwrite.value = false
   } catch (cause: any) {
     if (!disposed && session === sessionVersion && !controller.signal.aborted && version === inputVersion) {
