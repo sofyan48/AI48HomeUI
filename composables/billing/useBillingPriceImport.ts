@@ -1,4 +1,5 @@
 import { resolveImportSelection } from './importSelection'
+import { scopeImportMatches } from './importMatches'
 import { billingImportApplySupportError, createBillingImportIdempotencyKey, billingImportStorageKey, isDefinitiveBillingImportFailure, readBillingImportPending, validateBillingImportResult, writeBillingImportPending, type BillingImportPendingApply } from '~/composables/billingImport'
 import { billingCatalogSources, defaultBillingImportPreferences, readBillingImportPreferences, writeBillingImportPreferences, type BillingCatalogSource, type BillingImportPreferences } from '~/composables/billingPreferences'
 import { computed, ref, reactive, watch, onMounted, onScopeDispose, provide, inject, type InjectionKey } from 'vue'
@@ -275,7 +276,7 @@ const validationError = computed(() => {
   const rowKeys = rowMultipliers.map(row => row.row_key.trim())
   if (rowMultipliers.some(row => !row.row_key.trim() || !positive(row.multiplier)) || new Set(rowKeys).size !== rowKeys.length) return t('billing.import.err.rowMultiplier')
   const overrideKeys = matchOverrides.map(item => `${item.target_provider.trim().toLowerCase()}::${item.target_model.trim()}`)
-  if (matchOverrides.some(item => !item.target_provider.trim() || !item.target_model.trim() || !item.source_provider.trim() || !item.source_model.trim()) || new Set(overrideKeys).size !== overrideKeys.length || overrideKeys.some(key => !targetKeys.includes(key))) return t('billing.import.err.override')
+  if (matchOverrides.some(item => !item.target_provider.trim() || !item.target_model.trim() || !item.source_provider.trim() || !item.source_model.trim()) || new Set(overrideKeys).size !== overrideKeys.length) return t('billing.import.err.override')
   return ''
 })
 const requiresOverwrite = computed(() => (preview.value?.rows || []).some((row: any) => selected.value.includes(row.row_key) && row.action === 'overwrite'))
@@ -307,7 +308,7 @@ async function previewPrices(updates = false, preferredSelection?: string[]) {
           multiplier_rules: multiplierRules.map((rule, index) => ({ id: rule.id || `rule-${index + 1}`, label: rule.label.trim(), match_mode: rule.match_mode, pattern: rule.pattern.trim(), multiplier: rule.multiplier })),
           row_multipliers: Object.fromEntries(rowMultipliers.map(row => [row.row_key.trim(), row.multiplier]))
         },
-        match_overrides: matchOverrides.map(item => ({ target_provider: item.target_provider.trim(), target_model: item.target_model.trim(), source_provider: item.source_provider.trim(), source_model: item.source_model.trim() }))
+        match_overrides: scopeImportMatches(targets, matchOverrides).map(item => ({ target_provider: item.target_provider.trim(), target_model: item.target_model.trim(), source_provider: item.source_provider.trim(), source_model: item.source_model.trim() }))
       }
     })
     if (disposed || session !== sessionVersion || controller.signal.aborted || version !== inputVersion) return
